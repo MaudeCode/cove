@@ -149,11 +149,13 @@ Cove is a full-featured WebUI for OpenClaw.
 
 ---
 
-## Tech Decisions
+## Tech Decisions ✅
 
-- [ ] State management (signals? preact hooks?)
-- [ ] Styling (Tailwind? CSS modules? vanilla?)
-- [ ] Component library (build custom? headless UI?)
-- [ ] WebSocket vs SSE for streaming
-- [ ] Routing (preact-router?)
-- [ ] API client structure
+| Decision | Choice | Notes |
+|----------|--------|-------|
+| State management | Preact Signals | Fine-grained reactivity, native to Preact |
+| Styling | Tailwind CSS | Utility-first, great Vite integration |
+| Component library | Custom | Build as we go, extract patterns |
+| Streaming | WebSocket | Match OpenClaw gateway protocol |
+| Routing | preact-router | Official, stable, simple API |
+| API client | Custom typed client | JSON-RPC over WebSocket, auto-reconnect |
