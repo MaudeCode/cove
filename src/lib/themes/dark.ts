@@ -22,11 +22,11 @@ export const darkTheme: Theme = {
     "--color-text-muted": "#52525b",
     "--color-text-inverse": "#09090b",
 
-    // Accent - vibrant teal/cyan for personality
-    "--color-accent": "#14b8a6",
-    "--color-accent-hover": "#0d9488",
-    "--color-accent-active": "#0f766e",
-    "--color-accent-muted": "#134e4a",
+    // Accent - warm coral/lobster red 🦞
+    "--color-accent": "#f97066",
+    "--color-accent-hover": "#ef5a50",
+    "--color-accent-active": "#dc4840",
+    "--color-accent-muted": "#5c2320",
     "--color-accent-text": "#ffffff",
 
     // Status
@@ -39,10 +39,10 @@ export const darkTheme: Theme = {
     "--color-info": "#38bdf8",
     "--color-info-muted": "#0c4a6e",
 
-    // Borders - subtle accent tint
+    // Borders
     "--color-border": "#252530",
     "--color-border-hover": "#3f3f4a",
-    "--color-border-focus": "#14b8a6",
+    "--color-border-focus": "#f97066",
 
     // Shadows
     "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.4)",
