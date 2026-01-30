@@ -7,27 +7,20 @@
  * - Event streaming
  * - Auto-reconnect with exponential backoff
  *
- * Usage:
- *   import { gateway, connect, disconnect, send } from '@/lib/gateway'
- *
- *   await connect({ url: 'ws://localhost:8095', password: 'secret' })
- *   const result = await send('session.list', { limit: 10 })
- *   gateway.events.subscribe(ev => console.log(ev))
+ * Protocol:
+ * 1. Server sends connect.challenge event with { nonce, ts }
+ * 2. Client sends connect request with ConnectParams
+ * 3. Server responds with hello-ok payload
  */
 
 import { signal, computed } from "@preact/signals";
-import type {
-  GatewayMessage,
-  GatewayRequest,
-  GatewayResponse,
-  GatewayEvent,
-  HelloPayload,
-} from "@/types/gateway";
+import type { GatewayMessage, GatewayResponse, GatewayEvent, HelloPayload } from "@/types/gateway";
 
 // ============================================
 // Configuration
 // ============================================
 
+const PROTOCOL_VERSION = 3;
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
 const RECONNECT_MULTIPLIER = 1.5;
@@ -75,6 +68,7 @@ let currentConfig: ConnectConfig | null = null;
 let requestId = 0;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let _connectNonce: string | null = null;
 
 // Pending requests waiting for responses
 const pendingRequests = new Map<
@@ -98,22 +92,14 @@ export interface ConnectConfig {
   /** WebSocket URL (ws:// or wss://) */
   url: string;
 
-  /** Auth mode */
-  authMode?: "password" | "token";
-
-  /** Password (if authMode is 'password') */
-  password?: string;
-
-  /** Token (if authMode is 'token') */
+  /** Auth token */
   token?: string;
+
+  /** Auth password */
+  password?: string;
 
   /** Auto-reconnect on disconnect (default: true) */
   autoReconnect?: boolean;
-}
-
-export interface RequestOptions {
-  /** Timeout in ms (default: 30000) */
-  timeout?: number;
 }
 
 // ============================================
@@ -123,7 +109,7 @@ export interface RequestOptions {
 /**
  * Connect to the gateway
  */
-export async function connect(config: ConnectConfig): Promise<HelloPayload> {
+export function connect(config: ConnectConfig): Promise<HelloPayload> {
   // Clean up existing connection
   if (ws) {
     disconnect();
@@ -133,6 +119,7 @@ export async function connect(config: ConnectConfig): Promise<HelloPayload> {
   connectionState.value = "connecting";
   lastError.value = null;
   reconnectAttempt.value = 0;
+  _connectNonce = null;
 
   return new Promise((resolve, reject) => {
     try {
@@ -140,25 +127,40 @@ export async function connect(config: ConnectConfig): Promise<HelloPayload> {
 
       ws.onopen = () => {
         connectionState.value = "authenticating";
-        authenticate(config)
-          .then((hello) => {
-            connectionState.value = "connected";
-            gatewayVersion.value = hello.version ?? null;
-            sessionKey.value = hello.sessionKey ?? null;
-            capabilities.value = hello.capabilities ?? [];
-            startHeartbeat();
-            resolve(hello);
-          })
-          .catch((err) => {
-            lastError.value = err.message;
-            disconnect();
-            reject(err);
-          });
+        // Wait for connect.challenge event before sending connect request
       };
 
       ws.onmessage = (event) => {
         try {
           const msg = JSON.parse(event.data) as GatewayMessage;
+
+          // Handle connect.challenge event during authentication
+          if (
+            connectionState.value === "authenticating" &&
+            msg.type === "event" &&
+            msg.event === "connect.challenge"
+          ) {
+            const payload = msg.payload as { nonce: string; ts: number };
+            _connectNonce = payload.nonce;
+
+            // Now send the connect request
+            sendConnectRequest(config)
+              .then((hello) => {
+                connectionState.value = "connected";
+                gatewayVersion.value = hello.server?.version ?? null;
+                sessionKey.value = hello.server?.connId ?? null;
+                capabilities.value = hello.features?.methods ?? [];
+                startHeartbeat();
+                resolve(hello);
+              })
+              .catch((err) => {
+                lastError.value = err.message;
+                disconnect();
+                reject(err);
+              });
+            return;
+          }
+
           handleMessage(msg);
         } catch (err) {
           console.error("[gateway] Failed to parse message:", err);
@@ -166,7 +168,6 @@ export async function connect(config: ConnectConfig): Promise<HelloPayload> {
       };
 
       ws.onerror = () => {
-        // Error details are limited in browser WebSocket API
         lastError.value = "WebSocket error";
       };
 
@@ -190,6 +191,46 @@ export async function connect(config: ConnectConfig): Promise<HelloPayload> {
 }
 
 /**
+ * Send the connect request with proper protocol params
+ */
+async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> {
+  const params = {
+    minProtocol: PROTOCOL_VERSION,
+    maxProtocol: PROTOCOL_VERSION,
+    client: {
+      id: "webchat-ui",
+      displayName: "Cove",
+      version: "0.1.0",
+      platform: getBrowserPlatform(),
+      mode: "webchat",
+    },
+    auth: {} as { token?: string; password?: string },
+  };
+
+  if (config.token) {
+    params.auth.token = config.token;
+  } else if (config.password) {
+    params.auth.password = config.password;
+  }
+
+  const result = await send<HelloPayload>("connect", params);
+  return result;
+}
+
+/**
+ * Get browser platform string
+ */
+function getBrowserPlatform(): string {
+  const ua = navigator.userAgent;
+  if (ua.includes("Mac")) return "macos";
+  if (ua.includes("Windows")) return "windows";
+  if (ua.includes("Linux")) return "linux";
+  if (ua.includes("iPhone") || ua.includes("iPad")) return "ios";
+  if (ua.includes("Android")) return "android";
+  return "web";
+}
+
+/**
  * Disconnect from the gateway
  */
 export function disconnect(): void {
@@ -208,28 +249,17 @@ export function disconnect(): void {
   gatewayVersion.value = null;
   sessionKey.value = null;
   capabilities.value = [];
-}
-
-/**
- * Authenticate with the gateway
- */
-async function authenticate(config: ConnectConfig): Promise<HelloPayload> {
-  // OpenClaw expects 'connect' as the first request with password/token
-  const params: Record<string, unknown> = {};
-
-  if (config.token) {
-    params.token = config.token;
-  } else if (config.password) {
-    params.password = config.password;
-  }
-
-  const result = await send<HelloPayload>("connect", params);
-  return result;
+  _connectNonce = null;
 }
 
 // ============================================
 // Request/Response RPC
 // ============================================
+
+export interface RequestOptions {
+  /** Timeout in ms (default: 30000) */
+  timeout?: number;
+}
 
 /**
  * Send a request to the gateway
@@ -248,7 +278,7 @@ export function send<T = unknown>(
     const id = `req_${++requestId}`;
     const timeout = options?.timeout ?? REQUEST_TIMEOUT_MS;
 
-    const request: GatewayRequest = {
+    const request = {
       type: "req",
       id,
       method,
@@ -276,10 +306,10 @@ export function send<T = unknown>(
 function handleMessage(msg: GatewayMessage): void {
   switch (msg.type) {
     case "res":
-      handleResponse(msg);
+      handleResponse(msg as GatewayResponse);
       break;
     case "event":
-      handleEvent(msg);
+      handleEvent(msg as GatewayEvent);
       break;
     default:
       console.warn("[gateway] Unknown message type:", msg);

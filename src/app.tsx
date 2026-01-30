@@ -34,7 +34,8 @@ export function App() {
 
   // Gateway connection form state
   const url = useSignal("");
-  const password = useSignal("");
+  const token = useSignal("");
+  const authMode = useSignal<"token" | "password">("token");
   const connecting = useSignal(false);
   const testResult = useSignal<string | null>(null);
 
@@ -44,10 +45,11 @@ export function App() {
     try {
       const hello = await connect({
         url: url.value,
-        password: password.value,
+        token: authMode.value === "token" ? token.value : undefined,
+        password: authMode.value === "password" ? token.value : undefined,
         autoReconnect: false,
       });
-      testResult.value = `Connected! Version: ${hello.version ?? "unknown"}`;
+      testResult.value = `Connected! Version: ${hello.server?.version ?? "unknown"}`;
     } catch (err) {
       testResult.value = `Failed: ${err instanceof Error ? err.message : String(err)}`;
     } finally {
@@ -122,18 +124,37 @@ export function App() {
               </div>
               <div>
                 <label
-                  htmlFor="gateway-password"
+                  htmlFor="gateway-auth-mode"
                   class="block text-xs text-[var(--color-text-muted)] mb-1"
                 >
-                  Password
+                  Auth Mode
+                </label>
+                <select
+                  id="gateway-auth-mode"
+                  value={authMode.value}
+                  onChange={(e) =>
+                    (authMode.value = (e.target as HTMLSelectElement).value as "token" | "password")
+                  }
+                  class="w-full px-3 py-2 text-sm rounded-md bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                >
+                  <option value="token">Token</option>
+                  <option value="password">Password</option>
+                </select>
+              </div>
+              <div>
+                <label
+                  htmlFor="gateway-token"
+                  class="block text-xs text-[var(--color-text-muted)] mb-1"
+                >
+                  {authMode.value === "token" ? "Token" : "Password"}
                 </label>
                 <input
-                  id="gateway-password"
+                  id="gateway-token"
                   type="password"
-                  value={password.value}
-                  onInput={(e) => (password.value = (e.target as HTMLInputElement).value)}
+                  value={token.value}
+                  onInput={(e) => (token.value = (e.target as HTMLInputElement).value)}
                   class="w-full px-3 py-2 text-sm rounded-md bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                  placeholder="Enter password"
+                  placeholder={authMode.value === "token" ? "Enter token" : "Enter password"}
                 />
               </div>
               <button
