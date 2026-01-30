@@ -4,6 +4,46 @@ Cove is a full-featured WebUI for OpenClaw.
 
 ## Phase 1: Foundation
 
+### 0.0 Project Structure
+
+```
+src/
+├── components/        # Reusable UI components
+│   ├── ui/            # Primitives (Button, Input, Modal, Toast, etc.)
+│   └── chat/          # Chat-specific (Message, ToolCall, Input, etc.)
+├── views/             # Full page views (Chat, Cron, Config, Status)
+├── lib/               # Gateway client, storage, utils
+│   ├── gateway.ts     # WebSocket client
+│   ├── storage.ts     # localStorage wrapper
+│   └── i18n.ts        # Localization
+├── hooks/             # Custom Preact hooks (if needed alongside signals)
+├── signals/           # Global state (signals)
+├── styles/            # Tailwind config, global styles, fonts
+└── types/             # TypeScript types
+```
+
+### 0.1 Core Principles
+
+**Accessibility (a11y)**
+- [ ] ARIA labels on all interactive elements
+- [ ] Keyboard navigation throughout
+- [ ] Focus management (modals, drawers)
+- [ ] Screen reader friendly
+- [ ] Color contrast compliance
+- [ ] Reduced motion support
+
+**Internationalization (i18n)**
+- [ ] All user-facing strings extracted
+- [ ] Locale switching support
+- [ ] RTL layout support
+- [ ] Date/time/number formatting by locale
+
+**Error Handling**
+- [ ] Chat view: inline errors
+- [ ] Other views: toast notifications
+- [ ] Desktop notifications (opt-in)
+- [ ] Error boundaries for graceful failure
+
 ### 1.0 Layout Structure
 
 ```
@@ -249,3 +289,8 @@ Cove is a full-featured WebUI for OpenClaw.
 | Syntax highlighting | Prism | Lightweight, themeable |
 | Markdown | markdown-it | Pluggable, GFM support, good features |
 | Theming | CSS custom properties | Build with variables from day one for full theming support |
+| Icons | Lucide (lucide-preact) | Tree-shakeable, only used icons bundled |
+| Fonts | Geist (default) + options | Inter, System, JetBrains Mono, OpenDyslexic |
+| Error UX | Inline (chat) + Toasts | Desktop notifications opt-in |
+| i18n | Built-in from start | String extraction, RTL support ready |
+| Testing | Deferred | Add once architecture stabilizes |
