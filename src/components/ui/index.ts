@@ -63,3 +63,17 @@ export {
   type ErrorBoundaryProps,
   type InlineErrorProps,
 } from "./ErrorBoundary";
+
+// Icons (shared)
+export {
+  CloseIcon,
+  PlusIcon,
+  MenuIcon,
+  SettingsIcon,
+  LogoutIcon,
+  ChevronDownIcon,
+  ArrowDownIcon,
+  ExternalLinkIcon,
+  SendIcon,
+  StopIcon,
+} from "./icons";

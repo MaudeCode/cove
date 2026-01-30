@@ -8,6 +8,7 @@ import type { ComponentChildren } from "preact";
 import { useEffect, useRef, useCallback } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { IconButton } from "./IconButton";
+import { CloseIcon } from "./icons";
 
 export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
 
@@ -150,13 +151,5 @@ export function Modal({
         )}
       </div>
     </div>
-  );
-}
-
-function CloseIcon() {
-  return (
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
   );
 }
