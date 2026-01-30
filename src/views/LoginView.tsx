@@ -10,7 +10,7 @@ import { connect, lastError } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession } from "@/signals/sessions";
 import { getAuth, saveAuth } from "@/lib/storage";
-import { Input, Select, Button, Checkbox, Card, FormField } from "@/components/ui";
+import { Input, Select, Button, Toggle, Card, FormField } from "@/components/ui";
 
 export function LoginView() {
   const url = useSignal("");
@@ -174,10 +174,11 @@ export function LoginView() {
             </FormField>
 
             {/* Remember me */}
-            <Checkbox
+            <Toggle
               checked={rememberMe.value}
               onChange={(checked) => (rememberMe.value = checked)}
               label={t("auth.rememberMe")}
+              size="sm"
             />
 
             {/* Connect button */}
