@@ -30,8 +30,8 @@ export function TopBar() {
   ];
 
   return (
-    <header class="h-14 flex-shrink-0 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)]">
-      <div class="h-full px-4 flex items-center justify-between">
+    <header class="h-14 flex-shrink-0 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)]/80 backdrop-blur-sm">
+      <div class="h-full px-5 flex items-center justify-between">
         {/* Left side: hamburger + logo */}
         <div class="flex items-center gap-3">
           {/* Hamburger menu for mobile */}
