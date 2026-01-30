@@ -5,14 +5,17 @@
  * Navigation items are driven by src/lib/navigation.tsx config.
  */
 
-import { useSignal } from "@preact/signals";
+import { useSignal, signal } from "@preact/signals";
+import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
-import { activeView, type View } from "@/signals/ui";
-import { activeSessionKey, setActiveSession, sessionsByRecent } from "@/signals/sessions";
+import { activeSessionKey, sessionsByRecent } from "@/signals/sessions";
 import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon } from "@/components/ui";
 import { SessionItem } from "@/components/sessions";
 import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
+
+// Track current path for active state (updated by router)
+export const currentPath = signal<string>(window.location.pathname);
 
 export function Sidebar() {
   return (
@@ -22,10 +25,7 @@ export function Sidebar() {
         <Button
           variant="primary"
           disabled={!isConnected.value}
-          onClick={() => {
-            setActiveSession("main");
-            activeView.value = "chat";
-          }}
+          onClick={() => route("/chat")}
           fullWidth
           icon={<PlusIcon />}
         >
@@ -46,11 +46,10 @@ export function Sidebar() {
               <li key={session.key}>
                 <SessionItem
                   session={session}
-                  isActive={activeSessionKey.value === session.key && activeView.value === "chat"}
-                  onClick={() => {
-                    setActiveSession(session.key);
-                    activeView.value = "chat";
-                  }}
+                  isActive={
+                    activeSessionKey.value === session.key && currentPath.value.startsWith("/chat")
+                  }
+                  onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
                 />
               </li>
             ))}
@@ -117,7 +116,12 @@ interface NavItemComponentProps {
 }
 
 function NavItemComponent({ item }: NavItemComponentProps) {
-  const isActive = !item.external && activeView.value === item.id;
+  // Check if this nav item matches the current path
+  const itemPath = `/${item.id}`;
+  const isActive =
+    !item.external &&
+    (currentPath.value === itemPath ||
+      (item.id === "chat" && currentPath.value.startsWith("/chat")));
   const Icon = item.icon;
 
   // External link
@@ -142,7 +146,7 @@ function NavItemComponent({ item }: NavItemComponentProps) {
   return (
     <button
       type="button"
-      onClick={() => (activeView.value = item.id as View)}
+      onClick={() => route(itemPath)}
       class={`
         w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm
         transition-all duration-200 ease-out

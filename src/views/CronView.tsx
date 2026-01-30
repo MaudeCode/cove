@@ -2,13 +2,15 @@
  * CronView
  *
  * Cron job management view.
+ * Route: /cron
  * TODO: Phase 3.2 implementation
  */
 
 import { t } from "@/lib/i18n";
 import { Card } from "@/components/ui";
+import type { RouteProps } from "@/types/routes";
 
-export function CronView() {
+export function CronView(_props: RouteProps) {
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
       {/* Header */}
