@@ -16,7 +16,7 @@ interface AppShellProps {
 
 export function AppShell({ children }: AppShellProps) {
   return (
-    <div class="h-screen p-2 bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]">
+    <div class="h-screen flex flex-col bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">
       {/* Skip to content link for accessibility */}
       <a
         href="#main-content"
@@ -25,41 +25,39 @@ export function AppShell({ children }: AppShellProps) {
         Skip to content
       </a>
 
-      {/* Main container with rounded corners */}
-      <div class="h-full flex flex-col rounded-2xl overflow-hidden border border-[var(--color-border)] shadow-soft-lg bg-[var(--color-bg-surface)]">
-        <TopBar />
+      <TopBar />
 
-        <div class="flex-1 flex overflow-hidden">
-          {/* Sidebar - hidden on mobile when closed */}
-          <aside
-            class={`
-              flex-shrink-0 w-64 border-r border-[var(--color-border)]
-              bg-[var(--color-bg-secondary)] overflow-hidden
-              transition-all duration-200 ease-out
-              ${sidebarOpen.value ? "translate-x-0" : "-translate-x-full w-0 border-r-0"}
-              lg:translate-x-0 lg:w-64 lg:border-r
-            `}
-          >
+      <div class="flex-1 flex overflow-hidden">
+        {/* Sidebar - hidden on mobile when closed */}
+        <aside
+          class={`
+            flex-shrink-0 w-64 p-2 pr-0
+            bg-[var(--color-bg-secondary)] overflow-hidden
+            transition-all duration-200 ease-out
+            ${sidebarOpen.value ? "translate-x-0" : "-translate-x-full w-0 p-0"}
+            lg:translate-x-0 lg:w-64 lg:p-2 lg:pr-0
+          `}
+        >
+          <div class="h-full rounded-2xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-soft-sm overflow-hidden">
             <Sidebar />
-          </aside>
+          </div>
+        </aside>
 
-          {/* Mobile overlay when sidebar is open */}
-          {sidebarOpen.value && (
-            <div
-              class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
-              onClick={() => (sidebarOpen.value = false)}
-              aria-hidden="true"
-            />
-          )}
+        {/* Mobile overlay when sidebar is open */}
+        {sidebarOpen.value && (
+          <div
+            class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+            onClick={() => (sidebarOpen.value = false)}
+            aria-hidden="true"
+          />
+        )}
 
-          {/* Main content area */}
-          <main
-            id="main-content"
-            class="flex-1 flex flex-col overflow-hidden bg-[var(--color-bg-primary)]"
-          >
+        {/* Main content area - rounded panel */}
+        <main id="main-content" class="flex-1 flex flex-col overflow-hidden p-2">
+          <div class="h-full rounded-2xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] shadow-soft overflow-hidden flex flex-col">
             {children}
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
     </div>
   );
