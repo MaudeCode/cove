@@ -35,21 +35,38 @@ export interface GatewayEvent {
 /** Union of all gateway messages */
 export type GatewayMessage = GatewayRequest | GatewayResponse | GatewayEvent;
 
-/** Auth configuration for connecting */
-export interface AuthConfig {
-  /** Auth mode */
-  mode: "password" | "token";
-
-  /** Password (if mode is 'password') */
-  password?: string;
-
-  /** Token (if mode is 'token') */
-  token?: string;
-}
-
-/** Hello response after successful auth */
+/** Hello response after successful auth (hello-ok payload) */
 export interface HelloPayload {
-  version?: string;
-  sessionKey?: string;
-  capabilities?: string[];
+  type: "hello-ok";
+  protocol: number;
+  server: {
+    version: string;
+    commit?: string;
+    host?: string;
+    connId: string;
+  };
+  features: {
+    methods: string[];
+    events: string[];
+  };
+  snapshot: {
+    presence: unknown[];
+    stateVersion: {
+      presence: number;
+      health: number;
+    };
+    health?: unknown;
+  };
+  canvasHostUrl?: string;
+  auth?: {
+    deviceToken: string;
+    role: string;
+    scopes: string[];
+    issuedAtMs?: number;
+  };
+  policy: {
+    maxPayload: number;
+    maxBufferedBytes: number;
+    tickIntervalMs: number;
+  };
 }
