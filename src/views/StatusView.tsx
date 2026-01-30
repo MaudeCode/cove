@@ -2,14 +2,16 @@
  * StatusView
  *
  * Gateway status dashboard view.
+ * Route: /overview (aliased as OverviewView)
  * TODO: Phase 3.1 implementation
  */
 
 import { t } from "@/lib/i18n";
 import { isConnected, gatewayVersion } from "@/lib/gateway";
 import { Card, Badge } from "@/components/ui";
+import type { RouteProps } from "@/types/routes";
 
-export function StatusView() {
+export function StatusView(_props: RouteProps) {
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
       {/* Header */}

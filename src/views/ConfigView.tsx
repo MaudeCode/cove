@@ -2,13 +2,15 @@
  * ConfigView
  *
  * Configuration editor view.
+ * Route: /config
  * TODO: Phase 3.3 implementation
  */
 
 import { t } from "@/lib/i18n";
 import { Card } from "@/components/ui";
+import type { RouteProps } from "@/types/routes";
 
-export function ConfigView() {
+export function ConfigView(_props: RouteProps) {
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
       {/* Header */}

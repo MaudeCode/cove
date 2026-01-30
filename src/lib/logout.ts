@@ -4,10 +4,10 @@
  * Handles disconnecting from gateway and clearing credentials.
  */
 
+import { route } from "preact-router";
 import { disconnect } from "@/lib/gateway";
 import { cleanupChat } from "@/lib/chat";
 import { clearSessions } from "@/signals/sessions";
-import { activeView } from "@/signals/ui";
 import { clearAuth } from "@/lib/storage";
 
 /**
@@ -37,6 +37,6 @@ export function logout(clearCredentials = true): void {
     clearSavedCredentials();
   }
 
-  // Navigate to chat view (which will show login since disconnected)
-  activeView.value = "chat";
+  // Navigate to home (which will show login since disconnected)
+  route("/");
 }
