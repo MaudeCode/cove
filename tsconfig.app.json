@@ -8,9 +8,11 @@
     "types": ["vite/client"],
     "skipLibCheck": true,
     "paths": {
+      "@/*": ["./src/*"],
       "react": ["./node_modules/preact/compat/"],
       "react-dom": ["./node_modules/preact/compat/"]
     },
+    "baseUrl": ".",
 
     /* Bundler mode */
     "moduleResolution": "bundler",
