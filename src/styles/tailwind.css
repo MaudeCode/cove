@@ -1,0 +1,6 @@
+@import "tailwindcss";
+
+/* CSS variable theming layer - will be expanded in Phase 0.2 */
+@theme {
+  /* Colors will be defined here */
+}

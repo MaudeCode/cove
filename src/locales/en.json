@@ -1,0 +1,76 @@
+{
+  "app": {
+    "name": "Cove",
+    "description": "OpenClaw WebUI"
+  },
+  "actions": {
+    "send": "Send",
+    "cancel": "Cancel",
+    "close": "Close",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "copy": "Copy",
+    "retry": "Retry",
+    "newChat": "New Chat",
+    "connect": "Connect",
+    "disconnect": "Disconnect",
+    "logout": "Logout"
+  },
+  "auth": {
+    "gatewayUrl": "Gateway URL",
+    "password": "Password",
+    "token": "Token",
+    "rememberMe": "Remember me",
+    "connecting": "Connecting...",
+    "authMode": {
+      "password": "Password",
+      "token": "Token"
+    }
+  },
+  "errors": {
+    "connectionFailed": "Connection failed",
+    "unauthorized": "Invalid credentials",
+    "timeout": "Request timed out",
+    "unknown": "An unknown error occurred"
+  },
+  "status": {
+    "connected": "Connected",
+    "disconnected": "Disconnected",
+    "connecting": "Connecting",
+    "error": "Error"
+  },
+  "nav": {
+    "chat": "Chat",
+    "sessions": "Sessions",
+    "cron": "Cron Jobs",
+    "config": "Config",
+    "status": "Status",
+    "settings": "Settings"
+  },
+  "chat": {
+    "placeholder": "Message (Enter to send, Shift+Enter for new line)",
+    "sending": "Sending...",
+    "thinking": "Thinking...",
+    "copied": "Copied!",
+    "copyCode": "Copy code",
+    "viewRaw": "View raw",
+    "viewRendered": "View rendered"
+  },
+  "sessions": {
+    "main": "Main",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "older": "Older",
+    "noSessions": "No sessions yet"
+  },
+  "time": {
+    "justNow": "Just now",
+    "minutesAgo": "{count} minute ago",
+    "minutesAgo_plural": "{count} minutes ago",
+    "hoursAgo": "{count} hour ago",
+    "hoursAgo_plural": "{count} hours ago",
+    "daysAgo": "{count} day ago",
+    "daysAgo_plural": "{count} days ago"
+  }
+}
