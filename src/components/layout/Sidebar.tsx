@@ -10,34 +10,9 @@ import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { activeView, type View } from "@/signals/ui";
 import { activeSessionKey, setActiveSession, sessionsByRecent } from "@/signals/sessions";
-import type { Session } from "@/types/sessions";
 import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon } from "@/components/ui";
+import { SessionItem } from "@/components/sessions";
 import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
-
-// ============================================
-// Helpers
-// ============================================
-
-/**
- * Get a display label for a session
- */
-function getSessionLabel(session: Session): string {
-  // Use custom label if set
-  if (session.label) return session.label;
-
-  // Use displayName if available
-  if (session.displayName) return session.displayName;
-
-  // Parse session key (format: "agent:main:main" or "channel:telegram:123")
-  const parts = session.key.split(":");
-  if (parts.length >= 2) {
-    // Return the last meaningful part, capitalized
-    const name = parts[parts.length - 1];
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  }
-
-  return session.key;
-}
 
 export function Sidebar() {
   return (
@@ -69,32 +44,14 @@ export function Sidebar() {
           <ul class="space-y-1">
             {sessionsByRecent.value.map((session) => (
               <li key={session.key}>
-                <button
-                  type="button"
+                <SessionItem
+                  session={session}
+                  isActive={activeSessionKey.value === session.key && activeView.value === "chat"}
                   onClick={() => {
                     setActiveSession(session.key);
                     activeView.value = "chat";
                   }}
-                  class={`
-                    w-full text-left px-3.5 py-2.5 rounded-xl text-sm
-                    flex items-center gap-2.5 transition-all duration-200 ease-out
-                    ${
-                      activeSessionKey.value === session.key && activeView.value === "chat"
-                        ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
-                        : "hover:bg-[var(--color-bg-primary)] hover:shadow-soft-sm text-[var(--color-text-primary)]"
-                    }
-                  `}
-                >
-                  <span
-                    class={`w-2 h-2 rounded-full flex-shrink-0 ${
-                      activeSessionKey.value === session.key && activeView.value === "chat"
-                        ? "bg-[var(--color-accent)]"
-                        : "bg-[var(--color-text-muted)]"
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <span class="truncate">{getSessionLabel(session)}</span>
-                </button>
+                />
               </li>
             ))}
           </ul>
