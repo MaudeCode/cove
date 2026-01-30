@@ -15,7 +15,7 @@ export interface SelectOption {
   disabled?: boolean;
 }
 
-export interface SelectProps extends Omit<JSX.HTMLAttributes<HTMLSelectElement>, "size"> {
+export interface SelectProps extends Omit<JSX.SelectHTMLAttributes<HTMLSelectElement>, "size"> {
   /** Options to display */
   options: SelectOption[];
   /** Select size */
@@ -26,8 +26,6 @@ export interface SelectProps extends Omit<JSX.HTMLAttributes<HTMLSelectElement>,
   placeholder?: string;
   /** Full width */
   fullWidth?: boolean;
-  /** Disabled state */
-  disabled?: boolean;
 }
 
 const sizeStyles: Record<SelectSize, string> = {

@@ -7,6 +7,7 @@
 import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
+import { IconButton } from "@/components/ui";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -125,38 +126,22 @@ export function ChatInput({
           {/* Action buttons */}
           <div class="flex gap-2 flex-shrink-0">
             {isStreaming ? (
-              <button
-                type="button"
+              <IconButton
+                icon={<StopIcon />}
+                label={t("actions.stop")}
                 onClick={onAbort}
-                class="px-4 py-3 text-sm font-medium rounded-xl
-                  bg-[var(--color-error)] text-white
-                  hover:opacity-90 transition-opacity"
-                aria-label="Stop generating"
-              >
-                <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <rect x="6" y="6" width="12" height="12" rx="2" />
-                </svg>
-              </button>
+                variant="danger"
+                size="lg"
+              />
             ) : (
-              <button
-                type="button"
+              <IconButton
+                icon={<SendIcon />}
+                label={t("actions.send")}
                 onClick={handleSend}
                 disabled={!canSend}
-                class="px-4 py-3 text-sm font-medium rounded-xl
-                  bg-[var(--color-accent)] text-white
-                  hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed
-                  transition-opacity"
-                aria-label={t("actions.send")}
-              >
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
-                  />
-                </svg>
-              </button>
+                size="lg"
+                class="bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-50"
+              />
             )}
           </div>
         </div>
@@ -176,5 +161,30 @@ export function ChatInput({
         </div>
       </div>
     </div>
+  );
+}
+
+// ============================================
+// Icons
+// ============================================
+
+function SendIcon() {
+  return (
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+      />
+    </svg>
+  );
+}
+
+function StopIcon() {
+  return (
+    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+      <rect x="6" y="6" width="12" height="12" rx="2" />
+    </svg>
   );
 }

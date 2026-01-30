@@ -8,40 +8,25 @@ import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { activeView, type View } from "@/signals/ui";
 import { activeSessionKey, setActiveSession, sessionsByRecent } from "@/signals/sessions";
+import { Button, Badge } from "@/components/ui";
 
 export function Sidebar() {
   return (
     <div class="h-full flex flex-col">
       {/* New Chat button */}
       <div class="p-3">
-        <button
-          type="button"
+        <Button
+          variant="primary"
           disabled={!isConnected.value}
           onClick={() => {
             setActiveSession("main");
             activeView.value = "chat";
           }}
-          class="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg
-            bg-[var(--color-accent)] text-white font-medium
-            hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed
-            transition-opacity"
+          fullWidth
+          icon={<PlusIcon />}
         >
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
           {t("actions.newChat")}
-        </button>
+        </Button>
       </div>
 
       {/* Sessions section */}
@@ -55,32 +40,14 @@ export function Sidebar() {
             <ul class="space-y-1">
               {sessionsByRecent.value.map((session) => (
                 <li key={session.key}>
-                  <button
-                    type="button"
+                  <SessionItem
+                    label={session.label || session.key}
+                    active={activeSessionKey.value === session.key}
                     onClick={() => {
                       setActiveSession(session.key);
                       activeView.value = "chat";
                     }}
-                    class={`
-                      w-full text-left px-3 py-2 rounded-lg text-sm
-                      flex items-center gap-2 transition-colors
-                      ${
-                        activeSessionKey.value === session.key
-                          ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
-                          : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                      }
-                    `}
-                  >
-                    <span
-                      class={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        activeSessionKey.value === session.key
-                          ? "bg-[var(--color-accent)]"
-                          : "bg-[var(--color-text-muted)]"
-                      }`}
-                      aria-hidden="true"
-                    />
-                    <span class="truncate">{session.label || session.key}</span>
-                  </button>
+                  />
                 </li>
               ))}
             </ul>
@@ -139,6 +106,29 @@ function SidebarSection({
   );
 }
 
+interface SessionItemProps {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}
+
+function SessionItem({ label, active, onClick }: SessionItemProps) {
+  return (
+    <Button
+      variant={active ? "secondary" : "ghost"}
+      onClick={onClick}
+      fullWidth
+      class={`
+        justify-start
+        ${active ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]" : ""}
+      `}
+    >
+      <Badge variant={active ? "info" : "default"} dot size="sm" class="mr-2" />
+      <span class="truncate">{label}</span>
+    </Button>
+  );
+}
+
 interface NavItemProps {
   icon: preact.ComponentChildren;
   label: string;
@@ -148,30 +138,34 @@ interface NavItemProps {
 
 function NavItem({ icon, label, view, active }: NavItemProps) {
   return (
-    <button
-      type="button"
+    <Button
+      variant={active ? "secondary" : "ghost"}
       onClick={() => (activeView.value = view)}
+      fullWidth
       class={`
-        w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm
-        transition-colors
-        ${
-          active
-            ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
-            : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
-        }
+        justify-start mb-1
+        ${active ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]" : ""}
       `}
     >
-      <span class="w-5 h-5" aria-hidden="true">
+      <span class="w-5 h-5 mr-3" aria-hidden="true">
         {icon}
       </span>
       {label}
-    </button>
+    </Button>
   );
 }
 
 // ============================================
-// Icons (inline SVGs for now, could use lucide-preact later)
+// Icons
 // ============================================
+
+function PlusIcon() {
+  return (
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+  );
+}
 
 function ClockIcon() {
   return (
