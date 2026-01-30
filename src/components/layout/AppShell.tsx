@@ -67,7 +67,7 @@ export function AppShell({ children }: AppShellProps) {
               onResizeStart={() => (sidebarResizing.value = true)}
               onResize={handleResize}
               onResizeEnd={() => (sidebarResizing.value = false)}
-              class="h-[calc(100%-2rem)] rounded-full"
+              class="h-[calc(100%-4rem)] rounded-full"
             />
           </div>
         )}
