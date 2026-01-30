@@ -1,0 +1,166 @@
+/**
+ * MessageList
+ *
+ * Scrollable message container with auto-scroll behavior.
+ */
+
+import { useRef, useEffect, useCallback } from "preact/hooks";
+import { useSignal } from "@preact/signals";
+import type { Message } from "@/types/messages";
+import { ChatMessage } from "./ChatMessage";
+import { t } from "@/lib/i18n";
+
+interface MessageListProps {
+  messages: Message[];
+  isLoading?: boolean;
+  error?: string | null;
+  streamingContent?: string;
+  isStreaming?: boolean;
+}
+
+export function MessageList({
+  messages,
+  isLoading = false,
+  error = null,
+  streamingContent = "",
+  isStreaming = false,
+}: MessageListProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const showScrollButton = useSignal(false);
+  const isAutoScrolling = useRef(true);
+
+  /**
+   * Scroll to bottom of message list
+   */
+  const scrollToBottom = useCallback((smooth = true) => {
+    if (bottomRef.current) {
+      bottomRef.current.scrollIntoView({
+        behavior: smooth ? "smooth" : "auto",
+        block: "end",
+      });
+    }
+  }, []);
+
+  /**
+   * Handle scroll events to show/hide scroll button
+   */
+  const handleScroll = useCallback(() => {
+    if (!containerRef.current) return;
+
+    const { scrollTop, scrollHeight, clientHeight } = containerRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+
+    // Show button if scrolled up more than 100px
+    showScrollButton.value = distanceFromBottom > 100;
+
+    // Track if user manually scrolled up
+    isAutoScrolling.current = distanceFromBottom < 50;
+  }, []);
+
+  /**
+   * Auto-scroll on new messages (if at bottom)
+   */
+  useEffect(() => {
+    if (isAutoScrolling.current) {
+      scrollToBottom(false);
+    }
+  }, [messages.length, streamingContent, scrollToBottom]);
+
+  /**
+   * Initial scroll to bottom
+   */
+  useEffect(() => {
+    scrollToBottom(false);
+  }, [scrollToBottom]);
+
+  // Create streaming message placeholder
+  const streamingMessage: Message | null = isStreaming
+    ? {
+        id: "streaming",
+        role: "assistant",
+        content: streamingContent,
+        timestamp: Date.now(),
+      }
+    : null;
+
+  return (
+    <div class="relative flex-1 flex flex-col overflow-hidden">
+      {/* Scrollable message area */}
+      <div
+        ref={containerRef}
+        onScroll={handleScroll}
+        class="flex-1 overflow-y-auto px-4 py-4"
+        role="list"
+        aria-label="Messages"
+      >
+        {/* Loading state */}
+        {isLoading && (
+          <div class="flex justify-center py-8">
+            <div class="text-[var(--color-text-muted)]">{t("status.loading")}</div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {error && (
+          <div class="flex justify-center py-8">
+            <div class="text-[var(--color-error)] text-center">
+              <p>{error}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!isLoading && !error && messages.length === 0 && !isStreaming && (
+          <div class="flex-1 flex items-center justify-center py-16">
+            <div class="text-center">
+              <div class="text-5xl mb-4">💬</div>
+              <h3 class="text-lg font-medium mb-1">{t("chat.emptyState.title")}</h3>
+              <p class="text-[var(--color-text-muted)]">{t("chat.emptyState.description")}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Messages */}
+        <div class="space-y-4">
+          {messages.map((message) => (
+            <ChatMessage key={message.id} message={message} />
+          ))}
+
+          {/* Streaming message */}
+          {streamingMessage && <ChatMessage message={streamingMessage} isStreaming />}
+        </div>
+
+        {/* Scroll anchor */}
+        <div ref={bottomRef} class="h-1" />
+      </div>
+
+      {/* Scroll to bottom button */}
+      {showScrollButton.value && (
+        <button
+          type="button"
+          onClick={() => {
+            isAutoScrolling.current = true;
+            scrollToBottom(true);
+          }}
+          class="absolute bottom-4 right-4 p-2 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-lg hover:bg-[var(--color-bg-secondary)] transition-colors"
+          aria-label={t("chat.scrollToBottom")}
+        >
+          <svg
+            class="w-5 h-5 text-[var(--color-text-secondary)]"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 14l-7 7m0 0l-7-7m7 7V3"
+            />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+}
