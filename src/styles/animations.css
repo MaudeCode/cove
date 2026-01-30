@@ -1,0 +1,201 @@
+/**
+ * Custom Animations
+ *
+ * Used for UI transitions and effects.
+ * Respects prefers-reduced-motion via themes.css
+ */
+
+/* ============================================
+   Keyframes
+   ============================================ */
+
+/* Fade in */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Fade out */
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* Slide in from bottom */
+@keyframes slide-in-bottom {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Slide in from top */
+@keyframes slide-in-top {
+  from {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Slide in from left */
+@keyframes slide-in-left {
+  from {
+    transform: translateX(-10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Slide in from right */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Scale in */
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Spin */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Pulse */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* Typing cursor blink */
+@keyframes blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ============================================
+   Animation Utility Classes
+   ============================================ */
+
+.animate-fade-in {
+  animation: fade-in var(--transition-normal) ease-out;
+}
+
+.animate-fade-out {
+  animation: fade-out var(--transition-normal) ease-out;
+}
+
+.animate-slide-in-bottom {
+  animation: slide-in-bottom var(--transition-normal) ease-out;
+}
+
+.animate-slide-in-top {
+  animation: slide-in-top var(--transition-normal) ease-out;
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left var(--transition-normal) ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right var(--transition-normal) ease-out;
+}
+
+.animate-scale-in {
+  animation: scale-in var(--transition-normal) ease-out;
+}
+
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+.animate-pulse {
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.animate-blink {
+  animation: blink 1s step-end infinite;
+}
+
+/* ============================================
+   Transition Utilities
+   ============================================ */
+
+.transition-fast {
+  transition-duration: var(--transition-fast);
+  transition-timing-function: ease-out;
+}
+
+.transition-normal {
+  transition-duration: var(--transition-normal);
+  transition-timing-function: ease-out;
+}
+
+.transition-slow {
+  transition-duration: var(--transition-slow);
+  transition-timing-function: ease-out;
+}
+
+.transition-colors {
+  transition-property: color, background-color, border-color;
+}
+
+.transition-opacity {
+  transition-property: opacity;
+}
+
+.transition-transform {
+  transition-property: transform;
+}
+
+.transition-all {
+  transition-property: all;
+}
