@@ -6,7 +6,14 @@
  */
 
 import type { ComponentChildren } from "preact";
-import { sidebarOpen } from "@/signals/ui";
+import {
+  sidebarOpen,
+  sidebarWidth,
+  sidebarResizing,
+  SIDEBAR_MIN_WIDTH,
+  SIDEBAR_MAX_WIDTH,
+} from "@/signals/ui";
+import { ResizeHandle } from "@/components/ui";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 
@@ -15,6 +22,14 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const handleResize = (delta: number) => {
+    const newWidth = Math.max(
+      SIDEBAR_MIN_WIDTH,
+      Math.min(SIDEBAR_MAX_WIDTH, sidebarWidth.value + delta),
+    );
+    sidebarWidth.value = newWidth;
+  };
+
   return (
     <div class="h-screen flex flex-col bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]">
       {/* Skip to content link for accessibility */}
@@ -30,18 +45,32 @@ export function AppShell({ children }: AppShellProps) {
       <div class="flex-1 flex overflow-hidden">
         {/* Sidebar - hidden on mobile when closed */}
         <aside
+          style={{ width: sidebarOpen.value ? `${sidebarWidth.value}px` : "0" }}
           class={`
-            flex-shrink-0 w-64 p-2 pr-0
+            flex-shrink-0 p-2 pr-0
             bg-[var(--color-bg-secondary)] overflow-hidden
-            transition-all duration-200 ease-out
-            ${sidebarOpen.value ? "translate-x-0" : "-translate-x-full w-0 p-0"}
-            lg:translate-x-0 lg:w-64 lg:p-2 lg:pr-0
+            ${sidebarResizing.value ? "" : "transition-all duration-200 ease-out"}
+            ${sidebarOpen.value ? "translate-x-0" : "-translate-x-full p-0"}
+            lg:translate-x-0 lg:p-2 lg:pr-0
           `}
         >
           <div class="h-full rounded-2xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-soft-sm overflow-hidden">
             <Sidebar />
           </div>
         </aside>
+
+        {/* Resize handle - only visible on desktop when sidebar is open */}
+        {sidebarOpen.value && (
+          <div class="hidden lg:block py-2">
+            <ResizeHandle
+              direction="horizontal"
+              onResizeStart={() => (sidebarResizing.value = true)}
+              onResize={handleResize}
+              onResizeEnd={() => (sidebarResizing.value = false)}
+              class="h-full"
+            />
+          </div>
+        )}
 
         {/* Mobile overlay when sidebar is open */}
         {sidebarOpen.value && (
@@ -53,7 +82,7 @@ export function AppShell({ children }: AppShellProps) {
         )}
 
         {/* Main content area - rounded panel */}
-        <main id="main-content" class="flex-1 flex flex-col overflow-hidden p-2">
+        <main id="main-content" class="flex-1 flex flex-col overflow-hidden p-2 pl-0 lg:pl-0">
           <div class="h-full rounded-2xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] shadow-soft overflow-hidden flex flex-col">
             {children}
           </div>

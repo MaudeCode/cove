@@ -33,6 +33,7 @@ export {
   type CardContentProps,
   type CardFooterProps,
 } from "./Card";
+export { ResizeHandle, type ResizeHandleProps } from "./ResizeHandle";
 
 // Feedback
 export { Spinner, type SpinnerProps, type SpinnerSize } from "./Spinner";
