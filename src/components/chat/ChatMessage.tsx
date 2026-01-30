@@ -23,13 +23,14 @@ export function ChatMessage({ message, isStreaming = false }: ChatMessageProps) 
     <div class={`flex ${isUser ? "justify-end" : "justify-start"}`} role="listitem">
       <div
         class={`
-          max-w-[85%] rounded-2xl
+          max-w-[85%] rounded-3xl shadow-soft-sm
+          transition-all duration-200 ease-out
           ${
             isUser
-              ? "bg-[var(--color-accent)] text-white px-4 py-3 rounded-br-md"
+              ? "bg-[var(--color-accent)] text-white px-5 py-3.5 rounded-br-lg hover:shadow-soft"
               : isSystem
-                ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] px-4 py-2 text-sm italic"
-                : "bg-[var(--color-bg-surface)] border border-[var(--color-border)] px-4 py-3 rounded-bl-md"
+                ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] px-4 py-2.5 text-sm italic rounded-2xl"
+                : "bg-[var(--color-bg-surface)] border border-[var(--color-border)] px-5 py-3.5 rounded-bl-lg hover:shadow-soft"
           }
         `}
       >

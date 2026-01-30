@@ -101,7 +101,7 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        class="absolute inset-0 bg-black/40 backdrop-blur-md animate-fade-in"
         onClick={closeOnBackdrop ? onClose : undefined}
         aria-hidden="true"
       />
@@ -114,9 +114,10 @@ export function Modal({
           relative w-full ${sizeStyles[size]}
           bg-[var(--color-bg-surface)]
           border border-[var(--color-border)]
-          rounded-xl shadow-xl
+          rounded-2xl shadow-soft-xl
           max-h-[90vh] flex flex-col
           focus:outline-none
+          animate-scale-in
         `}
       >
         {/* Header */}

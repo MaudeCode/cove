@@ -113,13 +113,14 @@ export function ChatInput({
               disabled={disabled}
               placeholder={placeholder || t("chat.placeholder")}
               rows={1}
-              class="w-full px-4 py-3 text-sm rounded-xl resize-none
+              class="w-full px-5 py-3.5 text-sm rounded-2xl resize-none
                 bg-[var(--color-bg-primary)] border border-[var(--color-border)]
+                shadow-soft-sm focus:shadow-soft
                 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
                 placeholder:text-[var(--color-text-muted)]
-                disabled:opacity-50 disabled:cursor-not-allowed
-                transition-shadow"
-              style={{ minHeight: "44px", maxHeight: "200px" }}
+                disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
+                transition-all duration-200 ease-out"
+              style={{ minHeight: "48px", maxHeight: "200px" }}
             />
           </div>
 
@@ -132,6 +133,7 @@ export function ChatInput({
                 onClick={onAbort}
                 variant="danger"
                 size="lg"
+                class="rounded-2xl shadow-soft-sm"
               />
             ) : (
               <IconButton
@@ -140,7 +142,7 @@ export function ChatInput({
                 onClick={handleSend}
                 disabled={!canSend}
                 size="lg"
-                class="bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-50"
+                class="rounded-2xl bg-[var(--color-accent)] text-white shadow-soft hover:shadow-soft-lg hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
               />
             )}
           </div>
