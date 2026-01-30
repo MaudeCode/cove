@@ -2,6 +2,7 @@
  * Sidebar
  *
  * Sessions list and navigation sections.
+ * Navigation items are driven by src/lib/navigation.tsx config.
  */
 
 import { t } from "@/lib/i18n";
@@ -9,6 +10,7 @@ import { isConnected } from "@/lib/gateway";
 import { activeView, type View } from "@/signals/ui";
 import { activeSessionKey, setActiveSession, sessionsByRecent } from "@/signals/sessions";
 import { Button } from "@/components/ui";
+import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
 
 export function Sidebar() {
   return (
@@ -30,8 +32,8 @@ export function Sidebar() {
       </div>
 
       {/* Sessions section */}
-      <nav class="flex-1 overflow-y-auto px-3 pb-3">
-        <SidebarSection title={t("nav.sessions")} defaultOpen>
+      <div class="px-3 pb-3">
+        <SidebarSection title={t("nav.sessions")}>
           {sessionsByRecent.value.length === 0 ? (
             <p class="text-sm text-[var(--color-text-muted)] px-2 py-4">
               {t("sessions.noSessions")}
@@ -71,29 +73,14 @@ export function Sidebar() {
             </ul>
           )}
         </SidebarSection>
-      </nav>
-
-      {/* Bottom navigation sections */}
-      <div class="border-t border-[var(--color-border)] px-3 py-2">
-        <NavItem
-          icon={<ClockIcon />}
-          label={t("nav.cron")}
-          view="cron"
-          active={activeView.value === "cron"}
-        />
-        <NavItem
-          icon={<CogIcon />}
-          label={t("nav.config")}
-          view="config"
-          active={activeView.value === "config"}
-        />
-        <NavItem
-          icon={<ChartIcon />}
-          label={t("nav.status")}
-          view="status"
-          active={activeView.value === "status"}
-        />
       </div>
+
+      {/* Navigation sections (from config) */}
+      <nav class="flex-1 overflow-y-auto border-t border-[var(--color-border)]">
+        {navigation.map((section) => (
+          <NavSectionComponent key={section.titleKey} section={section} />
+        ))}
+      </nav>
     </div>
   );
 }
@@ -104,17 +91,12 @@ export function Sidebar() {
 
 interface SidebarSectionProps {
   title: string;
-  defaultOpen?: boolean;
   children: preact.ComponentChildren;
 }
 
-function SidebarSection({
-  title,
-  defaultOpen: _defaultOpen = true,
-  children,
-}: SidebarSectionProps) {
+function SidebarSection({ title, children }: SidebarSectionProps) {
   return (
-    <div class="mb-4">
+    <div class="mb-2">
       <h3 class="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
         {title}
       </h3>
@@ -123,32 +105,79 @@ function SidebarSection({
   );
 }
 
-interface NavItemProps {
-  icon: preact.ComponentChildren;
-  label: string;
-  view: View;
-  active: boolean;
+interface NavSectionComponentProps {
+  section: NavSection;
 }
 
-function NavItem({ icon, label, view, active }: NavItemProps) {
+function NavSectionComponent({ section }: NavSectionComponentProps) {
+  // Filter items based on connection requirement
+  const visibleItems = section.items.filter(
+    (item) => !item.requiresConnection || isConnected.value,
+  );
+
+  if (visibleItems.length === 0) return null;
+
+  return (
+    <div class="px-3 py-2">
+      <h3 class="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+        {t(section.titleKey)}
+      </h3>
+      <ul class="space-y-0.5">
+        {visibleItems.map((item) => (
+          <li key={item.id}>
+            <NavItemComponent item={item} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+interface NavItemComponentProps {
+  item: NavItem;
+}
+
+function NavItemComponent({ item }: NavItemComponentProps) {
+  const isActive = !item.external && activeView.value === item.id;
+  const Icon = item.icon;
+
+  // External link
+  if (item.external) {
+    return (
+      <a
+        href={item.external}
+        target="_blank"
+        rel="noopener noreferrer"
+        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
+      >
+        <span class="w-5 h-5 flex-shrink-0" aria-hidden="true">
+          <Icon />
+        </span>
+        {t(item.labelKey)}
+        <ExternalLinkIcon />
+      </a>
+    );
+  }
+
+  // Internal view link
   return (
     <button
       type="button"
-      onClick={() => (activeView.value = view)}
+      onClick={() => (activeView.value = item.id as View)}
       class={`
         w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm
         transition-colors
         ${
-          active
+          isActive
             ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
             : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
         }
       `}
     >
       <span class="w-5 h-5 flex-shrink-0" aria-hidden="true">
-        {icon}
+        <Icon />
       </span>
-      {label}
+      {t(item.labelKey)}
     </button>
   );
 }
@@ -165,46 +194,20 @@ function PlusIcon() {
   );
 }
 
-function ClockIcon() {
+function ExternalLinkIcon() {
   return (
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg
+      class="w-3 h-3 ml-auto text-[var(--color-text-muted)]"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke-width="2"
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
-}
-
-function CogIcon() {
-  return (
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-      />
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-    </svg>
-  );
-}
-
-function ChartIcon() {
-  return (
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
       />
     </svg>
   );

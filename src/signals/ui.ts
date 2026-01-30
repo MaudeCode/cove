@@ -7,8 +7,10 @@
  */
 
 import { signal } from "@preact/signals";
+import type { ViewId } from "@/lib/navigation";
 
-export type View = "chat" | "cron" | "config" | "status";
+// Re-export ViewId as View for convenience
+export type View = ViewId;
 
 export interface Toast {
   id: string;
