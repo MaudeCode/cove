@@ -1,0 +1,317 @@
+/* ============================================
+   Markdown Content Styles
+   ============================================ */
+
+.message-content {
+  /* Typography */
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+}
+
+/* Headings */
+.message-content h1,
+.message-content h2,
+.message-content h3,
+.message-content h4,
+.message-content h5,
+.message-content h6 {
+  margin-top: 1.25em;
+  margin-bottom: 0.5em;
+  font-weight: 600;
+  line-height: 1.3;
+  color: var(--color-text-primary);
+}
+
+.message-content h1:first-child,
+.message-content h2:first-child,
+.message-content h3:first-child {
+  margin-top: 0;
+}
+
+.message-content h1 {
+  font-size: 1.5em;
+}
+.message-content h2 {
+  font-size: 1.25em;
+}
+.message-content h3 {
+  font-size: 1.1em;
+}
+
+/* Paragraphs */
+.message-content p {
+  margin-bottom: 0.75em;
+}
+
+.message-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Lists */
+.message-content ul,
+.message-content ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.message-content li {
+  margin: 0.25em 0;
+}
+
+.message-content ul {
+  list-style-type: disc;
+}
+
+.message-content ol {
+  list-style-type: decimal;
+}
+
+/* Nested lists */
+.message-content ul ul,
+.message-content ol ul {
+  list-style-type: circle;
+}
+
+/* Blockquotes */
+.message-content blockquote {
+  margin: 1em 0;
+  padding: 0.5em 1em;
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-bg-secondary);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+}
+
+.message-content blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+/* Horizontal rules */
+.message-content hr {
+  margin: 1.5em 0;
+  border: none;
+  border-top: 1px solid var(--color-border);
+}
+
+/* Inline code */
+.message-content code:not(pre code) {
+  padding: 0.15em 0.4em;
+  margin: 0 0.1em;
+  font-size: 0.875em;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-primary);
+}
+
+/* Code blocks */
+.message-content pre.code-block {
+  position: relative;
+  margin: 1em 0;
+  padding: 1em;
+  overflow-x: auto;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.message-content pre.code-block code {
+  padding: 0;
+  background: none;
+  border: none;
+  font-size: inherit;
+}
+
+/* Copy button for code blocks */
+.message-content pre.code-block .copy-button {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-family: var(--font-sans);
+  color: var(--color-text-muted);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  opacity: 0;
+  transition:
+    opacity 0.15s,
+    background 0.15s;
+}
+
+.message-content pre.code-block:hover .copy-button {
+  opacity: 1;
+}
+
+.message-content pre.code-block .copy-button:hover {
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+}
+
+/* Tables */
+.message-content table {
+  width: 100%;
+  margin: 1em 0;
+  border-collapse: collapse;
+  font-size: 0.875em;
+}
+
+.message-content th,
+.message-content td {
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--color-border);
+  text-align: left;
+}
+
+.message-content th {
+  font-weight: 600;
+  background: var(--color-bg-secondary);
+}
+
+.message-content tr:nth-child(even) {
+  background: var(--color-bg-secondary);
+}
+
+/* Images */
+.message-content img {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-md);
+}
+
+/* Links */
+.message-content a {
+  color: var(--color-accent);
+  text-decoration: none;
+}
+
+.message-content a:hover {
+  text-decoration: underline;
+}
+
+/* Strong and emphasis */
+.message-content strong {
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.message-content em {
+  font-style: italic;
+}
+
+/* Strikethrough */
+.message-content del {
+  text-decoration: line-through;
+  opacity: 0.7;
+}
+
+/* ============================================
+   Prism Syntax Highlighting (Theme-aware)
+   ============================================ */
+
+/* Base token colors - light theme compatible */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.token.punctuation {
+  color: var(--color-text-secondary);
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #e45649;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #50a14f;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #986801;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #a626a4;
+}
+
+.token.function,
+.token.class-name {
+  color: #4078f2;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #e45649;
+}
+
+/* Dark theme overrides */
+[data-theme="dark"] .token.property,
+[data-theme="dark"] .token.tag,
+[data-theme="dark"] .token.boolean,
+[data-theme="dark"] .token.number,
+[data-theme="dark"] .token.constant,
+[data-theme="dark"] .token.symbol,
+[data-theme="dark"] .token.deleted {
+  color: #e06c75;
+}
+
+[data-theme="dark"] .token.selector,
+[data-theme="dark"] .token.attr-name,
+[data-theme="dark"] .token.string,
+[data-theme="dark"] .token.char,
+[data-theme="dark"] .token.builtin,
+[data-theme="dark"] .token.inserted {
+  color: #98c379;
+}
+
+[data-theme="dark"] .token.operator,
+[data-theme="dark"] .token.entity,
+[data-theme="dark"] .token.url,
+[data-theme="dark"] .language-css .token.string,
+[data-theme="dark"] .style .token.string {
+  color: #d19a66;
+}
+
+[data-theme="dark"] .token.atrule,
+[data-theme="dark"] .token.attr-value,
+[data-theme="dark"] .token.keyword {
+  color: #c678dd;
+}
+
+[data-theme="dark"] .token.function,
+[data-theme="dark"] .token.class-name {
+  color: #61afef;
+}
+
+[data-theme="dark"] .token.regex,
+[data-theme="dark"] .token.important,
+[data-theme="dark"] .token.variable {
+  color: #e06c75;
+}
