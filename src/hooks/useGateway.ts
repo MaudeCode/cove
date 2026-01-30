@@ -27,6 +27,7 @@ import {
   send,
   subscribe,
   on,
+  type RequestOptions,
 } from "@/lib/gateway";
 
 /**

@@ -105,7 +105,6 @@ export async function login(params: LoginParams): Promise<void> {
 
   await connect({
     url,
-    authMode,
     password,
     token,
     autoReconnect: true,
