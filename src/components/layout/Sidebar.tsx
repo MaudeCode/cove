@@ -5,6 +5,7 @@
  * Navigation items are driven by src/lib/navigation.tsx config.
  */
 
+import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { activeView, type View } from "@/signals/ui";
@@ -31,56 +32,55 @@ export function Sidebar() {
         </Button>
       </div>
 
-      {/* Sessions section */}
-      <div class="px-3 pb-3">
-        <SidebarSection title={t("nav.sessions")}>
-          {sessionsByRecent.value.length === 0 ? (
-            <p class="text-sm text-[var(--color-text-muted)] px-2 py-4">
-              {t("sessions.noSessions")}
-            </p>
-          ) : (
-            <ul class="space-y-1">
-              {sessionsByRecent.value.map((session) => (
-                <li key={session.key}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActiveSession(session.key);
-                      activeView.value = "chat";
-                    }}
-                    class={`
-                      w-full text-left px-3 py-2 rounded-lg text-sm
-                      flex items-center gap-2 transition-colors
-                      ${
-                        activeSessionKey.value === session.key
-                          ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
-                          : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-                      }
-                    `}
-                  >
-                    <span
-                      class={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        activeSessionKey.value === session.key
-                          ? "bg-[var(--color-accent)]"
-                          : "bg-[var(--color-text-muted)]"
-                      }`}
-                      aria-hidden="true"
-                    />
-                    <span class="truncate">{session.label || session.key}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </SidebarSection>
+      {/* Sessions section - scrollable */}
+      <div class="flex-1 overflow-y-auto px-3 pb-3">
+        <h3 class="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
+          {t("nav.sessions")}
+        </h3>
+        {sessionsByRecent.value.length === 0 ? (
+          <p class="text-sm text-[var(--color-text-muted)] px-2 py-4">{t("sessions.noSessions")}</p>
+        ) : (
+          <ul class="space-y-1">
+            {sessionsByRecent.value.map((session) => (
+              <li key={session.key}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveSession(session.key);
+                    activeView.value = "chat";
+                  }}
+                  class={`
+                    w-full text-left px-3 py-2 rounded-lg text-sm
+                    flex items-center gap-2 transition-colors
+                    ${
+                      activeSessionKey.value === session.key && activeView.value === "chat"
+                        ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+                        : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
+                    }
+                  `}
+                >
+                  <span
+                    class={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      activeSessionKey.value === session.key && activeView.value === "chat"
+                        ? "bg-[var(--color-accent)]"
+                        : "bg-[var(--color-text-muted)]"
+                    }`}
+                    aria-hidden="true"
+                  />
+                  <span class="truncate">{session.label || session.key}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
-      {/* Navigation sections (from config) */}
-      <nav class="flex-1 overflow-y-auto border-t border-[var(--color-border)]">
+      {/* Navigation sections - pinned to bottom, collapsible */}
+      <div class="border-t border-[var(--color-border)] max-h-[50%] overflow-y-auto">
         {navigation.map((section) => (
-          <NavSectionComponent key={section.titleKey} section={section} />
+          <CollapsibleNavSection key={section.titleKey} section={section} />
         ))}
-      </nav>
+      </div>
     </div>
   );
 }
@@ -89,27 +89,13 @@ export function Sidebar() {
 // Sub-components
 // ============================================
 
-interface SidebarSectionProps {
-  title: string;
-  children: preact.ComponentChildren;
-}
-
-function SidebarSection({ title, children }: SidebarSectionProps) {
-  return (
-    <div class="mb-2">
-      <h3 class="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-        {title}
-      </h3>
-      {children}
-    </div>
-  );
-}
-
-interface NavSectionComponentProps {
+interface CollapsibleNavSectionProps {
   section: NavSection;
 }
 
-function NavSectionComponent({ section }: NavSectionComponentProps) {
+function CollapsibleNavSection({ section }: CollapsibleNavSectionProps) {
+  const isOpen = useSignal(false);
+
   // Filter items based on connection requirement
   const visibleItems = section.items.filter(
     (item) => !item.requiresConnection || isConnected.value,
@@ -118,17 +104,27 @@ function NavSectionComponent({ section }: NavSectionComponentProps) {
   if (visibleItems.length === 0) return null;
 
   return (
-    <div class="px-3 py-2">
-      <h3 class="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
-        {t(section.titleKey)}
-      </h3>
-      <ul class="space-y-0.5">
-        {visibleItems.map((item) => (
-          <li key={item.id}>
-            <NavItemComponent item={item} />
-          </li>
-        ))}
-      </ul>
+    <div class="border-b border-[var(--color-border)] last:border-b-0">
+      {/* Section header - clickable to toggle */}
+      <button
+        type="button"
+        onClick={() => (isOpen.value = !isOpen.value)}
+        class="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider hover:bg-[var(--color-bg-primary)] transition-colors"
+      >
+        <span>{t(section.titleKey)}</span>
+        <ChevronIcon open={isOpen.value} />
+      </button>
+
+      {/* Collapsible content */}
+      {isOpen.value && (
+        <ul class="px-3 pb-2 space-y-0.5">
+          {visibleItems.map((item) => (
+            <li key={item.id}>
+              <NavItemComponent item={item} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
@@ -190,6 +186,20 @@ function PlusIcon() {
   return (
     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+    </svg>
+  );
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      class={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
     </svg>
   );
 }
