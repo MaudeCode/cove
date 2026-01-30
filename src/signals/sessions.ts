@@ -3,11 +3,18 @@
  *
  * Chat session state.
  *
- * @see Phase 0.9 in ROADMAP.md for full spec
+ * Usage:
+ *   import { sessions, activeSessionKey, activeSession } from '@/signals/sessions'
+ *   import { loadSessions, setActiveSession } from '@/signals/sessions'
  */
 
 import { signal, computed } from "@preact/signals";
-import type { Session } from "@/types/sessions";
+import { send } from "@/lib/gateway";
+import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
+
+// ============================================
+// State
+// ============================================
 
 /** All known sessions */
 export const sessions = signal<Session[]>([]);
@@ -15,7 +22,110 @@ export const sessions = signal<Session[]>([]);
 /** Currently active session key */
 export const activeSessionKey = signal<string | null>(null);
 
+/** Whether we're loading sessions */
+export const isLoadingSessions = signal<boolean>(false);
+
+/** Error from loading sessions */
+export const sessionsError = signal<string | null>(null);
+
+// ============================================
+// Derived State
+// ============================================
+
 /** The currently active session (derived) */
 export const activeSession = computed(
   () => sessions.value.find((s) => s.key === activeSessionKey.value) ?? null,
 );
+
+/** Sessions sorted by last active time */
+export const sessionsByRecent = computed(() =>
+  [...sessions.value].sort((a, b) => (b.lastActiveAt ?? 0) - (a.lastActiveAt ?? 0)),
+);
+
+/** Number of sessions */
+export const sessionCount = computed(() => sessions.value.length);
+
+// ============================================
+// Actions
+// ============================================
+
+/**
+ * Load sessions from the gateway
+ */
+export async function loadSessions(params?: SessionsListParams): Promise<void> {
+  isLoadingSessions.value = true;
+  sessionsError.value = null;
+
+  try {
+    const result = await send<SessionsListResult>("sessions.list", {
+      limit: 100,
+      sort: "recent",
+      ...params,
+    });
+
+    sessions.value = result.sessions ?? [];
+  } catch (err) {
+    sessionsError.value = err instanceof Error ? err.message : String(err);
+    throw err;
+  } finally {
+    isLoadingSessions.value = false;
+  }
+}
+
+/**
+ * Set the active session
+ */
+export function setActiveSession(sessionKey: string | null): void {
+  activeSessionKey.value = sessionKey;
+}
+
+/**
+ * Find or create main session
+ */
+export function ensureMainSession(): string {
+  // Default to 'main' session key
+  const mainKey = "main";
+
+  // Check if main session exists
+  const mainSession = sessions.value.find((s) => s.key === mainKey);
+
+  if (!mainSession) {
+    // Add placeholder for main session
+    sessions.value = [
+      {
+        key: mainKey,
+        label: "Main",
+        channel: "webchat",
+      },
+      ...sessions.value,
+    ];
+  }
+
+  return mainKey;
+}
+
+/**
+ * Clear sessions
+ */
+export function clearSessions(): void {
+  sessions.value = [];
+  activeSessionKey.value = null;
+  sessionsError.value = null;
+}
+
+/**
+ * Update a session in the list
+ */
+export function updateSession(sessionKey: string, updates: Partial<Session>): void {
+  sessions.value = sessions.value.map((s) => (s.key === sessionKey ? { ...s, ...updates } : s));
+}
+
+/**
+ * Remove a session from the list
+ */
+export function removeSession(sessionKey: string): void {
+  sessions.value = sessions.value.filter((s) => s.key !== sessionKey);
+  if (activeSessionKey.value === sessionKey) {
+    activeSessionKey.value = null;
+  }
+}
