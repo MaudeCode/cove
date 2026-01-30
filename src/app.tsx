@@ -14,6 +14,7 @@ import { setActiveSession } from "@/signals/sessions";
 import { activeView } from "@/signals/ui";
 
 import { AppShell } from "@/components/layout";
+import { ToastContainer } from "@/components/ui";
 import { ChatView, LoginView, CronView, ConfigView, StatusView } from "@/views";
 
 export function App() {
@@ -25,7 +26,12 @@ export function App() {
     tryAutoConnect();
   }, []);
 
-  return <AppShell>{isConnected.value ? <MainContent /> : <LoginView />}</AppShell>;
+  return (
+    <>
+      <AppShell>{isConnected.value ? <MainContent /> : <LoginView />}</AppShell>
+      <ToastContainer position="top-right" />
+    </>
+  );
 }
 
 /**

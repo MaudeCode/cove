@@ -149,6 +149,10 @@
   animation: slide-in-right var(--transition-normal) ease-out;
 }
 
+.animate-slide-in {
+  animation: slide-in-right var(--transition-normal) ease-out;
+}
+
 .animate-scale-in {
   animation: scale-in var(--transition-normal) ease-out;
 }
