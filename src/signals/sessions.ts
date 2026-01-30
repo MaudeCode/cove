@@ -39,7 +39,7 @@ export const activeSession = computed(
 
 /** Sessions sorted by last active time */
 export const sessionsByRecent = computed(() =>
-  [...sessions.value].sort((a, b) => (b.lastActiveAt ?? 0) - (a.lastActiveAt ?? 0)),
+  [...sessions.value].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)),
 );
 
 /** Number of sessions */
@@ -58,8 +58,8 @@ export async function loadSessions(params?: SessionsListParams): Promise<void> {
 
   try {
     const result = await send<SessionsListResult>("sessions.list", {
-      limit: 100,
-      sort: "recent",
+      limit: params?.limit ?? 50,
+      activeMinutes: params?.activeMinutes ?? 60 * 24 * 7, // Last week by default
       ...params,
     });
 

@@ -9,7 +9,7 @@ import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
-import { setActiveSession } from "@/signals/sessions";
+import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { getAuth, saveAuth } from "@/lib/storage";
 import { Input, Select, Button, Toggle, Card, FormField } from "@/components/ui";
 
@@ -70,6 +70,9 @@ export function LoginView() {
           rememberMe: true,
         });
       }
+
+      // Load sessions list for sidebar
+      await loadSessions();
 
       // Initialize chat with main session
       setActiveSession("main");

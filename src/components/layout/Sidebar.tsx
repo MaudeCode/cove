@@ -10,8 +10,34 @@ import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { activeView, type View } from "@/signals/ui";
 import { activeSessionKey, setActiveSession, sessionsByRecent } from "@/signals/sessions";
+import type { Session } from "@/types/sessions";
 import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon } from "@/components/ui";
 import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
+
+// ============================================
+// Helpers
+// ============================================
+
+/**
+ * Get a display label for a session
+ */
+function getSessionLabel(session: Session): string {
+  // Use custom label if set
+  if (session.label) return session.label;
+
+  // Use displayName if available
+  if (session.displayName) return session.displayName;
+
+  // Parse session key (format: "agent:main:main" or "channel:telegram:123")
+  const parts = session.key.split(":");
+  if (parts.length >= 2) {
+    // Return the last meaningful part, capitalized
+    const name = parts[parts.length - 1];
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  }
+
+  return session.key;
+}
 
 export function Sidebar() {
   return (
@@ -67,7 +93,7 @@ export function Sidebar() {
                     }`}
                     aria-hidden="true"
                   />
-                  <span class="truncate">{session.label || session.key}</span>
+                  <span class="truncate">{getSessionLabel(session)}</span>
                 </button>
               </li>
             ))}
