@@ -7,49 +7,48 @@
 
 import { t } from "@/lib/i18n";
 import { isConnected, gatewayVersion } from "@/lib/gateway";
+import { Card, Badge } from "@/components/ui";
 
 export function StatusView() {
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
+      {/* Header */}
       <div class="p-6 border-b border-[var(--color-border)]">
         <h1 class="text-xl font-semibold">{t("nav.status")}</h1>
       </div>
 
+      {/* Content */}
       <div class="flex-1 overflow-y-auto p-6">
         <div class="max-w-2xl mx-auto space-y-6">
           {/* Connection Status Card */}
-          <div class="p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
-            <h2 class="text-sm font-medium text-[var(--color-text-muted)] mb-3">
-              Gateway Connection
-            </h2>
+          <Card title="Gateway Connection" padding="md">
             <div class="flex items-center gap-3">
-              <div
-                class={`w-3 h-3 rounded-full ${
-                  isConnected.value ? "bg-[var(--color-success)]" : "bg-[var(--color-error)]"
-                }`}
-              />
-              <div>
-                <div class="font-medium">
-                  {isConnected.value ? t("status.connected") : t("status.disconnected")}
-                </div>
-                {gatewayVersion.value && (
-                  <div class="text-sm text-[var(--color-text-muted)]">
-                    Version {gatewayVersion.value}
-                  </div>
-                )}
-              </div>
+              <Badge variant={isConnected.value ? "success" : "error"} dot size="md">
+                {isConnected.value ? t("status.connected") : t("status.disconnected")}
+              </Badge>
+              {gatewayVersion.value && (
+                <span class="text-sm text-[var(--color-text-muted)]">
+                  Version {gatewayVersion.value}
+                </span>
+              )}
             </div>
-          </div>
+          </Card>
 
           {/* Placeholder for more status info */}
-          <div class="p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
-            <h2 class="text-sm font-medium text-[var(--color-text-muted)] mb-3">
-              More Status Info
-            </h2>
-            <p class="text-[var(--color-text-muted)] text-sm">
-              Full status dashboard coming in Phase 3.1
-            </p>
-          </div>
+          <Card
+            title="More Status Info"
+            subtitle="Full status dashboard coming in Phase 3.1"
+            padding="md"
+          >
+            <div class="text-[var(--color-text-muted)] text-sm">
+              <ul class="list-disc list-inside space-y-1">
+                <li>Session statistics</li>
+                <li>Memory usage</li>
+                <li>Uptime information</li>
+                <li>Plugin status</li>
+              </ul>
+            </div>
+          </Card>
         </div>
       </div>
     </div>

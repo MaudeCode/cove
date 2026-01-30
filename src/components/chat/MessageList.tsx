@@ -8,6 +8,7 @@ import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import type { Message } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
+import { IconButton, Spinner } from "@/components/ui";
 import { t } from "@/lib/i18n";
 
 interface MessageListProps {
@@ -97,7 +98,7 @@ export function MessageList({
         {/* Loading state */}
         {isLoading && (
           <div class="flex justify-center py-8">
-            <div class="text-[var(--color-text-muted)]">{t("status.loading")}</div>
+            <Spinner size="md" label={t("status.loading")} />
           </div>
         )}
 
@@ -137,30 +138,37 @@ export function MessageList({
 
       {/* Scroll to bottom button */}
       {showScrollButton.value && (
-        <button
-          type="button"
-          onClick={() => {
-            isAutoScrolling.current = true;
-            scrollToBottom(true);
-          }}
-          class="absolute bottom-4 right-4 p-2 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-lg hover:bg-[var(--color-bg-secondary)] transition-colors"
-          aria-label={t("chat.scrollToBottom")}
-        >
-          <svg
-            class="w-5 h-5 text-[var(--color-text-secondary)]"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 14l-7 7m0 0l-7-7m7 7V3"
-            />
-          </svg>
-        </button>
+        <div class="absolute bottom-4 right-4">
+          <IconButton
+            icon={<ArrowDownIcon />}
+            label={t("chat.scrollToBottom")}
+            onClick={() => {
+              isAutoScrolling.current = true;
+              scrollToBottom(true);
+            }}
+            variant="default"
+            size="md"
+            class="shadow-lg bg-[var(--color-bg-surface)] border border-[var(--color-border)]"
+          />
+        </div>
       )}
     </div>
+  );
+}
+
+// ============================================
+// Icons
+// ============================================
+
+function ArrowDownIcon() {
+  return (
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 14l-7 7m0 0l-7-7m7 7V3"
+      />
+    </svg>
   );
 }

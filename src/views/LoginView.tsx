@@ -10,6 +10,7 @@ import { connect, lastError } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession } from "@/signals/sessions";
 import { getAuth, saveAuth } from "@/lib/storage";
+import { Input, Select, Button, Checkbox, Card, FormField } from "@/components/ui";
 
 export function LoginView() {
   const url = useSignal("");
@@ -97,6 +98,12 @@ export function LoginView() {
     }
   }
 
+  // Build auth mode options with translations
+  const authModeOptions = [
+    { value: "token", label: t("auth.authMode.token") },
+    { value: "password", label: t("auth.authMode.password") },
+  ];
+
   return (
     <div class="flex-1 flex items-center justify-center p-8">
       <div class="w-full max-w-sm">
@@ -108,72 +115,50 @@ export function LoginView() {
         </div>
 
         {/* Form */}
-        <div class="p-6 rounded-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-lg">
+        <Card variant="elevated" padding="lg">
           <h2 class="text-lg font-semibold mb-4">{t("auth.title")}</h2>
 
           <div class="space-y-4">
             {/* Gateway URL */}
-            <div>
-              <label
-                htmlFor="gateway-url"
-                class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5"
-              >
-                {t("auth.gatewayUrl")}
-              </label>
-              <input
+            <FormField
+              label={t("auth.gatewayUrl")}
+              htmlFor="gateway-url"
+              error={validationError.value || undefined}
+            >
+              <Input
                 id="gateway-url"
                 type="text"
                 value={url.value}
                 onInput={(e) => {
                   url.value = (e.target as HTMLInputElement).value;
-                  validationError.value = null; // Clear error on input
+                  validationError.value = null;
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder={t("auth.gatewayUrlPlaceholder")}
-                class={`w-full px-3 py-2.5 text-sm rounded-lg
-                  bg-[var(--color-bg-primary)] border
-                  focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]
-                  placeholder:text-[var(--color-text-muted)]
-                  ${validationError.value ? "border-[var(--color-error)]" : "border-[var(--color-border)]"}`}
+                error={validationError.value || undefined}
+                fullWidth
               />
-              {validationError.value && (
-                <p class="mt-1 text-xs text-[var(--color-error)]">{validationError.value}</p>
-              )}
-            </div>
+            </FormField>
 
             {/* Auth mode */}
-            <div>
-              <label
-                htmlFor="auth-mode"
-                class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5"
-              >
-                Auth Mode
-              </label>
-              <select
+            <FormField label="Auth Mode" htmlFor="auth-mode">
+              <Select
                 id="auth-mode"
                 value={authMode.value}
                 onChange={(e) =>
                   (authMode.value = (e.target as HTMLSelectElement).value as "token" | "password")
                 }
-                class="w-full px-3 py-2.5 text-sm rounded-lg
-                  bg-[var(--color-bg-primary)] border border-[var(--color-border)]
-                  focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]
-                  cursor-pointer"
-              >
-                <option value="token">{t("auth.authMode.token")}</option>
-                <option value="password">{t("auth.authMode.password")}</option>
-              </select>
-            </div>
+                options={authModeOptions}
+                fullWidth
+              />
+            </FormField>
 
             {/* Token/Password */}
-            <div>
-              <label
-                htmlFor="auth-credential"
-                class="block text-sm font-medium text-[var(--color-text-secondary)] mb-1.5"
-              >
-                {authMode.value === "token" ? t("auth.token") : t("auth.password")}
-              </label>
-              <input
+            <FormField
+              label={authMode.value === "token" ? t("auth.token") : t("auth.password")}
+              htmlFor="auth-credential"
+            >
+              <Input
                 id="auth-credential"
                 type="password"
                 value={token.value}
@@ -184,43 +169,34 @@ export function LoginView() {
                     ? t("auth.tokenPlaceholder")
                     : t("auth.passwordPlaceholder")
                 }
-                class="w-full px-3 py-2.5 text-sm rounded-lg
-                  bg-[var(--color-bg-primary)] border border-[var(--color-border)]
-                  focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]
-                  placeholder:text-[var(--color-text-muted)]"
+                fullWidth
               />
-            </div>
+            </FormField>
 
             {/* Remember me */}
-            <label class="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={rememberMe.value}
-                onChange={(e) => (rememberMe.value = (e.target as HTMLInputElement).checked)}
-                class="w-4 h-4 rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]"
-              />
-              <span class="text-sm text-[var(--color-text-secondary)]">{t("auth.rememberMe")}</span>
-            </label>
+            <Checkbox
+              checked={rememberMe.value}
+              onChange={(checked) => (rememberMe.value = checked)}
+              label={t("auth.rememberMe")}
+            />
 
             {/* Connect button */}
-            <button
-              type="button"
+            <Button
+              variant="primary"
               onClick={handleConnect}
               disabled={connecting.value || !url.value.trim()}
-              class="w-full px-4 py-2.5 text-sm font-medium rounded-lg
-                bg-[var(--color-accent)] text-white
-                hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed
-                transition-opacity"
+              loading={connecting.value}
+              fullWidth
             >
               {connecting.value ? t("auth.connecting") : t("actions.connect")}
-            </button>
+            </Button>
 
             {/* Error message */}
             {lastError.value && (
               <p class="text-sm text-[var(--color-error)] text-center">{lastError.value}</p>
             )}
           </div>
-        </div>
+        </Card>
       </div>
     </div>
   );

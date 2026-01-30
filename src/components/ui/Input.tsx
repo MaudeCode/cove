@@ -9,7 +9,7 @@ import { forwardRef } from "preact/compat";
 
 export type InputSize = "sm" | "md" | "lg";
 
-export interface InputProps extends Omit<JSX.HTMLAttributes<HTMLInputElement>, "size"> {
+export interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "size"> {
   /** Input size */
   size?: InputSize;
   /** Error message */
@@ -20,8 +20,6 @@ export interface InputProps extends Omit<JSX.HTMLAttributes<HTMLInputElement>, "
   rightElement?: JSX.Element;
   /** Full width */
   fullWidth?: boolean;
-  /** Disabled state */
-  disabled?: boolean;
 }
 
 const sizeStyles: Record<InputSize, string> = {
