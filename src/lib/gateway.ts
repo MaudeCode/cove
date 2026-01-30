@@ -68,7 +68,6 @@ let currentConfig: ConnectConfig | null = null;
 let requestId = 0;
 let heartbeatTimer: ReturnType<typeof setInterval> | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-let _connectNonce: string | null = null;
 
 // Pending requests waiting for responses
 const pendingRequests = new Map<
@@ -119,7 +118,6 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
   connectionState.value = "connecting";
   lastError.value = null;
   reconnectAttempt.value = 0;
-  _connectNonce = null;
 
   return new Promise((resolve, reject) => {
     try {
@@ -140,8 +138,7 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
             msg.type === "event" &&
             msg.event === "connect.challenge"
           ) {
-            const payload = msg.payload as { nonce: string; ts: number };
-            _connectNonce = payload.nonce;
+            // Note: msg.payload contains { nonce, ts } for future HMAC auth
 
             // Now send the connect request
             sendConnectRequest(config)
@@ -249,7 +246,6 @@ export function disconnect(): void {
   gatewayVersion.value = null;
   sessionKey.value = null;
   capabilities.value = [];
-  _connectNonce = null;
 }
 
 // ============================================
