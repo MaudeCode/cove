@@ -2,13 +2,16 @@
 
 A cozy WebUI for [OpenClaw](https://github.com/openclaw/openclaw) chat.
 
-Built with [Preact](https://preactjs.com/) + [Vite](https://vitejs.dev/) for a fast, lightweight experience.
+Built with [Preact](https://preactjs.com/) + [Vite](https://vitejs.dev/).
+
+## Philosophy
+
+**Keep it minimal.** Resist the urge to add dependencies. Preact is chosen specifically because it's tiny (~3KB). Every addition should be justified.
 
 ## Features
 
 - 💬 Clean chat interface
 - 🌙 Light/dark mode (follows system preference)
-- ⚡ Fast and lightweight (~3KB Preact)
 - 📱 Responsive design
 
 ## Development
