@@ -4,6 +4,60 @@ Cove is a full-featured WebUI for OpenClaw.
 
 ## Phase 1: Foundation
 
+### 1.0 Layout Structure
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│ [Logo/Cove]   Gateway: ●  Connected      [Theme] [Settings]  │
+├────────────────┬─────────────────────────────────────────────┤
+│                │                                             │
+│ [+ New Chat]   │                                             │
+│                │                                             │
+│ ▼ Sessions     │                                             │
+│ ┌────────────┐ │                                             │
+│ │ ● Main     │ │           Main content area                 │
+│ │   Debug    │ │           (Chat, Cron, Config, etc.)        │
+│ │   Test     │ │                                             │
+│ │   ...      │ │                                             │
+│ │ (scroll)   │ │                                             │
+│ └────────────┘ │                                             │
+│                │                                             │
+│────────────────│                                             │
+│ ▶ Cron Jobs    │                                             │
+│ ▶ Config       │─────────────────────────────────────────────│
+│ ▶ Status       │ [Input box - when in chat view]             │
+│                │                                             │
+└────────────────┴─────────────────────────────────────────────┘
+```
+
+**Sidebar (left)**
+- [ ] New Chat button (prominent, top)
+- [ ] Sessions section (expandable, scrollable)
+  - [ ] Session list with active indicator
+  - [ ] Search/filter sessions
+  - [ ] Grouped by time (Today, Yesterday, etc.) or flat list
+- [ ] Bottom sections (pinned, collapsible)
+  - [ ] Cron Jobs
+  - [ ] Config
+  - [ ] Status
+- [ ] Click section → navigates to that view in main content area
+
+**Top bar**
+- [ ] Logo/branding
+- [ ] Gateway health indicator (connected/disconnected, latency?)
+- [ ] Theme toggle
+- [ ] Settings gear
+
+**Main content area**
+- [ ] Renders current view (Chat, Cron, Config, Status)
+- [ ] Full height minus top bar
+- [ ] When in Chat: input box pinned to bottom
+
+**Responsive behavior**
+- [ ] Desktop: Sidebar always visible
+- [ ] Tablet: Sidebar collapsible
+- [ ] Mobile: Sidebar as drawer, hamburger menu
+
 ### 1.1 Gateway Auth
 - [ ] Password login form
 - [ ] Token-based auth option
