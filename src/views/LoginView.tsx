@@ -16,9 +16,38 @@ export function LoginView() {
   const authMode = useSignal<"token" | "password">("token");
   const connecting = useSignal(false);
   const rememberMe = useSignal(true);
+  const validationError = useSignal<string | null>(null);
+
+  /**
+   * Validate the gateway URL
+   */
+  const validateUrl = (value: string): string | null => {
+    if (!value.trim()) {
+      return t("errors.required");
+    }
+
+    // Check for valid WebSocket URL
+    if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
+      return "URL must start with ws:// or wss://";
+    }
+
+    try {
+      new URL(value);
+    } catch {
+      return t("errors.invalid");
+    }
+
+    return null;
+  };
 
   const handleConnect = async () => {
-    if (!url.value.trim()) return;
+    // Validate URL
+    const urlError = validateUrl(url.value);
+    if (urlError) {
+      validationError.value = urlError;
+      return;
+    }
+    validationError.value = null;
 
     connecting.value = true;
     try {
@@ -93,14 +122,21 @@ export function LoginView() {
                 id="gateway-url"
                 type="text"
                 value={url.value}
-                onInput={(e) => (url.value = (e.target as HTMLInputElement).value)}
+                onInput={(e) => {
+                  url.value = (e.target as HTMLInputElement).value;
+                  validationError.value = null; // Clear error on input
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder={t("auth.gatewayUrlPlaceholder")}
-                class="w-full px-3 py-2.5 text-sm rounded-lg
-                  bg-[var(--color-bg-primary)] border border-[var(--color-border)]
+                class={`w-full px-3 py-2.5 text-sm rounded-lg
+                  bg-[var(--color-bg-primary)] border
                   focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]
-                  placeholder:text-[var(--color-text-muted)]"
+                  placeholder:text-[var(--color-text-muted)]
+                  ${validationError.value ? "border-[var(--color-error)]" : "border-[var(--color-border)]"}`}
               />
+              {validationError.value && (
+                <p class="mt-1 text-xs text-[var(--color-error)]">{validationError.value}</p>
+              )}
             </div>
 
             {/* Auth mode */}
