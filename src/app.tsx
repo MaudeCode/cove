@@ -33,7 +33,7 @@ export function App() {
   const pref = themePreference.value;
 
   // Gateway connection form state
-  const url = useSignal("wss://openclaw.maudeco.de/ws");
+  const url = useSignal("");
   const password = useSignal("");
   const connecting = useSignal(false);
   const testResult = useSignal<string | null>(null);

@@ -21,7 +21,6 @@ import type {
   GatewayRequest,
   GatewayResponse,
   GatewayEvent,
-  AuthConfig,
   HelloPayload,
 } from "@/types/gateway";
 
@@ -215,13 +214,16 @@ export function disconnect(): void {
  * Authenticate with the gateway
  */
 async function authenticate(config: ConnectConfig): Promise<HelloPayload> {
-  const auth: AuthConfig = {
-    mode: config.authMode ?? (config.token ? "token" : "password"),
-    password: config.password,
-    token: config.token,
-  };
+  // OpenClaw expects 'connect' as the first request with password/token
+  const params: Record<string, unknown> = {};
 
-  const result = await send<HelloPayload>("auth.hello", { auth });
+  if (config.token) {
+    params.token = config.token;
+  } else if (config.password) {
+    params.password = config.password;
+  }
+
+  const result = await send<HelloPayload>("connect", params);
   return result;
 }
 
