@@ -1,36 +1,112 @@
 /**
- * Locale Loader
+ * Locale Management
  *
- * Lazy-loads locale files and provides the current translations.
+ * Handles loading and caching of locale strings.
+ * Currently supports: en
+ *
+ * To add a new locale:
+ * 1. Create src/locales/{locale}.json
+ * 2. Add to supportedLocales below
+ * 3. Add lazy import in loadLocale()
  */
 
 import en from "./en.json";
 
+// Type for locale strings (derived from English as source of truth)
 export type LocaleStrings = typeof en;
 
-const locales: Record<string, LocaleStrings> = {
+// Supported locales
+export const supportedLocales = [
+  { code: "en", name: "English", nativeName: "English" },
+  // Future locales:
+  // { code: 'es', name: 'Spanish', nativeName: 'Español' },
+  // { code: 'de', name: 'German', nativeName: 'Deutsch' },
+  // { code: 'fr', name: 'French', nativeName: 'Français' },
+  // { code: 'ja', name: 'Japanese', nativeName: '日本語' },
+  // { code: 'ar', name: 'Arabic', nativeName: 'العربية', rtl: true },
+] as const;
+
+export type SupportedLocale = (typeof supportedLocales)[number]["code"];
+
+// Cache for loaded locales
+const localeCache: Record<string, LocaleStrings> = {
   en,
 };
 
 /**
- * Get translations for a locale
+ * Check if a locale is supported
  */
-export function getLocaleStrings(locale: string): LocaleStrings {
-  return locales[locale] ?? locales.en;
+export function isSupported(locale: string): locale is SupportedLocale {
+  return supportedLocales.some((l) => l.code === locale);
 }
 
 /**
- * Load a locale (for lazy loading additional locales)
+ * Get locale info
  */
-export async function loadLocale(locale: string): Promise<LocaleStrings> {
-  if (locales[locale]) {
-    return locales[locale];
+export function getLocaleInfo(locale: string) {
+  return supportedLocales.find((l) => l.code === locale);
+}
+
+/**
+ * Get strings for a locale (sync, from cache or fallback)
+ */
+export function getLocaleStrings(locale: string): LocaleStrings {
+  // Try exact match
+  if (localeCache[locale]) {
+    return localeCache[locale];
   }
 
-  // TODO: Lazy load other locales
-  // const strings = await import(`./${locale}.json`)
-  // locales[locale] = strings.default
-  // return strings.default
+  // Try base locale (e.g., 'en-US' -> 'en')
+  const baseLocale = locale.split("-")[0];
+  if (localeCache[baseLocale]) {
+    return localeCache[baseLocale];
+  }
 
-  return locales.en;
+  // Fallback to English
+  return localeCache.en;
+}
+
+/**
+ * Load a locale asynchronously (for lazy loading)
+ */
+export async function loadLocale(locale: string): Promise<LocaleStrings> {
+  // Return from cache if available
+  if (localeCache[locale]) {
+    return localeCache[locale];
+  }
+
+  // Lazy load based on locale
+  // Add cases here as locales are added
+  try {
+    switch (locale) {
+      case "en":
+        return en;
+      // Future:
+      // case 'es':
+      //   const es = await import('./es.json')
+      //   localeCache.es = es.default
+      //   return es.default
+      default:
+        // Try base locale
+        const baseLocale = locale.split("-")[0];
+        if (baseLocale !== locale) {
+          return loadLocale(baseLocale);
+        }
+        return en;
+    }
+  } catch {
+    console.warn(`[i18n] Failed to load locale: ${locale}, falling back to en`);
+    return en;
+  }
+}
+
+/**
+ * Get all available locales for UI
+ */
+export function getAvailableLocales() {
+  return supportedLocales.map((l) => ({
+    code: l.code,
+    name: l.name,
+    nativeName: l.nativeName,
+  }));
 }
