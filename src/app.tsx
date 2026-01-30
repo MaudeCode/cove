@@ -1,49 +1,49 @@
-import { useState } from 'preact/hooks'
-import './app.css'
+import { useState } from "preact/hooks";
+import "./app.css";
 
 interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  timestamp: Date
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
 }
 
 export function App() {
-  const [messages, setMessages] = useState<Message[]>([])
-  const [input, setInput] = useState('')
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [input, setInput] = useState("");
 
   const handleSend = () => {
-    if (!input.trim()) return
+    if (!input.trim()) return;
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
-      role: 'user',
+      role: "user",
       content: input,
       timestamp: new Date(),
-    }
+    };
 
-    setMessages((prev) => [...prev, userMessage])
-    setInput('')
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
 
     // TODO: Connect to OpenClaw gateway
     // For now, just echo back
     setTimeout(() => {
       const assistantMessage: Message = {
         id: crypto.randomUUID(),
-        role: 'assistant',
+        role: "assistant",
         content: `Echo: ${userMessage.content}`,
         timestamp: new Date(),
-      }
-      setMessages((prev) => [...prev, assistantMessage])
-    }, 500)
-  }
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
+    }, 500);
+  };
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
-  }
+  };
 
   return (
     <div class="cove">
@@ -62,9 +62,7 @@ export function App() {
           messages.map((msg) => (
             <div key={msg.id} class={`message message-${msg.role}`}>
               <div class="message-content">{msg.content}</div>
-              <div class="message-time">
-                {msg.timestamp.toLocaleTimeString()}
-              </div>
+              <div class="message-time">{msg.timestamp.toLocaleTimeString()}</div>
             </div>
           ))
         )}
@@ -83,5 +81,5 @@ export function App() {
         </button>
       </footer>
     </div>
-  )
+  );
 }
