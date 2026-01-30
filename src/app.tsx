@@ -1,19 +1,19 @@
 /**
  * Main App Component
  *
- * Phase 1.1 - Layout Shell
+ * Uses preact-router for URL-based navigation.
  */
 
 import { useEffect } from "preact/hooks";
+import Router from "preact-router";
 import { initTheme } from "@/lib/theme";
 import { initI18n } from "@/lib/i18n";
 import { initStorage, getAuth } from "@/lib/storage";
 import { isConnected, connect } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
-import { activeView } from "@/signals/ui";
 
-import { AppShell } from "@/components/layout";
+import { AppShell, currentPath } from "@/components/layout";
 import { ToastContainer, ErrorBoundary, toast } from "@/components/ui";
 import {
   ChatView,
@@ -46,7 +46,7 @@ export function App() {
           toast.error(`Error: ${error.message}`);
         }}
       >
-        <AppShell>{isConnected.value ? <MainContent /> : <LoginView />}</AppShell>
+        <AppShell>{isConnected.value ? <MainRouter /> : <LoginView />}</AppShell>
       </ErrorBoundary>
       <ToastContainer position="top-right" />
     </>
@@ -54,43 +54,43 @@ export function App() {
 }
 
 /**
- * Main content router based on activeView signal
+ * Handle route changes - sync to signal for sidebar active state
  */
-function MainContent() {
-  switch (activeView.value) {
-    // Chat
-    case "chat":
-      return <ChatView />;
+function handleRouteChange(e: { url: string }) {
+  currentPath.value = e.url;
+}
 
-    // Control
-    case "overview":
-      return <OverviewView />;
-    case "channels":
-      return <ChannelsView />;
-    case "instances":
-      return <InstancesView />;
-    case "sessions":
-      return <SessionsView />;
-    case "cron":
-      return <CronView />;
+/**
+ * Main content router
+ */
+function MainRouter() {
+  return (
+    <Router onChange={handleRouteChange}>
+      {/* Chat routes */}
+      <ChatView path="/" />
+      <ChatView path="/chat" />
+      <ChatView path="/chat/:sessionKey" />
 
-    // Agent
-    case "skills":
-      return <SkillsView />;
-    case "nodes":
-      return <NodesView />;
+      {/* Control */}
+      <OverviewView path="/overview" />
+      <ChannelsView path="/channels" />
+      <InstancesView path="/instances" />
+      <SessionsView path="/sessions" />
+      <CronView path="/cron" />
 
-    // Settings
-    case "config":
-      return <ConfigView />;
-    case "debug":
-      return <DebugView />;
-    case "logs":
-      return <LogsView />;
+      {/* Agent */}
+      <SkillsView path="/skills" />
+      <NodesView path="/nodes" />
 
-    default:
-      return <ChatView />;
-  }
+      {/* Settings */}
+      <ConfigView path="/config" />
+      <DebugView path="/debug" />
+      <LogsView path="/logs" />
+
+      {/* Fallback */}
+      <ChatView default />
+    </Router>
+  );
 }
 
 /**

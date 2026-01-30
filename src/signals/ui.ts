@@ -7,10 +7,6 @@
  */
 
 import { signal } from "@preact/signals";
-import type { ViewId } from "@/lib/navigation";
-
-// Re-export ViewId as View for convenience
-export type View = ViewId;
 
 export interface Toast {
   id: string;
@@ -21,9 +17,6 @@ export interface Toast {
 
 /** Whether the sidebar is open */
 export const sidebarOpen = signal<boolean>(true);
-
-/** Currently active main view */
-export const activeView = signal<View>("chat");
 
 /** Currently open modal (null if none) */
 export const activeModal = signal<string | null>(null);

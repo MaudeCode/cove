@@ -2,6 +2,7 @@
  * ChatView
  *
  * Main chat interface view.
+ * Route: /chat/:sessionKey?
  */
 
 import { useEffect, useRef } from "preact/hooks";
@@ -16,11 +17,29 @@ import {
   streamingContent,
   clearMessages,
 } from "@/signals/chat";
-import { activeSessionKey } from "@/signals/sessions";
+import { activeSessionKey, setActiveSession } from "@/signals/sessions";
 import { MessageList, ChatInput } from "@/components/chat";
 
-export function ChatView() {
+interface ChatViewProps {
+  /** Route path (from preact-router) */
+  path?: string;
+  /** Session key from URL (from preact-router) */
+  sessionKey?: string;
+}
+
+export function ChatView({ sessionKey }: ChatViewProps) {
   const prevSessionRef = useRef<string | null>(null);
+
+  // Sync session from URL to signal
+  useEffect(() => {
+    // Decode URL-encoded session key (e.g., "agent%3Amain%3Amain" -> "agent:main:main")
+    const decodedKey = sessionKey ? decodeURIComponent(sessionKey) : null;
+    const targetSession = decodedKey || "main";
+
+    if (targetSession !== activeSessionKey.value) {
+      setActiveSession(targetSession);
+    }
+  }, [sessionKey]);
 
   // Load history when session changes
   useEffect(() => {
