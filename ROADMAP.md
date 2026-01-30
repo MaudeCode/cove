@@ -294,6 +294,10 @@ src/
 | Error UX | Inline (chat) + Toasts | Desktop notifications opt-in |
 | i18n | Built-in from start | String extraction, RTL support ready |
 | Testing | Deferred | Add once architecture stabilizes |
+| Linting | oxlint | Rust-based, jsx-a11y, import, react, typescript plugins |
+| Formatting | oxfmt | Prettier-compatible, built-in Tailwind + import sorting |
+| Tailwind linting | eslint-plugin-better-tailwindcss | Unknown/conflicting class detection |
+| Commit linting | commitlint | Conventional commits enforced via husky |
 | Date/time | Native Intl APIs | User option: local time vs relative ("2h ago") |
 | Animations | Tailwind + custom CSS | No heavy libs, add motion later if needed |
 | Package manager | Bun | Fast, modern |

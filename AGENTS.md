@@ -263,6 +263,26 @@ Use conventional commits:
 
 ---
 
+## Linting & Formatting (Automated)
+
+The following tools enforce code quality automatically:
+
+| Tool | Purpose | Command |
+|------|---------|---------|
+| oxlint | Linting (a11y, imports, react, TS) | `bun run lint` |
+| oxfmt | Formatting + Tailwind/import sorting | `bun run format` |
+| commitlint | Commit message validation | Runs on commit via husky |
+
+**Pre-commit hooks** will run `lint` and `format:check` automatically.
+**Commit-msg hook** will validate commit messages.
+
+Run all checks manually:
+```bash
+bun run check   # lint + format:check + typecheck
+```
+
+---
+
 ## Pull Request Checklist
 
 Before submitting a PR, verify:

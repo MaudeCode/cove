@@ -1,0 +1,18 @@
+{
+  "$schema": "https://oxc.rs/schemas/oxfmt.json",
+  "printWidth": 100,
+  "tabWidth": 2,
+  "useTabs": false,
+  "semi": false,
+  "singleQuote": true,
+  "jsxSingleQuote": false,
+  "trailingComma": "es5",
+  "bracketSpacing": true,
+  "bracketSameLine": false,
+  "arrowParens": "avoid",
+  "endOfLine": "lf",
+  "sorting": {
+    "imports": true,
+    "tailwindClasses": true
+  }
+}
