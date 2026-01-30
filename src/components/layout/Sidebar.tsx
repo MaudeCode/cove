@@ -8,7 +8,7 @@ import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { activeView, type View } from "@/signals/ui";
 import { activeSessionKey, setActiveSession, sessionsByRecent } from "@/signals/sessions";
-import { Button, Badge } from "@/components/ui";
+import { Button } from "@/components/ui";
 
 export function Sidebar() {
   return (
@@ -40,14 +40,32 @@ export function Sidebar() {
             <ul class="space-y-1">
               {sessionsByRecent.value.map((session) => (
                 <li key={session.key}>
-                  <SessionItem
-                    label={session.label || session.key}
-                    active={activeSessionKey.value === session.key}
+                  <button
+                    type="button"
                     onClick={() => {
                       setActiveSession(session.key);
                       activeView.value = "chat";
                     }}
-                  />
+                    class={`
+                      w-full text-left px-3 py-2 rounded-lg text-sm
+                      flex items-center gap-2 transition-colors
+                      ${
+                        activeSessionKey.value === session.key
+                          ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+                          : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
+                      }
+                    `}
+                  >
+                    <span
+                      class={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        activeSessionKey.value === session.key
+                          ? "bg-[var(--color-accent)]"
+                          : "bg-[var(--color-text-muted)]"
+                      }`}
+                      aria-hidden="true"
+                    />
+                    <span class="truncate">{session.label || session.key}</span>
+                  </button>
                 </li>
               ))}
             </ul>
@@ -95,7 +113,6 @@ function SidebarSection({
   defaultOpen: _defaultOpen = true,
   children,
 }: SidebarSectionProps) {
-  // For now, always open. Could add collapsible behavior later.
   return (
     <div class="mb-4">
       <h3 class="px-2 py-1 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider">
@@ -103,29 +120,6 @@ function SidebarSection({
       </h3>
       {children}
     </div>
-  );
-}
-
-interface SessionItemProps {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}
-
-function SessionItem({ label, active, onClick }: SessionItemProps) {
-  return (
-    <Button
-      variant={active ? "secondary" : "ghost"}
-      onClick={onClick}
-      fullWidth
-      class={`
-        justify-start
-        ${active ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]" : ""}
-      `}
-    >
-      <Badge variant={active ? "info" : "default"} dot size="sm" class="mr-2" />
-      <span class="truncate">{label}</span>
-    </Button>
   );
 }
 
@@ -138,20 +132,24 @@ interface NavItemProps {
 
 function NavItem({ icon, label, view, active }: NavItemProps) {
   return (
-    <Button
-      variant={active ? "secondary" : "ghost"}
+    <button
+      type="button"
       onClick={() => (activeView.value = view)}
-      fullWidth
       class={`
-        justify-start mb-1
-        ${active ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]" : ""}
+        w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm
+        transition-colors
+        ${
+          active
+            ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
+            : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
+        }
       `}
     >
-      <span class="w-5 h-5 mr-3" aria-hidden="true">
+      <span class="w-5 h-5 flex-shrink-0" aria-hidden="true">
         {icon}
       </span>
       {label}
-    </Button>
+    </button>
   );
 }
 
@@ -169,7 +167,7 @@ function PlusIcon() {
 
 function ClockIcon() {
   return (
-    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -182,7 +180,7 @@ function ClockIcon() {
 
 function CogIcon() {
   return (
-    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -201,7 +199,7 @@ function CogIcon() {
 
 function ChartIcon() {
   return (
-    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
