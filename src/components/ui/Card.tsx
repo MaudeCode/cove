@@ -30,15 +30,21 @@ const variantStyles: Record<CardVariant, string> = {
   default: `
     bg-[var(--color-bg-surface)]
     border border-[var(--color-border)]
+    shadow-soft-sm
+    transition-shadow duration-200 ease-out
+    hover:shadow-soft
   `,
   elevated: `
     bg-[var(--color-bg-surface)]
     border border-[var(--color-border)]
-    shadow-lg
+    shadow-soft-lg
+    transition-shadow duration-200 ease-out
+    hover:shadow-soft-xl
   `,
   outlined: `
     bg-transparent
     border border-[var(--color-border)]
+    transition-colors duration-200 ease-out
   `,
 };
 
@@ -63,7 +69,7 @@ export function Card({
   const hasHeader = title || subtitle || headerActions;
 
   return (
-    <div class={`rounded-lg ${variantStyles[variant]} ${className || ""}`} {...props}>
+    <div class={`rounded-2xl ${variantStyles[variant]} ${className || ""}`} {...props}>
       {hasHeader && (
         <div
           class={`
@@ -88,7 +94,7 @@ export function Card({
             ${paddingStyles[padding]}
             border-t border-[var(--color-border)]
             bg-[var(--color-bg-secondary)]/50
-            rounded-b-lg
+            rounded-b-2xl
           `}
         >
           {footer}

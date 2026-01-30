@@ -56,12 +56,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             ref={ref}
             disabled={disabled}
             class={`
-              block rounded-lg
+              block rounded-xl
               bg-[var(--color-bg-primary)]
-              border transition-colors
+              border transition-all duration-200 ease-out
+              shadow-soft-sm focus:shadow-soft
               placeholder:text-[var(--color-text-muted)]
               focus:outline-none focus:ring-2 focus:ring-offset-0
-              disabled:opacity-50 disabled:cursor-not-allowed
+              disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
               ${
                 hasError
                   ? "border-[var(--color-error)] focus:ring-[var(--color-error)]"
