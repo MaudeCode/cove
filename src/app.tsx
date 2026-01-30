@@ -14,7 +14,7 @@ import { setActiveSession } from "@/signals/sessions";
 import { activeView } from "@/signals/ui";
 
 import { AppShell } from "@/components/layout";
-import { ToastContainer } from "@/components/ui";
+import { ToastContainer, ErrorBoundary, toast } from "@/components/ui";
 import { ChatView, LoginView, CronView, ConfigView, StatusView } from "@/views";
 
 export function App() {
@@ -28,7 +28,13 @@ export function App() {
 
   return (
     <>
-      <AppShell>{isConnected.value ? <MainContent /> : <LoginView />}</AppShell>
+      <ErrorBoundary
+        onError={(error) => {
+          toast.error(`Error: ${error.message}`);
+        }}
+      >
+        <AppShell>{isConnected.value ? <MainContent /> : <LoginView />}</AppShell>
+      </ErrorBoundary>
       <ToastContainer position="top-right" />
     </>
   );

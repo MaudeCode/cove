@@ -39,3 +39,11 @@ export {
   type ToastPosition,
   type ToastContainerProps,
 } from "./Toast";
+
+// Error handling
+export {
+  ErrorBoundary,
+  InlineError,
+  type ErrorBoundaryProps,
+  type InlineErrorProps,
+} from "./ErrorBoundary";
