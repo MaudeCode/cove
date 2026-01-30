@@ -147,6 +147,12 @@ Cove is a full-featured WebUI for OpenClaw.
 - [ ] Customizable layout
 - [ ] Notifications (desktop/browser)
 
+### 4.10 PWA Support
+- [ ] manifest.json (app name, icons, theme colors, display mode)
+- [ ] Service worker for install prompt
+- [ ] Offline caching (optional)
+- [ ] iOS/Android home screen install support
+
 ---
 
 ## Tech Decisions ✅
@@ -159,3 +165,4 @@ Cove is a full-featured WebUI for OpenClaw.
 | Streaming | WebSocket | Match OpenClaw gateway protocol |
 | Routing | preact-router | Official, stable, simple API |
 | API client | Custom typed client | JSON-RPC over WebSocket, auto-reconnect |
+| Storage | localStorage | Settings, auth, session key persistence |
