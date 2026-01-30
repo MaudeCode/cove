@@ -424,30 +424,28 @@ export const activeSession = computed(() =>
 
 ---
 
-### 0.10 Error Handling Infrastructure
+### 0.10 Error Handling Infrastructure ✅
 
 **Toast system:**
-- [ ] `showToast(message, type, duration?)` function
-- [ ] Toast queue management (max visible, auto-dismiss)
-- [ ] Toast types: success, error, warning, info
-- [ ] Accessible announcements (aria-live)
+- [x] `showToast(message, type, duration?)` function
+- [x] Toast queue management (max visible, auto-dismiss)
+- [x] Toast types: success, error, warning, info
+- [x] Accessible announcements (aria-live)
 
 **Error boundary:**
-- [ ] Create ErrorBoundary component
-- [ ] Fallback UI with retry option
-- [ ] Error logging/reporting hook
+- [x] Create ErrorBoundary component
+- [x] Fallback UI with retry option
+- [x] Error logging/reporting hook
 
 **Inline error component:**
 - [x] Inline error display in login/chat views
-- [x] For use in chat view
+- [x] InlineError component with retry button
 
 **Checklist:**
-- [ ] Toast container positioned correctly
-- [ ] Toasts are keyboard dismissible
-- [ ] Error boundary catches render errors
+- [x] Toast container positioned correctly (top-right)
+- [x] Toasts are keyboard dismissible
+- [x] Error boundary catches render errors
 - [x] Errors are logged for debugging
-
-*Note: Basic inline error display done; toast system deferred.*
 
 ---
 
