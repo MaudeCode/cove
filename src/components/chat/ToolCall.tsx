@@ -6,6 +6,7 @@
 
 import { useState } from "preact/hooks";
 import type { ToolCall as ToolCallType } from "@/types/messages";
+import { Badge, Button, Card } from "@/components/ui";
 
 interface ToolCallProps {
   toolCall: ToolCallType;
@@ -14,11 +15,11 @@ interface ToolCallProps {
 export function ToolCall({ toolCall }: ToolCallProps) {
   const [expanded, setExpanded] = useState(false);
 
-  const statusColors: Record<string, string> = {
-    pending: "bg-[var(--color-warning)]/20 text-[var(--color-warning)]",
-    running: "bg-[var(--color-accent)]/20 text-[var(--color-accent)]",
-    complete: "bg-[var(--color-success)]/20 text-[var(--color-success)]",
-    error: "bg-[var(--color-error)]/20 text-[var(--color-error)]",
+  const statusVariant: Record<string, "default" | "success" | "warning" | "error" | "info"> = {
+    pending: "warning",
+    running: "info",
+    complete: "success",
+    error: "error",
   };
 
   const statusIcons: Record<string, string> = {
@@ -32,23 +33,19 @@ export function ToolCall({ toolCall }: ToolCallProps) {
     toolCall.completedAt && toolCall.startedAt ? toolCall.completedAt - toolCall.startedAt : null;
 
   return (
-    <div
-      class="rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)] overflow-hidden"
-      role="listitem"
-    >
+    <Card padding="none" variant="outlined" class="overflow-hidden">
       {/* Summary row - always visible */}
-      <button
-        type="button"
+      <Button
+        variant="ghost"
         onClick={() => setExpanded(!expanded)}
-        class="w-full px-3 py-2 flex items-center gap-2 text-sm text-left hover:bg-[var(--color-bg-secondary)] transition-colors"
+        fullWidth
+        class="justify-start px-3 py-2 rounded-none"
         aria-expanded={expanded}
       >
         {/* Status indicator */}
-        <span
-          class={`px-1.5 py-0.5 rounded text-xs font-medium ${statusColors[toolCall.status] || statusColors.pending}`}
-        >
+        <Badge variant={statusVariant[toolCall.status] || "default"} size="sm" class="mr-2">
           {statusIcons[toolCall.status] || "?"}
-        </span>
+        </Badge>
 
         {/* Tool name */}
         <span class="font-medium text-[var(--color-text-primary)]">
@@ -56,27 +53,20 @@ export function ToolCall({ toolCall }: ToolCallProps) {
         </span>
 
         {/* Brief summary */}
-        <span class="text-[var(--color-text-muted)] truncate flex-1">
+        <span class="text-[var(--color-text-muted)] truncate flex-1 ml-2 text-left">
           {getToolSummary(toolCall)}
         </span>
 
         {/* Duration */}
         {duration !== null && (
-          <span class="text-xs text-[var(--color-text-muted)] flex-shrink-0">
+          <span class="text-xs text-[var(--color-text-muted)] flex-shrink-0 ml-2">
             {formatDuration(duration)}
           </span>
         )}
 
         {/* Expand icon */}
-        <svg
-          class={`w-4 h-4 text-[var(--color-text-muted)] transition-transform ${expanded ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
-      </button>
+        <ChevronIcon expanded={expanded} />
+      </Button>
 
       {/* Expanded details */}
       {expanded && (
@@ -109,9 +99,13 @@ export function ToolCall({ toolCall }: ToolCallProps) {
           )}
         </div>
       )}
-    </div>
+    </Card>
   );
 }
+
+// ============================================
+// Helpers
+// ============================================
 
 /**
  * Format tool name for display
@@ -165,4 +159,21 @@ function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
   return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
+}
+
+// ============================================
+// Icons
+// ============================================
+
+function ChevronIcon({ expanded }: { expanded: boolean }) {
+  return (
+    <svg
+      class={`w-4 h-4 ml-2 text-[var(--color-text-muted)] transition-transform ${expanded ? "rotate-180" : ""}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  );
 }
