@@ -6,47 +6,47 @@ export const darkTheme: Theme = {
   appearance: "dark",
   builtIn: true,
   colors: {
-    // Backgrounds
-    "--color-bg-primary": "#0a0a0b",
-    "--color-bg-secondary": "#111113",
-    "--color-bg-tertiary": "#18181b",
-    "--color-bg-surface": "#1f1f23",
-    "--color-bg-elevated": "#27272a",
-    "--color-bg-hover": "#2d2d31",
-    "--color-bg-active": "#3f3f46",
+    // Backgrounds - more contrast between layers
+    "--color-bg-primary": "#0f0f12", // Content area (darkest)
+    "--color-bg-secondary": "#0a0a0c", // Chrome/shell (even darker for contrast)
+    "--color-bg-tertiary": "#161619",
+    "--color-bg-surface": "#1a1a1f", // Cards, inputs (lighter than primary)
+    "--color-bg-elevated": "#222228",
+    "--color-bg-hover": "#2a2a32",
+    "--color-bg-active": "#363640",
 
     // Text
-    "--color-text-primary": "#fafafa",
+    "--color-text-primary": "#f4f4f5",
     "--color-text-secondary": "#a1a1aa",
     "--color-text-tertiary": "#71717a",
     "--color-text-muted": "#52525b",
     "--color-text-inverse": "#09090b",
 
-    // Accent
-    "--color-accent": "#3b82f6",
-    "--color-accent-hover": "#2563eb",
-    "--color-accent-active": "#1d4ed8",
-    "--color-accent-muted": "#1e3a5f",
+    // Accent - vibrant teal/cyan for personality
+    "--color-accent": "#14b8a6",
+    "--color-accent-hover": "#0d9488",
+    "--color-accent-active": "#0f766e",
+    "--color-accent-muted": "#134e4a",
     "--color-accent-text": "#ffffff",
 
     // Status
     "--color-success": "#22c55e",
     "--color-success-muted": "#14532d",
-    "--color-warning": "#eab308",
-    "--color-warning-muted": "#422006",
-    "--color-error": "#ef4444",
-    "--color-error-muted": "#450a0a",
-    "--color-info": "#06b6d4",
-    "--color-info-muted": "#083344",
+    "--color-warning": "#f59e0b",
+    "--color-warning-muted": "#451a03",
+    "--color-error": "#f43f5e",
+    "--color-error-muted": "#4c0519",
+    "--color-info": "#38bdf8",
+    "--color-info-muted": "#0c4a6e",
 
-    // Borders
-    "--color-border": "#27272a",
-    "--color-border-hover": "#3f3f46",
-    "--color-border-focus": "#3b82f6",
+    // Borders - subtle accent tint
+    "--color-border": "#252530",
+    "--color-border-hover": "#3f3f4a",
+    "--color-border-focus": "#14b8a6",
 
     // Shadows
-    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.3)",
-    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4)",
-    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5)",
+    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.4)",
+    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
+    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
   },
 };
