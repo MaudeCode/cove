@@ -12,6 +12,7 @@
  */
 
 import { send, on } from "@/lib/gateway";
+import { log } from "@/lib/logger";
 import {
   isLoadingHistory,
   historyError,
@@ -116,6 +117,8 @@ export async function sendMessage(
   startRun(idempotencyKey, sessionKey);
 
   try {
+    log.chat.debug("Sending message to session:", sessionKey, "message:", message.slice(0, 50));
+
     const result = await send<ChatSendResult>("chat.send", {
       sessionKey,
       message,
@@ -124,6 +127,8 @@ export async function sendMessage(
       idempotencyKey,
     });
 
+    log.chat.debug("chat.send result:", result);
+
     if (result.status === "error") {
       errorRun(idempotencyKey, result.summary ?? "Unknown error");
       throw new Error(result.summary ?? "Failed to send message");
@@ -131,6 +136,7 @@ export async function sendMessage(
 
     return idempotencyKey;
   } catch (err) {
+    log.chat.error("chat.send failed:", err);
     errorRun(idempotencyKey, err instanceof Error ? err.message : String(err));
     throw err;
   }
