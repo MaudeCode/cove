@@ -61,6 +61,7 @@ export function createLogger(namespace: string) {
 export const log = {
   gateway: createLogger("gateway"),
   auth: createLogger("auth"),
+  chat: createLogger("chat"),
   i18n: createLogger("i18n"),
   ui: createLogger("ui"),
 };
