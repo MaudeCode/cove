@@ -24,7 +24,12 @@ Cove is a full-featured WebUI for OpenClaw.
 - [ ] Tool calls rendered identically during stream and in history
 - [ ] Message list with scrolling
 - [ ] Streaming text display (WebSocket)
-- [ ] Tool call visualization (name, params, result, timing)
+- [ ] Tool call visualization
+  - [ ] Compact summary view (e.g., "read <file>", "edited <file>")
+  - [ ] Click to expand full details
+  - [ ] File reads: show file content
+  - [ ] File edits: show diff view
+  - [ ] Show timing/duration
 - [ ] Markdown rendering (GFM)
 - [ ] Code blocks with syntax highlighting
 - [ ] Copy code button
@@ -32,10 +37,8 @@ Cove is a full-featured WebUI for OpenClaw.
 - [ ] Input box with auto-resize
 - [ ] Send with Enter / Shift+Enter for newline
 - [ ] Keyboard shortcut (Cmd+Enter to send)
-- [ ] File/image upload
 - [ ] Loading/typing indicator
 - [ ] Error handling (failed sends, retries)
-- [ ] Reply/quote support (if channel supports)
 
 ---
 
@@ -58,6 +61,10 @@ Cove is a full-featured WebUI for OpenClaw.
 - [ ] Search across all sessions
 - [ ] Filter by date range
 - [ ] Export conversation (JSON, Markdown, PDF?)
+
+### 2.3 Chat Enhancements
+- [ ] File/image upload (drag-drop, paste, preview)
+- [ ] Reply/quote support (if channel supports)
 
 ---
 
@@ -162,6 +169,14 @@ Cove is a full-featured WebUI for OpenClaw.
 - [ ] Offline caching (optional)
 - [ ] iOS/Android home screen install support
 
+### 4.11 Custom Theming
+- [ ] Theme schema (colors, code theme, fonts, spacing)
+- [ ] Built-in theme presets (light, dark, etc.)
+- [ ] Theme editor UI (color pickers, live preview)
+- [ ] Save/load custom themes
+- [ ] Import/export themes (share with others)
+- [ ] Prism theme synced to app theme
+
 ---
 
 ## Tech Decisions ✅
@@ -175,3 +190,6 @@ Cove is a full-featured WebUI for OpenClaw.
 | Routing | preact-router | Official, stable, simple API |
 | API client | Custom typed client | JSON-RPC over WebSocket, auto-reconnect |
 | Storage | localStorage | Settings, auth, session key persistence |
+| Syntax highlighting | Prism | Lightweight, themeable |
+| Markdown | markdown-it | Pluggable, GFM support, good features |
+| Theming | CSS custom properties | Build with variables from day one for full theming support |
