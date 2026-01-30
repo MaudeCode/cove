@@ -50,12 +50,12 @@ export function Sidebar() {
                     activeView.value = "chat";
                   }}
                   class={`
-                    w-full text-left px-3 py-2 rounded-lg text-sm
-                    flex items-center gap-2 transition-colors
+                    w-full text-left px-3.5 py-2.5 rounded-xl text-sm
+                    flex items-center gap-2.5 transition-all duration-200 ease-out
                     ${
                       activeSessionKey.value === session.key && activeView.value === "chat"
-                        ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
-                        : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
+                        ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
+                        : "hover:bg-[var(--color-bg-primary)] hover:shadow-soft-sm text-[var(--color-text-primary)]"
                     }
                   `}
                 >
@@ -144,7 +144,7 @@ function NavItemComponent({ item }: NavItemComponentProps) {
         href={item.external}
         target="_blank"
         rel="noopener noreferrer"
-        class="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors hover:bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
+        class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 ease-out hover:bg-[var(--color-bg-primary)] hover:shadow-soft-sm text-[var(--color-text-secondary)]"
       >
         <span class="w-5 h-5 flex-shrink-0" aria-hidden="true">
           <Icon />
@@ -161,12 +161,12 @@ function NavItemComponent({ item }: NavItemComponentProps) {
       type="button"
       onClick={() => (activeView.value = item.id as View)}
       class={`
-        w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm
-        transition-colors
+        w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm
+        transition-all duration-200 ease-out
         ${
           isActive
-            ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)]"
-            : "hover:bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)]"
+            ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
+            : "hover:bg-[var(--color-bg-primary)] hover:shadow-soft-sm text-[var(--color-text-secondary)]"
         }
       `}
     >
