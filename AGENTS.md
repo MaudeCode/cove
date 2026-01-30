@@ -9,7 +9,6 @@ This file documents how Cove works for LLMs and developers working on the projec
 - **Stack**: Preact + Vite + TypeScript + Tailwind CSS
 - **State**: Preact Signals (reactive, no Redux/Context complexity)
 - **Styling**: Tailwind + CSS custom properties (themes)
-- **Live URL**: https://cove.maudeco.de
 
 ## Architecture
 
@@ -162,7 +161,7 @@ bun run build
 
 ## Protocol Reference
 
-The gateway protocol is defined in OpenClaw source:
+The gateway protocol is defined in OpenClaw source (https://github.com/openclaw/openclaw):
 - `src/gateway/protocol/schema/frames.ts` - Frame schemas
 - `src/gateway/protocol/client-info.ts` - Valid client IDs/modes
 - `src/gateway/server/ws-connection/message-handler.ts` - Server handling
@@ -171,19 +170,18 @@ Protocol version is currently **3**.
 
 ## Roadmap
 
-- [x] Phase 0.1 - Project scaffold
-- [x] Phase 0.2 - Theme system
-- [x] Phase 0.3 - i18n infrastructure
-- [x] Phase 0.4 - Gateway WebSocket client
-- [ ] Phase 0.5 - Session & message signals
-- [ ] Phase 1.x - Chat UI, message rendering, streaming
-- [ ] Phase 2.x - Sessions sidebar, history
-- [ ] Phase 3.x - Settings, config editing
+See ROADMAP.md for full details.
+
+- [x] Phase 0 - Infrastructure (scaffold, themes, i18n, gateway client, signals)
+- [x] Phase 1 - Core Features (layout shell, auth, chat interface)
+- [ ] Phase 2 - Session & History
+- [ ] Phase 3 - Operations (status, cron, config)
+- [ ] Phase 4 - Nice to Have
 
 ## Notes for LLMs
 
-1. **OpenClaw source** is at `~/git/openclaw/` - reference it for protocol details
-2. **Signals over useState** - use `@preact/signals` for reactive state
-3. **No default exports** - project uses named exports only (lint enforced)
-4. **Console warnings OK** - `console.warn/error` for debugging is intentional
-5. **CSS variables** - all colors use `var(--color-*)` for theming
+1. **Signals over useState** - use `@preact/signals` for reactive state
+2. **No default exports** - project uses named exports only (lint enforced)
+3. **Console warnings OK** - `console.warn/error` for debugging is intentional
+4. **CSS variables** - all colors use `var(--color-*)` for theming
+5. **OpenClaw protocol** - refer to https://github.com/openclaw/openclaw for protocol details
