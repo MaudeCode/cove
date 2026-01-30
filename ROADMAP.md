@@ -693,29 +693,68 @@ export const navigation: NavSection[] = [
 
 ## Phase 2: Session & History
 
+> **Note on Sessions views:**
+> - 2.1 = Sidebar quick-access session list (always visible, lightweight)
+> - 3.4 = Dedicated Sessions admin view (bulk actions, advanced filters, stats)
+
+### 2.0 Chat Reliability (Phase 1.3 completion)
+
+> Complete the error recovery features that were incomplete in Phase 1.3.
+
+- [ ] Failed send → inline error with retry button
+- [ ] Connection lost → banner notification (dismissible)
+- [ ] Message queuing while disconnected
+- [ ] Auto-resend queued messages on reconnect
+- [ ] Visual indicator for pending/queued messages
+
 ### 2.1 Session Management
-- [ ] List all sessions (main, isolated, sub-agents)
-- [ ] Session metadata (model, channel, created, last active)
-- [ ] Switch between sessions
-- [ ] Session status card (usage, cost, tokens, model override)
-- [ ] Create new session
-- [ ] Delete/archive session
-- [ ] Session labels/renaming
+
+> Sidebar session list with quick actions.
+
+- [ ] Fetch session list from gateway (`sessions.list`)
+- [ ] Session metadata display (model, channel, tokens, last active)
+- [ ] Active session indicator
+- [ ] Click to switch sessions
+- [ ] Session rename/label (inline edit or modal)
+- [ ] Delete session (with confirmation modal)
+- [ ] Archive session (hide from main list, show in admin view)
+- [ ] Model override per session
 - [ ] Filter by kind (main/isolated/channel)
+- [ ] Group by time (Today, Yesterday, Older) — optional
+- [ ] Session status card (usage, cost, tokens) — expandable or tooltip
 
 ### 2.2 Session History
-- [ ] View past messages in session
-- [ ] Infinite scroll / pagination
-- [ ] Search within session
-- [ ] Search across all sessions
+
+> Load and navigate message history within a session.
+
+- [ ] Load message history on session switch
+- [ ] Infinite scroll / pagination (load older messages on scroll up)
+- [ ] Loading state while fetching history
+- [ ] Jump to bottom button (when scrolled up)
+- [ ] Search within current session
 - [ ] Filter by date range
-- [ ] Export conversation (JSON, Markdown, PDF?)
+- [ ] Highlight search matches in messages
 
 ### 2.3 Chat Enhancements
-- [ ] File/image upload (drag-drop, paste, preview)
+
+> Message-level actions and media support.
+
+- [ ] Message actions menu (hover or kebab menu)
+  - [ ] Copy message (formatted text)
+  - [ ] Copy message (raw markdown)
+  - [ ] Retry failed message
+- [ ] Copy code blocks individually (already done, verify)
+- [ ] File upload (click or drag-drop)
+- [ ] Image paste from clipboard
+- [ ] Upload progress indicator
+- [ ] Image/media preview in messages
 - [ ] Reply/quote support (if channel supports)
+- [ ] Typing indicator improvements (show who's typing)
 
 ### 2.4 Settings View
+
+> User preferences panel.
+
 - [ ] Appearance settings
   - [ ] Theme picker (light, dark, system + custom themes)
   - [ ] Font size (sm, md, lg)
@@ -726,21 +765,21 @@ export const navigation: NavSection[] = [
   - [ ] Sound toggle
 - [ ] Keyboard shortcuts reference modal
 - [ ] About section (version, gateway info, links)
+- [ ] Reset to defaults button
 
 ### 2.5 Onboarding
-- [ ] First-run welcome modal
+
+> First-time user experience. (Could defer to Phase 4 polish.)
+
+- [ ] First-run detection (no saved gateway URL)
+- [ ] Welcome modal with quick overview
 - [ ] Connection setup wizard
   - [ ] Gateway URL input with validation
   - [ ] Auth method selection (password vs token)
   - [ ] Test connection before saving
-- [ ] Sample chat to verify connection works
+  - [ ] Error messages with troubleshooting hints
+- [ ] Skip option for returning users / manual setup
 - [ ] Connection troubleshooting guide (common errors, fixes)
-
-### 2.6 Error Recovery (from 1.3 incomplete)
-- [ ] Failed send → inline error with retry button
-- [ ] Connection lost → banner notification
-- [ ] Message queuing while disconnected
-- [ ] Auto-resend queued messages on reconnect
 
 ---
 
@@ -844,6 +883,19 @@ export const navigation: NavSection[] = [
 - [ ] Edit in-place
 - [ ] Search across memory files
 - [ ] Git history view (if repo)
+
+### 4.2 Global Search
+- [ ] Search across all sessions
+- [ ] Search results with session context
+- [ ] Jump to message in session
+- [ ] Search filters (date range, session kind, model)
+
+### 4.3 Conversation Export
+- [ ] Export single session: JSON
+- [ ] Export single session: Markdown
+- [ ] Export single session: PDF (complex)
+- [ ] Bulk export multiple sessions
+- [ ] Include/exclude tool calls in export
 
 ### 4.4 Real-time Activity Feed
 - [ ] Live stream of gateway events
