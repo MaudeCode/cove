@@ -1,71 +1,17 @@
 /**
- * Cove Theme System
+ * Cove Theme System - Base Styles
  *
- * All colors and design tokens as CSS custom properties.
- * Supports light/dark mode via [data-theme] attribute.
+ * Color values are applied via JavaScript from theme definitions.
+ * This file contains non-color theme tokens and utility styles.
  *
- * Usage:
- *   - class="bg-[var(--color-bg-primary)]"
- *   - class="text-[var(--color-text-primary)]"
- *
+ * @see src/lib/themes/ for color definitions
  * @see Phase 0.2 in ROADMAP.md
  */
 
 /* ============================================
-   Base Theme (Dark - Default)
+   Non-Color Theme Tokens
    ============================================ */
 :root {
-  /* === Backgrounds === */
-  --color-bg-primary: #0a0a0b;
-  --color-bg-secondary: #111113;
-  --color-bg-tertiary: #18181b;
-  --color-bg-surface: #1f1f23;
-  --color-bg-elevated: #27272a;
-  --color-bg-hover: #2d2d31;
-  --color-bg-active: #3f3f46;
-
-  /* === Text === */
-  --color-text-primary: #fafafa;
-  --color-text-secondary: #a1a1aa;
-  --color-text-tertiary: #71717a;
-  --color-text-muted: #52525b;
-  --color-text-inverse: #09090b;
-
-  /* === Accent (Primary) === */
-  --color-accent: #3b82f6;
-  --color-accent-hover: #2563eb;
-  --color-accent-active: #1d4ed8;
-  --color-accent-muted: #1e3a5f;
-  --color-accent-text: #ffffff;
-
-  /* === Status Colors === */
-  --color-success: #22c55e;
-  --color-success-muted: #14532d;
-  --color-success-text: #ffffff;
-
-  --color-warning: #eab308;
-  --color-warning-muted: #422006;
-  --color-warning-text: #000000;
-
-  --color-error: #ef4444;
-  --color-error-muted: #450a0a;
-  --color-error-text: #ffffff;
-
-  --color-info: #06b6d4;
-  --color-info-muted: #083344;
-  --color-info-text: #ffffff;
-
-  /* === Borders === */
-  --color-border: #27272a;
-  --color-border-hover: #3f3f46;
-  --color-border-focus: #3b82f6;
-
-  /* === Shadows === */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.5), 0 8px 10px -6px rgb(0 0 0 / 0.5);
-
   /* === Border Radius === */
   --radius-none: 0;
   --radius-sm: 0.25rem;
@@ -124,113 +70,6 @@
 }
 
 /* ============================================
-   Light Theme
-   ============================================ */
-[data-theme="light"] {
-  /* === Backgrounds === */
-  --color-bg-primary: #ffffff;
-  --color-bg-secondary: #f9fafb;
-  --color-bg-tertiary: #f3f4f6;
-  --color-bg-surface: #ffffff;
-  --color-bg-elevated: #ffffff;
-  --color-bg-hover: #f3f4f6;
-  --color-bg-active: #e5e7eb;
-
-  /* === Text === */
-  --color-text-primary: #111827;
-  --color-text-secondary: #4b5563;
-  --color-text-tertiary: #6b7280;
-  --color-text-muted: #9ca3af;
-  --color-text-inverse: #fafafa;
-
-  /* === Accent (Primary) === */
-  --color-accent: #2563eb;
-  --color-accent-hover: #1d4ed8;
-  --color-accent-active: #1e40af;
-  --color-accent-muted: #dbeafe;
-  --color-accent-text: #ffffff;
-
-  /* === Status Colors === */
-  --color-success: #16a34a;
-  --color-success-muted: #dcfce7;
-  --color-success-text: #ffffff;
-
-  --color-warning: #ca8a04;
-  --color-warning-muted: #fef9c3;
-  --color-warning-text: #000000;
-
-  --color-error: #dc2626;
-  --color-error-muted: #fee2e2;
-  --color-error-text: #ffffff;
-
-  --color-info: #0891b2;
-  --color-info-muted: #cffafe;
-  --color-info-text: #ffffff;
-
-  /* === Borders === */
-  --color-border: #e5e7eb;
-  --color-border-hover: #d1d5db;
-  --color-border-focus: #2563eb;
-
-  /* === Shadows === */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-}
-
-/* ============================================
-   System Preference Detection
-   ============================================ */
-@media (prefers-color-scheme: light) {
-  :root:not([data-theme]) {
-    /* === Backgrounds === */
-    --color-bg-primary: #ffffff;
-    --color-bg-secondary: #f9fafb;
-    --color-bg-tertiary: #f3f4f6;
-    --color-bg-surface: #ffffff;
-    --color-bg-elevated: #ffffff;
-    --color-bg-hover: #f3f4f6;
-    --color-bg-active: #e5e7eb;
-
-    /* === Text === */
-    --color-text-primary: #111827;
-    --color-text-secondary: #4b5563;
-    --color-text-tertiary: #6b7280;
-    --color-text-muted: #9ca3af;
-    --color-text-inverse: #fafafa;
-
-    /* === Accent === */
-    --color-accent: #2563eb;
-    --color-accent-hover: #1d4ed8;
-    --color-accent-active: #1e40af;
-    --color-accent-muted: #dbeafe;
-    --color-accent-text: #ffffff;
-
-    /* === Status === */
-    --color-success: #16a34a;
-    --color-success-muted: #dcfce7;
-    --color-warning: #ca8a04;
-    --color-warning-muted: #fef9c3;
-    --color-error: #dc2626;
-    --color-error-muted: #fee2e2;
-    --color-info: #0891b2;
-    --color-info-muted: #cffafe;
-
-    /* === Borders === */
-    --color-border: #e5e7eb;
-    --color-border-hover: #d1d5db;
-    --color-border-focus: #2563eb;
-
-    /* === Shadows === */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-    --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-    --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-  }
-}
-
-/* ============================================
    Reduced Motion
    ============================================ */
 @media (prefers-reduced-motion: reduce) {
@@ -254,7 +93,7 @@
    Focus Visible Styles
    ============================================ */
 :focus-visible {
-  outline: 2px solid var(--color-border-focus);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
 }
 
@@ -267,7 +106,7 @@
    ============================================ */
 ::selection {
   background-color: var(--color-accent);
-  color: var(--color-accent-text);
+  color: white;
 }
 
 /* ============================================
@@ -283,7 +122,7 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: var(--color-bg-active);
+  background: var(--color-border);
   border-radius: var(--radius-full);
 }
 
@@ -294,5 +133,5 @@
 /* Firefox scrollbar */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-bg-active) transparent;
+  scrollbar-color: var(--color-border) transparent;
 }
