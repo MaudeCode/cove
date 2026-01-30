@@ -1,6 +1,53 @@
 @import "tailwindcss";
+@import "./themes.css";
+@import "./fonts.css";
+@import "./animations.css";
 
-/* CSS variable theming layer - will be expanded in Phase 0.2 */
-@theme {
-  /* Colors will be defined here */
+/* ============================================
+   Base Styles
+   ============================================ */
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: var(--leading-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    background-color: var(--color-bg-primary);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+  }
+
+  /* Monospace text */
+  code,
+  kbd,
+  pre,
+  samp {
+    font-family: var(--font-mono);
+  }
+
+  /* Placeholder text */
+  ::placeholder {
+    color: var(--color-text-muted);
+  }
+
+  /* Disabled elements */
+  :disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  /* Links */
+  a {
+    color: var(--color-accent);
+    text-decoration: none;
+  }
+
+  a:hover {
+    text-decoration: underline;
+  }
 }
