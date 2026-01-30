@@ -100,9 +100,9 @@ export function ChatInput({
   const canSend = value.value.trim().length > 0 && !disabled && !isStreaming;
 
   return (
-    <div class="border-t border-[var(--color-border)] bg-[var(--color-bg-surface)] p-4">
+    <div class="px-3 pb-3 pt-2">
       <div class="max-w-4xl mx-auto">
-        <div class="flex gap-3 items-end">
+        <div class="flex gap-2 items-end">
           {/* Textarea */}
           <div class="flex-1 relative">
             <textarea
@@ -113,14 +113,14 @@ export function ChatInput({
               disabled={disabled}
               placeholder={placeholder || t("chat.placeholder")}
               rows={1}
-              class="w-full px-5 py-3.5 text-sm rounded-2xl resize-none
-                bg-[var(--color-bg-primary)] border border-[var(--color-border)]
+              class="w-full px-4 py-2.5 text-sm rounded-2xl resize-none
+                bg-[var(--color-bg-surface)] border border-[var(--color-border)]
                 shadow-soft-sm focus:shadow-soft
                 focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
                 placeholder:text-[var(--color-text-muted)]
                 disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
                 transition-all duration-200 ease-out"
-              style={{ minHeight: "48px", maxHeight: "200px" }}
+              style={{ minHeight: "42px", maxHeight: "200px" }}
             />
           </div>
 
@@ -132,8 +132,8 @@ export function ChatInput({
                 label={t("actions.stop")}
                 onClick={onAbort}
                 variant="danger"
-                size="lg"
-                class="rounded-2xl shadow-soft-sm"
+                size="md"
+                class="rounded-xl shadow-soft-sm"
               />
             ) : (
               <IconButton
@@ -141,24 +141,24 @@ export function ChatInput({
                 label={t("actions.send")}
                 onClick={handleSend}
                 disabled={!canSend}
-                size="lg"
-                class="rounded-2xl bg-[var(--color-accent)] text-white shadow-soft hover:shadow-soft-lg hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
+                size="md"
+                class="rounded-xl bg-[var(--color-accent)] text-white shadow-soft hover:shadow-soft-lg hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
               />
             )}
           </div>
         </div>
 
-        {/* Keyboard hint */}
-        <div class="mt-2 text-xs text-[var(--color-text-muted)] text-center">
+        {/* Keyboard hint - only on hover/focus */}
+        <div class="mt-1 text-[10px] text-[var(--color-text-muted)] text-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <span class="hidden sm:inline">
-            <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+            <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
               Enter
             </kbd>{" "}
-            to send,{" "}
-            <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+            send ·{" "}
+            <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
               Shift+Enter
             </kbd>{" "}
-            for new line
+            new line
           </span>
         </div>
       </div>
