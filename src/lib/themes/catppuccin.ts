@@ -6,48 +6,48 @@ export const catppuccinMochaTheme: Theme = {
   appearance: "dark",
   builtIn: true,
   colors: {
-    // Backgrounds (Mocha palette)
-    "--color-bg-primary": "#1e1e2e",
-    "--color-bg-secondary": "#181825",
-    "--color-bg-tertiary": "#11111b",
-    "--color-bg-surface": "#313244",
-    "--color-bg-elevated": "#45475a",
+    // Backgrounds - more contrast (Mocha palette)
+    "--color-bg-primary": "#1e1e2e", // Content area (Base)
+    "--color-bg-secondary": "#11111b", // Chrome/shell (Crust - darker)
+    "--color-bg-tertiary": "#181825", // Mantle
+    "--color-bg-surface": "#313244", // Surface0
+    "--color-bg-elevated": "#45475a", // Surface1
     "--color-bg-hover": "#313244",
     "--color-bg-active": "#45475a",
 
     // Text
-    "--color-text-primary": "#cdd6f4",
-    "--color-text-secondary": "#bac2de",
-    "--color-text-tertiary": "#a6adc8",
-    "--color-text-muted": "#6c7086",
+    "--color-text-primary": "#cdd6f4", // Text
+    "--color-text-secondary": "#bac2de", // Subtext1
+    "--color-text-tertiary": "#a6adc8", // Subtext0
+    "--color-text-muted": "#6c7086", // Overlay0
     "--color-text-inverse": "#1e1e2e",
 
-    // Accent (Mauve)
-    "--color-accent": "#cba6f7",
-    "--color-accent-hover": "#b4befe",
-    "--color-accent-active": "#f5c2e7",
-    "--color-accent-muted": "#45475a",
+    // Accent (Pink - more distinctive than mauve)
+    "--color-accent": "#f5c2e7",
+    "--color-accent-hover": "#f5e0dc",
+    "--color-accent-active": "#cba6f7",
+    "--color-accent-muted": "#3d2d40",
     "--color-accent-text": "#1e1e2e",
 
-    // Status
-    "--color-success": "#a6e3a1",
-    "--color-success-muted": "#2d4a35",
-    "--color-warning": "#f9e2af",
-    "--color-warning-muted": "#4a4a2d",
-    "--color-error": "#f38ba8",
-    "--color-error-muted": "#4a2d3a",
-    "--color-info": "#89dceb",
-    "--color-info-muted": "#2d4a4a",
+    // Status (Catppuccin colors)
+    "--color-success": "#a6e3a1", // Green
+    "--color-success-muted": "#243028",
+    "--color-warning": "#f9e2af", // Yellow
+    "--color-warning-muted": "#382f20",
+    "--color-error": "#f38ba8", // Red
+    "--color-error-muted": "#3d2430",
+    "--color-info": "#89dceb", // Sky
+    "--color-info-muted": "#203035",
 
     // Borders
     "--color-border": "#45475a",
-    "--color-border-hover": "#6c7086",
-    "--color-border-focus": "#cba6f7",
+    "--color-border-hover": "#585b70",
+    "--color-border-focus": "#f5c2e7",
 
     // Shadows
-    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.3)",
-    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4)",
-    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5)",
+    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.35)",
+    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45)",
+    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55)",
   },
 };
 
@@ -57,47 +57,47 @@ export const catppuccinLatteTheme: Theme = {
   appearance: "light",
   builtIn: true,
   colors: {
-    // Backgrounds (Latte palette)
-    "--color-bg-primary": "#eff1f5",
-    "--color-bg-secondary": "#e6e9ef",
-    "--color-bg-tertiary": "#dce0e8",
-    "--color-bg-surface": "#ccd0da",
-    "--color-bg-elevated": "#bcc0cc",
-    "--color-bg-hover": "#ccd0da",
-    "--color-bg-active": "#bcc0cc",
+    // Backgrounds - more contrast (Latte palette)
+    "--color-bg-primary": "#eff1f5", // Content area (Base)
+    "--color-bg-secondary": "#dce0e8", // Chrome/shell (Crust - darker for contrast)
+    "--color-bg-tertiary": "#e6e9ef", // Mantle
+    "--color-bg-surface": "#ffffff", // White for cards/inputs (more contrast)
+    "--color-bg-elevated": "#ffffff",
+    "--color-bg-hover": "#e6e9ef",
+    "--color-bg-active": "#ccd0da",
 
     // Text
-    "--color-text-primary": "#4c4f69",
-    "--color-text-secondary": "#5c5f77",
-    "--color-text-tertiary": "#6c6f85",
-    "--color-text-muted": "#8c8fa1",
+    "--color-text-primary": "#4c4f69", // Text
+    "--color-text-secondary": "#5c5f77", // Subtext1
+    "--color-text-tertiary": "#6c6f85", // Subtext0
+    "--color-text-muted": "#9ca0b0", // Overlay0
     "--color-text-inverse": "#eff1f5",
 
-    // Accent (Mauve)
-    "--color-accent": "#8839ef",
-    "--color-accent-hover": "#7287fd",
-    "--color-accent-active": "#ea76cb",
-    "--color-accent-muted": "#ccd0da",
-    "--color-accent-text": "#eff1f5",
+    // Accent (Pink - vibrant)
+    "--color-accent": "#ea76cb",
+    "--color-accent-hover": "#d65db1",
+    "--color-accent-active": "#8839ef",
+    "--color-accent-muted": "#f5e0f0",
+    "--color-accent-text": "#ffffff",
 
     // Status
-    "--color-success": "#40a02b",
-    "--color-success-muted": "#d5f0d0",
-    "--color-warning": "#df8e1d",
-    "--color-warning-muted": "#f9e8cc",
-    "--color-error": "#d20f39",
-    "--color-error-muted": "#f9d0d8",
-    "--color-info": "#04a5e5",
-    "--color-info-muted": "#cceef9",
+    "--color-success": "#40a02b", // Green
+    "--color-success-muted": "#d8f0d0",
+    "--color-warning": "#df8e1d", // Yellow
+    "--color-warning-muted": "#f9ecd0",
+    "--color-error": "#d20f39", // Red
+    "--color-error-muted": "#f9d5dd",
+    "--color-info": "#04a5e5", // Sky
+    "--color-info-muted": "#d0f0f9",
 
     // Borders
-    "--color-border": "#ccd0da",
-    "--color-border-hover": "#bcc0cc",
-    "--color-border-focus": "#8839ef",
+    "--color-border": "#ccd0da", // Surface0
+    "--color-border-hover": "#bcc0cc", // Surface1
+    "--color-border-focus": "#ea76cb",
 
     // Shadows
-    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+    "--shadow-sm": "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)",
+    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08)",
+    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.08)",
   },
 };

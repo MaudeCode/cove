@@ -6,47 +6,47 @@ export const lightTheme: Theme = {
   appearance: "light",
   builtIn: true,
   colors: {
-    // Backgrounds
-    "--color-bg-primary": "#ffffff",
-    "--color-bg-secondary": "#f9fafb",
-    "--color-bg-tertiary": "#f3f4f6",
-    "--color-bg-surface": "#ffffff",
+    // Backgrounds - more contrast between chrome and content
+    "--color-bg-primary": "#ffffff", // Content area (white)
+    "--color-bg-secondary": "#f1f5f9", // Chrome/shell (cool gray)
+    "--color-bg-tertiary": "#e2e8f0",
+    "--color-bg-surface": "#f8fafc", // Cards, inputs (off-white)
     "--color-bg-elevated": "#ffffff",
-    "--color-bg-hover": "#f3f4f6",
-    "--color-bg-active": "#e5e7eb",
+    "--color-bg-hover": "#f1f5f9",
+    "--color-bg-active": "#e2e8f0",
 
-    // Text
-    "--color-text-primary": "#111827",
-    "--color-text-secondary": "#4b5563",
-    "--color-text-tertiary": "#6b7280",
-    "--color-text-muted": "#9ca3af",
-    "--color-text-inverse": "#fafafa",
+    // Text - slightly warmer
+    "--color-text-primary": "#0f172a",
+    "--color-text-secondary": "#475569",
+    "--color-text-tertiary": "#64748b",
+    "--color-text-muted": "#94a3b8",
+    "--color-text-inverse": "#f8fafc",
 
-    // Accent
-    "--color-accent": "#2563eb",
-    "--color-accent-hover": "#1d4ed8",
-    "--color-accent-active": "#1e40af",
-    "--color-accent-muted": "#dbeafe",
+    // Accent - warm coral to match dark theme
+    "--color-accent": "#e11d48",
+    "--color-accent-hover": "#be123c",
+    "--color-accent-active": "#9f1239",
+    "--color-accent-muted": "#ffe4e6",
     "--color-accent-text": "#ffffff",
 
-    // Status
+    // Status - vibrant
     "--color-success": "#16a34a",
     "--color-success-muted": "#dcfce7",
-    "--color-warning": "#ca8a04",
-    "--color-warning-muted": "#fef9c3",
+    "--color-warning": "#d97706",
+    "--color-warning-muted": "#fef3c7",
     "--color-error": "#dc2626",
     "--color-error-muted": "#fee2e2",
-    "--color-info": "#0891b2",
-    "--color-info-muted": "#cffafe",
+    "--color-info": "#0284c7",
+    "--color-info-muted": "#e0f2fe",
 
     // Borders
-    "--color-border": "#e5e7eb",
-    "--color-border-hover": "#d1d5db",
-    "--color-border-focus": "#2563eb",
+    "--color-border": "#e2e8f0",
+    "--color-border-hover": "#cbd5e1",
+    "--color-border-focus": "#e11d48",
 
-    // Shadows
-    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+    // Shadows - slightly more visible
+    "--shadow-sm": "0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08)",
     "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.12), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
   },
 };
