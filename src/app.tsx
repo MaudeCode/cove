@@ -1,15 +1,12 @@
 /**
  * Main App Component
  *
- * This will be expanded in Phase 1.1 to include:
- * - Layout shell (TopBar, Sidebar, MainContent)
- * - Routing
- * - Auth state management
+ * Phase 0.5 - Session & Message Signals demo
  */
 
 import { useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-import { initTheme, themePreference, activeTheme, setTheme, getAllThemes } from "@/lib/theme";
+import { initTheme, themePreference, setTheme, getAllThemes } from "@/lib/theme";
 import { initI18n, t } from "@/lib/i18n";
 import {
   connect,
@@ -18,8 +15,16 @@ import {
   isConnected,
   lastError,
   gatewayVersion,
-  send,
 } from "@/lib/gateway";
+import { initChat, cleanupChat, sendMessage, abortChat } from "@/lib/chat";
+import {
+  messages,
+  isLoadingHistory,
+  historyError,
+  isStreaming,
+  streamingContent,
+} from "@/signals/chat";
+import { activeSessionKey, setActiveSession } from "@/signals/sessions";
 
 export function App() {
   // Initialize systems on mount
@@ -29,7 +34,6 @@ export function App() {
   }, []);
 
   const themes = getAllThemes();
-  const current = activeTheme.value;
   const pref = themePreference.value;
 
   // Gateway connection form state
@@ -37,189 +41,262 @@ export function App() {
   const token = useSignal("");
   const authMode = useSignal<"token" | "password">("token");
   const connecting = useSignal(false);
-  const testResult = useSignal<string | null>(null);
+
+  // Chat input state
+  const chatInput = useSignal("");
+  const sending = useSignal(false);
 
   const handleConnect = async () => {
     connecting.value = true;
-    testResult.value = null;
     try {
-      const hello = await connect({
+      await connect({
         url: url.value,
         token: authMode.value === "token" ? token.value : undefined,
         password: authMode.value === "password" ? token.value : undefined,
-        autoReconnect: false,
+        autoReconnect: true,
       });
-      testResult.value = `Connected! Version: ${hello.server?.version ?? "unknown"}`;
+
+      // Initialize chat with main session
+      setActiveSession("main");
+      await initChat("main");
     } catch (err) {
-      testResult.value = `Failed: ${err instanceof Error ? err.message : String(err)}`;
+      console.error("Connect failed:", err);
     } finally {
       connecting.value = false;
     }
   };
 
   const handleDisconnect = () => {
+    cleanupChat();
     disconnect();
-    testResult.value = null;
   };
 
-  const handleTestRequest = async () => {
+  const handleSend = async () => {
+    if (!chatInput.value.trim() || !activeSessionKey.value) return;
+
+    sending.value = true;
+    const message = chatInput.value;
+    chatInput.value = "";
+
     try {
-      const result = await send("status");
-      testResult.value = `Status: ${JSON.stringify(result, null, 2)}`;
+      await sendMessage(activeSessionKey.value, message);
     } catch (err) {
-      testResult.value = `Request failed: ${err instanceof Error ? err.message : String(err)}`;
+      console.error("Send failed:", err);
+    } finally {
+      sending.value = false;
+    }
+  };
+
+  const handleAbort = () => {
+    if (activeSessionKey.value) {
+      abortChat(activeSessionKey.value);
+    }
+  };
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
     }
   };
 
   return (
-    <div class="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] flex items-center justify-center transition-colors p-4">
-      <div class="text-center max-w-lg w-full">
-        <h1 class="text-4xl font-bold mb-2">🏖️ {t("app.name")}</h1>
-        <p class="text-[var(--color-text-secondary)]">{t("app.description")}</p>
-
-        {/* Phase indicator */}
-        <div class="mt-4 p-2 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
-          <p class="text-xs text-[var(--color-text-muted)]">Phase 0.4 — Gateway WebSocket Client</p>
-        </div>
-
-        {/* Gateway Connection Test */}
-        <div class="mt-6 p-4 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-left">
-          <h3 class="text-sm font-semibold mb-3">Gateway Connection Test</h3>
-
-          {/* Connection State */}
-          <div class="flex items-center gap-2 mb-4">
-            <div
-              class={`w-3 h-3 rounded-full ${
-                isConnected.value
-                  ? "bg-[var(--color-success)]"
-                  : connectionState.value === "connecting" ||
-                      connectionState.value === "authenticating"
-                    ? "bg-[var(--color-warning)] animate-pulse"
-                    : "bg-[var(--color-error)]"
-              }`}
-            />
-            <span class="text-sm text-[var(--color-text-secondary)]">
-              {connectionState.value}
-              {gatewayVersion.value && ` (v${gatewayVersion.value})`}
-            </span>
-          </div>
-
-          {!isConnected.value ? (
-            <div class="space-y-3">
-              <div>
-                <label
-                  htmlFor="gateway-url"
-                  class="block text-xs text-[var(--color-text-muted)] mb-1"
-                >
-                  Gateway URL
-                </label>
-                <input
-                  id="gateway-url"
-                  type="text"
-                  value={url.value}
-                  onInput={(e) => (url.value = (e.target as HTMLInputElement).value)}
-                  class="w-full px-3 py-2 text-sm rounded-md bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                  placeholder="wss://..."
-                />
-              </div>
-              <div>
-                <label
-                  htmlFor="gateway-auth-mode"
-                  class="block text-xs text-[var(--color-text-muted)] mb-1"
-                >
-                  Auth Mode
-                </label>
-                <select
-                  id="gateway-auth-mode"
-                  value={authMode.value}
-                  onChange={(e) =>
-                    (authMode.value = (e.target as HTMLSelectElement).value as "token" | "password")
-                  }
-                  class="w-full px-3 py-2 text-sm rounded-md bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                >
-                  <option value="token">Token</option>
-                  <option value="password">Password</option>
-                </select>
-              </div>
-              <div>
-                <label
-                  htmlFor="gateway-token"
-                  class="block text-xs text-[var(--color-text-muted)] mb-1"
-                >
-                  {authMode.value === "token" ? "Token" : "Password"}
-                </label>
-                <input
-                  id="gateway-token"
-                  type="password"
-                  value={token.value}
-                  onInput={(e) => (token.value = (e.target as HTMLInputElement).value)}
-                  class="w-full px-3 py-2 text-sm rounded-md bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-                  placeholder={authMode.value === "token" ? "Enter token" : "Enter password"}
-                />
-              </div>
-              <button
-                onClick={handleConnect}
-                disabled={connecting.value}
-                class="w-full px-4 py-2 text-sm font-medium rounded-md bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-50 transition-opacity"
-              >
-                {connecting.value ? "Connecting..." : "Connect"}
-              </button>
+    <div class="min-h-screen bg-[var(--color-bg-primary)] text-[var(--color-text-primary)] flex flex-col transition-colors">
+      {/* Header */}
+      <header class="border-b border-[var(--color-border)] p-4">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+          <h1 class="text-xl font-bold">🏖️ {t("app.name")}</h1>
+          <div class="flex items-center gap-4">
+            {/* Connection indicator */}
+            <div class="flex items-center gap-2">
+              <div
+                class={`w-2 h-2 rounded-full ${
+                  isConnected.value
+                    ? "bg-[var(--color-success)]"
+                    : connectionState.value === "connecting" ||
+                        connectionState.value === "authenticating"
+                      ? "bg-[var(--color-warning)] animate-pulse"
+                      : "bg-[var(--color-error)]"
+                }`}
+              />
+              <span class="text-sm text-[var(--color-text-secondary)]">
+                {connectionState.value}
+                {gatewayVersion.value && ` v${gatewayVersion.value}`}
+              </span>
             </div>
-          ) : (
-            <div class="space-y-3">
-              <div class="flex gap-2">
+            {/* Theme selector */}
+            <select
+              value={pref.selected}
+              onChange={(e) => setTheme((e.target as HTMLSelectElement).value)}
+              class="text-sm px-2 py-1 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]"
+            >
+              <option value="system">System</option>
+              {themes.map((theme) => (
+                <option key={theme.id} value={theme.id}>
+                  {theme.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </header>
+
+      {/* Main content */}
+      <main class="flex-1 max-w-4xl w-full mx-auto p-4 flex flex-col">
+        {!isConnected.value ? (
+          /* Connection form */
+          <div class="flex-1 flex items-center justify-center">
+            <div class="w-full max-w-sm p-6 rounded-lg bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
+              <h2 class="text-lg font-semibold mb-4">Connect to Gateway</h2>
+              <div class="space-y-4">
+                <div>
+                  <label htmlFor="url" class="block text-sm text-[var(--color-text-muted)] mb-1">
+                    Gateway URL
+                  </label>
+                  <input
+                    id="url"
+                    type="text"
+                    value={url.value}
+                    onInput={(e) => (url.value = (e.target as HTMLInputElement).value)}
+                    placeholder="wss://..."
+                    class="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="auth" class="block text-sm text-[var(--color-text-muted)] mb-1">
+                    Auth Mode
+                  </label>
+                  <select
+                    id="auth"
+                    value={authMode.value}
+                    onChange={(e) =>
+                      (authMode.value = (e.target as HTMLSelectElement).value as
+                        | "token"
+                        | "password")
+                    }
+                    class="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] border border-[var(--color-border)]"
+                  >
+                    <option value="token">Token</option>
+                    <option value="password">Password</option>
+                  </select>
+                </div>
+                <div>
+                  <label htmlFor="token" class="block text-sm text-[var(--color-text-muted)] mb-1">
+                    {authMode.value === "token" ? "Token" : "Password"}
+                  </label>
+                  <input
+                    id="token"
+                    type="password"
+                    value={token.value}
+                    onInput={(e) => (token.value = (e.target as HTMLInputElement).value)}
+                    placeholder={authMode.value === "token" ? "Enter token" : "Enter password"}
+                    class="w-full px-3 py-2 text-sm rounded bg-[var(--color-bg-primary)] border border-[var(--color-border)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                  />
+                </div>
                 <button
-                  onClick={handleTestRequest}
-                  class="flex-1 px-4 py-2 text-sm font-medium rounded-md bg-[var(--color-bg-primary)] border border-[var(--color-border)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+                  onClick={handleConnect}
+                  disabled={connecting.value}
+                  class="w-full px-4 py-2 text-sm font-medium rounded bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-50"
                 >
-                  Test Request
+                  {connecting.value ? "Connecting..." : "Connect"}
                 </button>
+                {lastError.value && (
+                  <p class="text-sm text-[var(--color-error)]">{lastError.value}</p>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* Chat interface */
+          <>
+            {/* Messages area */}
+            <div class="flex-1 overflow-y-auto space-y-4 mb-4">
+              {isLoadingHistory.value && (
+                <div class="text-center text-[var(--color-text-muted)] py-8">
+                  Loading history...
+                </div>
+              )}
+              {historyError.value && (
+                <div class="text-center text-[var(--color-error)] py-8">{historyError.value}</div>
+              )}
+              {messages.value.map((msg) => (
+                <div
+                  key={msg.id}
+                  class={`p-3 rounded-lg ${
+                    msg.role === "user"
+                      ? "bg-[var(--color-accent)]/10 ml-12"
+                      : msg.role === "assistant"
+                        ? "bg-[var(--color-bg-surface)] mr-12"
+                        : "bg-[var(--color-bg-secondary)] text-sm italic"
+                  }`}
+                >
+                  <div class="text-xs text-[var(--color-text-muted)] mb-1">
+                    {msg.role === "user"
+                      ? "You"
+                      : msg.role === "assistant"
+                        ? "Assistant"
+                        : "System"}
+                  </div>
+                  <div class="whitespace-pre-wrap">{msg.content}</div>
+                </div>
+              ))}
+              {/* Streaming indicator */}
+              {isStreaming.value && (
+                <div class="p-3 rounded-lg bg-[var(--color-bg-surface)] mr-12">
+                  <div class="text-xs text-[var(--color-text-muted)] mb-1">Assistant</div>
+                  <div class="whitespace-pre-wrap">
+                    {streamingContent.value || (
+                      <span class="text-[var(--color-text-muted)] animate-pulse">Thinking...</span>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Input area */}
+            <div class="border-t border-[var(--color-border)] pt-4">
+              <div class="flex gap-2">
+                <textarea
+                  value={chatInput.value}
+                  onInput={(e) => (chatInput.value = (e.target as HTMLTextAreaElement).value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type a message... (Enter to send, Shift+Enter for new line)"
+                  rows={2}
+                  class="flex-1 px-3 py-2 text-sm rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)] resize-none focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
+                />
+                <div class="flex flex-col gap-2">
+                  <button
+                    onClick={handleSend}
+                    disabled={sending.value || isStreaming.value || !chatInput.value.trim()}
+                    class="px-4 py-2 text-sm font-medium rounded bg-[var(--color-accent)] text-white hover:opacity-90 disabled:opacity-50"
+                  >
+                    Send
+                  </button>
+                  {isStreaming.value && (
+                    <button
+                      onClick={handleAbort}
+                      class="px-4 py-2 text-sm font-medium rounded bg-[var(--color-error)] text-white hover:opacity-90"
+                    >
+                      Stop
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div class="flex justify-between items-center mt-2">
+                <span class="text-xs text-[var(--color-text-muted)]">
+                  Session: {activeSessionKey.value ?? "none"}
+                </span>
                 <button
                   onClick={handleDisconnect}
-                  class="flex-1 px-4 py-2 text-sm font-medium rounded-md bg-[var(--color-error)] text-white hover:opacity-90 transition-opacity"
+                  class="text-xs text-[var(--color-text-muted)] hover:text-[var(--color-error)]"
                 >
                   Disconnect
                 </button>
               </div>
             </div>
-          )}
-
-          {/* Error display */}
-          {lastError.value && (
-            <div class="mt-3 p-2 rounded bg-[var(--color-error)]/10 border border-[var(--color-error)]/30">
-              <p class="text-xs text-[var(--color-error)]">{lastError.value}</p>
-            </div>
-          )}
-
-          {/* Test result */}
-          {testResult.value && (
-            <div class="mt-3 p-2 rounded bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-              <pre class="text-xs text-[var(--color-text-secondary)] whitespace-pre-wrap overflow-auto max-h-32">
-                {testResult.value}
-              </pre>
-            </div>
-          )}
-        </div>
-
-        {/* Theme selector */}
-        <div class="mt-6">
-          <select
-            id="theme-select"
-            value={pref.selected}
-            onChange={(e) => setTheme((e.target as HTMLSelectElement).value)}
-            class="w-full px-3 py-2 text-sm rounded-md bg-[var(--color-bg-surface)] border border-[var(--color-border)] text-[var(--color-text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)]"
-          >
-            <option value="system">Theme: System</option>
-            {themes.map((theme) => (
-              <option key={theme.id} value={theme.id}>
-                Theme: {theme.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <p class="mt-4 text-xs text-[var(--color-text-muted)]">Current: {current.name}</p>
-      </div>
+          </>
+        )}
+      </main>
     </div>
   );
 }
