@@ -1,8 +1,10 @@
 {
   "app": {
     "name": "Cove",
-    "description": "OpenClaw WebUI"
+    "description": "OpenClaw WebUI",
+    "tagline": "A cozy home for your AI assistant"
   },
+
   "actions": {
     "send": "Send",
     "cancel": "Cancel",
@@ -11,16 +13,41 @@
     "delete": "Delete",
     "edit": "Edit",
     "copy": "Copy",
+    "copied": "Copied!",
     "retry": "Retry",
+    "refresh": "Refresh",
+    "expand": "Expand",
+    "collapse": "Collapse",
     "newChat": "New Chat",
     "connect": "Connect",
     "disconnect": "Disconnect",
-    "logout": "Logout"
+    "logout": "Logout",
+    "login": "Login",
+    "submit": "Submit",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "done": "Done",
+    "search": "Search",
+    "filter": "Filter",
+    "clear": "Clear",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "more": "More",
+    "less": "Less",
+    "viewAll": "View All",
+    "showMore": "Show More",
+    "showLess": "Show Less"
   },
+
   "auth": {
+    "title": "Connect to Gateway",
     "gatewayUrl": "Gateway URL",
+    "gatewayUrlPlaceholder": "ws://localhost:8080",
     "password": "Password",
+    "passwordPlaceholder": "Enter password",
     "token": "Token",
+    "tokenPlaceholder": "Enter token",
     "rememberMe": "Remember me",
     "connecting": "Connecting...",
     "authMode": {
@@ -28,49 +55,174 @@
       "token": "Token"
     }
   },
+
   "errors": {
-    "connectionFailed": "Connection failed",
+    "generic": "Something went wrong",
+    "connectionFailed": "Failed to connect to gateway",
+    "connectionLost": "Connection lost",
     "unauthorized": "Invalid credentials",
     "timeout": "Request timed out",
-    "unknown": "An unknown error occurred"
+    "notFound": "Not found",
+    "serverError": "Server error",
+    "networkError": "Network error",
+    "unknown": "An unknown error occurred",
+    "retry": "Please try again",
+    "required": "This field is required",
+    "invalid": "Invalid value"
   },
+
   "status": {
     "connected": "Connected",
     "disconnected": "Disconnected",
     "connecting": "Connecting",
-    "error": "Error"
+    "reconnecting": "Reconnecting",
+    "error": "Error",
+    "online": "Online",
+    "offline": "Offline",
+    "loading": "Loading...",
+    "saving": "Saving...",
+    "processing": "Processing..."
   },
+
   "nav": {
     "chat": "Chat",
     "sessions": "Sessions",
     "cron": "Cron Jobs",
     "config": "Config",
     "status": "Status",
-    "settings": "Settings"
+    "settings": "Settings",
+    "memory": "Memory",
+    "skills": "Skills",
+    "nodes": "Nodes"
   },
+
   "chat": {
     "placeholder": "Message (Enter to send, Shift+Enter for new line)",
+    "placeholderDisabled": "Connect to gateway to start chatting",
     "sending": "Sending...",
     "thinking": "Thinking...",
-    "copied": "Copied!",
+    "streaming": "Generating response...",
     "copyCode": "Copy code",
     "viewRaw": "View raw",
-    "viewRendered": "View rendered"
+    "viewRendered": "View rendered",
+    "scrollToBottom": "Scroll to bottom",
+    "newMessages": "{count} new message",
+    "newMessages_plural": "{count} new messages",
+    "emptyState": {
+      "title": "Start a conversation",
+      "description": "Send a message to begin chatting with your assistant"
+    },
+    "toolCall": {
+      "running": "Running...",
+      "completed": "Completed",
+      "failed": "Failed",
+      "duration": "{duration}"
+    }
   },
+
   "sessions": {
+    "title": "Sessions",
     "main": "Main",
+    "current": "Current",
     "today": "Today",
     "yesterday": "Yesterday",
+    "thisWeek": "This Week",
     "older": "Older",
-    "noSessions": "No sessions yet"
+    "noSessions": "No sessions yet",
+    "newSession": "New Session",
+    "deleteSession": "Delete Session",
+    "deleteConfirm": "Are you sure you want to delete this session?",
+    "switchTo": "Switch to {name}",
+    "count": "{count} session",
+    "count_plural": "{count} sessions"
   },
+
+  "settings": {
+    "title": "Settings",
+    "appearance": {
+      "title": "Appearance",
+      "theme": "Theme",
+      "themeSystem": "System",
+      "lightTheme": "Light Theme",
+      "darkTheme": "Dark Theme",
+      "fontSize": "Font Size",
+      "fontSizeSm": "Small",
+      "fontSizeMd": "Medium",
+      "fontSizeLg": "Large",
+      "fontFamily": "Font Family"
+    },
+    "language": {
+      "title": "Language & Region",
+      "locale": "Language",
+      "timeFormat": "Time Format",
+      "timeRelative": "Relative (2 hours ago)",
+      "timeAbsolute": "Absolute (3:45 PM)"
+    },
+    "notifications": {
+      "title": "Notifications",
+      "desktop": "Desktop Notifications",
+      "sound": "Sound"
+    }
+  },
+
+  "cron": {
+    "title": "Cron Jobs",
+    "noJobs": "No cron jobs configured",
+    "createJob": "Create Job",
+    "editJob": "Edit Job",
+    "deleteJob": "Delete Job",
+    "runNow": "Run Now",
+    "enable": "Enable",
+    "disable": "Disable",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "schedule": "Schedule",
+    "nextRun": "Next Run",
+    "lastRun": "Last Run"
+  },
+
+  "config": {
+    "title": "Configuration",
+    "editor": "Config Editor",
+    "apply": "Apply Changes",
+    "applyConfirm": "Apply configuration changes? This will restart the gateway.",
+    "reset": "Reset",
+    "resetConfirm": "Reset to default configuration?",
+    "backup": "Backup",
+    "restore": "Restore",
+    "validation": {
+      "valid": "Configuration is valid",
+      "invalid": "Configuration has errors"
+    }
+  },
+
   "time": {
-    "justNow": "Just now",
+    "justNow": "just now",
+    "secondsAgo": "{count} second ago",
+    "secondsAgo_plural": "{count} seconds ago",
     "minutesAgo": "{count} minute ago",
     "minutesAgo_plural": "{count} minutes ago",
     "hoursAgo": "{count} hour ago",
     "hoursAgo_plural": "{count} hours ago",
     "daysAgo": "{count} day ago",
-    "daysAgo_plural": "{count} days ago"
+    "daysAgo_plural": "{count} days ago",
+    "weeksAgo": "{count} week ago",
+    "weeksAgo_plural": "{count} weeks ago",
+    "monthsAgo": "{count} month ago",
+    "monthsAgo_plural": "{count} months ago",
+    "yearsAgo": "{count} year ago",
+    "yearsAgo_plural": "{count} years ago"
+  },
+
+  "accessibility": {
+    "skipToContent": "Skip to content",
+    "menuOpen": "Open menu",
+    "menuClose": "Close menu",
+    "sidebarToggle": "Toggle sidebar",
+    "themeToggle": "Toggle theme",
+    "loading": "Loading",
+    "closeDialog": "Close dialog",
+    "expandSection": "Expand section",
+    "collapseSection": "Collapse section"
   }
 }
