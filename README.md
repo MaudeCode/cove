@@ -1,8 +1,8 @@
-# 🦞 Cove
+# 🏖️ Cove
 
 A cozy WebUI for [OpenClaw](https://github.com/openclaw/openclaw) chat.
 
-Built with [Preact](https://preactjs.com/) + [Vite](https://vitejs.dev/).
+Built with [Preact](https://preactjs.com/) + [Vite](https://vitejs.dev/) + [Tailwind CSS](https://tailwindcss.com/).
 
 ## Philosophy
 
@@ -10,34 +10,45 @@ Built with [Preact](https://preactjs.com/) + [Vite](https://vitejs.dev/).
 
 ## Features
 
-- 💬 Clean chat interface
-- 🌙 Light/dark mode (follows system preference)
+- 🔌 Full OpenClaw gateway WebSocket protocol support
+- 🎨 6 built-in themes (light, dark, nord, dracula, solarized variants)
+- 🌙 System preference auto-switching
+- 🌍 i18n ready with formatting utilities
+- ⚡ Zero FOUC (Flash of Unstyled Content)
 - 📱 Responsive design
 
 ## Development
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Start dev server
-npm run dev
+bun run dev
+
+# Type check
+bun run typecheck
+
+# Lint + format
+bun run lint
+bun run format
 
 # Build for production
-npm run build
-
-# Preview production build
-npm run preview
+bun run build
 ```
 
-## TODO
+## Architecture
 
-- [ ] Connect to OpenClaw gateway WebSocket
-- [ ] Message streaming
-- [ ] Markdown rendering
-- [ ] Code syntax highlighting
-- [ ] Session management
-- [ ] Settings panel
+See [AGENTS.md](./AGENTS.md) for detailed documentation on how the codebase works.
+
+## Progress
+
+- [x] Phase 0.1 - Project scaffold
+- [x] Phase 0.2 - Theme system (6 themes, FOUC-free)
+- [x] Phase 0.3 - i18n infrastructure
+- [x] Phase 0.4 - Gateway WebSocket client
+- [ ] Phase 0.5 - Session & message signals
+- [ ] Phase 1.x - Chat UI, message rendering, streaming
 
 ## License
 
