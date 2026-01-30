@@ -13,8 +13,17 @@ Cove is a full-featured WebUI for OpenClaw.
 - [ ] Auto-reconnect on disconnect
 
 ### 1.2 Chat Interface
+
+**Core Principle: Streaming = History**
+> Streaming messages MUST use the same data structure and components as history messages.
+> No visual difference between a just-streamed message and one loaded from history.
+> No refresh required after streaming ends. The message is already in final form.
+
+- [ ] Single `Message` type for both streaming and history
+- [ ] Single `<ChatMessage>` component renders both (only cosmetic difference: typing indicator)
+- [ ] Tool calls rendered identically during stream and in history
 - [ ] Message list with scrolling
-- [ ] Streaming text display (SSE/WebSocket)
+- [ ] Streaming text display (WebSocket)
 - [ ] Tool call visualization (name, params, result, timing)
 - [ ] Markdown rendering (GFM)
 - [ ] Code blocks with syntax highlighting
