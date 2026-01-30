@@ -715,6 +715,33 @@ export const navigation: NavSection[] = [
 - [ ] File/image upload (drag-drop, paste, preview)
 - [ ] Reply/quote support (if channel supports)
 
+### 2.4 Settings View
+- [ ] Appearance settings
+  - [ ] Theme picker (light, dark, system + custom themes)
+  - [ ] Font size (sm, md, lg)
+  - [ ] Font family (Geist, Inter, System, JetBrains Mono, OpenDyslexic)
+- [ ] Time display preference (relative vs absolute)
+- [ ] Notifications
+  - [ ] Enable/disable browser notifications
+  - [ ] Sound toggle
+- [ ] Keyboard shortcuts reference modal
+- [ ] About section (version, gateway info, links)
+
+### 2.5 Onboarding
+- [ ] First-run welcome modal
+- [ ] Connection setup wizard
+  - [ ] Gateway URL input with validation
+  - [ ] Auth method selection (password vs token)
+  - [ ] Test connection before saving
+- [ ] Sample chat to verify connection works
+- [ ] Connection troubleshooting guide (common errors, fixes)
+
+### 2.6 Error Recovery (from 1.3 incomplete)
+- [ ] Failed send → inline error with retry button
+- [ ] Connection lost → banner notification
+- [ ] Message queuing while disconnected
+- [ ] Auto-resend queued messages on reconnect
+
 ---
 
 ## Phase 3: Operations
