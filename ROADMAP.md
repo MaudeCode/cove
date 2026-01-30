@@ -487,16 +487,16 @@ export const activeSession = computed(() =>
 
 **Sidebar behavior:**
 - [x] New Chat button (prominent, top)
-- [x] Sessions section (expandable, scrollable)
+- [x] Sessions section (main scrollable area)
   - [x] Session list with active indicator
   - [ ] Search/filter sessions
   - [ ] Grouped by time (Today, Yesterday, etc.) or flat list
-- [ ] Navigation sections (matching OpenClaw default UI):
-  - [ ] **Chat**: Chat (current)
-  - [ ] **Control**: Overview, Channels, Instances, Sessions, Cron Jobs
-  - [ ] **Agent**: Skills, Nodes
-  - [ ] **Settings**: Config, Debug, Logs
-  - [ ] **Resources**: Docs (external link)
+- [x] Navigation sections (collapsible, pinned to bottom):
+  - [x] **Control**: Overview, Channels, Instances, Sessions, Cron Jobs
+  - [x] **Agent**: Skills, Nodes
+  - [x] **Settings**: Config, Debug, Logs
+  - [x] **Resources**: Docs (external link)
+- [x] Centralized navigation config (`src/lib/navigation.tsx`)
 - [x] Click section → navigates to that view
 
 **TopBar behavior:**
@@ -624,6 +624,70 @@ interface ToolCall {
 - [ ] Failed send: inline error with retry button
 - [ ] Connection lost: show banner, queue messages
 - [ ] On reconnect: resend queued messages
+
+---
+
+### 1.4 Component Library ✅
+
+**UI Primitives (`components/ui/`):**
+
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `Button` | ✅ | Primary, secondary, ghost, danger variants; loading state |
+| `IconButton` | ✅ | Accessible icon-only button with tooltip |
+| `Input` | ✅ | With error state, left/right elements, extends native props |
+| `Select` | ✅ | Options array, placeholder, extends native props |
+| `Toggle` | ✅ | iOS-style switch with label/description |
+| `Checkbox` | ✅ | Traditional checkbox with label |
+| `Card` | ✅ | Surface container with title/subtitle/padding variants |
+| `FormField` | ✅ | Label + input + error wrapper |
+| `Modal` | ✅ | Focus trap, escape to close |
+| `Toast` | ✅ | Success, error, warning, info with auto-dismiss |
+| `ToastContainer` | ✅ | Manages toast stack |
+| `Badge` | ✅ | Status badges with dot indicator |
+| `Spinner` | ✅ | Accessible loading spinner |
+| `Skeleton` | ✅ | Loading placeholder |
+| `ErrorBoundary` | ✅ | Catches render errors with fallback UI |
+
+**Usage:**
+- All views use components from `@/components/ui`
+- No raw HTML form elements in views
+- Consistent styling via CSS variables
+
+---
+
+### 1.5 Navigation System ✅
+
+**Centralized config (`src/lib/navigation.tsx`):**
+```tsx
+export const navigation: NavSection[] = [
+  {
+    titleKey: "nav.sections.control",
+    items: [
+      { id: "overview", labelKey: "nav.overview", icon: OverviewIcon, requiresConnection: true },
+      // ...
+    ],
+  },
+  // ...
+];
+```
+
+**Features:**
+- [x] Single source of truth for all pages
+- [x] Define pages with: id, label (i18n key), icon, section
+- [x] `requiresConnection` flag hides items when disconnected
+- [x] `external` flag for links that open in new tab
+- [x] `ViewId` type derived from config automatically
+- [x] Sidebar renders from config (no manual NavItem entries)
+- [x] Collapsible sections pinned to bottom
+- [x] Sessions list takes main scrollable area
+
+**To add a new page:**
+1. Add icon component to `navigation.tsx`
+2. Add item to appropriate section
+3. Add i18n key to `locales/en.json`
+4. Create view component in `views/`
+5. Add case to router in `app.tsx`
 
 ---
 
