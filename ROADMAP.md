@@ -31,6 +31,8 @@ Cove is a full-featured WebUI for OpenClaw.
   - [ ] File edits: show diff view
   - [ ] Show timing/duration
 - [ ] Markdown rendering (GFM)
+  - [ ] GitHub-style admonitions (NOTE, WARNING, etc.)
+  - [ ] Rendered vs raw source toggle
 - [ ] Code blocks with syntax highlighting
 - [ ] Copy code button
 - [ ] Image/media display
