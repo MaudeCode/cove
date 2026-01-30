@@ -61,13 +61,13 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* Resize handle - only visible on desktop when sidebar is open */}
         {sidebarOpen.value && (
-          <div class="hidden lg:block py-2">
+          <div class="hidden lg:flex items-center py-2">
             <ResizeHandle
               direction="horizontal"
               onResizeStart={() => (sidebarResizing.value = true)}
               onResize={handleResize}
               onResizeEnd={() => (sidebarResizing.value = false)}
-              class="h-full"
+              class="h-[calc(100%-2rem)] rounded-full"
             />
           </div>
         )}
