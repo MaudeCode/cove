@@ -6,6 +6,7 @@
 
 import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
+import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession } from "@/signals/sessions";
@@ -74,7 +75,7 @@ export function LoginView() {
       setActiveSession("main");
       await initChat("main");
     } catch (err) {
-      console.error("Connect failed:", err);
+      log.auth.error("Connect failed:", err);
     } finally {
       connecting.value = false;
     }

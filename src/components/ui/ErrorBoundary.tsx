@@ -7,6 +7,7 @@
 
 import { Component, type ComponentChildren } from "preact";
 import { t } from "@/lib/i18n";
+import { log } from "@/lib/logger";
 import { Button } from "./Button";
 
 export interface ErrorBoundaryProps {
@@ -46,9 +47,9 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
     // Call error handler if provided
     this.props.onError?.(error, errorInfo);
 
-    // Log to console for debugging
-    console.error("[ErrorBoundary] Caught error:", error);
-    console.error("[ErrorBoundary] Component stack:", errorInfo.componentStack);
+    // Log for debugging
+    log.ui.error("ErrorBoundary caught error:", error);
+    log.ui.error("Component stack:", errorInfo.componentStack);
   }
 
   handleRetry = (): void => {
