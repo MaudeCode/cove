@@ -491,10 +491,12 @@ export const activeSession = computed(() =>
   - [x] Session list with active indicator
   - [ ] Search/filter sessions
   - [ ] Grouped by time (Today, Yesterday, etc.) or flat list
-- [x] Bottom sections (pinned, collapsible)
-  - [x] Cron Jobs
-  - [x] Config
-  - [x] Status
+- [ ] Navigation sections (matching OpenClaw default UI):
+  - [ ] **Chat**: Chat (current)
+  - [ ] **Control**: Overview, Channels, Instances, Sessions, Cron Jobs
+  - [ ] **Agent**: Skills, Nodes
+  - [ ] **Settings**: Config, Debug, Logs
+  - [ ] **Resources**: Docs (external link)
 - [x] Click section → navigates to that view
 
 **TopBar behavior:**
@@ -653,17 +655,38 @@ interface ToolCall {
 
 ## Phase 3: Operations
 
-### 3.1 Status Dashboard
-- [ ] Gateway health (uptime, version, pid)
-- [ ] Connected channels with status
-- [ ] Current model info
-- [ ] Active sessions count
-- [ ] Recent activity feed
-- [ ] Node status (if any paired)
-- [ ] Error/warning alerts
-- [ ] Quick actions (restart gateway, etc.)
+### 3.1 Overview Dashboard
+- [ ] Gateway connection panel (URL, token/password, connect/disconnect)
+- [ ] Gateway health (uptime, version, tick interval)
+- [ ] Quick stats (sessions count, cron next run, presence count)
+- [ ] Auth hints for connection failures
+- [ ] Secure context warnings (HTTP vs HTTPS)
 
-### 3.2 Cron Job Management
+### 3.2 Channels View
+- [ ] Grid of channel cards (WhatsApp, Telegram, Discord, Signal, Slack, GoogleChat, iMessage, Nostr)
+- [ ] Per-channel status (connected, error, disabled)
+- [ ] Per-channel config section (expandable)
+- [ ] Channel health summary
+- [ ] Account count per channel
+- [ ] Enable/disable toggles
+- [ ] Channel-specific actions (QR login for WhatsApp, etc.)
+
+### 3.3 Instances View
+- [ ] List connected clients/services (presence beacons)
+- [ ] Instance metadata (mode, roles, scopes, last input)
+- [ ] Refresh button
+- [ ] Presence age display
+
+### 3.4 Sessions View
+- [ ] List all sessions with filters (active minutes, limit)
+- [ ] Session metadata (model, channel, created, last active, tokens)
+- [ ] Patch session (label, thinking level, verbose level, reasoning level)
+- [ ] Delete session
+- [ ] Include/exclude global sessions toggle
+- [ ] Include/exclude unknown sessions toggle
+- [ ] Click to switch active session
+
+### 3.5 Cron Job Management
 - [ ] List all jobs (enabled/disabled)
 - [ ] Job details (schedule, payload, target)
 - [ ] Create new job
@@ -677,13 +700,48 @@ interface ToolCall {
 - [ ] View run history (timestamps, outcomes)
 - [ ] Next run preview
 
-### 3.3 Configuration Editor
+### 3.6 Skills Browser
+- [ ] List bundled, managed, and workspace skills
+- [ ] Search/filter skills
+- [ ] View skill description & location
+- [ ] View SKILL.md contents
+- [ ] Enable/disable toggle per skill
+- [ ] Install from ClawdHub
+
+### 3.7 Nodes Management
+- [ ] List paired nodes (mobile devices)
+- [ ] Node status (online/offline, last seen)
+- [ ] Send notification
+- [ ] Trigger camera snap (front/back/both)
+- [ ] Request location
+- [ ] Screen recording controls
+- [ ] Approve/reject pending pairing requests
+
+### 3.8 Configuration Editor
 - [ ] View current config (formatted JSON)
-- [ ] Edit with syntax highlighting
-- [ ] Schema-aware validation
+- [ ] Schema-aware form UI (like OpenClaw default)
+- [ ] Edit with syntax highlighting (raw mode)
 - [ ] Diff view before applying
 - [ ] Apply config (with restart)
 - [ ] Config backup before changes
+
+### 3.9 Debug View
+- [ ] Raw snapshots display (status, health, heartbeat JSON)
+- [ ] Security audit summary
+- [ ] Manual RPC tester (method + params → result)
+- [ ] Event log viewer (live stream of gateway events)
+
+### 3.10 Logs Viewer
+- [ ] Gateway JSONL log viewer
+- [ ] Level filters (trace, debug, info, warn, error, fatal)
+- [ ] Text search filter
+- [ ] Auto-follow toggle (tail mode)
+- [ ] Export filtered logs
+- [ ] Truncation indicator for large logs
+
+### 3.11 Docs Link
+- [ ] Nav item linking to https://docs.openclaw.ai
+- [ ] Opens in new tab
 
 ---
 
@@ -695,20 +753,6 @@ interface ToolCall {
 - [ ] Edit in-place
 - [ ] Search across memory files
 - [ ] Git history view (if repo)
-
-### 4.2 Skills Browser
-- [ ] List available skills
-- [ ] View skill description & location
-- [ ] View SKILL.md contents
-- [ ] Trigger/invoke skill (?)
-
-### 4.3 Node Management
-- [ ] List paired nodes
-- [ ] Node status (online/offline, last seen)
-- [ ] Send notification
-- [ ] Trigger camera snap
-- [ ] Request location
-- [ ] Screen recording controls
 
 ### 4.4 Real-time Activity Feed
 - [ ] Live stream of gateway events
