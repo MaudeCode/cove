@@ -14,6 +14,7 @@
 
 import { signal, effect, computed } from "@preact/signals";
 import { getLocaleStrings, type LocaleStrings } from "@/locales";
+import { log } from "./logger";
 
 // Storage key
 const STORAGE_KEY = "cove:locale";
@@ -125,7 +126,7 @@ export function t(key: string, params?: Record<string, string | number>): string
 
   // Return key if not found
   if (typeof value !== "string") {
-    console.warn(`[i18n] Missing translation: ${key}`);
+    log.i18n.warn(`Missing translation: ${key}`);
     return key;
   }
 

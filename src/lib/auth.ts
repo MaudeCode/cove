@@ -15,6 +15,7 @@
 
 import { signal, computed } from "@preact/signals";
 import { connect, disconnect, connectionState, isConnected } from "@/lib/gateway";
+import { log } from "./logger";
 
 // ============================================
 // Storage
@@ -70,7 +71,7 @@ function saveCredentials(creds: SavedCredentials): void {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(creds));
     savedCredentials.value = creds;
   } catch {
-    console.warn("[auth] Failed to save credentials");
+    log.auth.warn("Failed to save credentials");
   }
 }
 
@@ -156,7 +157,7 @@ export async function autoConnect(): Promise<boolean> {
     });
     return true;
   } catch (err) {
-    console.warn("[auth] Auto-connect failed:", err);
+    log.auth.warn("Auto-connect failed:", err);
     // Don't clear credentials on auto-connect failure
     // User might just be offline
     return false;

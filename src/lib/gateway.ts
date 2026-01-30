@@ -15,6 +15,7 @@
 
 import { signal, computed } from "@preact/signals";
 import type { GatewayMessage, GatewayResponse, GatewayEvent, HelloPayload } from "@/types/gateway";
+import { log } from "./logger";
 
 // ============================================
 // Configuration
@@ -160,7 +161,7 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
 
           handleMessage(msg);
         } catch (err) {
-          console.error("[gateway] Failed to parse message:", err);
+          log.gateway.error(" Failed to parse message:", err);
         }
       };
 
@@ -308,7 +309,7 @@ function handleMessage(msg: GatewayMessage): void {
       handleEvent(msg as GatewayEvent);
       break;
     default:
-      console.warn("[gateway] Unknown message type:", msg);
+      log.gateway.warn(" Unknown message type:", msg);
   }
 }
 
@@ -318,7 +319,7 @@ function handleMessage(msg: GatewayMessage): void {
 function handleResponse(res: GatewayResponse): void {
   const pending = pendingRequests.get(res.id);
   if (!pending) {
-    console.warn("[gateway] Received response for unknown request:", res.id);
+    log.gateway.warn(" Received response for unknown request:", res.id);
     return;
   }
 
@@ -341,7 +342,7 @@ function handleEvent(event: GatewayEvent): void {
     try {
       handler(event);
     } catch (err) {
-      console.error("[gateway] Event handler error:", err);
+      log.gateway.error(" Event handler error:", err);
     }
   }
 }
@@ -418,7 +419,7 @@ function scheduleReconnect(): void {
     RECONNECT_MAX_MS,
   );
 
-  console.log(
+  log.gateway.info(
     `[gateway] Reconnecting in ${Math.round(delay / 1000)}s (attempt ${reconnectAttempt.value})`,
   );
 

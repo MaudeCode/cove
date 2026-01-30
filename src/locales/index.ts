@@ -11,6 +11,7 @@
  */
 
 import en from "./en.json";
+import { log } from "@/lib/logger";
 
 // Type for locale strings (derived from English as source of truth)
 export type LocaleStrings = typeof en;
@@ -95,7 +96,7 @@ export async function loadLocale(locale: string): Promise<LocaleStrings> {
         return en;
     }
   } catch {
-    console.warn(`[i18n] Failed to load locale: ${locale}, falling back to en`);
+    log.i18n.warn(`Failed to load locale: ${locale}, falling back to en`);
     return en;
   }
 }
