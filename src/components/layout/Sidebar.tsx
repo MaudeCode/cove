@@ -10,7 +10,7 @@ import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { activeView, type View } from "@/signals/ui";
 import { activeSessionKey, setActiveSession, sessionsByRecent } from "@/signals/sessions";
-import { Button } from "@/components/ui";
+import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon } from "@/components/ui";
 import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
 
 export function Sidebar() {
@@ -112,7 +112,7 @@ function CollapsibleNavSection({ section }: CollapsibleNavSectionProps) {
         class="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-[var(--color-text-muted)] uppercase tracking-wider hover:bg-[var(--color-bg-primary)] transition-colors"
       >
         <span>{t(section.titleKey)}</span>
-        <ChevronIcon open={isOpen.value} />
+        <ChevronDownIcon open={isOpen.value} />
       </button>
 
       {/* Collapsible content */}
@@ -150,7 +150,7 @@ function NavItemComponent({ item }: NavItemComponentProps) {
           <Icon />
         </span>
         {t(item.labelKey)}
-        <ExternalLinkIcon />
+        <ExternalLinkIcon class="w-3 h-3 ml-auto text-[var(--color-text-muted)]" />
       </a>
     );
   }
@@ -175,50 +175,5 @@ function NavItemComponent({ item }: NavItemComponentProps) {
       </span>
       {t(item.labelKey)}
     </button>
-  );
-}
-
-// ============================================
-// Icons
-// ============================================
-
-function PlusIcon() {
-  return (
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-    </svg>
-  );
-}
-
-function ChevronIcon({ open }: { open: boolean }) {
-  return (
-    <svg
-      class={`w-4 h-4 transition-transform ${open ? "rotate-180" : ""}`}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-    </svg>
-  );
-}
-
-function ExternalLinkIcon() {
-  return (
-    <svg
-      class="w-3 h-3 ml-auto text-[var(--color-text-muted)]"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-      />
-    </svg>
   );
 }
