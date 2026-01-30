@@ -274,52 +274,50 @@ function clear(): void
 
 ---
 
-### 0.6 Base UI Components
+### 0.6 Base UI Components ✅
 
 > All components must have: ARIA labels, keyboard support, CSS variable theming, i18n strings.
 
 **Primitives (`components/ui/`):**
 
-| Component | Props | Notes |
-|-----------|-------|-------|
-| `Button` | variant, size, disabled, loading, icon | Primary, secondary, ghost, danger variants |
-| `IconButton` | icon, label, size | Accessible icon-only button |
-| `Input` | type, placeholder, error, disabled | Text, password, search |
-| `Textarea` | placeholder, rows, autoResize | Auto-growing textarea |
-| `Select` | options, value, onChange | Accessible select dropdown |
-| `Checkbox` | checked, label, disabled | With visible label |
-| `Toggle` | checked, label, disabled | Switch/toggle component |
-| `Modal` | open, onClose, title | Focus trap, escape to close |
-| `Drawer` | open, onClose, side | Slide-in panel (for mobile sidebar) |
-| `Toast` | message, type, duration | Success, error, warning, info |
-| `ToastContainer` | position | Manages toast stack |
-| `Tooltip` | content, side | Accessible tooltip |
-| `Spinner` | size | Loading spinner |
-| `Skeleton` | width, height | Loading placeholder |
-| `Badge` | variant, label | Status badges |
-| `Avatar` | src, fallback, size | User/assistant avatar |
-| `Divider` | orientation | Horizontal/vertical divider |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `Button` | ✅ | Primary, secondary, ghost, danger variants |
+| `IconButton` | ✅ | Accessible icon-only button |
+| `Input` | ✅ | With error state, left/right elements |
+| `Textarea` | ⏳ | Using ChatInput for now |
+| `Select` | ✅ | Accessible select dropdown |
+| `Checkbox` | ⏳ | Deferred |
+| `Toggle` | ✅ | Switch/toggle with label/description |
+| `Modal` | ✅ | Focus trap, escape to close |
+| `Drawer` | ⏳ | Using Sidebar mobile mode |
+| `Toast` | ✅ | Success, error, warning, info |
+| `ToastContainer` | ✅ | Manages toast stack |
+| `Tooltip` | ⏳ | Deferred |
+| `Spinner` | ✅ | Loading spinner |
+| `Skeleton` | ✅ | Loading placeholder + SkeletonText, SkeletonAvatar |
+| `Badge` | ✅ | Status badges with variants |
+| `Avatar` | ⏳ | Deferred |
+| `Divider` | ⏳ | Using border classes |
 
 **Layout (`components/ui/`):**
 
-| Component | Props | Notes |
-|-----------|-------|-------|
-| `Stack` | direction, gap, align | Flex container |
-| `ScrollArea` | orientation | Custom scrollbar styling |
-| `Collapsible` | open, onToggle, title | Expandable section |
-| `ResizablePanel` | minSize, maxSize | Draggable resize handle |
+| Component | Status | Notes |
+|-----------|--------|-------|
+| `Stack` | ⏳ | Using flex classes |
+| `ScrollArea` | ⏳ | Using overflow-auto |
+| `Collapsible` | ⏳ | Deferred |
+| `ResizablePanel` | ⏳ | Deferred |
 
 **Checklist for each component:**
-- [ ] TypeScript props interface
-- [ ] ARIA attributes (role, labels, states)
-- [ ] Keyboard navigation (Tab, Enter, Escape, Arrow keys as appropriate)
-- [ ] Focus visible styles
-- [ ] CSS variable usage (no hardcoded colors)
-- [ ] Forwarded refs where needed
-- [ ] Loading/disabled states
-- [ ] All text via `t()` function
-
-*Note: Skipped formal UI primitive library. Components built inline as needed in layout/chat.*
+- [x] TypeScript props interface
+- [x] ARIA attributes (role, labels, states)
+- [x] Keyboard navigation (Tab, Enter, Escape, Arrow keys as appropriate)
+- [x] Focus visible styles
+- [x] CSS variable usage (no hardcoded colors)
+- [x] Forwarded refs where needed
+- [x] Loading/disabled states
+- [x] All text via `t()` function
 
 ---
 
