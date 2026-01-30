@@ -8,7 +8,7 @@ import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import type { Message } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
-import { IconButton, Spinner } from "@/components/ui";
+import { IconButton, Spinner, ArrowDownIcon } from "@/components/ui";
 import { t } from "@/lib/i18n";
 
 interface MessageListProps {
@@ -153,22 +153,5 @@ export function MessageList({
         </div>
       )}
     </div>
-  );
-}
-
-// ============================================
-// Icons
-// ============================================
-
-function ArrowDownIcon() {
-  return (
-    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M19 14l-7 7m0 0l-7-7m7 7V3"
-      />
-    </svg>
   );
 }

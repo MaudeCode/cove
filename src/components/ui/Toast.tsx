@@ -8,6 +8,7 @@ import { useEffect } from "preact/hooks";
 import { signal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { IconButton } from "./IconButton";
+import { CloseIcon } from "./icons";
 
 // ============================================
 // Types
@@ -130,7 +131,7 @@ export function Toast({ id, type, message, duration = 5000, onDismiss }: ToastPr
 
       {/* Dismiss */}
       <IconButton
-        icon={<CloseIcon />}
+        icon={<CloseIcon class="w-4 h-4" />}
         label={t("actions.close")}
         variant="ghost"
         size="sm"
@@ -229,12 +230,4 @@ function ToastIcon({ type }: { type: ToastType }) {
         </svg>
       );
   }
-}
-
-function CloseIcon() {
-  return (
-    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
 }

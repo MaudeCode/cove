@@ -6,7 +6,7 @@
 
 import { useState } from "preact/hooks";
 import type { ToolCall as ToolCallType } from "@/types/messages";
-import { Badge, Button, Card } from "@/components/ui";
+import { Badge, Button, Card, ChevronDownIcon } from "@/components/ui";
 
 interface ToolCallProps {
   toolCall: ToolCallType;
@@ -65,7 +65,7 @@ export function ToolCall({ toolCall }: ToolCallProps) {
         )}
 
         {/* Expand icon */}
-        <ChevronIcon expanded={expanded} />
+        <ChevronDownIcon class="w-4 h-4 ml-2 text-[var(--color-text-muted)]" open={expanded} />
       </Button>
 
       {/* Expanded details */}
@@ -159,21 +159,4 @@ function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
   if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
   return `${Math.floor(ms / 60000)}m ${Math.floor((ms % 60000) / 1000)}s`;
-}
-
-// ============================================
-// Icons
-// ============================================
-
-function ChevronIcon({ expanded }: { expanded: boolean }) {
-  return (
-    <svg
-      class={`w-4 h-4 ml-2 text-[var(--color-text-muted)] transition-transform ${expanded ? "rotate-180" : ""}`}
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-    </svg>
-  );
 }
