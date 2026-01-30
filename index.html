@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" style="background:#0a0a0b">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -8,13 +8,14 @@
     <meta name="theme-color" content="#0a0a0b" />
     <title>Cove - OpenClaw WebUI</title>
     
-    <!-- Theme initialization script - prevents FOUC -->
+    <!-- Theme initialization - runs before anything else -->
     <script>
       (function(){
         var PREF_KEY='cove:theme-preference';
         var CACHE_KEY='cove:theme-cache';
         var LIGHT={"--color-bg-primary":"#ffffff","--color-bg-secondary":"#f9fafb","--color-bg-surface":"#ffffff","--color-text-primary":"#111827","--color-text-secondary":"#4b5563","--color-accent":"#2563eb","--color-border":"#e5e7eb"};
         var DARK={"--color-bg-primary":"#0a0a0b","--color-bg-secondary":"#111113","--color-bg-surface":"#1f1f23","--color-text-primary":"#fafafa","--color-text-secondary":"#a1a1aa","--color-accent":"#3b82f6","--color-border":"#27272a"};
+        var root=document.documentElement;
         
         try{
           var pref=JSON.parse(localStorage.getItem(PREF_KEY)||'{}');
@@ -46,19 +47,18 @@
             }
           }
           
+          // Apply colors and background immediately
           if(colors){
-            var root=document.documentElement;
+            var bg=colors['--color-bg-primary'];
+            root.style.background=bg;
+            root.setAttribute('data-appearance',appearance);
             for(var k in colors){
               root.style.setProperty(k,colors[k]);
             }
-            root.setAttribute('data-appearance',appearance);
           }
-          
-          var meta=document.querySelector('meta[name="theme-color"]');
-          if(meta){
-            meta.setAttribute('content',colors['--color-bg-primary']||(appearance==='dark'?'#0a0a0b':'#ffffff'));
-          }
-        }catch(e){}
+        }catch(e){
+          // Keep default dark background on error
+        }
       })();
     </script>
   </head>
