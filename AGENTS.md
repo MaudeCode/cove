@@ -1,322 +1,189 @@
-# AGENTS.md - Cove Development Guidelines
+# AGENTS.md - Cove Development Guide
 
-**This file is mandatory reading for any LLM or agent working on this codebase.**
-**Violations of these guidelines will result in rejected PRs.**
-
----
+This file documents how Cove works for LLMs and developers working on the project.
 
 ## Project Overview
 
-Cove is a full-featured WebUI for OpenClaw. Read `ROADMAP.md` for feature specifications.
+**Cove** is a WebUI for [OpenClaw](https://github.com/openclaw/openclaw) - an AI assistant gateway.
 
----
+- **Stack**: Preact + Vite + TypeScript + Tailwind CSS
+- **State**: Preact Signals (reactive, no Redux/Context complexity)
+- **Styling**: Tailwind + CSS custom properties (themes)
+- **Live URL**: https://cove.maudeco.de
 
-## Tech Stack (Non-Negotiable)
-
-| Technology | Package | Notes |
-|------------|---------|-------|
-| Framework | Preact | NOT React. Use `preact` imports. |
-| State | @preact/signals | Signals for reactivity. NOT useState for global state. |
-| Styling | Tailwind CSS | Utility-first. Use CSS variables for theming. |
-| Routing | preact-router | Official Preact router. |
-| Icons | lucide-preact | Tree-shakeable icons. |
-| Markdown | markdown-it | With GFM and admonition plugins. |
-| Syntax Highlighting | Prism | Lightweight, themeable. |
-| Package Manager | Bun | NOT npm or yarn. Use `bun install`, `bun run`. |
-
----
-
-## Project Structure (Enforced)
+## Architecture
 
 ```
 src/
-├── components/
-│   ├── ui/           # Reusable primitives (Button, Input, Modal, Toast, etc.)
-│   └── chat/         # Chat-specific components (Message, ToolCall, etc.)
-├── views/            # Full page views (Chat, Cron, Config, Status)
-├── lib/              # Utilities and services
-│   ├── gateway.ts    # WebSocket client for OpenClaw gateway
-│   ├── storage.ts    # localStorage wrapper
-│   ├── i18n.ts       # Localization utilities
-│   └── ...
-├── hooks/            # Custom Preact hooks (when needed)
-├── signals/          # Global state (Preact signals)
-├── styles/           # Global CSS, Tailwind config, fonts
-└── types/            # TypeScript type definitions
+├── app.tsx              # Root component
+├── main.tsx             # Entry point
+├── lib/                 # Core libraries (non-React)
+│   ├── gateway.ts       # WebSocket client for OpenClaw
+│   ├── auth.ts          # Authentication state
+│   ├── theme.ts         # Theme management
+│   ├── i18n.ts          # Internationalization
+│   └── themes/          # Theme color definitions
+├── hooks/               # Preact hooks
+├── components/          # UI components (coming)
+├── views/               # Page-level components (coming)
+├── signals/             # Global state signals
+├── types/               # TypeScript types
+├── locales/             # Translation files
+└── styles/              # CSS
 ```
 
-**Rules:**
-- Components go in `components/`. No components in `views/` or `lib/`.
-- Views are full pages only. They compose components.
-- Shared logic goes in `lib/`. Keep it pure and testable.
-- Types go in `types/`. Co-located types are acceptable for component-specific types.
+## Key Systems
 
----
+### 1. Gateway WebSocket Client (`src/lib/gateway.ts`)
 
-## Code Style (Enforced)
+Connects to OpenClaw gateway using its WebSocket protocol.
 
-### Imports
+**Protocol Flow:**
+1. Client opens WebSocket to gateway URL
+2. Server sends `connect.challenge` event with `{ nonce, ts }`
+3. Client sends `connect` request with:
+   ```ts
+   {
+     type: "req",
+     id: "req_1",
+     method: "connect",
+     params: {
+       minProtocol: 3,
+       maxProtocol: 3,
+       client: {
+         id: "webchat-ui",      // Required: known client ID
+         displayName: "Cove",
+         version: "0.1.0",
+         platform: "macos",     // or windows/linux/ios/android/web
+         mode: "webchat"        // Required: webchat/cli/ui/backend/node
+       },
+       auth: {
+         token: "...",          // OR password, not both
+       }
+     }
+   }
+   ```
+4. Server responds with `hello-ok` payload containing features, snapshot, policy
 
-**DO:**
-```tsx
-// Individual icon imports (tree-shaking)
-import { Menu, Settings, Plus } from 'lucide-preact'
+**Usage:**
+```ts
+import { connect, send, on, isConnected } from '@/lib/gateway'
 
-// Named imports from lib
-import { connectGateway } from '@/lib/gateway'
+// Connect
+await connect({ url: 'wss://gateway.example.com', token: '...' })
+
+// Send RPC request
+const result = await send('session.list', { limit: 10 })
+
+// Subscribe to events
+on('chat.message', (payload) => console.log(payload))
+
+// Check connection (reactive signal)
+if (isConnected.value) { ... }
 ```
 
-**DON'T:**
-```tsx
-// NO barrel imports that pull everything
-import * as Icons from 'lucide-preact'
+**Valid Client IDs** (from OpenClaw protocol):
+- `webchat-ui` - Web chat interface (use this for Cove)
+- `openclaw-control-ui` - Control panel
+- `cli` - Command line
+- `openclaw-macos/ios/android` - Native apps
 
-// NO default imports when named exist
-import gateway from '@/lib/gateway'
+### 2. Theme System (`src/lib/theme.ts`)
+
+Multi-theme support with system preference detection.
+
+**Built-in Themes:** light, dark, nord, dracula, solarized-light, solarized-dark
+
+**How it works:**
+- Themes define CSS custom properties (e.g., `--color-bg-primary`)
+- `theme-script.ts` inlines in `<head>` to prevent FOUC
+- Theme preference stored in localStorage
+- System mode (light/dark) auto-switches themes
+
+**Usage:**
+```ts
+import { setTheme, activeTheme, themePreference } from '@/lib/theme'
+
+setTheme('dark')           // Set specific theme
+setTheme('system')         // Use system preference
+activeTheme.value.name     // Current theme name
 ```
 
-### Components
+### 3. i18n System (`src/lib/i18n.ts`)
 
-**DO:**
-```tsx
-// Functional components with explicit types
-interface ButtonProps {
-  label: string
-  onClick: () => void
-  disabled?: boolean
-}
+Translation and locale-aware formatting.
 
-export function Button({ label, onClick, disabled = false }: ButtonProps) {
-  return (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      class="px-4 py-2 rounded bg-primary text-white"
-    >
-      {label}
-    </button>
-  )
-}
+**Usage:**
+```ts
+import { t, formatDate, formatRelativeTime } from '@/lib/i18n'
+
+t('actions.send')                    // "Send"
+t('messages.count', { count: 5 })    // "5 messages" (pluralized)
+formatRelativeTime(date)             // "2 hours ago"
+formatBytes(1048576)                 // "1 MB"
 ```
 
-**DON'T:**
-```tsx
-// NO React.FC or FC types
-const Button: FC<Props> = ...
+**Adding translations:**
+1. Add keys to `src/locales/en.json`
+2. Use dot notation: `t('section.subsection.key')`
+3. Plurals: add `_plural` suffix key
 
-// NO class components
-class Button extends Component ...
+### 4. Auth State (`src/lib/auth.ts`)
 
-// NO inline styles
-<button style={{ padding: '16px' }}>
+Manages gateway credentials and auto-connect.
 
-// NO className (Preact uses class)
-<button className="...">
+```ts
+import { login, logout, autoConnect } from '@/lib/auth'
+
+await login({ url, token, rememberMe: true })  // Saves to localStorage
+await autoConnect()                             // Auto-login on app load
+logout()                                        // Clear + disconnect
 ```
 
-### State Management
+## Development
 
-**DO:**
-```tsx
-// Signals for reactive state
-import { signal, computed } from '@preact/signals'
-
-export const sessions = signal<Session[]>([])
-export const activeSession = computed(() => 
-  sessions.value.find(s => s.active)
-)
-```
-
-**DON'T:**
-```tsx
-// NO useState for global/shared state
-const [sessions, setSessions] = useState([])
-
-// NO prop drilling for global state
-<Parent sessions={sessions}>
-  <Child sessions={sessions}>
-```
-
-### Tailwind
-
-**DO:**
-```tsx
-// Use Tailwind utilities
-<div class="flex items-center gap-4 p-4 bg-surface rounded-lg">
-
-// Use CSS variables for theming
-<div class="bg-[var(--color-surface)] text-[var(--color-text)]">
-```
-
-**DON'T:**
-```tsx
-// NO arbitrary values when Tailwind class exists
-<div class="p-[16px]">  // Use p-4
-
-// NO inline styles
-<div style={{ display: 'flex' }}>
-```
-
----
-
-## Accessibility (Mandatory)
-
-Every interactive element MUST have:
-
-1. **ARIA labels** - All buttons, inputs, and interactive elements
-2. **Keyboard support** - Tab navigation, Enter/Space activation
-3. **Focus indicators** - Visible focus states
-4. **Semantic HTML** - Use `<button>`, `<nav>`, `<main>`, etc.
-
-```tsx
-// CORRECT
-<button
-  aria-label={t('newChat')}
-  onClick={handleNewChat}
-  class="focus:ring-2 focus:ring-primary"
->
-  <Plus aria-hidden="true" />
-</button>
-
-// WRONG - No aria-label, icon not hidden
-<div onClick={handleNewChat}>
-  <Plus />
-</div>
-```
-
----
-
-## Internationalization (Mandatory)
-
-All user-facing strings MUST be extracted for translation.
-
-**DO:**
-```tsx
-import { t } from '@/lib/i18n'
-
-<button aria-label={t('newChat')}>{t('newChat')}</button>
-<p>{t('errors.connectionFailed')}</p>
-```
-
-**DON'T:**
-```tsx
-// NO hardcoded user-facing strings
-<button>New Chat</button>
-<p>Connection failed</p>
-```
-
-Exceptions: Log messages, debug output, code/technical content.
-
----
-
-## Streaming = History (Critical Requirement)
-
-**This is non-negotiable.**
-
-Streaming messages and history messages MUST:
-1. Use the **same data structure** (`Message` type)
-2. Use the **same component** (`<ChatMessage>`)
-3. Look **visually identical** (except typing indicator)
-4. Require **no refresh** after streaming ends
-
-```tsx
-// ONE component for both
-<ChatMessage 
-  message={msg} 
-  isStreaming={msg.id === currentStreamId} 
-/>
-
-// ONE type for both
-interface Message {
-  id: string
-  role: 'user' | 'assistant'
-  content: string
-  toolCalls?: ToolCall[]
-  timestamp: number
-}
-```
-
----
-
-## File Naming
-
-- Components: `PascalCase.tsx` (e.g., `ChatMessage.tsx`)
-- Utilities: `camelCase.ts` (e.g., `gateway.ts`)
-- Types: `camelCase.ts` or `PascalCase.ts` for main type files
-- Views: `PascalCase.tsx` (e.g., `Chat.tsx`, `CronJobs.tsx`)
-- Styles: `kebab-case.css` (e.g., `animations.css`)
-
----
-
-## Commits
-
-Use conventional commits:
-- `feat(scope):` - New features
-- `fix(scope):` - Bug fixes
-- `refactor(scope):` - Code changes that neither fix bugs nor add features
-- `style(scope):` - Formatting, missing semicolons, etc.
-- `docs(scope):` - Documentation
-- `chore(scope):` - Maintenance, dependencies
-- `a11y(scope):` - Accessibility improvements
-- `i18n(scope):` - Internationalization
-
----
-
-## Linting & Formatting (Automated)
-
-The following tools enforce code quality automatically:
-
-| Tool | Purpose | Command |
-|------|---------|---------|
-| oxlint | Linting (a11y, imports, react, TS) | `bun run lint` |
-| oxfmt | Formatting + Tailwind/import sorting | `bun run format` |
-| commitlint | Commit message validation | Runs on commit via husky |
-
-**Pre-commit hooks** will run `lint` and `format:check` automatically.
-**Commit-msg hook** will validate commit messages.
-
-Run all checks manually:
 ```bash
-bun run check   # lint + format:check + typecheck
+# Install
+bun install
+
+# Dev server (hot reload)
+bun run dev
+
+# Type check
+bun run typecheck
+
+# Lint + format
+bun run lint
+bun run format
+
+# Build for production
+bun run build
 ```
 
----
+## Protocol Reference
 
-## Pull Request Checklist
+The gateway protocol is defined in OpenClaw source:
+- `src/gateway/protocol/schema/frames.ts` - Frame schemas
+- `src/gateway/protocol/client-info.ts` - Valid client IDs/modes
+- `src/gateway/server/ws-connection/message-handler.ts` - Server handling
 
-Before submitting a PR, verify:
+Protocol version is currently **3**.
 
-- [ ] No `import *` statements
-- [ ] All icons imported individually from `lucide-preact`
-- [ ] All user-facing strings use `t()` for i18n
-- [ ] All interactive elements have ARIA labels
-- [ ] All interactive elements are keyboard accessible
-- [ ] Components are in correct directories per structure
-- [ ] Using `class` not `className`
-- [ ] Using Tailwind utilities, not inline styles
-- [ ] Using signals for shared state, not prop drilling
-- [ ] Streaming and history use same Message type/component
-- [ ] Bun lockfile updated (not npm/yarn)
-- [ ] No React-specific imports (use Preact)
+## Roadmap
 
----
+- [x] Phase 0.1 - Project scaffold
+- [x] Phase 0.2 - Theme system
+- [x] Phase 0.3 - i18n infrastructure
+- [x] Phase 0.4 - Gateway WebSocket client
+- [ ] Phase 0.5 - Session & message signals
+- [ ] Phase 1.x - Chat UI, message rendering, streaming
+- [ ] Phase 2.x - Sessions sidebar, history
+- [ ] Phase 3.x - Settings, config editing
 
-## Common Mistakes to Avoid
+## Notes for LLMs
 
-1. **Importing React** - Use Preact. `import { h } from 'preact'` if needed.
-2. **className** - Preact uses `class`.
-3. **useState for global state** - Use signals.
-4. **Hardcoded strings** - Use i18n.
-5. **Missing ARIA** - Every interactive element needs labels.
-6. **Barrel imports** - Import specifically what you need.
-7. **npm/yarn** - Use Bun.
-8. **Different streaming/history rendering** - They must be identical.
-
----
-
-## Questions?
-
-Read `ROADMAP.md` for feature specifications and priorities.
-
-If unsure about a decision, ask before implementing.
+1. **OpenClaw source** is at `~/git/openclaw/` - reference it for protocol details
+2. **Signals over useState** - use `@preact/signals` for reactive state
+3. **No default exports** - project uses named exports only (lint enforced)
+4. **Console warnings OK** - `console.warn/error` for debugging is intentional
+5. **CSS variables** - all colors use `var(--color-*)` for theming
