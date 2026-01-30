@@ -294,3 +294,8 @@ src/
 | Error UX | Inline (chat) + Toasts | Desktop notifications opt-in |
 | i18n | Built-in from start | String extraction, RTL support ready |
 | Testing | Deferred | Add once architecture stabilizes |
+| Date/time | Native Intl APIs | User option: local time vs relative ("2h ago") |
+| Animations | Tailwind + custom CSS | No heavy libs, add motion later if needed |
+| Package manager | Bun | Fast, modern |
+| License | MIT | |
+| Distribution | npm, Docker, git | Document/implement later |
