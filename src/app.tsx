@@ -7,6 +7,7 @@
 import { useEffect } from "preact/hooks";
 import { initTheme } from "@/lib/theme";
 import { initI18n } from "@/lib/i18n";
+import { initStorage, getAuth } from "@/lib/storage";
 import { isConnected, connect } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession } from "@/signals/sessions";
@@ -18,6 +19,7 @@ import { ChatView, LoginView, CronView, ConfigView, StatusView } from "@/views";
 export function App() {
   // Initialize systems on mount
   useEffect(() => {
+    initStorage();
     initTheme();
     initI18n();
     tryAutoConnect();
@@ -48,25 +50,22 @@ function MainContent() {
  * Try to auto-connect using saved credentials
  */
 async function tryAutoConnect() {
-  const savedUrl = localStorage.getItem("cove:gateway-url");
-  const savedMode = localStorage.getItem("cove:auth-mode") as "token" | "password" | null;
-  const savedCred = localStorage.getItem("cove:auth-credential");
+  const saved = getAuth();
 
-  if (!savedUrl) return;
+  if (!saved?.url || !saved.rememberMe) return;
 
   try {
     await connect({
-      url: savedUrl,
-      token: savedMode === "token" ? (savedCred ?? undefined) : undefined,
-      password: savedMode === "password" ? (savedCred ?? undefined) : undefined,
+      url: saved.url,
+      token: saved.authMode === "token" ? saved.credential : undefined,
+      password: saved.authMode === "password" ? saved.credential : undefined,
       autoReconnect: true,
     });
 
     // Initialize chat with main session
     setActiveSession("main");
     await initChat("main");
-  } catch (err) {
-    console.warn("Auto-connect failed:", err);
+  } catch {
     // User will see the login form
   }
 }

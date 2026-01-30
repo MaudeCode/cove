@@ -9,6 +9,7 @@ import { t } from "@/lib/i18n";
 import { connect, lastError } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession } from "@/signals/sessions";
+import { getAuth, saveAuth } from "@/lib/storage";
 
 export function LoginView() {
   const url = useSignal("");
@@ -60,11 +61,12 @@ export function LoginView() {
 
       // Save credentials if remember me is checked
       if (rememberMe.value) {
-        localStorage.setItem("cove:gateway-url", url.value);
-        localStorage.setItem("cove:auth-mode", authMode.value);
-        if (token.value) {
-          localStorage.setItem("cove:auth-credential", token.value);
-        }
+        saveAuth({
+          url: url.value,
+          authMode: authMode.value,
+          credential: token.value || undefined,
+          rememberMe: true,
+        });
       }
 
       // Initialize chat with main session
@@ -86,13 +88,13 @@ export function LoginView() {
 
   // Load saved credentials on mount
   if (!url.value) {
-    const savedUrl = localStorage.getItem("cove:gateway-url");
-    const savedMode = localStorage.getItem("cove:auth-mode") as "token" | "password" | null;
-    const savedCred = localStorage.getItem("cove:auth-credential");
-
-    if (savedUrl) url.value = savedUrl;
-    if (savedMode) authMode.value = savedMode;
-    if (savedCred) token.value = savedCred;
+    const saved = getAuth();
+    if (saved) {
+      url.value = saved.url;
+      authMode.value = saved.authMode;
+      if (saved.credential) token.value = saved.credential;
+      rememberMe.value = saved.rememberMe;
+    }
   }
 
   return (

@@ -8,14 +8,13 @@ import { disconnect } from "@/lib/gateway";
 import { cleanupChat } from "@/lib/chat";
 import { clearSessions } from "@/signals/sessions";
 import { activeView } from "@/signals/ui";
+import { clearAuth } from "@/lib/storage";
 
 /**
- * Clear saved credentials from localStorage
+ * Clear saved credentials from storage
  */
 export function clearSavedCredentials(): void {
-  localStorage.removeItem("cove:gateway-url");
-  localStorage.removeItem("cove:auth-mode");
-  localStorage.removeItem("cove:auth-credential");
+  clearAuth();
 }
 
 /**

@@ -249,7 +249,7 @@ class GatewayClient {
 
 ---
 
-### 0.5 Storage Utilities
+### 0.5 Storage Utilities ✅
 
 **Typed localStorage wrapper (`lib/storage.ts`):**
 ```ts
@@ -266,13 +266,11 @@ function clear(): void
 ```
 
 **Checklist:**
-- [ ] Create typed storage wrapper
+- [x] Create typed storage wrapper
 - [x] Add JSON parse/stringify with error handling
-- [ ] Add migration support for schema changes
+- [x] Add migration support for schema changes
 - [x] Create settings signal that syncs with storage
-- [ ] Test storage quota handling
-
-*Note: Using direct localStorage for now; typed wrapper deferred.*
+- [x] Test storage quota handling
 
 ---
 
