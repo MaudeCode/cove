@@ -45,6 +45,7 @@ export function MessageList({
 
   /**
    * Handle scroll events to show/hide scroll button
+   * Note: showScrollButton is a Preact Signal (stable ref), not React state
    */
   const handleScroll = useCallback(() => {
     if (!containerRef.current) return;
