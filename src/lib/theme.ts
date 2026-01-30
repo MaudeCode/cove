@@ -1,83 +1,218 @@
 /**
- * Theme Utilities
+ * Theme System
  *
- * Manages theme state and applies to DOM.
+ * Manages theme state and applies CSS variables to DOM.
+ * Works with the inline script in index.html to prevent FOUC.
  */
 
-import { effect } from "@preact/signals";
-import { theme, fontSize, fontFamily } from "@/signals/settings";
+import { signal, effect, computed } from "@preact/signals";
+import type { Theme, ThemePreference, ThemeColors } from "@/types/theme";
+import { DEFAULT_THEME_PREFERENCE } from "@/types/theme";
+import { getTheme, builtInThemes } from "@/lib/themes";
 
-export type ThemeValue = "light" | "dark" | "system";
+// Storage keys (must match inline script in index.html)
+const STORAGE_KEY = "cove:theme-preference";
+const CUSTOM_THEMES_KEY = "cove:custom-themes";
+const CACHE_KEY = "cove:theme-cache";
+
+/** Current theme preference */
+export const themePreference = signal<ThemePreference>(loadPreference());
+
+/** Custom themes (user-created) */
+export const customThemes = signal<Theme[]>(loadCustomThemes());
+
+/** The currently active theme (resolved) */
+export const activeTheme = computed<Theme>(() => {
+  const pref = themePreference.value;
+  const customs = customThemes.value;
+
+  if (pref.selected === "system") {
+    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const themeId = prefersDark ? pref.darkTheme : pref.lightTheme;
+    return getTheme(themeId, customs) ?? getTheme("dark", customs)!;
+  }
+
+  return getTheme(pref.selected, customs) ?? getTheme("dark", customs)!;
+});
+
+/** Current appearance (light or dark) */
+export const appearance = computed(() => activeTheme.value.appearance);
 
 /**
- * Get the resolved theme (accounting for system preference)
+ * Load preference from localStorage
  */
-export function getResolvedTheme(value: ThemeValue): "light" | "dark" {
-  if (value === "system") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+function loadPreference(): ThemePreference {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      return { ...DEFAULT_THEME_PREFERENCE, ...JSON.parse(stored) };
+    }
+  } catch {
+    // Ignore
   }
-  return value;
+  return DEFAULT_THEME_PREFERENCE;
 }
 
 /**
- * Apply theme to the document
+ * Save preference to localStorage
  */
-export function applyTheme(value: ThemeValue): void {
-  const resolved = getResolvedTheme(value);
-
-  if (value === "system") {
-    // Remove data-theme to let CSS media query handle it
-    document.documentElement.removeAttribute("data-theme");
-  } else {
-    document.documentElement.setAttribute("data-theme", resolved);
+function savePreference(pref: ThemePreference): void {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(pref));
+  } catch {
+    // Ignore
   }
+}
+
+/**
+ * Load custom themes from localStorage
+ */
+function loadCustomThemes(): Theme[] {
+  try {
+    const stored = localStorage.getItem(CUSTOM_THEMES_KEY);
+    if (stored) {
+      return JSON.parse(stored);
+    }
+  } catch {
+    // Ignore
+  }
+  return [];
+}
+
+/**
+ * Save custom themes to localStorage
+ */
+function saveCustomThemes(themes: Theme[]): void {
+  try {
+    localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(themes));
+  } catch {
+    // Ignore
+  }
+}
+
+/**
+ * Apply a theme's CSS variables to the document
+ */
+export function applyThemeColors(colors: ThemeColors): void {
+  const root = document.documentElement;
+  for (const [key, value] of Object.entries(colors)) {
+    root.style.setProperty(key, value);
+  }
+}
+
+/**
+ * Cache the theme for the inline script (prevents FOUC on reload)
+ */
+function cacheTheme(theme: Theme): void {
+  try {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        id: theme.id,
+        appearance: theme.appearance,
+        colors: theme.colors,
+      }),
+    );
+  } catch {
+    // Ignore
+  }
+}
+
+/**
+ * Apply the current theme to the document
+ */
+export function applyTheme(theme: Theme): void {
+  applyThemeColors(theme.colors);
+
+  // Cache for inline script to use on next load
+  cacheTheme(theme);
 
   // Update meta theme-color for mobile browsers
   const metaThemeColor = document.querySelector('meta[name="theme-color"]');
   if (metaThemeColor) {
-    metaThemeColor.setAttribute("content", resolved === "dark" ? "#0a0a0b" : "#ffffff");
+    metaThemeColor.setAttribute(
+      "content",
+      theme.colors["--color-bg-primary"] ?? (theme.appearance === "dark" ? "#0a0a0b" : "#ffffff"),
+    );
+  }
+
+  // Set data-appearance for CSS selectors that need to know light/dark
+  document.documentElement.setAttribute("data-appearance", theme.appearance);
+}
+
+/**
+ * Set the theme preference
+ */
+export function setTheme(selected: "system" | string): void {
+  themePreference.value = { ...themePreference.value, selected };
+}
+
+/**
+ * Set the light theme for system preference
+ */
+export function setLightTheme(themeId: string): void {
+  themePreference.value = { ...themePreference.value, lightTheme: themeId };
+}
+
+/**
+ * Set the dark theme for system preference
+ */
+export function setDarkTheme(themeId: string): void {
+  themePreference.value = { ...themePreference.value, darkTheme: themeId };
+}
+
+/**
+ * Add a custom theme
+ */
+export function addCustomTheme(theme: Theme): void {
+  const themes = [...customThemes.value.filter((t) => t.id !== theme.id), theme];
+  customThemes.value = themes;
+  saveCustomThemes(themes);
+}
+
+/**
+ * Remove a custom theme
+ */
+export function removeCustomTheme(themeId: string): void {
+  const themes = customThemes.value.filter((t) => t.id !== themeId);
+  customThemes.value = themes;
+  saveCustomThemes(themes);
+
+  // If this was the active theme, switch to default
+  if (themePreference.value.selected === themeId) {
+    setTheme("system");
   }
 }
 
 /**
- * Apply font size to the document
+ * Get all available themes (built-in + custom)
  */
-export function applyFontSize(size: "sm" | "md" | "lg"): void {
-  document.documentElement.setAttribute("data-font-size", size);
+export function getAllThemes(): Theme[] {
+  return [...builtInThemes, ...customThemes.value];
 }
 
 /**
- * Apply font family to the document
- */
-export function applyFontFamily(family: string): void {
-  document.documentElement.setAttribute("data-font-family", family);
-}
-
-/**
- * Initialize theme system
+ * Initialize the theme system
  * Sets up effects to sync signals with DOM
  */
 export function initTheme(): void {
-  // Watch for theme changes
+  // Apply theme whenever it changes
   effect(() => {
-    applyTheme(theme.value);
+    const theme = activeTheme.value;
+    applyTheme(theme);
   });
 
-  // Watch for font size changes
+  // Save preference whenever it changes
   effect(() => {
-    applyFontSize(fontSize.value);
+    savePreference(themePreference.value);
   });
 
-  // Watch for font family changes
-  effect(() => {
-    applyFontFamily(fontFamily.value);
-  });
-
-  // Watch for system preference changes
+  // Listen for system preference changes
   const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
   mediaQuery.addEventListener("change", () => {
-    if (theme.value === "system") {
-      applyTheme("system");
+    if (themePreference.value.selected === "system") {
+      // Force recompute
+      themePreference.value = { ...themePreference.value };
     }
   });
 }
