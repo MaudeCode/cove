@@ -15,7 +15,20 @@ import { activeView } from "@/signals/ui";
 
 import { AppShell } from "@/components/layout";
 import { ToastContainer, ErrorBoundary, toast } from "@/components/ui";
-import { ChatView, LoginView, CronView, ConfigView, StatusView } from "@/views";
+import {
+  ChatView,
+  LoginView,
+  OverviewView,
+  ChannelsView,
+  InstancesView,
+  SessionsView,
+  CronView,
+  SkillsView,
+  NodesView,
+  ConfigView,
+  DebugView,
+  LogsView,
+} from "@/views";
 
 export function App() {
   // Initialize systems on mount
@@ -45,14 +58,36 @@ export function App() {
  */
 function MainContent() {
   switch (activeView.value) {
+    // Chat
     case "chat":
       return <ChatView />;
+
+    // Control
+    case "overview":
+      return <OverviewView />;
+    case "channels":
+      return <ChannelsView />;
+    case "instances":
+      return <InstancesView />;
+    case "sessions":
+      return <SessionsView />;
     case "cron":
       return <CronView />;
+
+    // Agent
+    case "skills":
+      return <SkillsView />;
+    case "nodes":
+      return <NodesView />;
+
+    // Settings
     case "config":
       return <ConfigView />;
-    case "status":
-      return <StatusView />;
+    case "debug":
+      return <DebugView />;
+    case "logs":
+      return <LogsView />;
+
     default:
       return <ChatView />;
   }

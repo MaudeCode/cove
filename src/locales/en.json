@@ -87,13 +87,26 @@
   "nav": {
     "chat": "Chat",
     "sessions": "Sessions",
+    "overview": "Overview",
+    "channels": "Channels",
+    "instances": "Instances",
     "cron": "Cron Jobs",
     "config": "Config",
     "status": "Status",
+    "debug": "Debug",
+    "logs": "Logs",
+    "docs": "Docs",
     "settings": "Settings",
     "memory": "Memory",
     "skills": "Skills",
-    "nodes": "Nodes"
+    "nodes": "Nodes",
+    "sections": {
+      "chat": "Chat",
+      "control": "Control",
+      "agent": "Agent",
+      "settings": "Settings",
+      "resources": "Resources"
+    }
   },
 
   "chat": {
