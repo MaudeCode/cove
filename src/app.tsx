@@ -10,7 +10,7 @@ import { initI18n } from "@/lib/i18n";
 import { initStorage, getAuth } from "@/lib/storage";
 import { isConnected, connect } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
-import { setActiveSession } from "@/signals/sessions";
+import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { activeView } from "@/signals/ui";
 
 import { AppShell } from "@/components/layout";
@@ -108,6 +108,9 @@ async function tryAutoConnect() {
       password: saved.authMode === "password" ? saved.credential : undefined,
       autoReconnect: true,
     });
+
+    // Load sessions list for sidebar
+    await loadSessions();
 
     // Initialize chat with main session
     setActiveSession("main");

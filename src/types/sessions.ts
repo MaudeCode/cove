@@ -1,54 +1,81 @@
 /**
  * Session Types
+ *
+ * Matches OpenClaw gateway sessions.list response.
  */
 
 export interface Session {
-  /** Session key (unique identifier) */
+  /** Session key (unique identifier, e.g. "agent:main:main") */
   key: string;
 
-  /** Session ID (internal) */
+  /** Session ID (UUID) */
   sessionId?: string;
 
-  /** Display label */
+  /** Session kind */
+  kind?: "main" | "isolated" | "channel" | "other";
+
+  /** Display name */
+  displayName?: string;
+
+  /** Custom label (user-set) */
   label?: string;
 
   /** Channel (telegram, discord, webchat, etc.) */
   channel?: string;
 
-  /** When the session was created */
-  createdAt?: number;
+  /** Last channel used */
+  lastChannel?: string;
 
-  /** When the session was last active */
+  /** Model being used */
+  model?: string;
+
+  /** When the session was last updated (ms since epoch) */
+  updatedAt?: number;
+
+  /** Alias for updatedAt for convenience */
   lastActiveAt?: number;
 
-  /** Number of messages in the session */
-  messageCount?: number;
+  /** Context tokens available */
+  contextTokens?: number;
 
-  /** Preview of the last message */
-  lastMessagePreview?: string;
+  /** Total tokens used */
+  totalTokens?: number;
+
+  /** Transcript file path */
+  transcriptPath?: string;
+
+  /** Delivery context info */
+  deliveryContext?: {
+    channel?: string;
+    to?: string;
+    accountId?: string;
+  };
+
+  /** Last messages (when requested) */
+  messages?: Array<{
+    role: string;
+    content: unknown;
+  }>;
 }
 
 export interface SessionsListResult {
+  /** Number of sessions */
+  count: number;
+
+  /** Session list */
   sessions: Session[];
-  total?: number;
 }
 
 export interface SessionsListParams {
-  /** Filter by channel */
-  channel?: string;
+  /** Filter by session kinds */
+  kinds?: string[];
 
-  /** Filter by label pattern */
-  labelPattern?: string;
-
-  /** Include archived sessions */
-  includeArchived?: boolean;
+  /** Only sessions active in the last N minutes */
+  activeMinutes?: number;
 
   /** Maximum number of sessions to return */
   limit?: number;
 
-  /** Offset for pagination */
-  offset?: number;
-
-  /** Sort order */
-  sort?: "recent" | "created" | "label";
+  /** Number of last messages to include per session */
+  messageLimit?: number;
 }
