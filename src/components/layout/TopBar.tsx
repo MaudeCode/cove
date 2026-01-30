@@ -46,11 +46,13 @@ export function TopBar() {
           </div>
 
           {/* Logo */}
-          <a href="/" class="flex items-center gap-2 font-semibold text-lg">
-            <span class="text-xl" aria-hidden="true">
+          <a href="/" class="flex items-center gap-2.5 font-semibold text-lg group">
+            <span class="text-xl group-hover:scale-110 transition-transform" aria-hidden="true">
               🏖️
             </span>
-            <span>{t("app.name")}</span>
+            <span class="bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-info)] bg-clip-text text-transparent">
+              {t("app.name")}
+            </span>
           </a>
         </div>
 
