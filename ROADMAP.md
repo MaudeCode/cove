@@ -18,6 +18,7 @@ Cove is a full-featured WebUI for OpenClaw.
 - [ ] `lucide-preact` — Icons
 - [ ] `markdown-it` + plugins — Markdown rendering
 - [ ] `prismjs` — Syntax highlighting
+- [ ] `@floating-ui/dom` — Positioning for tooltips, popovers, dropdowns (framework-agnostic)
 - [ ] Fonts: Geist, JetBrains Mono (via fontsource or CDN)
 
 **Create directory structure:**
@@ -772,6 +773,7 @@ interface ToolCall {
 | Storage | localStorage | Settings, auth, session key persistence |
 | Syntax highlighting | Prism | Lightweight, themeable |
 | Markdown | markdown-it | Pluggable, GFM support, good features |
+| Positioning | @floating-ui/dom | Framework-agnostic, custom Preact hook wrapper |
 | Theming | CSS custom properties | Build with variables from day one for full theming support |
 | Icons | Lucide (lucide-preact) | Tree-shakeable, only used icons bundled |
 | Fonts | Geist (default) + options | Inter, System, JetBrains Mono, OpenDyslexic |
