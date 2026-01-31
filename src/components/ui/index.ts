@@ -38,6 +38,7 @@ export { ResizeHandle, type ResizeHandleProps } from "./ResizeHandle";
 // Feedback
 export { Spinner, type SpinnerProps, type SpinnerSize } from "./Spinner";
 export { Badge, type BadgeProps, type BadgeVariant, type BadgeSize } from "./Badge";
+export { Chip, type ChipProps, type ChipSize } from "./Chip";
 export { Skeleton, SkeletonText, SkeletonAvatar, type SkeletonProps } from "./Skeleton";
 
 // Overlays
