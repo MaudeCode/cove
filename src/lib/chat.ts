@@ -354,6 +354,20 @@ export function unsubscribeFromChatEvents(): void {
 }
 
 /**
+ * Find overlap between end of str1 and start of str2
+ * Returns the length of overlap
+ */
+function findOverlap(str1: string, str2: string): number {
+  const maxOverlap = Math.min(str1.length, str2.length);
+  for (let i = maxOverlap; i > 0; i--) {
+    if (str1.endsWith(str2.slice(0, i))) {
+      return i;
+    }
+  }
+  return 0;
+}
+
+/**
  * Handle a tool event from the agent stream
  */
 function handleToolEvent(evt: AgentEvent): void {
@@ -457,29 +471,37 @@ function handleChatEvent(event: ChatEvent): void {
           : parsed.toolCalls;
 
         // Determine if this is a continuation or new text block
-        // If new text doesn't start with existing content, it's a new block (append)
+        // Gateway sends accumulated text per-block, resetting after tool calls
         let newContent: string;
-        const isContinuation = parsed.text.startsWith(existingContent);
-        const isNewBlock = !isContinuation && existingContent && parsed.text;
 
-        console.log("[DELTA]", {
-          existingLen: existingContent.length,
-          newLen: parsed.text.length,
-          isContinuation,
-          isNewBlock,
-          existingStart: existingContent.slice(0, 30),
-          newStart: parsed.text.slice(0, 30),
-        });
-
-        if (isContinuation) {
-          // Continuation - use the new accumulated text
+        if (!existingContent) {
+          // First content
           newContent = parsed.text;
-        } else if (isNewBlock) {
-          // New text block after tool call - append with separator
+        } else if (parsed.text.startsWith(existingContent)) {
+          // Direct continuation of existing
+          newContent = parsed.text;
+        } else if (
+          existingContent.endsWith(parsed.text.slice(0, Math.min(20, parsed.text.length)))
+        ) {
+          // New text continues from where existing ends (after we appended)
+          // Find overlap and extend
+          const overlap = findOverlap(existingContent, parsed.text);
+          if (overlap > 0) {
+            newContent = existingContent + parsed.text.slice(overlap);
+          } else {
+            newContent = existingContent + "\n\n" + parsed.text;
+          }
+        } else if (!existingContent.includes(parsed.text.slice(0, 20))) {
+          // Truly new block (no overlap) - append
           newContent = existingContent + "\n\n" + parsed.text;
-          console.log("[DELTA] APPENDING new block");
         } else {
-          newContent = parsed.text;
+          // Some overlap exists, try to find it
+          const overlap = findOverlap(existingContent, parsed.text);
+          if (overlap > 0) {
+            newContent = existingContent + parsed.text.slice(overlap);
+          } else {
+            newContent = parsed.text;
+          }
         }
 
         updateRunContent(runId, newContent, mergedToolCalls);
