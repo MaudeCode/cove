@@ -30,11 +30,13 @@ export function mergeDeltaText(
 ): DeltaResult {
   // Case 1: First content
   if (!existingContent) {
+    console.log("[MERGE] Case 1: First content");
     return { content: newText };
   }
 
   // Case 2: Direct continuation (same block, no tool call in between)
   if (newText.startsWith(existingContent)) {
+    console.log("[MERGE] Case 2: Direct continuation");
     return { content: newText };
   }
 
@@ -43,18 +45,30 @@ export function mergeDeltaText(
     const baseContent = existingContent.slice(0, lastBlockStart);
     const lastBlock = existingContent.slice(lastBlockStart);
 
+    console.log("[MERGE] Case 3 check:", {
+      lastBlockStart,
+      baseLen: baseContent.length,
+      lastBlockLen: lastBlock.length,
+      newTextLen: newText.length,
+      lastBlockStart30: lastBlock.slice(0, 30),
+      newTextStart30: newText.slice(0, 30),
+    });
+
     // Check if new text continues the last block
     if (newText.startsWith(lastBlock)) {
+      console.log("[MERGE] Case 3a: Continues last block");
       return { content: baseContent + newText };
     }
 
     // Check if it's a prefix match (partial continuation)
     const prefixLen = Math.min(lastBlock.length, 30);
     if (lastBlock.length > 0 && newText.startsWith(lastBlock.slice(0, prefixLen))) {
+      console.log("[MERGE] Case 3b: Prefix match");
       return { content: baseContent + newText };
     }
 
     // New block - append with separator
+    console.log("[MERGE] Case 3c: New block (append)");
     const newBlockStart = existingContent.length + TEXT_BLOCK_SEPARATOR.length;
     return {
       content: existingContent + TEXT_BLOCK_SEPARATOR + newText,
@@ -63,6 +77,7 @@ export function mergeDeltaText(
   }
 
   // Case 4: No lastBlockStart but content doesn't continue - new block after tool
+  console.log("[MERGE] Case 4: New block after tool (append)");
   const newBlockStart = existingContent.length + TEXT_BLOCK_SEPARATOR.length;
   return {
     content: existingContent + TEXT_BLOCK_SEPARATOR + newText,
