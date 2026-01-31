@@ -256,7 +256,7 @@ export function MessageList({
                   }
                   role={isSearchOpen.value ? "button" : undefined}
                   tabIndex={isSearchOpen.value ? 0 : undefined}
-                  class={isSearchOpen.value ? MESSAGE_HIGHLIGHT_HOVER : ""}
+                  class={`-mx-2 px-2 py-1 rounded-lg ${isSearchOpen.value ? MESSAGE_HIGHLIGHT_HOVER : ""}`}
                 >
                   <ChatMessage
                     message={message}
