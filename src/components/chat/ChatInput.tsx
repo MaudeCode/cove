@@ -8,6 +8,7 @@
 import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
+import { log } from "@/lib/logger";
 import { SendIcon, StopIcon } from "@/components/ui";
 import { ModelPicker } from "./ModelPicker";
 
@@ -129,6 +130,15 @@ export function ChatInput({
           />
 
           {/* Model picker - bottom left */}
+          {(() => {
+            log.ui.debug(
+              "ChatInput render - sessionKey:",
+              sessionKey,
+              "currentModel:",
+              currentModel,
+            );
+            return null;
+          })()}
           {sessionKey && (
             <div class="absolute bottom-2 left-2">
               <ModelPicker
