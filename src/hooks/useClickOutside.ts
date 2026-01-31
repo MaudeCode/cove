@@ -4,14 +4,18 @@
  * Closes a dropdown/popover when clicking outside of it.
  */
 
-import { useEffect, type RefObject } from "preact/hooks";
+import { useEffect } from "preact/hooks";
+import type { RefObject } from "preact";
+
+type RefOrRefs = RefObject<HTMLElement> | RefObject<HTMLElement>[];
 
 /**
- * Run a callback when clicking outside the referenced element.
+ * Run a callback when clicking outside the referenced element(s).
+ * Accepts a single ref or array of refs (useful for button + menu combos).
  * Only active when `active` is true.
  */
 export function useClickOutside(
-  ref: RefObject<HTMLElement>,
+  refs: RefOrRefs,
   onClickOutside: () => void,
   active: boolean = true,
 ): void {
@@ -19,12 +23,18 @@ export function useClickOutside(
     if (!active) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      const refArray = Array.isArray(refs) ? refs : [refs];
+      const target = e.target as Node;
+
+      // Check if click is inside any of the refs
+      const isInside = refArray.some((ref) => ref.current?.contains(target));
+
+      if (!isInside) {
         onClickOutside();
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [ref, onClickOutside, active]);
+  }, [refs, onClickOutside, active]);
 }

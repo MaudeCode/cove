@@ -15,6 +15,8 @@ export interface ButtonProps extends Omit<
   JSX.HTMLAttributes<HTMLButtonElement>,
   "size" | "loading"
 > {
+  /** HTML button type */
+  type?: "button" | "submit" | "reset";
   /** Button variant */
   variant?: ButtonVariant;
   /** Button size */
@@ -66,6 +68,7 @@ const sizeStyles: Record<ButtonSize, string> = {
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
+      type = "button",
       variant = "primary",
       size = "md",
       loading = false,
@@ -84,7 +87,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        type="button"
+        type={type}
         disabled={isDisabled}
         class={`
           inline-flex items-center justify-center

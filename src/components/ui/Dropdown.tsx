@@ -5,8 +5,9 @@
  * for full styling control (unlike native <select>).
  */
 
-import { useState, useRef, useEffect, useCallback } from "preact/hooks";
+import { useState, useRef, useCallback } from "preact/hooks";
 import { ChevronDown } from "lucide-preact";
+import { useClickOutside } from "@/hooks";
 
 export type DropdownSize = "sm" | "md" | "lg";
 
@@ -89,23 +90,7 @@ export function Dropdown({
   );
 
   // Handle click outside
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
-        triggerRef.current &&
-        !triggerRef.current.contains(e.target as Node)
-      ) {
-        close();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, close]);
+  useClickOutside([triggerRef, menuRef], close, isOpen);
 
   // Keyboard navigation
   const handleKeyDown = useCallback(
