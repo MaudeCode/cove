@@ -19,6 +19,7 @@ import {
   isLoadingHistory,
   historyError,
   thinkingLevel,
+  messages,
   setMessages,
   addMessage,
   startRun,
@@ -283,15 +284,25 @@ export async function sendMessage(
 
 /**
  * Retry sending a failed message.
+ * Looks in both the message queue (for queued messages) and messages list (for failed sends).
  */
 export async function retryMessage(messageId: string): Promise<void> {
-  const message = messageQueue.value.find((m) => m.id === messageId);
+  // First check the queue (for messages queued while disconnected)
+  let message = messageQueue.value.find((m) => m.id === messageId);
+
+  // If not in queue, check the messages list (for failed sends)
+  if (!message) {
+    message = messages.value.find((m) => m.id === messageId && m.status === "failed");
+  }
+
   if (!message?.sessionKey) {
-    log.chat.warn("Cannot retry message:", messageId);
+    log.chat.warn("Cannot retry message - not found or missing sessionKey:", messageId);
     return;
   }
 
+  // Remove from queue if it was there
   dequeueMessage(messageId);
+
   const idempotencyKey = messageId.replace(/^user_/, "");
   await sendMessage(message.sessionKey, message.content, { messageId: idempotencyKey });
 }
