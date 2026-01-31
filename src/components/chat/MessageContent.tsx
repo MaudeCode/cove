@@ -4,7 +4,7 @@
  * Renders markdown content with syntax highlighting.
  */
 
-import { useMemo, useRef, useEffect } from "preact/hooks";
+import { useRef, useEffect } from "preact/hooks";
 import { renderMarkdown } from "@/lib/markdown";
 import { BouncingDots } from "@/components/ui";
 import { t } from "@/lib/i18n";
@@ -17,11 +17,9 @@ interface MessageContentProps {
 export function MessageContent({ content, isStreaming = false }: MessageContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Render markdown
-  const html = useMemo(() => {
-    if (!content) return "";
-    return renderMarkdown(content);
-  }, [content]);
+  // Render markdown - NO useMemo to ensure updates always render
+  // useMemo was potentially causing stale renders during rapid streaming
+  const html = content ? renderMarkdown(content) : "";
 
   // Add copy buttons to code blocks after render
   useEffect(() => {
