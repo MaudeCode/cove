@@ -12,6 +12,7 @@ import { initChat } from "@/lib/chat";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
+import { loadModels } from "@/signals/models";
 import { getAuth, saveAuth } from "@/lib/storage";
 import { Input, Select, Button, Toggle, Card, FormField } from "@/components/ui";
 
@@ -85,6 +86,9 @@ export function LoginView() {
 
       // Start polling for usage data
       startUsagePolling();
+
+      // Load available models
+      loadModels();
     } catch (err) {
       log.auth.error("Connect failed:", err);
     } finally {

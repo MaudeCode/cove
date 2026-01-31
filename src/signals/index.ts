@@ -10,3 +10,4 @@ export * from "./sessions";
 export * from "./settings";
 export * from "./ui";
 export * from "./usage";
+export * from "./models";
