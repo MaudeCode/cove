@@ -15,6 +15,7 @@ export {
 
 // Form controls
 export { Input, type InputProps, type InputSize } from "./Input";
+export { DatePicker } from "./DatePicker";
 export { Select, type SelectProps, type SelectOption, type SelectSize } from "./Select";
 export { Toggle, type ToggleProps, type ToggleSize } from "./Toggle";
 export { Checkbox, type CheckboxProps, type CheckboxSize } from "./Checkbox";

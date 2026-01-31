@@ -15,22 +15,9 @@ import {
   hasDateFilter,
   clearDateFilter,
 } from "@/signals/chat";
-import { IconButton, SearchIcon, CloseIcon, XIcon } from "@/components/ui";
+import { IconButton, DatePicker, SearchIcon, CloseIcon, XIcon } from "@/components/ui";
 import { hasContent } from "@/lib/utils";
 import { t } from "@/lib/i18n";
-
-/** Format date for input[type=date] value (YYYY-MM-DD) */
-function formatDateInput(date: Date | null): string {
-  if (!date) return "";
-  return date.toISOString().split("T")[0];
-}
-
-/** Parse date from input[type=date] value */
-function parseDateInput(value: string): Date | null {
-  if (!value) return null;
-  const date = new Date(value + "T00:00:00");
-  return isNaN(date.getTime()) ? null : date;
-}
 
 export function SearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
@@ -85,17 +72,6 @@ export function SearchBar() {
   const hasQuery = hasContent(searchQuery.value);
   const hasFilters = hasQuery || hasDateFilter.value;
 
-  // Shared input styling
-  const inputClass = `
-    px-2.5 py-1.5 text-sm rounded-lg
-    bg-[var(--color-bg-primary)] 
-    border border-[var(--color-border)]
-    text-[var(--color-text-primary)]
-    placeholder:text-[var(--color-text-muted)]
-    focus:outline-none focus:border-[var(--color-accent)]/50
-    transition-colors
-  `;
-
   return (
     <div class="flex items-center gap-3 px-3 py-2 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)]">
       {/* Search icon */}
@@ -108,29 +84,23 @@ export function SearchBar() {
         value={searchQuery.value}
         onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
         placeholder={t("chat.searchPlaceholder")}
-        class={`flex-1 min-w-[120px] ${inputClass}`}
+        class="flex-1 min-w-[120px] px-2.5 py-1.5 text-sm rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/50 transition-colors"
       />
 
       {/* Date range */}
       <div class="flex items-center gap-1.5 flex-shrink-0">
-        <input
-          type="date"
-          value={formatDateInput(dateRangeStart.value)}
-          onChange={(e) =>
-            (dateRangeStart.value = parseDateInput((e.target as HTMLInputElement).value))
-          }
-          class={`w-[130px] ${inputClass}`}
-          title={t("chat.dateRange")}
+        <DatePicker
+          value={dateRangeStart.value}
+          onChange={(date) => (dateRangeStart.value = date)}
+          placeholder="From"
+          class="w-[130px]"
         />
         <span class="text-[var(--color-text-muted)] text-sm">–</span>
-        <input
-          type="date"
-          value={formatDateInput(dateRangeEnd.value)}
-          onChange={(e) =>
-            (dateRangeEnd.value = parseDateInput((e.target as HTMLInputElement).value))
-          }
-          class={`w-[130px] ${inputClass}`}
-          title={t("chat.dateRange")}
+        <DatePicker
+          value={dateRangeEnd.value}
+          onChange={(date) => (dateRangeEnd.value = date)}
+          placeholder="To"
+          class="w-[130px]"
         />
         {hasDateFilter.value && (
           <button
