@@ -12,6 +12,7 @@ import { log } from "@/lib/logger";
 import { send, isConnected, mainSessionKey } from "@/lib/gateway";
 import {
   activeSessionKey,
+  effectiveSessionKey,
   sessionsByRecent,
   sessionKindFilter,
   setSessionKindFilter,
@@ -104,7 +105,7 @@ export function Sidebar() {
                   <SessionItem
                     session={session}
                     isActive={
-                      activeSessionKey.value === session.key &&
+                      effectiveSessionKey.value === session.key &&
                       currentPath.value.startsWith("/chat")
                     }
                     isMain={isMain}
