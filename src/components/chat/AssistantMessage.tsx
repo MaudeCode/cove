@@ -42,20 +42,29 @@ function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBloc
   });
 
   // Sort tool calls by their insertion position
+  // Treat insertedAt:0 as "unknown" if there's content - this happens when tool events
+  // arrive before text deltas (race condition after page refresh or reconnection)
+  const getEffectivePosition = (tc: ToolCall): number => {
+    const pos = tc.insertedAtContentLength;
+    if (pos === undefined) return Infinity;
+    // If tool claims position 0 but there's content, it's likely a race condition
+    // Put it at the end instead of breaking the text flow
+    if (pos === 0 && content.length > 0) return Infinity;
+    return pos;
+  };
+
   const sortedTools = [...toolCalls].sort((a, b) => {
-    const posA = a.insertedAtContentLength ?? Infinity;
-    const posB = b.insertedAtContentLength ?? Infinity;
-    return posA - posB;
+    return getEffectivePosition(a) - getEffectivePosition(b);
   });
 
   const blocks: ContentBlock[] = [];
   let currentPos = 0;
 
   for (const tool of sortedTools) {
-    const insertPos = tool.insertedAtContentLength;
+    const insertPos = getEffectivePosition(tool);
 
-    // If no insertion position, tool goes at end
-    if (insertPos === undefined || insertPos === Infinity) {
+    // If no insertion position (or corrected to end), tool goes at end
+    if (insertPos === Infinity) {
       continue; // Will add at end
     }
 
@@ -93,9 +102,10 @@ function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBloc
     }
   }
 
-  // Add any tool calls without insertion positions at the end
+  // Add any tool calls without valid insertion positions at the end
+  // (includes undefined positions and position:0 with existing content)
   for (const tool of sortedTools) {
-    if (tool.insertedAtContentLength === undefined) {
+    if (getEffectivePosition(tool) === Infinity) {
       blocks.push({ type: "tool", toolCall: tool });
     }
   }
@@ -148,8 +158,14 @@ export function AssistantMessage({
 
       {/* Message Content - interleaved blocks */}
       <div class="space-y-3">
-        {blocks.map((block, idx) =>
-          block.type === "text" ? (
+        {blocks.map((block, idx) => {
+          log.chat.debug("Rendering block", {
+            idx,
+            type: block.type,
+            contentLen: block.type === "text" ? block.content.length : undefined,
+            toolName: block.type === "tool" ? block.toolCall.name : undefined,
+          });
+          return block.type === "text" ? (
             <div
               key={`text-${idx}`}
               class="prose prose-sm max-w-none text-[var(--color-text-primary)]"
@@ -160,8 +176,8 @@ export function AssistantMessage({
             <div key={block.toolCall.id}>
               <ToolCallComponent toolCall={block.toolCall} />
             </div>
-          ),
-        )}
+          );
+        })}
 
         {/* Show streaming indicator after all content */}
         {isStreaming && (
