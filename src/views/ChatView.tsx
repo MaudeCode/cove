@@ -30,7 +30,13 @@ import {
   updateSession,
 } from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
-import { MessageList, ChatInput, ConnectionBanner, SearchBar } from "@/components/chat";
+import {
+  MessageList,
+  ChatInput,
+  ConnectionBanner,
+  CompactionBanner,
+  SearchBar,
+} from "@/components/chat";
 
 interface ChatViewProps {
   /** Route path (from preact-router) */
@@ -130,6 +136,9 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     <div class="flex-1 flex flex-col overflow-hidden">
       {/* Connection status banner */}
       <ConnectionBanner />
+
+      {/* Compaction status banner */}
+      <CompactionBanner />
 
       {/* Search bar */}
       <SearchBar />
