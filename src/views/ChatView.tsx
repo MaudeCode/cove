@@ -33,6 +33,13 @@ export function ChatView({ sessionKey }: ChatViewProps) {
   const prevSessionRef = useRef<string | null>(null);
   const wasConnectedRef = useRef<boolean>(false);
 
+  // Debug: log when component renders and what streaming values are
+  console.log("[RENDER] ChatView", {
+    isStreaming: isStreaming.value,
+    contentLen: streamingContent.value.length,
+    toolCallsLen: streamingToolCalls.value.length,
+  });
+
   // Sync session from URL to signal
   useEffect(() => {
     // Decode URL-encoded session key (e.g., "agent%3Amain%3Amain" -> "agent:main:main")
