@@ -191,20 +191,6 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
 /**
  * Send the connect request with proper protocol params
  */
-/**
- * Get or create a stable device ID for this browser
- */
-function getDeviceId(): string {
-  const storageKey = "cove:deviceId";
-  let deviceId = localStorage.getItem(storageKey);
-  if (!deviceId) {
-    // Generate a stable device ID
-    deviceId = `cove-${crypto.randomUUID()}`;
-    localStorage.setItem(storageKey, deviceId);
-  }
-  return deviceId;
-}
-
 async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> {
   const params = {
     minProtocol: PROTOCOL_VERSION,
@@ -218,9 +204,6 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
     },
     role: "operator",
     scopes: ["operator.read", "operator.write"],
-    device: {
-      id: getDeviceId(),
-    },
     auth: {} as { token?: string; password?: string },
   };
 
