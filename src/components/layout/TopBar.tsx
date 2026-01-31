@@ -6,7 +6,7 @@
 
 import { t } from "@/lib/i18n";
 import { themePreference, setTheme, getAllThemes } from "@/lib/theme";
-import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
+import { connectionState, isConnected, gatewayVersion, isInitialLoad } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
 import { sidebarOpen } from "@/signals/ui";
 import { IconButton, Select, CloseIcon, MenuIcon, SettingsIcon, LogoutIcon } from "@/components/ui";
@@ -50,19 +50,21 @@ export function TopBar() {
 
         {/* Right side: connection status + theme + settings */}
         <div class="flex items-center gap-4">
-          {/* Connection status */}
-          <div class="flex items-center gap-2 text-sm">
-            <span
-              class={`w-2 h-2 rounded-full ${getStatusDotColor(connectionState.value)}`}
-              aria-hidden="true"
-            />
-            <span class={`hidden sm:inline ${getStatusTextColor(connectionState.value)}`}>
-              {getStatusLabel(connectionState.value)}
-              {isConnected.value && gatewayVersion.value && gatewayVersion.value !== "dev" && (
-                <span class="text-[var(--color-text-muted)]"> v{gatewayVersion.value}</span>
-              )}
-            </span>
-          </div>
+          {/* Connection status - hidden during initial load */}
+          {!isInitialLoad.value && (
+            <div class="flex items-center gap-2 text-sm">
+              <span
+                class={`w-2 h-2 rounded-full ${getStatusDotColor(connectionState.value)}`}
+                aria-hidden="true"
+              />
+              <span class={`hidden sm:inline ${getStatusTextColor(connectionState.value)}`}>
+                {getStatusLabel(connectionState.value)}
+                {isConnected.value && gatewayVersion.value && gatewayVersion.value !== "dev" && (
+                  <span class="text-[var(--color-text-muted)]"> v{gatewayVersion.value}</span>
+                )}
+              </span>
+            </div>
+          )}
 
           {/* Theme selector */}
           <Select
