@@ -11,7 +11,7 @@
  *   {isStreaming.value && <StreamingMessage content={streamingContent.value} toolCalls={streamingToolCalls.value} />}
  */
 
-import { signal } from "@preact/signals";
+import { signal, computed } from "@preact/signals";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatRun } from "@/types/chat";
 
@@ -79,7 +79,10 @@ function syncStreamingSignals(): void {
     streamingToolCalls.value = [];
   }
   isStreaming.value = foundStreaming;
-  console.log("[SIGNAL] syncStreamingSignals:", { isStreaming: isStreaming.value, contentLen: streamingContent.value.length });
+  console.log("[SIGNAL] syncStreamingSignals:", {
+    isStreaming: isStreaming.value,
+    contentLen: streamingContent.value.length,
+  });
 }
 
 // ============================================
@@ -139,7 +142,11 @@ export function startRun(runId: string, sessionKey: string): void {
  */
 export function updateRunContent(runId: string, content: string, toolCalls: ToolCall[] = []): void {
   const run = activeRuns.value.get(runId);
-  console.log("[SIGNAL] updateRunContent called", { runId, contentLen: content.length, hasRun: !!run });
+  console.log("[SIGNAL] updateRunContent called", {
+    runId,
+    contentLen: content.length,
+    hasRun: !!run,
+  });
   if (!run) {
     console.log("[SIGNAL] No run found! Active runs:", Array.from(activeRuns.value.keys()));
     return;
