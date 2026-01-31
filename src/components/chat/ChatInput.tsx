@@ -8,6 +8,7 @@
 import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
+import { hasContent } from "@/lib/utils";
 import { SendIcon, StopIcon } from "@/components/ui";
 import { ModelPicker } from "./ModelPicker";
 import { QueuedMessages } from "./QueuedMessages";
@@ -100,8 +101,8 @@ export function ChatInput({
     textareaRef.current?.focus();
   }, []);
 
-  const canSend = value.value.trim().length > 0 && !disabled;
-  const hasText = value.value.trim().length > 0;
+  const canSend = hasContent(value.value) && !disabled;
+  const hasText = hasContent(value.value);
 
   return (
     <div class="pb-3 pt-2">

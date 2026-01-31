@@ -52,18 +52,20 @@ export function TopBar() {
         {/* Right side: connection status + theme + settings */}
         <div class="flex items-center gap-4">
           {/* Connection status - always visible, fade in quickly to hide initial disconnected state */}
-          <div class="flex items-center gap-2 text-sm animate-[fade-in_150ms_ease-out_100ms_forwards] opacity-0">
-            <span
-              class={`w-2 h-2 rounded-full ${getStatusDotColor(connectionState.value)}`}
-              aria-hidden="true"
-            />
-            <span class={`hidden sm:inline ${getStatusTextColor(connectionState.value)}`}>
-              {getStatusLabel(connectionState.value)}
-              {isConnected.value && gatewayVersion.value && gatewayVersion.value !== "dev" && (
-                <span class="text-[var(--color-text-muted)]"> v{gatewayVersion.value}</span>
-              )}
-            </span>
-          </div>
+          {(() => {
+            const style = getStatusStyle(connectionState.value);
+            return (
+              <div class="flex items-center gap-2 text-sm animate-[fade-in_150ms_ease-out_100ms_forwards] opacity-0">
+                <span class={`w-2 h-2 rounded-full ${style.dot}`} aria-hidden="true" />
+                <span class={`hidden sm:inline ${style.text}`}>
+                  {t(style.label)}
+                  {isConnected.value && gatewayVersion.value && gatewayVersion.value !== "dev" && (
+                    <span class="text-[var(--color-text-muted)]"> v{gatewayVersion.value}</span>
+                  )}
+                </span>
+              </div>
+            );
+          })()}
 
           {/* Usage badge - only shows when Anthropic OAuth is active */}
           <UsageBadge />
@@ -100,49 +102,45 @@ export function TopBar() {
 // Helpers
 // ============================================
 
-function getStatusDotColor(state: string): string {
-  switch (state) {
-    case "connected":
-      return "bg-[var(--color-success)]";
-    case "connecting":
-    case "authenticating":
-    case "reconnecting":
-      return "bg-[var(--color-warning)]";
-    case "error":
-      return "bg-[var(--color-error)]";
-    default:
-      return "bg-[var(--color-text-muted)]";
-  }
+interface StatusStyle {
+  dot: string;
+  text: string;
+  label: string;
 }
 
-function getStatusTextColor(state: string): string {
-  switch (state) {
-    case "connected":
-      return "text-[var(--color-success)]";
-    case "connecting":
-    case "authenticating":
-    case "reconnecting":
-      return "text-[var(--color-warning)]";
-    case "error":
-      return "text-[var(--color-error)]";
-    default:
-      return "text-[var(--color-text-muted)]";
-  }
-}
+const STATUS_STYLES: Record<string, StatusStyle> = {
+  connected: {
+    dot: "bg-[var(--color-success)]",
+    text: "text-[var(--color-success)]",
+    label: "status.connected",
+  },
+  connecting: {
+    dot: "bg-[var(--color-warning)]",
+    text: "text-[var(--color-warning)]",
+    label: "status.connecting",
+  },
+  authenticating: {
+    dot: "bg-[var(--color-warning)]",
+    text: "text-[var(--color-warning)]",
+    label: "status.connecting",
+  },
+  reconnecting: {
+    dot: "bg-[var(--color-warning)]",
+    text: "text-[var(--color-warning)]",
+    label: "status.reconnecting",
+  },
+  error: {
+    dot: "bg-[var(--color-error)]",
+    text: "text-[var(--color-error)]",
+    label: "status.error",
+  },
+  disconnected: {
+    dot: "bg-[var(--color-text-muted)]",
+    text: "text-[var(--color-text-muted)]",
+    label: "status.disconnected",
+  },
+};
 
-function getStatusLabel(state: string): string {
-  switch (state) {
-    case "connected":
-      return t("status.connected");
-    case "connecting":
-      return t("status.connecting");
-    case "reconnecting":
-      return t("status.reconnecting");
-    case "authenticating":
-      return t("status.connecting");
-    case "error":
-      return t("status.error");
-    default:
-      return t("status.disconnected");
-  }
+function getStatusStyle(state: string): StatusStyle {
+  return STATUS_STYLES[state] ?? STATUS_STYLES.disconnected;
 }

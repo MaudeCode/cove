@@ -7,6 +7,7 @@
 import { useRef, useEffect, useCallback } from "preact/hooks";
 import { searchQuery, isSearchOpen, searchMatchCount } from "@/signals/chat";
 import { Input, IconButton, SearchIcon, CloseIcon } from "@/components/ui";
+import { hasContent } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 
 export function SearchBar() {
@@ -58,7 +59,7 @@ export function SearchBar() {
   }
 
   const matchCount = searchMatchCount.value;
-  const hasQuery = searchQuery.value.trim().length > 0;
+  const hasQuery = hasContent(searchQuery.value);
 
   return (
     <div class="flex items-center gap-2 px-3 py-2 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)]">

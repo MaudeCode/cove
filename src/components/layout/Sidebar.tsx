@@ -9,6 +9,7 @@ import { useSignal, signal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
+import { hasContent } from "@/lib/utils";
 import { send, isConnected } from "@/lib/gateway";
 import { isMainSession } from "@/lib/session-utils";
 import {
@@ -269,7 +270,7 @@ const timeGroupOrder: TimeGroup[] = ["pinned", "today", "yesterday", "thisWeek",
 function SessionList({ onRename, onDelete }: SessionListProps) {
   const groups = sessionsGrouped.value;
   const hasResults = sessionsByRecent.value.length > 0;
-  const hasSearch = sessionSearchQuery.value.trim().length > 0;
+  const hasSearch = hasContent(sessionSearchQuery.value);
 
   if (!hasResults) {
     return (
