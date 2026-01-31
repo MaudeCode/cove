@@ -2,6 +2,13 @@
  * ModelPicker
  *
  * Dropdown to select the model for the current session.
+ *
+ * WORKAROUND: We filter to only show models from the current provider because
+ * OpenClaw's models.list returns ALL known models, not just authenticated ones.
+ * This prevents users from seeing (and failing to use) models they don't have
+ * auth for. Proper fix belongs in OpenClaw's loadModelCatalog().
+ *
+ * @see src/signals/models.ts for details
  */
 
 import { useState, useRef, useEffect } from "preact/hooks";
@@ -14,6 +21,16 @@ interface ModelPickerProps {
   sessionKey: string;
   currentModel?: string;
   onModelChange?: (modelId: string) => void;
+}
+
+/**
+ * Extract provider from a model ID (e.g., "anthropic" from "anthropic/claude-opus-4-5")
+ */
+function getProviderFromModelId(modelId: string): string | null {
+  if (!modelId) return null;
+  const slashIndex = modelId.indexOf("/");
+  if (slashIndex === -1) return null;
+  return modelId.substring(0, slashIndex);
 }
 
 export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPickerProps) {
@@ -38,6 +55,17 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     return null;
   }
 
+  // Filter to current provider only (workaround for OpenClaw showing all models)
+  const currentProvider = getProviderFromModelId(currentModel ?? "");
+  const availableModels = currentProvider
+    ? (modelsByProvider.value.get(currentProvider) ?? [])
+    : [];
+
+  // Don't render if no models for this provider
+  if (availableModels.length === 0) {
+    return null;
+  }
+
   const displayName = currentModel ? getModelDisplayName(currentModel) : "Default";
 
   const handleSelect = async (modelId: string) => {
@@ -49,7 +77,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     setUpdating(true);
     try {
       await send("sessions.patch", {
-        sessionKey,
+        key: sessionKey,
         model: modelId,
       });
       onModelChange?.(modelId);
@@ -79,30 +107,22 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
 
       {open && (
         <div class="absolute bottom-full left-0 mb-1 w-56 max-h-64 overflow-y-auto bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50">
-          {/* Group by provider */}
-          {Array.from(modelsByProvider.value.entries()).map(([provider, providerModels]) => (
-            <div key={provider}>
-              <div class="px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)]">
-                {provider}
-              </div>
-              {providerModels.map((model) => (
-                <button
-                  key={model.id}
-                  type="button"
-                  onClick={() => handleSelect(model.id)}
-                  class={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between ${
-                    currentModel === model.id
-                      ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                      : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
-                  }`}
-                >
-                  <span class="truncate">{model.name}</span>
-                  {model.reasoning && (
-                    <span class="text-[10px] text-[var(--color-warning)] ml-2">🧠</span>
-                  )}
-                </button>
-              ))}
-            </div>
+          {availableModels.map((model) => (
+            <button
+              key={model.id}
+              type="button"
+              onClick={() => handleSelect(model.id)}
+              class={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center justify-between ${
+                currentModel === model.id
+                  ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
+                  : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
+              }`}
+            >
+              <span class="truncate">{model.name}</span>
+              {model.reasoning && (
+                <span class="text-[10px] text-[var(--color-warning)] ml-2">🧠</span>
+              )}
+            </button>
           ))}
         </div>
       )}
