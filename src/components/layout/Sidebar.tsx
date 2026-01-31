@@ -27,6 +27,7 @@ import {
 import type { TimeGroup } from "@/lib/session-utils";
 import {
   Button,
+  Toggle,
   PlusIcon,
   ChevronDownIcon,
   ExternalLinkIcon,
@@ -228,15 +229,14 @@ function SessionFilterPanel() {
           </div>
 
           {/* Cron toggle */}
-          <label class="flex items-center gap-2 px-1 py-1 cursor-pointer text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]">
-            <input
-              type="checkbox"
+          <div class="px-1 py-1">
+            <Toggle
+              size="sm"
               checked={showCronSessions.value}
               onChange={toggleCronSessions}
-              class="w-3.5 h-3.5 rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]/50"
+              label={t("sessions.showCron")}
             />
-            {t("sessions.showCron")}
-          </label>
+          </div>
 
           {/* Clear all button */}
           {hasActiveFilters && (
