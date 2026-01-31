@@ -84,6 +84,14 @@
     "processing": "Processing..."
   },
 
+  "connection": {
+    "disconnected": "Connection lost. Messages will be sent when reconnected.",
+    "reconnecting": "Reconnecting to gateway...",
+    "messageFailed": "Failed to send. Tap to retry.",
+    "messageSending": "Sending...",
+    "messageQueued": "Queued"
+  },
+
   "nav": {
     "chat": "Chat",
     "sessions": "Sessions",

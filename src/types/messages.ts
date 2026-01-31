@@ -7,6 +7,9 @@
  * @see "Streaming = History" principle in ROADMAP.md
  */
 
+/** Message send status */
+export type MessageStatus = "sending" | "sent" | "failed";
+
 export interface Message {
   /** Unique message ID */
   id: string;
@@ -25,6 +28,15 @@ export interface Message {
 
   /** Whether this message is currently streaming */
   isStreaming?: boolean;
+
+  /** Send status for user messages */
+  status?: MessageStatus;
+
+  /** Error message if send failed */
+  error?: string;
+
+  /** Session key (for retry) */
+  sessionKey?: string;
 }
 
 export interface ToolCall {
