@@ -11,3 +11,4 @@ export * from "./sessions";
 export * from "./settings";
 export * from "./theme";
 export * from "./usage";
+export * from "./models";

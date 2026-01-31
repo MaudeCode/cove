@@ -19,7 +19,13 @@ import {
   hasQueuedMessages,
   getCachedSessionKey,
 } from "@/signals/chat";
-import { activeSessionKey, setActiveSession, effectiveSessionKey } from "@/signals/sessions";
+import {
+  activeSessionKey,
+  setActiveSession,
+  effectiveSessionKey,
+  activeSession,
+  updateSession,
+} from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
 import { MessageList, ChatInput, ConnectionBanner } from "@/components/chat";
 
@@ -124,6 +130,14 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         onAbort={handleAbort}
         disabled={false} // Allow typing even when disconnected (will queue)
         isStreaming={isStreaming.value}
+        sessionKey={effectiveSessionKey.value}
+        currentModel={activeSession.value?.model}
+        onModelChange={(modelId) => {
+          // Update local session state
+          if (effectiveSessionKey.value) {
+            updateSession(effectiveSessionKey.value, { model: modelId });
+          }
+        }}
       />
     </div>
   );

@@ -9,6 +9,7 @@ import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { SendIcon, StopIcon } from "@/components/ui";
+import { ModelPicker } from "./ModelPicker";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -16,6 +17,9 @@ interface ChatInputProps {
   disabled?: boolean;
   isStreaming?: boolean;
   placeholder?: string;
+  sessionKey?: string;
+  currentModel?: string;
+  onModelChange?: (modelId: string) => void;
 }
 
 export function ChatInput({
@@ -24,6 +28,9 @@ export function ChatInput({
   disabled = false,
   isStreaming = false,
   placeholder,
+  sessionKey,
+  currentModel,
+  onModelChange,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const value = useSignal("");
@@ -120,6 +127,17 @@ export function ChatInput({
               disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ minHeight: "60px", maxHeight: "200px" }}
           />
+
+          {/* Model picker - bottom left */}
+          {sessionKey && (
+            <div class="absolute bottom-2 left-2">
+              <ModelPicker
+                sessionKey={sessionKey}
+                currentModel={currentModel}
+                onModelChange={onModelChange}
+              />
+            </div>
+          )}
 
           {/* Action buttons - bottom right, inside container */}
           <div class="absolute bottom-2 right-2 flex items-center gap-1.5">
