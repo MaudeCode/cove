@@ -9,7 +9,7 @@ import { useSignal, signal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
-import { send, isConnected } from "@/lib/gateway";
+import { send, isConnected, mainSessionKey } from "@/lib/gateway";
 import {
   activeSessionKey,
   sessionsByRecent,
@@ -94,19 +94,27 @@ export function Sidebar() {
           <p class="text-sm text-[var(--color-text-muted)] px-2 py-4">{t("sessions.noSessions")}</p>
         ) : (
           <ul class="space-y-0.5">
-            {sessionsByRecent.value.map((session) => (
-              <li key={session.key}>
-                <SessionItem
-                  session={session}
-                  isActive={
-                    activeSessionKey.value === session.key && currentPath.value.startsWith("/chat")
-                  }
-                  onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
-                  onRename={setRenameSession}
-                  onDelete={setDeleteSession}
-                />
-              </li>
-            ))}
+            {sessionsByRecent.value.map((session) => {
+              const isMain =
+                session.key === mainSessionKey.value ||
+                session.key === "main" ||
+                session.key.endsWith(":main");
+              return (
+                <li key={session.key}>
+                  <SessionItem
+                    session={session}
+                    isActive={
+                      activeSessionKey.value === session.key &&
+                      currentPath.value.startsWith("/chat")
+                    }
+                    isMain={isMain}
+                    onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
+                    onRename={setRenameSession}
+                    onDelete={setDeleteSession}
+                  />
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
