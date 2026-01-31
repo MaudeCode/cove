@@ -71,13 +71,18 @@ export function MessageList({
   }, []);
 
   /**
-   * Auto-scroll on new messages (if at bottom)
+   * Auto-scroll on new messages or tool call changes (if at bottom)
+   * We track: message count, content length, tool call count, and completed tool count
    */
+  const completedToolCount = streamingToolCalls.filter(
+    (tc) => tc.status === "complete" || tc.status === "error",
+  ).length;
+
   useEffect(() => {
     if (isAutoScrolling.current) {
       scrollToBottom(false);
     }
-  }, [messages.length, streamingContent, scrollToBottom]);
+  }, [messages.length, streamingContent.length, streamingToolCalls.length, completedToolCount, scrollToBottom]);
 
   /**
    * Initial scroll to bottom
