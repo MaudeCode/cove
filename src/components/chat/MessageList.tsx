@@ -10,6 +10,7 @@ import type { Message, ToolCall } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
 import { IconButton, Spinner, ArrowDownIcon } from "@/components/ui";
 import { t } from "@/lib/i18n";
+import { log } from "@/lib/logger";
 
 interface MessageListProps {
   messages: Message[];
@@ -39,6 +40,15 @@ export function MessageList({
   userAvatar,
   queuedCount = 0,
 }: MessageListProps) {
+  // Debug: log every render to track reactivity issues
+  log.chat.debug("MessageList render", {
+    messagesCount: messages.length,
+    streamingContentLen: streamingContent.length,
+    streamingToolCallsCount: streamingToolCalls.length,
+    isStreaming,
+    queuedCount,
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const showScrollButton = useSignal(false);
