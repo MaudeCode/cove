@@ -105,7 +105,7 @@ export function MessageList({
         aria-label="Messages"
       >
         {/* Centered container with max-width */}
-        <div class="max-w-3xl mx-auto px-4 py-6">
+        <div class="max-w-5xl mx-auto px-6 py-6">
           {/* Loading state */}
           {isLoading && (
             <div class="flex justify-center py-8">
