@@ -53,23 +53,28 @@ export function AssistantMessage({
 
       {/* Message Content */}
       <div class="ml-8">
-        {/* Tool calls (inline, before or during content) */}
-        {hasToolCalls && (
-          <div class="mb-3">
-            <ToolCallList toolCalls={message.toolCalls!} />
-          </div>
-        )}
-
-        {/* Text content */}
+        {/* Text content first */}
         {message.content && (
           <div class="prose prose-sm max-w-none text-[var(--color-text-primary)]">
             <MessageContent content={message.content} isStreaming={isStreaming} />
           </div>
         )}
 
-        {/* Streaming cursor */}
-        {isStreaming && (
+        {/* Streaming cursor (after text, before tool calls) */}
+        {isStreaming && !hasToolCalls && (
           <span class="inline-block w-2 h-4 bg-[var(--color-accent)] animate-pulse rounded-sm ml-0.5" />
+        )}
+
+        {/* Tool calls (after text content) */}
+        {hasToolCalls && (
+          <div class="mt-3">
+            <ToolCallList toolCalls={message.toolCalls!} />
+          </div>
+        )}
+
+        {/* Streaming cursor (after tool calls if we have them) */}
+        {isStreaming && hasToolCalls && (
+          <span class="inline-block w-2 h-4 bg-[var(--color-accent)] animate-pulse rounded-sm ml-0.5 mt-2" />
         )}
       </div>
     </div>
