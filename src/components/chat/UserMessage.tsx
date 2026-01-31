@@ -103,10 +103,10 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
 
 function LoadingDots() {
   return (
-    <span class="inline-flex gap-0.5">
-      <span class="w-1 h-1 rounded-full bg-current animate-pulse" />
-      <span class="w-1 h-1 rounded-full bg-current animate-pulse [animation-delay:150ms]" />
-      <span class="w-1 h-1 rounded-full bg-current animate-pulse [animation-delay:300ms]" />
+    <span class="inline-flex items-end gap-0.5">
+      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot" />
+      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot [animation-delay:150ms]" />
+      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot [animation-delay:300ms]" />
     </span>
   );
 }
