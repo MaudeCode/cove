@@ -795,6 +795,11 @@ export const navigation: NavSection[] = [
   - [ ] Collapsed/muted styling (expandable on click)
   - [ ] Group consecutive heartbeats into single collapsible block
   - [ ] Optional: filter toggle to hide/show heartbeats
+- [ ] Compaction event UX
+  - [ ] Detect compaction summary messages in history
+  - [ ] Visual indicator for "conversation was compacted here"
+  - [ ] Collapsed/expandable view of compaction summary
+  - [ ] Clear separation between pre/post compaction context
 
 ### 2.4 Settings View
 
