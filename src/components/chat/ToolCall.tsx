@@ -14,8 +14,8 @@ interface ToolCallProps {
 }
 
 export function ToolCall({ toolCall }: ToolCallProps) {
-  // Auto-expand errors, collapse success
-  const [expanded, setExpanded] = useState(toolCall.status === "error");
+  // Always start collapsed - user can click to expand
+  const [expanded, setExpanded] = useState(false);
 
   const duration =
     toolCall.completedAt && toolCall.startedAt ? toolCall.completedAt - toolCall.startedAt : null;
