@@ -223,6 +223,7 @@
 
   "cron": {
     "title": "Cron Jobs",
+    "comingSoon": "Cron job management coming in Phase 3.2",
     "noJobs": "No cron jobs configured",
     "createJob": "Create Job",
     "editJob": "Edit Job",
@@ -239,6 +240,7 @@
 
   "config": {
     "title": "Configuration",
+    "comingSoon": "Configuration editor coming in Phase 3.3",
     "editor": "Config Editor",
     "apply": "Apply Changes",
     "applyConfirm": "Apply configuration changes? This will restart the gateway.",
