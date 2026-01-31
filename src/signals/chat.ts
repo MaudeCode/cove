@@ -140,15 +140,14 @@ export function startRun(runId: string, sessionKey: string): void {
 /**
  * Update a chat run with streaming content and tool calls
  */
-export function updateRunContent(runId: string, content: string, toolCalls: ToolCall[] = []): void {
+export function updateRunContent(
+  runId: string,
+  content: string,
+  toolCalls: ToolCall[] = [],
+  lastBlockStart?: number,
+): void {
   const run = activeRuns.value.get(runId);
-  console.log("[SIGNAL] updateRunContent called", {
-    runId,
-    contentLen: content.length,
-    hasRun: !!run,
-  });
   if (!run) {
-    console.log("[SIGNAL] No run found! Active runs:", Array.from(activeRuns.value.keys()));
     return;
   }
 
@@ -158,6 +157,7 @@ export function updateRunContent(runId: string, content: string, toolCalls: Tool
     status: "streaming",
     content,
     toolCalls,
+    lastBlockStart: lastBlockStart ?? run.lastBlockStart,
   });
   activeRuns.value = newRuns;
   syncStreamingSignals();
