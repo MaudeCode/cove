@@ -137,10 +137,10 @@ export function SessionItem({
             )}
           </span>
 
-          {/* Meta row - show agent name + time */}
-          <span class="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mt-0.5">
+          {/* Meta row - agent name left, time pinned right */}
+          <span class="flex items-center text-xs text-[var(--color-text-muted)] mt-0.5">
             {agentName && <span>{agentName}</span>}
-            {agentName && lastActive && <span>·</span>}
+            <span class="flex-1" />
             {lastActive && (
               <span class="whitespace-nowrap">{formatRelativeTime(new Date(lastActive))}</span>
             )}
