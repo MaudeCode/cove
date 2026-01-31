@@ -81,7 +81,7 @@ export const activeSession = computed(
   () => sessions.value.find((s) => s.key === effectiveSessionKey.value) ?? null,
 );
 
-/** Sessions sorted by last active time, filtered by kind */
+/** Sessions sorted by last active time, filtered by kind, with main pinned to top */
 export const sessionsByRecent = computed(() => {
   let filtered = sessions.value;
 
@@ -90,8 +90,17 @@ export const sessionsByRecent = computed(() => {
     filtered = filtered.filter((s) => s.kind === sessionKindFilter.value);
   }
 
-  // Sort by most recent
-  return [...filtered].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+  // Sort by most recent, but pin main session to top
+  const mainKey = mainSessionKey.value;
+  return [...filtered].sort((a, b) => {
+    // Main session always first
+    const aIsMain = a.key === mainKey || a.key === "main" || a.key.endsWith(":main");
+    const bIsMain = b.key === mainKey || b.key === "main" || b.key.endsWith(":main");
+    if (aIsMain && !bIsMain) return -1;
+    if (bIsMain && !aIsMain) return 1;
+    // Otherwise sort by recency
+    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
+  });
 });
 
 /** Number of sessions */
