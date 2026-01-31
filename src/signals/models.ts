@@ -26,6 +26,9 @@ import type { ModelChoice, ModelsListResult } from "@/types/models";
 /** Available models from the gateway */
 export const models = signal<ModelChoice[]>([]);
 
+/** Default model from gateway status (e.g., "anthropic/claude-opus-4-5") */
+export const defaultModel = signal<string | null>(null);
+
 /** Whether we're loading models */
 export const isLoadingModels = signal<boolean>(false);
 
@@ -58,6 +61,15 @@ export const providers = computed(() => Array.from(modelsByProvider.value.keys()
 // Actions
 // ============================================
 
+/** Status response shape (partial - just what we need) */
+interface StatusResult {
+  sessions?: {
+    defaults?: {
+      model?: string | null;
+    };
+  };
+}
+
 /**
  * Load available models from the gateway
  */
@@ -66,9 +78,21 @@ export async function loadModels(): Promise<void> {
   modelsError.value = null;
 
   try {
-    const result = await send<ModelsListResult>("models.list", {});
-    models.value = result.models ?? [];
+    // Load models list and default model in parallel
+    const [modelsResult, statusResult] = await Promise.all([
+      send<ModelsListResult>("models.list", {}),
+      send<StatusResult>("status", {}).catch(() => null), // Don't fail if status unavailable
+    ]);
+
+    models.value = modelsResult.models ?? [];
     log.ui.debug("Loaded models:", models.value.length);
+
+    // Extract default model from status
+    const defaultModelValue = statusResult?.sessions?.defaults?.model;
+    if (defaultModelValue) {
+      defaultModel.value = defaultModelValue;
+      log.ui.debug("Default model:", defaultModelValue);
+    }
   } catch (err) {
     modelsError.value = err instanceof Error ? err.message : String(err);
     log.ui.error("Failed to load models:", err);
