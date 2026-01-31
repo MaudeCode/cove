@@ -76,13 +76,20 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     currentProvider = foundModel?.provider ?? null;
   }
   
-  // Get models for this provider and dedupe by ID
+  // Get models for this provider, dedupe by ID, and sort with current model first
   const providerModels = currentProvider
     ? (modelsByProvider.value.get(currentProvider) ?? [])
     : [];
-  const availableModels = providerModels.filter(
+  const dedupedModels = providerModels.filter(
     (model, index, self) => self.findIndex((m) => m.id === model.id) === index,
   );
+  const availableModels = dedupedModels.sort((a, b) => {
+    // Current model always first
+    if (a.id === effectiveModel) return -1;
+    if (b.id === effectiveModel) return 1;
+    // Then alphabetically by name
+    return a.name.localeCompare(b.name);
+  });
 
   console.log("[ModelPicker] filtering:", {
     currentModel,
