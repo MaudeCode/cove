@@ -65,8 +65,16 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
 
   // Filter to current provider only (workaround for OpenClaw showing all models)
   // If no currentModel (using default), fall back to first model's provider
-  const effectiveModel = currentModel ?? models.value[0]?.id;
-  const currentProvider = getProviderFromModelId(effectiveModel ?? "");
+  // Note: model IDs may be "provider/model" format OR just "model" with separate provider field
+  const firstModel = models.value[0];
+  const effectiveModel = currentModel ?? firstModel?.id;
+  
+  // Try to get provider from model ID (if slash-separated), otherwise use first model's provider field
+  let currentProvider = getProviderFromModelId(effectiveModel ?? "");
+  if (!currentProvider && firstModel) {
+    currentProvider = firstModel.provider;
+  }
+  
   const availableModels = currentProvider
     ? (modelsByProvider.value.get(currentProvider) ?? [])
     : [];
