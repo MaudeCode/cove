@@ -119,8 +119,9 @@ export async function sendMessage(
   try {
     log.chat.debug("Sending message to session:", sessionKey, "message:", message.slice(0, 50));
 
+    // Note: Don't pass sessionKey - let gateway route to the connected session
+    // Webchat connections are bound to the main session automatically
     const result = await send<ChatSendResult>("chat.send", {
-      sessionKey,
       message,
       thinking: options?.thinking,
       timeoutMs: options?.timeoutMs,
