@@ -102,14 +102,27 @@ export async function loadHistory(sessionKey: string, limit = 200): Promise<void
         msg.role === "assistant" &&
         Math.abs(msg.timestamp - prev.timestamp) < 60000 // Within 1 minute = same turn
       ) {
-        // Merge tool calls
+        const prevContentLen = prev.content.length;
+        const separator = prev.content && msg.content ? "\n\n" : "";
+
+        // Merge tool calls - adjust insertion positions for merged content
         if (msg.toolCalls && msg.toolCalls.length > 0) {
-          prev.toolCalls = [...(prev.toolCalls ?? []), ...msg.toolCalls];
+          // Tool calls from new message need their positions adjusted
+          const adjustedToolCalls = msg.toolCalls.map((tc) => ({
+            ...tc,
+            insertedAtContentLength:
+              tc.insertedAtContentLength !== undefined
+                ? prevContentLen + separator.length + tc.insertedAtContentLength
+                : undefined,
+          }));
+          prev.toolCalls = [...(prev.toolCalls ?? []), ...adjustedToolCalls];
         }
-        // Merge content (append with newline if both have content)
+
+        // Merge content (append with separator if both have content)
         if (msg.content) {
-          prev.content = prev.content ? `${prev.content}\n\n${msg.content}` : msg.content;
+          prev.content = prev.content ? `${prev.content}${separator}${msg.content}` : msg.content;
         }
+
         // Update timestamp to latest
         prev.timestamp = Math.max(prev.timestamp, msg.timestamp);
         continue; // Don't add as separate message
