@@ -14,13 +14,29 @@ import { isMainSession } from "@/lib/session-utils";
 import {
   activeSessionKey,
   effectiveSessionKey,
+  sessionsGrouped,
   sessionsByRecent,
   sessionKindFilter,
   setSessionKindFilter,
+  sessionSearchQuery,
+  setSessionSearchQuery,
+  showCronSessions,
+  toggleCronSessions,
+  hiddenCronCount,
   updateSession,
   removeSession,
 } from "@/signals/sessions";
-import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon, FilterIcon } from "@/components/ui";
+import type { TimeGroup } from "@/lib/session-utils";
+import {
+  Button,
+  PlusIcon,
+  ChevronDownIcon,
+  ExternalLinkIcon,
+  FilterIcon,
+  SearchIcon,
+  ClockIcon,
+  XIcon,
+} from "@/components/ui";
 import { SessionItem, SessionRenameModal, SessionDeleteModal } from "@/components/sessions";
 import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
 import type { Session } from "@/types/sessions";
@@ -85,36 +101,75 @@ export function Sidebar() {
 
       {/* Sessions section - scrollable */}
       <div class="flex-1 overflow-y-auto px-3 pb-3">
+        {/* Header with title and filter */}
         <div class="flex items-center justify-between px-2 py-1.5">
           <h3 class="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider">
             {t("nav.sessions")}
           </h3>
-          {/* Filter dropdown */}
-          <SessionKindFilter />
+          <div class="flex items-center gap-1">
+            <SessionKindFilter />
+          </div>
         </div>
-        {sessionsByRecent.value.length === 0 ? (
-          <p class="text-sm text-[var(--color-text-muted)] px-2 py-4">{t("sessions.noSessions")}</p>
-        ) : (
-          <ul class="space-y-0.5">
-            {sessionsByRecent.value.map((session) => {
-              return (
-                <li key={session.key}>
-                  <SessionItem
-                    session={session}
-                    isActive={
-                      effectiveSessionKey.value === session.key &&
-                      currentPath.value.startsWith("/chat")
-                    }
-                    isMain={isMainSession(session.key)}
-                    onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
-                    onRename={setRenameSession}
-                    onDelete={setDeleteSession}
-                  />
-                </li>
-              );
-            })}
-          </ul>
+
+        {/* Search input */}
+        <div class="relative mb-2">
+          <SearchIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+          <input
+            type="text"
+            value={sessionSearchQuery.value}
+            onInput={(e) => setSessionSearchQuery((e.target as HTMLInputElement).value)}
+            placeholder={t("sessions.searchPlaceholder")}
+            class="w-full pl-8 pr-8 py-1.5 text-sm rounded-lg
+              bg-[var(--color-bg-primary)] border border-[var(--color-border)]
+              text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]
+              focus:outline-none focus:border-[var(--color-accent)]/50
+              transition-colors"
+          />
+          {sessionSearchQuery.value && (
+            <button
+              type="button"
+              onClick={() => setSessionSearchQuery("")}
+              class="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded
+                text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]
+                transition-colors"
+              aria-label={t("actions.clear")}
+            >
+              <XIcon class="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
+
+        {/* Hidden cron sessions notice */}
+        {hiddenCronCount.value > 0 && !sessionSearchQuery.value && (
+          <button
+            type="button"
+            onClick={toggleCronSessions}
+            class="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 mb-2
+              text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]
+              bg-[var(--color-bg-primary)] rounded-lg border border-dashed border-[var(--color-border)]
+              transition-colors"
+          >
+            <ClockIcon class="w-3 h-3" />
+            {t("sessions.hiddenCron", { count: hiddenCronCount.value })}
+          </button>
         )}
+
+        {/* Show cron toggle when cron sessions are visible */}
+        {showCronSessions.value && hiddenCronCount.value === 0 && (
+          <button
+            type="button"
+            onClick={toggleCronSessions}
+            class="w-full flex items-center justify-center gap-1.5 px-2 py-1 mb-2
+              text-xs text-[var(--color-accent)] hover:text-[var(--color-accent)]/80
+              transition-colors"
+          >
+            <ClockIcon class="w-3 h-3" />
+            {t("sessions.showCron")} ✓
+          </button>
+        )}
+
+        {/* Session list with time groups */}
+        <SessionList onRename={setRenameSession} onDelete={setDeleteSession} />
       </div>
 
       {/* Navigation sections - pinned to bottom, collapsible */}
@@ -208,6 +263,100 @@ function SessionKindFilter() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/**
+ * Session list with time-based grouping
+ */
+interface SessionListProps {
+  onRename: (session: Session) => void;
+  onDelete: (session: Session) => void;
+}
+
+const timeGroupLabels: Record<TimeGroup, string> = {
+  pinned: "sessions.pinned",
+  today: "sessions.today",
+  yesterday: "sessions.yesterday",
+  thisWeek: "sessions.thisWeek",
+  older: "sessions.older",
+};
+
+const timeGroupOrder: TimeGroup[] = ["pinned", "today", "yesterday", "thisWeek", "older"];
+
+function SessionList({ onRename, onDelete }: SessionListProps) {
+  const groups = sessionsGrouped.value;
+  const hasResults = sessionsByRecent.value.length > 0;
+  const hasSearch = sessionSearchQuery.value.trim().length > 0;
+
+  if (!hasResults) {
+    return (
+      <p class="text-sm text-[var(--color-text-muted)] px-2 py-4">
+        {hasSearch ? t("sessions.noResults") : t("sessions.noSessions")}
+      </p>
+    );
+  }
+
+  // If searching, show flat list (no groups)
+  if (hasSearch) {
+    return (
+      <ul class="space-y-0.5">
+        {sessionsByRecent.value.map((session) => (
+          <li key={session.key}>
+            <SessionItem
+              session={session}
+              isActive={
+                effectiveSessionKey.value === session.key && currentPath.value.startsWith("/chat")
+              }
+              isMain={isMainSession(session.key)}
+              onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
+              onRename={onRename}
+              onDelete={onDelete}
+            />
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  // Show grouped list
+  return (
+    <div class="space-y-3">
+      {timeGroupOrder.map((groupKey) => {
+        const sessions = groups.get(groupKey);
+        if (!sessions || sessions.length === 0) return null;
+
+        // Don't show "Pinned" header for main session
+        const showHeader = groupKey !== "pinned";
+
+        return (
+          <div key={groupKey}>
+            {showHeader && (
+              <h4 class="text-[10px] font-semibold text-[var(--color-text-muted)] uppercase tracking-wider px-2 py-1">
+                {t(timeGroupLabels[groupKey])}
+              </h4>
+            )}
+            <ul class="space-y-0.5">
+              {sessions.map((session) => (
+                <li key={session.key}>
+                  <SessionItem
+                    session={session}
+                    isActive={
+                      effectiveSessionKey.value === session.key &&
+                      currentPath.value.startsWith("/chat")
+                    }
+                    isMain={isMainSession(session.key)}
+                    onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
+                    onRename={onRename}
+                    onDelete={onDelete}
+                  />
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      })}
     </div>
   );
 }
