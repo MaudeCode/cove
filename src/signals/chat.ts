@@ -253,23 +253,29 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
       const hasMatchingTool = existing.toolCalls.some((tc) => newToolIds.has(tc.id));
       
       if (hasMatchingTool) {
-        // Merge tool calls: update status of existing ones, keep content intact
+        // Merge tool calls: update status of existing ones
         const mergedToolCalls = existing.toolCalls.map((existingTc) => {
           const newTc = newMessage.toolCalls?.find((tc) => tc.id === existingTc.id);
           if (newTc) {
-            // Update status and result from the new data
             return { ...existingTc, status: newTc.status, result: newTc.result, completedAt: newTc.completedAt };
           }
           return existingTc;
         });
         
-        // Update the existing message - keep existing content, just update tool calls
+        // Merge content: keep existing content, append new content if different
+        let mergedContent = existing.content;
+        if (newMessage.content && !existing.content.includes(newMessage.content)) {
+          // New content is different - append it
+          const separator = existing.content ? "\n\n" : "";
+          mergedContent = existing.content + separator + newMessage.content;
+        }
+        
         messages.value = existingMessages.map((msg) =>
           msg.id === existing.id
-            ? { ...msg, toolCalls: mergedToolCalls }
+            ? { ...msg, content: mergedContent, toolCalls: mergedToolCalls }
             : msg,
         );
-        console.log("[CHAT] Updated tool call status in existing message:", existing.id);
+        console.log("[CHAT] Merged streaming content into existing message:", existing.id);
         return true;
       }
     }
