@@ -476,7 +476,12 @@ function handleChatEvent(event: ChatEvent): void {
           const baseContent = existingContent.slice(0, lastBlockStart);
           const lastBlock = existingContent.slice(lastBlockStart);
 
-          console.log("[DELTA] lastBlockStart check:", { lastBlockStart, baseLen: baseContent.length, lastBlockLen: lastBlock.length, newTextLen: parsed.text.length });
+          console.log("[DELTA] lastBlockStart check:", {
+            lastBlockStart,
+            baseLen: baseContent.length,
+            lastBlockLen: lastBlock.length,
+            newTextLen: parsed.text.length,
+          });
           console.log("[DELTA] lastBlock:", lastBlock.slice(0, 50));
           console.log("[DELTA] newText:", parsed.text.slice(0, 50));
 
@@ -509,42 +514,34 @@ function handleChatEvent(event: ChatEvent): void {
           console.log("[DELTA] APPENDING - setting lastBlockStart to:", newBlockStart);
         }
 
-        console.log("[DELTA]", { reason, existingLen: existingContent.length, newLen: newContent.length, lastBlockStart, newBlockStart });
+        console.log("[DELTA]", {
+          reason,
+          existingLen: existingContent.length,
+          newLen: newContent.length,
+          lastBlockStart,
+          newBlockStart,
+        });
         updateRunContent(runId, newContent, mergedToolCalls, newBlockStart);
       }
       break;
     }
 
     case "final": {
-      // Message complete - merge streaming tool calls with final message
+      // Message complete - use our accumulated content (gateway's final only has last block)
       const existingRun = activeRuns.value.get(runId);
       const streamedToolCalls = existingRun?.toolCalls ?? [];
+      const accumulatedContent = existingRun?.content ?? "";
 
-      if (message) {
-        const finalMessage = normalizeMessage(message, `assistant_${runId}`);
-        // Preserve tool calls from streaming if final message doesn't have them
-        if (
-          streamedToolCalls.length > 0 &&
-          (!finalMessage.toolCalls || finalMessage.toolCalls.length === 0)
-        ) {
-          finalMessage.toolCalls = streamedToolCalls;
-        }
-        completeRun(runId, finalMessage);
-      } else {
-        // No message content, but might have tool calls
-        if (streamedToolCalls.length > 0) {
-          const toolOnlyMessage: Message = {
-            id: `assistant_${runId}`,
-            role: "assistant",
-            content: existingRun?.content ?? "",
-            toolCalls: streamedToolCalls,
-            timestamp: Date.now(),
-          };
-          completeRun(runId, toolOnlyMessage);
-        } else {
-          completeRun(runId);
-        }
-      }
+      // Build final message using our accumulated content (which includes all text blocks)
+      const finalMessage: Message = {
+        id: `assistant_${runId}`,
+        role: "assistant",
+        content: accumulatedContent,
+        toolCalls: streamedToolCalls.length > 0 ? streamedToolCalls : undefined,
+        timestamp: message?.timestamp ?? Date.now(),
+      };
+
+      completeRun(runId, finalMessage);
       break;
     }
 
