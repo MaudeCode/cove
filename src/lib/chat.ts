@@ -360,8 +360,15 @@ function handleToolEvent(evt: AgentEvent): void {
   const { runId, data } = evt;
   if (!data) return;
 
-  const run = activeRuns.value.get(runId);
-  if (!run) return;
+  let run = activeRuns.value.get(runId);
+
+  // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
+  if (!run) {
+    log.chat.debug("Creating run on-the-fly for tool event:", runId);
+    startRun(runId, "unknown");
+    run = activeRuns.value.get(runId);
+    if (!run) return;
+  }
 
   const toolCallId = data.toolCallId ?? `tool_${Date.now()}`;
   const toolName = data.name ?? "unknown";
@@ -444,9 +451,15 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
   if (!message) return;
 
   const parsed = parseMessageContent(message.content);
-  const existingRun = activeRuns.value.get(runId);
+  let existingRun = activeRuns.value.get(runId);
 
-  if (!existingRun) return;
+  // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
+  if (!existingRun) {
+    log.chat.debug("Creating run on-the-fly for delta:", runId);
+    startRun(runId, "unknown"); // sessionKey unknown but not critical for streaming
+    existingRun = activeRuns.value.get(runId);
+    if (!existingRun) return; // shouldn't happen, but be safe
+  }
 
   // Merge tool calls
   const mergedToolCalls = mergeToolCalls(existingRun.toolCalls, parsed.toolCalls);
