@@ -24,13 +24,16 @@ export function SessionDeleteModal({ session, onClose, onDelete }: SessionDelete
 
     setDeleting(true);
     try {
+      // Close modal first so user can see the animation
+      onClose();
+      // Small delay for modal to start closing
+      await new Promise((r) => setTimeout(r, 100));
+      // Then animate the session deletion
       await onDelete(session);
-    } catch (err) {
-      // Log error but still close the modal
-      console.error("Failed to delete session:", err);
+    } catch {
+      // Error already logged in onDelete
     } finally {
       setDeleting(false);
-      onClose();
     }
   };
 
