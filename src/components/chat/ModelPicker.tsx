@@ -14,6 +14,7 @@
 import { useState, useRef, useEffect, useMemo } from "preact/hooks";
 import { models, modelsByProvider, getModelDisplayName, defaultModel } from "@/signals/models";
 import { send } from "@/lib/gateway";
+import { log } from "@/lib/logger";
 import { ChevronDownIcon } from "@/components/ui";
 
 const FAVORITES_KEY = "cove:model-favorites";
@@ -146,6 +147,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
   const displayName = currentModel ? getModelDisplayName(currentModel) : "Default";
 
   const handleSelect = async (modelId: string) => {
+    console.log("[ModelPicker] selecting:", modelId, "current:", currentModel);
     if (modelId === currentModel) {
       setOpen(false);
       return;
@@ -153,13 +155,16 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
 
     setUpdating(true);
     try {
+      console.log("[ModelPicker] sending sessions.patch:", { key: sessionKey, model: modelId });
       await send("sessions.patch", {
         key: sessionKey,
         model: modelId,
       });
+      console.log("[ModelPicker] patch succeeded");
       onModelChange?.(modelId);
       log.ui.debug("Model changed to:", modelId);
     } catch (err) {
+      console.error("[ModelPicker] patch failed:", err);
       log.ui.error("Failed to change model:", err);
     } finally {
       setUpdating(false);
