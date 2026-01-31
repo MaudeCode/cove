@@ -134,6 +134,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         sessionKey={effectiveSessionKey.value}
         currentModel={activeSession.value?.model}
         onModelChange={(modelId) => {
+          console.log("[ChatView] onModelChange:", modelId, "sessionKey:", effectiveSessionKey.value);
           // Update local session state
           if (effectiveSessionKey.value) {
             updateSession(effectiveSessionKey.value, { model: modelId });
