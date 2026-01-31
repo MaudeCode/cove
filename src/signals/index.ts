@@ -4,7 +4,6 @@
  * Re-export all signals for convenient imports.
  */
 
-export * from "./auth";
 export * from "./chat";
 export * from "./identity";
 export * from "./models";
