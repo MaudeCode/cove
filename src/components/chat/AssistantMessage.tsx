@@ -8,7 +8,7 @@ import type { Message, ToolCall } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
 import { ToolCall as ToolCallComponent } from "./ToolCall";
 import { BouncingDots } from "@/components/ui";
-import { formatRelativeTime } from "@/lib/i18n";
+import { formatRelativeTime, t } from "@/lib/i18n";
 
 interface AssistantMessageProps {
   message: Message;
@@ -133,7 +133,7 @@ export function AssistantMessage({
         {/* Empty state with streaming indicator */}
         {!hasContent && isStreaming && (
           <span class="inline-flex items-center gap-2 text-[var(--color-text-muted)]">
-            Thinking
+            {t("chat.thinking")}
             <BouncingDots />
           </span>
         )}

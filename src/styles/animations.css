@@ -174,10 +174,6 @@
   }
 }
 
-.animate-bounce-dot {
-  animation: bounce-dot 1s ease-in-out infinite;
-}
-
 /* Staggered delays for wave effect */
 .animate-bounce-dot-1 {
   animation: bounce-dot 1s ease-in-out infinite;
