@@ -9,7 +9,8 @@ import { useSignal, signal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
-import { send, isConnected, mainSessionKey } from "@/lib/gateway";
+import { send, isConnected } from "@/lib/gateway";
+import { isMainSession } from "@/lib/session-utils";
 import {
   activeSessionKey,
   effectiveSessionKey,
@@ -96,10 +97,6 @@ export function Sidebar() {
         ) : (
           <ul class="space-y-0.5">
             {sessionsByRecent.value.map((session) => {
-              const isMain =
-                session.key === mainSessionKey.value ||
-                session.key === "main" ||
-                session.key.endsWith(":main");
               return (
                 <li key={session.key}>
                   <SessionItem
@@ -108,7 +105,7 @@ export function Sidebar() {
                       effectiveSessionKey.value === session.key &&
                       currentPath.value.startsWith("/chat")
                     }
-                    isMain={isMain}
+                    isMain={isMainSession(session.key)}
                     onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
                     onRename={setRenameSession}
                     onDelete={setDeleteSession}
