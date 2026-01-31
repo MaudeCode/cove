@@ -14,6 +14,7 @@ import { isConnected, connect } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
+import { startUsagePolling } from "@/signals/usage";
 
 import { AppShell, currentPath } from "@/components/layout";
 import { ToastContainer, ErrorBoundary, toast } from "@/components/ui";
@@ -138,6 +139,9 @@ async function tryAutoConnect() {
     // Initialize chat with main session
     setActiveSession("main");
     await initChat("main");
+
+    // Start polling for usage data
+    startUsagePolling();
   } catch {
     // User will see the login form
   }
