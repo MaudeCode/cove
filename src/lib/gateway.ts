@@ -224,7 +224,7 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
       mode: "webchat",
     },
     role: "operator",
-    scopes: ["operator.read", "operator.write"],
+    scopes: ["operator.admin", "operator.read", "operator.write"],
     auth: {} as { token?: string; password?: string },
   };
 
