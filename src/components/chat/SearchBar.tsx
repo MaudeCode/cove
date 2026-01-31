@@ -55,13 +55,14 @@ export function SearchBar() {
 
   if (!isSearchOpen.value) {
     return (
-      <div class="flex items-center">
+      <div class="flex items-center p-2">
         <IconButton
           icon={<SearchIcon />}
           label={t("chat.search")}
           onClick={() => (isSearchOpen.value = true)}
           variant="ghost"
           size="sm"
+          class="border border-[var(--color-border)]"
         />
       </div>
     );
