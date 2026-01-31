@@ -9,7 +9,14 @@ import { themePreference, setTheme, getAllThemes } from "@/lib/theme";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
 import { sidebarOpen } from "@/signals/ui";
-import { IconButton, Select, CloseIcon, MenuIcon, SettingsIcon, LogoutIcon } from "@/components/ui";
+import {
+  IconButton,
+  Dropdown,
+  CloseIcon,
+  MenuIcon,
+  SettingsIcon,
+  LogoutIcon,
+} from "@/components/ui";
 import { UsageBadge } from "@/components/usage";
 
 export function TopBar() {
@@ -71,9 +78,9 @@ export function TopBar() {
           <UsageBadge />
 
           {/* Theme selector */}
-          <Select
+          <Dropdown
             value={pref.selected}
-            onChange={(e) => setTheme((e.target as HTMLSelectElement).value)}
+            onChange={setTheme}
             options={themeOptions}
             size="sm"
             aria-label={t("settings.appearance.theme")}
