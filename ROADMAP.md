@@ -772,7 +772,7 @@ export const navigation: NavSection[] = [
 - [x] Loading state while fetching history
 - [x] Jump to bottom button (when scrolled up)
 - [x] Search within current session (client-side filter)
-- [ ] Filter by date range (client-side filter)
+- [x] Filter by date range (client-side filter)
 - [x] Highlight search matches in messages
 
 ### 2.3 Chat Enhancements
