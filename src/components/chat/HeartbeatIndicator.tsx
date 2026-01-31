@@ -15,8 +15,19 @@ import { isHeartbeatResponse } from "@/lib/message-detection";
 export function HeartbeatIndicator() {
   const count = heartbeatCount.value;
   const [isOpen, setIsOpen] = useState(false);
+  const [seenCount, setSeenCount] = useState(0);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
+
+  // Number of new (unseen) heartbeats
+  const exchangeCount = Math.floor(count / 2);
+  const unseenCount = Math.max(0, exchangeCount - seenCount);
+
+  // Mark as seen when dropdown closes
+  const handleClose = () => {
+    setSeenCount(exchangeCount);
+    setIsOpen(false);
+  };
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -29,13 +40,13 @@ export function HeartbeatIndicator() {
         buttonRef.current &&
         !buttonRef.current.contains(e.target as Node)
       ) {
-        setIsOpen(false);
+        handleClose();
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+  }, [isOpen, exchangeCount]);
 
   // Get heartbeat exchanges (pair prompt + response)
   const heartbeats = heartbeatMessages.value;
@@ -48,17 +59,17 @@ export function HeartbeatIndicator() {
         <IconButton
           icon={<Heart class="w-4 h-4" />}
           label={t("chat.heartbeats", { count })}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
           variant="ghost"
           size="sm"
           class="border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
         />
-        {count > 0 && (
+        {unseenCount > 0 && (
           <Badge
             variant="muted"
             class="absolute -top-1.5 -right-1.5 min-w-[1.25rem] h-5 text-xs px-1 pointer-events-none"
           >
-            {Math.floor(count / 2)}
+            {unseenCount}
           </Badge>
         )}
       </div>
