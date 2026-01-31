@@ -11,6 +11,7 @@ import { ChatMessage } from "./ChatMessage";
 import { IconButton, Spinner, ArrowDownIcon } from "@/components/ui";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
+import { searchQuery, isSearchOpen, scrollToMessageId } from "@/signals/chat";
 
 interface MessageListProps {
   messages: Message[];
@@ -125,6 +126,30 @@ export function MessageList({
     scrollToBottom(false);
   }, [scrollToBottom]);
 
+  /**
+   * Scroll to specific message when scrollToMessageId is set
+   */
+  useEffect(() => {
+    const targetId = scrollToMessageId.value;
+    if (!targetId || !containerRef.current) return;
+
+    // Find the message element
+    const messageEl = containerRef.current.querySelector(`[data-message-id="${targetId}"]`);
+    if (messageEl) {
+      // Scroll to the message with some offset from top
+      messageEl.scrollIntoView({ behavior: "smooth", block: "center" });
+
+      // Add a brief highlight effect
+      messageEl.classList.add("bg-[var(--color-bg-hover)]", "transition-colors");
+      setTimeout(() => {
+        messageEl.classList.remove("bg-[var(--color-bg-hover)]");
+      }, 2000);
+    }
+
+    // Clear the scroll target
+    scrollToMessageId.value = null;
+  }, [scrollToMessageId.value]);
+
   // Create streaming message placeholder
   const streamingMessage: Message | null = isStreaming
     ? {
@@ -178,16 +203,46 @@ export function MessageList({
 
           {/* Messages */}
           <div class="space-y-6">
-            {messages.map((message) => (
-              <ChatMessage
-                key={message.id}
-                message={message}
-                assistantName={assistantName}
-                assistantAvatar={assistantAvatar}
-                userName={userName}
-                userAvatar={userAvatar}
-              />
-            ))}
+            {messages.map((message) => {
+              const handleNavigate = isSearchOpen.value
+                ? () => {
+                    // Clear search and scroll to this message in full context
+                    scrollToMessageId.value = message.id;
+                    searchQuery.value = "";
+                    isSearchOpen.value = false;
+                  }
+                : undefined;
+
+              return (
+                <div
+                  key={message.id}
+                  data-message-id={message.id}
+                  onClick={handleNavigate}
+                  onKeyDown={
+                    handleNavigate
+                      ? (e) => {
+                          if (e.key === "Enter") handleNavigate();
+                        }
+                      : undefined
+                  }
+                  role={isSearchOpen.value ? "button" : undefined}
+                  tabIndex={isSearchOpen.value ? 0 : undefined}
+                  class={
+                    isSearchOpen.value
+                      ? "cursor-pointer hover:bg-[var(--color-bg-hover)] rounded-lg -mx-2 px-2 py-1 transition-colors"
+                      : ""
+                  }
+                >
+                  <ChatMessage
+                    message={message}
+                    assistantName={assistantName}
+                    assistantAvatar={assistantAvatar}
+                    userName={userName}
+                    userAvatar={userAvatar}
+                  />
+                </div>
+              );
+            })}
 
             {/* Streaming message */}
             {streamingMessage && (

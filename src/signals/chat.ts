@@ -83,6 +83,9 @@ export const searchQuery = signal<string>("");
 /** Whether search is active (panel open) */
 export const isSearchOpen = signal<boolean>(false);
 
+/** Message ID to scroll to (set when clicking a search result) */
+export const scrollToMessageId = signal<string | null>(null);
+
 /** Filter messages by search query */
 export const filteredMessages = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
