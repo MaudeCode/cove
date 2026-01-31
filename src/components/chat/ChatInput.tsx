@@ -162,18 +162,6 @@ export function ChatInput({
             </button>
           </div>
         </div>
-
-        {/* Keyboard hint */}
-        <div class="mt-1.5 text-[10px] text-[var(--color-text-muted)] text-center">
-          <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
-            Enter
-          </kbd>{" "}
-          {isStreaming ? "queue" : "send"} ·{" "}
-          <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
-            Shift+Enter
-          </kbd>{" "}
-          new line
-        </div>
       </div>
     </div>
   );
