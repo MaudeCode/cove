@@ -12,6 +12,7 @@ import { initStorage, getAuth } from "@/lib/storage";
 import { isConnected, connect } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
+import { loadAssistantIdentity } from "@/signals/identity";
 
 import { AppShell, currentPath } from "@/components/layout";
 import { ToastContainer, ErrorBoundary, toast } from "@/components/ui";
@@ -111,6 +112,9 @@ async function tryAutoConnect() {
 
     // Load sessions list for sidebar
     await loadSessions();
+
+    // Load assistant identity
+    await loadAssistantIdentity();
 
     // Initialize chat with main session
     setActiveSession("main");
