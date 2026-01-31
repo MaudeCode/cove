@@ -12,7 +12,6 @@ import { log } from "@/lib/logger";
 import { send, isConnected } from "@/lib/gateway";
 import { isMainSession } from "@/lib/session-utils";
 import {
-  activeSessionKey,
   effectiveSessionKey,
   sessionsGrouped,
   sessionsByRecent,
@@ -22,7 +21,6 @@ import {
   setSessionSearchQuery,
   showCronSessions,
   toggleCronSessions,
-  hiddenCronCount,
   updateSession,
   removeSession,
 } from "@/signals/sessions";
@@ -34,8 +32,6 @@ import {
   ExternalLinkIcon,
   FilterIcon,
   SearchIcon,
-  ClockIcon,
-  XIcon,
 } from "@/components/ui";
 import { SessionItem, SessionRenameModal, SessionDeleteModal } from "@/components/sessions";
 import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
@@ -106,67 +102,8 @@ export function Sidebar() {
           <h3 class="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider">
             {t("nav.sessions")}
           </h3>
-          <div class="flex items-center gap-1">
-            <SessionKindFilter />
-          </div>
+          <SessionFilterPanel />
         </div>
-
-        {/* Search input */}
-        <div class="relative mb-2">
-          <SearchIcon class="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-          <input
-            type="text"
-            value={sessionSearchQuery.value}
-            onInput={(e) => setSessionSearchQuery((e.target as HTMLInputElement).value)}
-            placeholder={t("sessions.searchPlaceholder")}
-            class="w-full pl-8 pr-8 py-1.5 text-sm rounded-lg
-              bg-[var(--color-bg-primary)] border border-[var(--color-border)]
-              text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]
-              focus:outline-none focus:border-[var(--color-accent)]/50
-              transition-colors"
-          />
-          {sessionSearchQuery.value && (
-            <button
-              type="button"
-              onClick={() => setSessionSearchQuery("")}
-              class="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded
-                text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]
-                transition-colors"
-              aria-label={t("actions.clear")}
-            >
-              <XIcon class="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {/* Hidden cron sessions notice */}
-        {hiddenCronCount.value > 0 && !sessionSearchQuery.value && (
-          <button
-            type="button"
-            onClick={toggleCronSessions}
-            class="w-full flex items-center justify-center gap-1.5 px-2 py-1.5 mb-2
-              text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]
-              bg-[var(--color-bg-primary)] rounded-lg border border-dashed border-[var(--color-border)]
-              transition-colors"
-          >
-            <ClockIcon class="w-3 h-3" />
-            {t("sessions.hiddenCron", { count: hiddenCronCount.value })}
-          </button>
-        )}
-
-        {/* Show cron toggle when cron sessions are visible */}
-        {showCronSessions.value && hiddenCronCount.value === 0 && (
-          <button
-            type="button"
-            onClick={toggleCronSessions}
-            class="w-full flex items-center justify-center gap-1.5 px-2 py-1 mb-2
-              text-xs text-[var(--color-accent)] hover:text-[var(--color-accent)]/80
-              transition-colors"
-          >
-            <ClockIcon class="w-3 h-3" />
-            {t("sessions.showCron")} ✓
-          </button>
-        )}
 
         {/* Session list with time groups */}
         <SessionList onRename={setRenameSession} onDelete={setDeleteSession} />
@@ -199,20 +136,25 @@ export function Sidebar() {
 // ============================================
 
 /**
- * Session kind filter dropdown
+ * Session filter panel - search, kind filter, and options in one dropdown
  */
-function SessionKindFilter() {
+function SessionFilterPanel() {
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const kinds = [
-    { value: null, label: "All" },
-    { value: "main", label: "Main" },
-    { value: "isolated", label: "Isolated" },
-    { value: "channel", label: "Channel" },
+    { value: null, label: t("sessions.filterAll") },
+    { value: "main", label: t("sessions.filterMain") },
+    { value: "isolated", label: t("sessions.filterIsolated") },
+    { value: "channel", label: t("sessions.filterChannel") },
   ];
 
-  const currentKind = kinds.find((k) => k.value === sessionKindFilter.value) ?? kinds[0];
+  // Check if any filters are active
+  const hasActiveFilters =
+    sessionKindFilter.value !== null ||
+    sessionSearchQuery.value.trim() !== "" ||
+    showCronSessions.value;
 
   // Close on click outside
   useEffect(() => {
@@ -226,41 +168,90 @@ function SessionKindFilter() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
+  // Focus search input when opening
+  useEffect(() => {
+    if (open && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [open]);
+
   return (
     <div ref={menuRef} class="relative">
       <button
         type="button"
         onClick={() => setOpen(!open)}
         class={`p-1 rounded transition-colors ${
-          sessionKindFilter.value
+          hasActiveFilters
             ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
             : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
         }`}
-        aria-label="Filter sessions"
-        title={`Filter: ${currentKind.label}`}
+        aria-label={t("sessions.filterSessions")}
       >
         <FilterIcon class="w-3.5 h-3.5" />
       </button>
 
       {open && (
-        <div class="absolute right-0 top-full mt-1 w-28 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 py-1">
-          {kinds.map((kind) => (
+        <div class="absolute right-0 top-full mt-1 w-52 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 p-2 space-y-2">
+          {/* Search input */}
+          <div class="relative">
+            <SearchIcon class="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={sessionSearchQuery.value}
+              onInput={(e) => setSessionSearchQuery((e.target as HTMLInputElement).value)}
+              placeholder={t("sessions.searchPlaceholder")}
+              class="w-full pl-7 pr-2 py-1.5 text-sm rounded-md
+                bg-[var(--color-bg-primary)] border border-[var(--color-border)]
+                text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]
+                focus:outline-none focus:border-[var(--color-accent)]/50
+                transition-colors"
+            />
+          </div>
+
+          {/* Kind filter */}
+          <div class="flex flex-wrap gap-1">
+            {kinds.map((kind) => (
+              <button
+                key={kind.value ?? "all"}
+                type="button"
+                onClick={() => setSessionKindFilter(kind.value)}
+                class={`px-2 py-1 text-xs rounded-md transition-colors ${
+                  sessionKindFilter.value === kind.value
+                    ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10 font-medium"
+                    : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]"
+                }`}
+              >
+                {kind.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Cron toggle */}
+          <label class="flex items-center gap-2 px-1 py-1 cursor-pointer text-xs text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]">
+            <input
+              type="checkbox"
+              checked={showCronSessions.value}
+              onChange={toggleCronSessions}
+              class="w-3.5 h-3.5 rounded border-[var(--color-border)] text-[var(--color-accent)] focus:ring-[var(--color-accent)]/50"
+            />
+            {t("sessions.showCron")}
+          </label>
+
+          {/* Clear all button */}
+          {hasActiveFilters && (
             <button
-              key={kind.value ?? "all"}
               type="button"
               onClick={() => {
-                setSessionKindFilter(kind.value);
-                setOpen(false);
+                setSessionSearchQuery("");
+                setSessionKindFilter(null);
+                if (showCronSessions.value) toggleCronSessions();
               }}
-              class={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
-                sessionKindFilter.value === kind.value
-                  ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                  : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
-              }`}
+              class="w-full px-2 py-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
             >
-              {kind.label}
+              {t("actions.clear")} {t("actions.filter").toLowerCase()}
             </button>
-          ))}
+          )}
         </div>
       )}
     </div>
