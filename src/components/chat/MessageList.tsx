@@ -4,14 +4,16 @@
  * Scrollable message container with auto-scroll behavior.
  */
 
-import { useRef, useEffect, useCallback } from "preact/hooks";
+import { useRef, useEffect, useCallback, useMemo } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import type { Message, ToolCall } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
+import { CollapsedMessage } from "./CollapsedMessage";
 import { IconButton, Spinner, ArrowDownIcon } from "@/components/ui";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { searchQuery, isSearchOpen, scrollToMessageId } from "@/signals/chat";
+import { groupMessages } from "@/lib/message-grouping";
 
 /** Base classes for message highlight styling (without bg) */
 const MESSAGE_HIGHLIGHT_BASE = "rounded-lg -mx-2 px-2 py-1 transition-colors";
@@ -171,6 +173,9 @@ export function MessageList({
       }
     : null;
 
+  // Group messages for collapsed display (heartbeats, compaction)
+  const messageGroups = useMemo(() => groupMessages(messages), [messages]);
+
   return (
     <div class="relative flex-1 flex flex-col overflow-hidden">
       {/* Scrollable message area */}
@@ -212,7 +217,36 @@ export function MessageList({
 
           {/* Messages */}
           <div class="space-y-6">
-            {messages.map((message) => {
+            {messageGroups.map((group, idx) => {
+              if (group.type === "heartbeat") {
+                return (
+                  <CollapsedMessage
+                    key={`heartbeat-${idx}`}
+                    messages={group.messages}
+                    type="heartbeat"
+                    assistantName={assistantName}
+                    assistantAvatar={assistantAvatar}
+                    userName={userName}
+                    userAvatar={userAvatar}
+                  />
+                );
+              }
+
+              if (group.type === "compaction") {
+                return (
+                  <CollapsedMessage
+                    key={`compaction-${idx}`}
+                    messages={group.messages}
+                    type="compaction"
+                    assistantName={assistantName}
+                    assistantAvatar={assistantAvatar}
+                    userName={userName}
+                    userAvatar={userAvatar}
+                  />
+                );
+              }
+
+              const message = group.message;
               const handleNavigate = isSearchOpen.value
                 ? () => {
                     // Clear search and scroll to this message in full context

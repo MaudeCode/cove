@@ -13,3 +13,5 @@ export { ToolCall } from "./ToolCall";
 export { ConnectionBanner } from "./ConnectionBanner";
 export { ModelPicker } from "./ModelPicker";
 export { SearchBar } from "./SearchBar";
+export { CollapsedMessage } from "./CollapsedMessage";
+export { CompactionBanner } from "./CompactionBanner";

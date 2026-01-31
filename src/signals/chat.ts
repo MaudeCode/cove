@@ -73,6 +73,9 @@ export const historyError = signal<string | null>(null);
 /** Current thinking level for the session */
 export const thinkingLevel = signal<string>("off");
 
+/** Whether the session is currently being compacted */
+export const isCompacting = signal<boolean>(false);
+
 // ============================================
 // Search & Filter
 // ============================================

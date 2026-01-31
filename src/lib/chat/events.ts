@@ -14,6 +14,7 @@ import {
   completeRun,
   errorRun,
   abortRun as abortRunSignal,
+  isCompacting,
 } from "@/signals/chat";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatEvent, AgentEvent } from "@/types/chat";
@@ -42,6 +43,8 @@ export function subscribeToChatEvents(): () => void {
       handleToolEvent(evt);
     } else if (evt.stream === "lifecycle" && evt.data?.phase === "start") {
       handleLifecycleStart(evt);
+    } else if (evt.stream === "compaction") {
+      handleCompactionEvent(evt);
     }
   });
 
@@ -68,6 +71,20 @@ function handleLifecycleStart(evt: AgentEvent): void {
   if (!existingRun && sessionKey) {
     log.chat.debug("Creating run on-the-fly for lifecycle start:", runId, "session:", sessionKey);
     startRun(runId, sessionKey);
+  }
+}
+
+/**
+ * Handle compaction events from the agent stream.
+ */
+function handleCompactionEvent(evt: AgentEvent): void {
+  const phase = evt.data?.phase;
+  log.chat.info("Compaction event:", phase);
+
+  if (phase === "start") {
+    isCompacting.value = true;
+  } else if (phase === "end") {
+    isCompacting.value = false;
   }
 }
 
