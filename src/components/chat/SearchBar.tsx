@@ -101,6 +101,7 @@ export function SearchBar() {
           onChange={(date) => (dateRangeStart.value = date)}
           placeholder="From"
           class="w-[130px]"
+          maxDate={dateRangeEnd.value}
         />
         <span class="text-[var(--color-text-muted)] text-sm">–</span>
         <DatePicker
@@ -108,6 +109,7 @@ export function SearchBar() {
           onChange={(date) => (dateRangeEnd.value = date)}
           placeholder="To"
           class="w-[130px]"
+          minDate={dateRangeStart.value}
         />
       </div>
 

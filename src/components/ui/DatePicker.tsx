@@ -13,6 +13,10 @@ interface DatePickerProps {
   onChange: (date: Date | null) => void;
   placeholder?: string;
   class?: string;
+  /** Minimum selectable date */
+  minDate?: Date | null;
+  /** Maximum selectable date */
+  maxDate?: Date | null;
 }
 
 const DAYS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
@@ -49,6 +53,8 @@ export function DatePicker({
   onChange,
   placeholder = "Select date",
   class: className = "",
+  minDate,
+  maxDate,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => value ?? new Date());
@@ -93,6 +99,19 @@ export function DatePicker({
   const isToday = (day: number): boolean => {
     const today = new Date();
     return today.getFullYear() === year && today.getMonth() === month && today.getDate() === day;
+  };
+
+  const isDisabled = (day: number): boolean => {
+    const date = new Date(year, month, day);
+    if (minDate) {
+      const min = new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate());
+      if (date < min) return true;
+    }
+    if (maxDate) {
+      const max = new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate());
+      if (date > max) return true;
+    }
+    return false;
   };
 
   // Build calendar grid
@@ -182,29 +201,35 @@ export function DatePicker({
 
           {/* Day grid */}
           <div class="grid grid-cols-7 gap-1">
-            {days.map((day, idx) => (
-              <div key={idx} class="aspect-square">
-                {day !== null && (
-                  <button
-                    type="button"
-                    onClick={() => selectDate(day)}
-                    class={`
-                      w-full h-full flex items-center justify-center
-                      text-sm rounded-md transition-colors
-                      ${
-                        isSelected(day)
-                          ? "bg-[var(--color-accent)] text-[var(--color-accent-text)] font-medium"
-                          : isToday(day)
-                            ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium"
-                            : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
-                      }
-                    `}
-                  >
-                    {day}
-                  </button>
-                )}
-              </div>
-            ))}
+            {days.map((day, idx) => {
+              const disabled = day !== null && isDisabled(day);
+              return (
+                <div key={idx} class="aspect-square">
+                  {day !== null && (
+                    <button
+                      type="button"
+                      onClick={() => !disabled && selectDate(day)}
+                      disabled={disabled}
+                      class={`
+                        w-full h-full flex items-center justify-center
+                        text-sm rounded-md transition-colors
+                        ${
+                          disabled
+                            ? "text-[var(--color-text-muted)]/40 cursor-not-allowed"
+                            : isSelected(day)
+                              ? "bg-[var(--color-accent)] text-[var(--color-accent-text)] font-medium"
+                              : isToday(day)
+                                ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] font-medium"
+                                : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
+                        }
+                      `}
+                    >
+                      {day}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           {/* Clear button */}
