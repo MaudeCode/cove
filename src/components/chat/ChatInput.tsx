@@ -56,22 +56,24 @@ export function ChatInput({
 
   /**
    * Handle keyboard shortcuts
-   * Note: handleSend is stable, value is a Preact Signal
    */
-  const handleKeyDown = useCallback((e: KeyboardEvent) => {
-    // Cmd/Ctrl+Enter always sends
-    if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
-      e.preventDefault();
-      handleSend();
-      return;
-    }
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      // Cmd/Ctrl+Enter always sends
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+        e.preventDefault();
+        handleSend();
+        return;
+      }
 
-    // Enter sends (Shift+Enter for newline)
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  }, []);
+      // Enter sends (Shift+Enter for newline)
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend],
+  );
 
   /**
    * Send message
