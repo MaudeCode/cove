@@ -179,8 +179,10 @@ export function MessageList({
 
   return (
     <div class="relative flex-1 flex flex-col overflow-hidden">
-      {/* Search bar overlay - positioned relative to this container */}
-      <SearchBar />
+      {/* Search bar overlay - zero-height wrapper to not affect flex layout */}
+      <div class="relative h-0 overflow-visible z-10">
+        <SearchBar />
+      </div>
 
       {/* Scrollable message area */}
       <div
