@@ -262,18 +262,21 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
           return existingTc;
         });
         
-        // Merge content: keep existing content, append new content if different
+        // Merge content: keep existing content, append new content
         let mergedContent = existing.content;
-        console.log("[CHAT] Merge content check:", {
-          existingContent: existing.content.slice(0, 50),
-          newContent: newMessage.content?.slice(0, 100),
-          newContentFull: newMessage.content,
-        });
-        if (newMessage.content && !existing.content.includes(newMessage.content)) {
-          // New content is different - append it
-          const separator = existing.content ? "\n\n" : "";
-          mergedContent = existing.content + separator + newMessage.content;
-          console.log("[CHAT] Merged content:", mergedContent.slice(0, 100));
+        if (newMessage.content) {
+          // Check if new content is already at the end of existing (avoid duplicate append)
+          const alreadyAppended = existing.content.endsWith(newMessage.content);
+          console.log("[CHAT] Merge content:", {
+            existingLen: existing.content.length,
+            newLen: newMessage.content.length,
+            alreadyAppended,
+          });
+          if (!alreadyAppended) {
+            const separator = existing.content ? "\n\n" : "";
+            mergedContent = existing.content + separator + newMessage.content;
+            console.log("[CHAT] Merged result length:", mergedContent.length);
+          }
         }
         
         messages.value = existingMessages.map((msg) =>
