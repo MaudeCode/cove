@@ -8,21 +8,27 @@ import type { Message, ToolCall } from "./messages";
 
 /** Content block in a message */
 export interface ContentBlock {
-  type: "text" | "tool_use" | "tool_result" | "image" | "thinking";
+  type: "text" | "tool_use" | "tool_result" | "image" | "thinking" | "toolCall";
   text?: string;
   id?: string;
   name?: string;
   input?: unknown;
+  arguments?: unknown; // OpenClaw history uses "arguments" instead of "input"
   content?: unknown;
   thinking?: string;
 }
 
 /** Raw message from gateway (before normalization) */
 export interface RawMessage {
-  role: "user" | "assistant" | "system";
+  role: "user" | "assistant" | "system" | "toolResult";
   content: string | ContentBlock[];
   timestamp?: number;
   stopReason?: string;
+  // Tool result fields (when role === "toolResult")
+  toolCallId?: string;
+  toolName?: string;
+  isError?: boolean;
+  details?: unknown;
   usage?: {
     input?: number;
     output?: number;
@@ -140,6 +146,18 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
             args: block.input as Record<string, unknown> | undefined,
             status: "running", // Tool use means it's running
             startedAt: Date.now(),
+          });
+        }
+        break;
+
+      case "toolCall":
+        // OpenClaw history format uses "toolCall" with "arguments"
+        if (block.id && block.name) {
+          toolCalls.push({
+            id: block.id,
+            name: block.name,
+            args: block.arguments as Record<string, unknown> | undefined,
+            status: "pending", // Will be updated when we find the result
           });
         }
         break;
