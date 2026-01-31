@@ -31,10 +31,11 @@ import {
   markMessageFailed,
   markMessageSending,
   markMessageSent,
+  activeRuns,
 } from "@/signals/chat";
 import type { Message } from "@/types/messages";
 import type { ChatHistoryResult, ChatSendResult, ChatEvent } from "@/types/chat";
-import { normalizeMessageContent } from "@/types/chat";
+import { parseMessageContent, mergeToolCalls, normalizeMessage } from "@/types/chat";
 
 // ============================================
 // History
@@ -53,14 +54,10 @@ export async function loadHistory(sessionKey: string, limit = 200): Promise<void
       limit,
     });
 
-    // Convert raw messages to our Message type
-    const normalized: Message[] = result.messages.map((raw, index) => ({
-      id: `hist_${index}_${Date.now()}`,
-      role: raw.role,
-      content: normalizeMessageContent(raw.content),
-      timestamp: raw.timestamp ?? Date.now(),
-      isStreaming: false,
-    }));
+    // Convert raw messages to our Message type with tool calls
+    const normalized: Message[] = result.messages.map((raw, index) =>
+      normalizeMessage(raw, `hist_${index}_${Date.now()}`),
+    );
 
     setMessages(normalized);
 
@@ -292,30 +289,35 @@ export function unsubscribeFromChatEvents(): void {
 function handleChatEvent(event: ChatEvent): void {
   const { runId, state, message, errorMessage } = event;
 
+  log.chat.debug("Chat event:", state, runId, message ? "has message" : "no message");
+
   switch (state) {
-    case "delta":
-      // Streaming content update
+    case "delta": {
+      // Streaming content update - parse both text and tool calls
       if (message) {
-        const content = normalizeMessageContent(message.content);
-        updateRunContent(runId, content);
+        const parsed = parseMessageContent(message.content);
+        const existingRun = activeRuns.value.get(runId);
+
+        // Merge tool calls with existing ones (to track status changes)
+        const mergedToolCalls = existingRun
+          ? mergeToolCalls(existingRun.toolCalls, parsed.toolCalls)
+          : parsed.toolCalls;
+
+        updateRunContent(runId, parsed.text, mergedToolCalls);
       }
       break;
+    }
 
-    case "final":
-      // Message complete
+    case "final": {
+      // Message complete - create final message with tool calls
       if (message) {
-        const finalMessage: Message = {
-          id: `assistant_${runId}`,
-          role: message.role,
-          content: normalizeMessageContent(message.content),
-          timestamp: message.timestamp ?? Date.now(),
-          isStreaming: false,
-        };
+        const finalMessage = normalizeMessage(message, `assistant_${runId}`);
         completeRun(runId, finalMessage);
       } else {
         completeRun(runId);
       }
       break;
+    }
 
     case "aborted":
       abortRunSignal(runId);
