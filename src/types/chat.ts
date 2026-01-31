@@ -107,6 +107,8 @@ export interface ChatRun {
   content: string;
   /** Tool calls accumulated during streaming */
   toolCalls: ToolCall[];
+  /** Position where we last appended a new text block (for continuation detection) */
+  lastBlockStart?: number;
   /** Final message once complete */
   message?: Message;
   /** Error message if failed */

@@ -354,20 +354,6 @@ export function unsubscribeFromChatEvents(): void {
 }
 
 /**
- * Find overlap between end of str1 and start of str2
- * Returns the length of overlap
- */
-function findOverlap(str1: string, str2: string): number {
-  const maxOverlap = Math.min(str1.length, str2.length);
-  for (let i = maxOverlap; i > 0; i--) {
-    if (str1.endsWith(str2.slice(0, i))) {
-      return i;
-    }
-  }
-  return 0;
-}
-
-/**
  * Handle a tool event from the agent stream
  */
 function handleToolEvent(evt: AgentEvent): void {
@@ -464,6 +450,7 @@ function handleChatEvent(event: ChatEvent): void {
         const parsed = parseMessageContent(message.content);
         const existingRun = activeRuns.value.get(runId);
         const existingContent = existingRun?.content ?? "";
+        const lastBlockStart = existingRun?.lastBlockStart ?? 0;
 
         // Merge tool calls with existing ones (to track status changes)
         const mergedToolCalls = existingRun
@@ -473,38 +460,43 @@ function handleChatEvent(event: ChatEvent): void {
         // Determine if this is a continuation or new text block
         // Gateway sends accumulated text per-block, resetting after tool calls
         let newContent: string;
+        let newBlockStart: number | undefined;
 
         if (!existingContent) {
           // First content
           newContent = parsed.text;
         } else if (parsed.text.startsWith(existingContent)) {
-          // Direct continuation of existing
+          // Direct continuation of existing (same block, no tool call in between)
           newContent = parsed.text;
-        } else if (
-          existingContent.endsWith(parsed.text.slice(0, Math.min(20, parsed.text.length)))
-        ) {
-          // New text continues from where existing ends (after we appended)
-          // Find overlap and extend
-          const overlap = findOverlap(existingContent, parsed.text);
-          if (overlap > 0) {
-            newContent = existingContent + parsed.text.slice(overlap);
+        } else if (lastBlockStart > 0) {
+          // We previously appended a block - check if this continues that block
+          const baseContent = existingContent.slice(0, lastBlockStart);
+          const lastBlock = existingContent.slice(lastBlockStart);
+
+          if (parsed.text.startsWith(lastBlock)) {
+            // Continuation of the last appended block - replace the block portion
+            newContent = baseContent + parsed.text;
+          } else if (lastBlock.length > 0 && parsed.text.length > lastBlock.length) {
+            // New text is longer and might be a continuation
+            // Check if the last block is a prefix of new text
+            if (parsed.text.startsWith(lastBlock.slice(0, Math.min(lastBlock.length, 30)))) {
+              newContent = baseContent + parsed.text;
+            } else {
+              // Truly new block
+              newContent = existingContent + "\n\n" + parsed.text;
+              newBlockStart = existingContent.length + 2;
+            }
           } else {
-            newContent = existingContent + "\n\n" + parsed.text;
+            // Unclear - treat as continuation of last block
+            newContent = baseContent + parsed.text;
           }
-        } else if (!existingContent.includes(parsed.text.slice(0, 20))) {
-          // Truly new block (no overlap) - append
-          newContent = existingContent + "\n\n" + parsed.text;
         } else {
-          // Some overlap exists, try to find it
-          const overlap = findOverlap(existingContent, parsed.text);
-          if (overlap > 0) {
-            newContent = existingContent + parsed.text.slice(overlap);
-          } else {
-            newContent = parsed.text;
-          }
+          // No lastBlockStart but content doesn't continue - new block after tool
+          newContent = existingContent + "\n\n" + parsed.text;
+          newBlockStart = existingContent.length + 2;
         }
 
-        updateRunContent(runId, newContent, mergedToolCalls);
+        updateRunContent(runId, newContent, mergedToolCalls, newBlockStart);
       }
       break;
     }
