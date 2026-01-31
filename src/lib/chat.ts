@@ -459,12 +459,25 @@ function handleChatEvent(event: ChatEvent): void {
         // Determine if this is a continuation or new text block
         // If new text doesn't start with existing content, it's a new block (append)
         let newContent: string;
-        if (parsed.text.startsWith(existingContent)) {
+        const isContinuation = parsed.text.startsWith(existingContent);
+        const isNewBlock = !isContinuation && existingContent && parsed.text;
+
+        console.log("[DELTA]", {
+          existingLen: existingContent.length,
+          newLen: parsed.text.length,
+          isContinuation,
+          isNewBlock,
+          existingStart: existingContent.slice(0, 30),
+          newStart: parsed.text.slice(0, 30),
+        });
+
+        if (isContinuation) {
           // Continuation - use the new accumulated text
           newContent = parsed.text;
-        } else if (existingContent && parsed.text) {
+        } else if (isNewBlock) {
           // New text block after tool call - append with separator
           newContent = existingContent + "\n\n" + parsed.text;
+          console.log("[DELTA] APPENDING new block");
         } else {
           newContent = parsed.text;
         }
