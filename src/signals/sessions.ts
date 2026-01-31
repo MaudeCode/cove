@@ -69,6 +69,9 @@ export const showSpawnSessions = signal<boolean>(true);
 /** Whether we're loading sessions */
 export const isLoadingSessions = signal<boolean>(false);
 
+/** Session key currently being deleted (for animation) */
+export const deletingSessionKey = signal<string | null>(null);
+
 /** Error from loading sessions */
 export const sessionsError = signal<string | null>(null);
 
@@ -304,4 +307,22 @@ export function removeSession(sessionKey: string): void {
   if (activeSessionKey.value === sessionKey) {
     activeSessionKey.value = null;
   }
+  deletingSessionKey.value = null;
+}
+
+/** Animation duration for session deletion (ms) */
+const DELETE_ANIMATION_MS = 300;
+
+/**
+ * Remove a session with fade-out animation.
+ * Sets deletingSessionKey to trigger animation, then removes after delay.
+ */
+export function removeSessionAnimated(sessionKey: string): Promise<void> {
+  return new Promise((resolve) => {
+    deletingSessionKey.value = sessionKey;
+    setTimeout(() => {
+      removeSession(sessionKey);
+      resolve();
+    }, DELETE_ANIMATION_MS);
+  });
 }
