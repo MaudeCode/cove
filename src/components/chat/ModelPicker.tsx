@@ -12,7 +12,7 @@
  */
 
 import { useState, useRef, useEffect } from "preact/hooks";
-import { models, modelsByProvider, getModelDisplayName } from "@/signals/models";
+import { models, modelsByProvider, getModelDisplayName, defaultModel } from "@/signals/models";
 import { send } from "@/lib/gateway";
 import { ChevronDownIcon } from "@/components/ui";
 
@@ -64,15 +64,16 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
   }
 
   // Filter to current provider only (workaround for OpenClaw showing all models)
-  // If no currentModel (using default), fall back to first model's provider
-  // Note: model IDs may be "provider/model" format OR just "model" with separate provider field
-  const firstModel = models.value[0];
-  const effectiveModel = currentModel ?? firstModel?.id;
+  // Priority: session override > gateway default model > first model in list
+  const effectiveModel = currentModel ?? defaultModel.value ?? models.value[0]?.id;
   
-  // Try to get provider from model ID (if slash-separated), otherwise use first model's provider field
+  // Try to get provider from model ID (if slash-separated format like "anthropic/claude-opus-4-5")
   let currentProvider = getProviderFromModelId(effectiveModel ?? "");
-  if (!currentProvider && firstModel) {
-    currentProvider = firstModel.provider;
+  
+  // If model ID doesn't have provider prefix, find it in the models list
+  if (!currentProvider && effectiveModel) {
+    const foundModel = models.value.find((m) => m.id === effectiveModel);
+    currentProvider = foundModel?.provider ?? null;
   }
   
   const availableModels = currentProvider
@@ -80,11 +81,11 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     : [];
 
   console.log("[ModelPicker] filtering:", {
+    currentModel,
+    defaultModelValue: defaultModel.value,
     effectiveModel,
     currentProvider,
     availableModelsCount: availableModels.length,
-    firstModelProvider: firstModel?.provider,
-    allProviders: Array.from(modelsByProvider.value.keys()),
   });
 
   // Don't render if no models for this provider
