@@ -54,7 +54,13 @@ export const gatewayVersion = signal<string | null>(null);
 /** Current connection ID */
 export const connectionId = signal<string | null>(null);
 
-/** Main session key from gateway (e.g., "agent:main:main") */
+/**
+ * Main session key from gateway (e.g., "agent:main:main")
+ *
+ * IMPORTANT: This is the actual session key to use for chat operations.
+ * Passing just "main" to chat.send will NOT work correctly — the gateway
+ * routes based on this full key. See docs/SESSION_ROUTING.md for details.
+ */
 export const mainSessionKey = signal<string | null>(null);
 
 /** Gateway capabilities */
