@@ -89,7 +89,10 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         {loading ? (
           <Spinner size="sm" />
         ) : (
-          <span class={styles.icon} aria-hidden="true">
+          <span
+            class={`${styles.icon} flex items-center justify-center [&>svg]:w-full [&>svg]:h-full`}
+            aria-hidden="true"
+          >
             {icon}
           </span>
         )}
