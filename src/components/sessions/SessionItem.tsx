@@ -1,10 +1,13 @@
 /**
  * SessionItem
  *
- * A clickable session item for lists (sidebar, pickers, etc.)
+ * A clickable session item with metadata and action menu.
  */
 
+import { useState, useRef, useEffect } from "preact/hooks";
 import type { Session } from "@/types/sessions";
+import { formatRelativeTime, t } from "@/lib/i18n";
+import { MoreIcon, EditIcon, TrashIcon } from "@/components/ui";
 
 export interface SessionItemProps {
   /** The session to display */
@@ -16,24 +19,22 @@ export interface SessionItemProps {
   /** Click handler */
   onClick?: () => void;
 
-  /** Show metadata like model/channel */
-  showMeta?: boolean;
+  /** Rename handler */
+  onRename?: (session: Session) => void;
+
+  /** Delete handler */
+  onDelete?: (session: Session) => void;
 }
 
 /**
  * Get a display label for a session
  */
 export function getSessionLabel(session: Session): string {
-  // Use custom label if set
   if (session.label) return session.label;
-
-  // Use displayName if available
   if (session.displayName) return session.displayName;
 
-  // Parse session key (format: "agent:main:main" or "channel:telegram:123")
   const parts = session.key.split(":");
   if (parts.length >= 2) {
-    // Return the last meaningful part, capitalized
     const name = parts[parts.length - 1];
     return name.charAt(0).toUpperCase() + name.slice(1);
   }
@@ -42,59 +43,152 @@ export function getSessionLabel(session: Session): string {
 }
 
 /**
- * Format session metadata for display
+ * Get session kind badge
  */
-function getSessionMeta(session: Session): string | null {
-  const parts: string[] = [];
+function getKindBadge(session: Session): { label: string; color: string } | null {
+  if (!session.kind || session.kind === "main") return null;
 
-  if (session.channel) {
-    parts.push(session.channel);
+  switch (session.kind) {
+    case "isolated":
+      return { label: "Isolated", color: "text-[var(--color-warning)]" };
+    case "channel":
+      return { label: session.channel || "Channel", color: "text-[var(--color-accent)]" };
+    default:
+      return null;
   }
-
-  if (session.model) {
-    // Shorten model name (e.g., "claude-opus-4-5" -> "opus-4-5")
-    const shortModel = session.model.replace(/^claude-/, "").replace(/^gpt-/, "");
-    parts.push(shortModel);
-  }
-
-  return parts.length > 0 ? parts.join(" · ") : null;
 }
 
 export function SessionItem({
   session,
   isActive = false,
   onClick,
-  showMeta = false,
+  onRename,
+  onDelete,
 }: SessionItemProps) {
-  const meta = showMeta ? getSessionMeta(session) : null;
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [menuOpen]);
+
+  const kindBadge = getKindBadge(session);
+  const lastActive = session.updatedAt || session.lastActiveAt;
+
+  // Format model name (shorten)
+  const shortModel = session.model
+    ?.replace(/^anthropic\//, "")
+    .replace(/^claude-/, "")
+    .replace(/^openai\//, "")
+    .replace(/^gpt-/, "");
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      class={`
-        w-full text-left px-3.5 py-2.5 rounded-xl text-sm
-        flex items-center gap-2.5 transition-all duration-200 ease-out
-        ${
-          isActive
-            ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
-            : "hover:bg-[var(--color-bg-primary)] hover:shadow-soft-sm text-[var(--color-text-primary)]"
-        }
-      `}
-    >
-      {/* Active indicator dot */}
-      <span
-        class={`w-2 h-2 rounded-full flex-shrink-0 ${
-          isActive ? "bg-[var(--color-accent)]" : "bg-[var(--color-text-muted)]"
-        }`}
-        aria-hidden="true"
-      />
+    <div class="relative group">
+      <button
+        type="button"
+        onClick={onClick}
+        class={`
+          w-full text-left px-3 py-2.5 rounded-xl text-sm
+          flex items-start gap-2.5 transition-all duration-200 ease-out
+          ${
+            isActive
+              ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
+              : "hover:bg-[var(--color-bg-primary)] hover:shadow-soft-sm text-[var(--color-text-primary)]"
+          }
+        `}
+      >
+        {/* Active indicator dot */}
+        <span
+          class={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${
+            isActive ? "bg-[var(--color-accent)]" : "bg-[var(--color-text-muted)]"
+          }`}
+          aria-hidden="true"
+        />
 
-      {/* Label and optional meta */}
-      <span class="flex-1 min-w-0">
-        <span class="block truncate">{getSessionLabel(session)}</span>
-        {meta && <span class="block text-xs text-[var(--color-text-muted)] truncate">{meta}</span>}
-      </span>
-    </button>
+        {/* Content */}
+        <span class="flex-1 min-w-0">
+          {/* Label row */}
+          <span class="flex items-center gap-2">
+            <span class="truncate font-medium">{getSessionLabel(session)}</span>
+            {kindBadge && (
+              <span class={`text-[10px] font-medium ${kindBadge.color}`}>{kindBadge.label}</span>
+            )}
+          </span>
+
+          {/* Meta row */}
+          <span class="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mt-0.5">
+            {shortModel && <span class="truncate">{shortModel}</span>}
+            {shortModel && lastActive && <span>·</span>}
+            {lastActive && <span>{formatRelativeTime(new Date(lastActive))}</span>}
+          </span>
+        </span>
+      </button>
+
+      {/* Action menu button - visible on hover */}
+      {(onRename || onDelete) && (
+        <div ref={menuRef} class="absolute right-2 top-2">
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMenuOpen(!menuOpen);
+            }}
+            class={`p-1 rounded-lg transition-all duration-150
+              ${
+                menuOpen
+                  ? "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)]"
+                  : "opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)]"
+              }`}
+            aria-label="Session actions"
+          >
+            <MoreIcon class="w-4 h-4" />
+          </button>
+
+          {/* Dropdown menu */}
+          {menuOpen && (
+            <div class="absolute right-0 top-full mt-1 w-36 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 py-1">
+              {onRename && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    onRename(session);
+                  }}
+                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
+                >
+                  <EditIcon class="w-4 h-4" />
+                  {t("actions.rename")}
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMenuOpen(false);
+                    onDelete(session);
+                  }}
+                  class="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-error)] hover:bg-[var(--color-error)]/10 transition-colors"
+                >
+                  <TrashIcon class="w-4 h-4" />
+                  {t("actions.delete")}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
