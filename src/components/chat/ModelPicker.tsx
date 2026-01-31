@@ -83,6 +83,8 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     effectiveModel,
     currentProvider,
     availableModelsCount: availableModels.length,
+    firstModelProvider: firstModel?.provider,
+    allProviders: Array.from(modelsByProvider.value.keys()),
   });
 
   // Don't render if no models for this provider
