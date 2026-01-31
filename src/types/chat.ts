@@ -123,6 +123,7 @@ export interface ParsedContent {
 
 /**
  * Parse raw message content into text and tool calls
+ * Also calculates insertedAtContentLength for proper interleaved rendering
  */
 export function parseMessageContent(content: string | ContentBlock[]): ParsedContent {
   if (typeof content === "string") {
@@ -131,12 +132,14 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
 
   const textParts: string[] = [];
   const toolCalls: ToolCall[] = [];
+  let currentTextLength = 0;
 
   for (const block of content) {
     switch (block.type) {
       case "text":
         if (block.text) {
           textParts.push(block.text);
+          currentTextLength += block.text.length;
         }
         break;
 
@@ -146,8 +149,9 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
             id: block.id,
             name: block.name,
             args: block.input as Record<string, unknown> | undefined,
-            status: "running", // Tool use means it's running
+            status: "running",
             startedAt: Date.now(),
+            insertedAtContentLength: currentTextLength,
           });
         }
         break;
@@ -159,7 +163,8 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
             id: block.id,
             name: block.name,
             args: block.arguments as Record<string, unknown> | undefined,
-            status: "pending", // Will be updated when we find the result
+            status: "pending",
+            insertedAtContentLength: currentTextLength,
           });
         }
         break;
