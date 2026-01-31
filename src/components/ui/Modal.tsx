@@ -117,7 +117,7 @@ export function Modal({
           relative w-full ${sizeStyles[size]}
           bg-[var(--color-bg-surface)]
           border border-[var(--color-border)]
-          rounded-2xl shadow-soft-xl
+          rounded-xl shadow-soft-xl
           max-h-[90vh] flex flex-col
           focus:outline-none
           animate-scale-in

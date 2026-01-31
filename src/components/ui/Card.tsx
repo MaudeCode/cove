@@ -69,7 +69,7 @@ export function Card({
   const hasHeader = title || subtitle || headerActions;
 
   return (
-    <div class={`rounded-2xl ${variantStyles[variant]} ${className || ""}`} {...props}>
+    <div class={`rounded-xl ${variantStyles[variant]} ${className || ""}`} {...props}>
       {hasHeader && (
         <div
           class={`

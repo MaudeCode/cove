@@ -117,7 +117,7 @@ export function Toast({ id, type, message, duration = 5000, onDismiss }: ToastPr
       aria-live="polite"
       class={`
         flex items-start gap-3 p-4
-        rounded-2xl border shadow-soft-lg
+        rounded-xl border shadow-soft-lg
         backdrop-blur-sm
         ${styles.bg} ${styles.border}
         animate-slide-in

@@ -66,7 +66,7 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
       {/* Message Content */}
       <div
         class={`
-          ml-8 rounded-2xl px-4 py-3
+          ml-8 rounded-xl px-4 py-3
           ${
             isFailed
               ? "bg-[var(--color-error)]/10 border border-[var(--color-error)]/20"
