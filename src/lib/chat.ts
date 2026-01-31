@@ -381,6 +381,24 @@ function handleToolEvent(evt: AgentEvent): void {
   const toolName = data.name ?? "unknown";
   const existingToolCalls = [...run.toolCalls];
 
+  // Helper to find or create a tool call entry
+  const findOrCreateToolCall = (): number => {
+    let idx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
+    if (idx < 0) {
+      // Tool call doesn't exist (missed 'start' event after refresh) - create it
+      console.log("[TOOL EVENT] Creating missing tool call:", toolCallId);
+      existingToolCalls.push({
+        id: toolCallId,
+        name: toolName,
+        status: "running",
+        startedAt: Date.now(),
+        insertedAtContentLength: run.content.length,
+      });
+      idx = existingToolCalls.length - 1;
+    }
+    return idx;
+  };
+
   switch (data.phase) {
     case "start": {
       // Avoid duplicates
@@ -400,25 +418,21 @@ function handleToolEvent(evt: AgentEvent): void {
     }
 
     case "update": {
-      const idx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
-      if (idx >= 0) {
-        existingToolCalls[idx] = { ...existingToolCalls[idx], result: data.partialResult };
-        updateRunContent(runId, run.content, existingToolCalls);
-      }
+      const idx = findOrCreateToolCall();
+      existingToolCalls[idx] = { ...existingToolCalls[idx], result: data.partialResult };
+      updateRunContent(runId, run.content, existingToolCalls);
       break;
     }
 
     case "result": {
-      const idx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
-      if (idx >= 0) {
-        existingToolCalls[idx] = {
-          ...existingToolCalls[idx],
-          result: data.result,
-          status: data.isError ? "error" : "complete",
-          completedAt: Date.now(),
-        };
-        updateRunContent(runId, run.content, existingToolCalls);
-      }
+      const idx = findOrCreateToolCall();
+      existingToolCalls[idx] = {
+        ...existingToolCalls[idx],
+        result: data.result,
+        status: data.isError ? "error" : "complete",
+        completedAt: Date.now(),
+      };
+      updateRunContent(runId, run.content, existingToolCalls);
       break;
     }
   }
