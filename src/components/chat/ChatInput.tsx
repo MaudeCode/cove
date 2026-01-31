@@ -1,7 +1,7 @@
 /**
  * ChatInput
  *
- * Message input with auto-resize, keyboard shortcuts, send and stop buttons.
+ * Unified message input container with embedded action buttons.
  * Supports queuing messages while streaming.
  */
 
@@ -35,10 +35,7 @@ export function ChatInput({
     const textarea = textareaRef.current;
     if (!textarea) return;
 
-    // Reset height to calculate new height
     textarea.style.height = "auto";
-
-    // Set new height (max 200px)
     const newHeight = Math.min(textarea.scrollHeight, 200);
     textarea.style.height = `${newHeight}px`;
   }, []);
@@ -64,7 +61,6 @@ export function ChatInput({
     onSend(message);
     value.value = "";
 
-    // Reset textarea height
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
@@ -75,14 +71,12 @@ export function ChatInput({
    */
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      // Cmd/Ctrl+Enter always sends
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
         handleSend();
         return;
       }
 
-      // Enter sends (Shift+Enter for newline)
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
         handleSend();
@@ -99,34 +93,36 @@ export function ChatInput({
   }, []);
 
   const canSend = value.value.trim().length > 0 && !disabled;
+  const hasText = value.value.trim().length > 0;
 
   return (
     <div class="px-3 pb-3 pt-2">
       <div class="max-w-5xl mx-auto">
-        <div class="flex gap-2 items-end">
+        {/* Unified container */}
+        <div
+          class="relative bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl
+            shadow-soft-sm focus-within:shadow-soft focus-within:border-[var(--color-accent)]/50
+            transition-all duration-200"
+        >
           {/* Textarea */}
-          <div class="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={value.value}
-              onInput={handleInput}
-              onKeyDown={handleKeyDown}
-              disabled={disabled}
-              placeholder={placeholder || t("chat.placeholder")}
-              rows={1}
-              class="w-full px-4 py-2.5 text-sm rounded-2xl resize-none
-                bg-[var(--color-bg-surface)] border border-[var(--color-border)]
-                shadow-soft-sm focus:shadow-soft
-                focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:border-transparent
-                placeholder:text-[var(--color-text-muted)]
-                disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
-                transition-all duration-200 ease-out"
-              style={{ minHeight: "42px", maxHeight: "200px" }}
-            />
-          </div>
+          <textarea
+            ref={textareaRef}
+            value={value.value}
+            onInput={handleInput}
+            onKeyDown={handleKeyDown}
+            disabled={disabled}
+            placeholder={placeholder || t("chat.placeholder")}
+            rows={1}
+            class="w-full px-4 pt-3 pb-12 text-sm rounded-xl resize-none
+              bg-transparent border-none
+              focus:outline-none
+              placeholder:text-[var(--color-text-muted)]
+              disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ minHeight: "60px", maxHeight: "200px" }}
+          />
 
-          {/* Action buttons */}
-          <div class="flex gap-1.5 flex-shrink-0">
+          {/* Action buttons - bottom right, inside container */}
+          <div class="absolute bottom-2 right-2 flex items-center gap-1.5">
             {/* Stop button - only during streaming */}
             {isStreaming && (
               <button
@@ -134,51 +130,49 @@ export function ChatInput({
                 onClick={onAbort}
                 aria-label={t("actions.stop")}
                 title={t("actions.stop")}
-                class="px-3 py-2.5 rounded-2xl flex items-center justify-center gap-1.5
+                class="px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5
                   bg-[var(--color-error)]/10 text-[var(--color-error)]
-                  border border-[var(--color-error)]/20
-                  hover:bg-[var(--color-error)]/20 hover:border-[var(--color-error)]/30
-                  active:scale-95 transition-all duration-200 ease-out"
+                  hover:bg-[var(--color-error)]/20
+                  active:scale-95 transition-all duration-150"
               >
                 <StopIcon class="w-4 h-4" />
-                <span class="text-xs font-medium hidden sm:inline">Stop</span>
+                <span class="text-xs font-medium">Stop</span>
               </button>
             )}
 
-            {/* Send button - always visible */}
+            {/* Send button */}
             <button
               type="button"
               onClick={handleSend}
               disabled={!canSend}
               aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
               title={isStreaming ? "Queue message" : t("actions.send")}
-              class="px-4 py-2.5 rounded-2xl flex items-center justify-center gap-1.5
-                bg-[var(--color-accent)] text-white
-                border border-transparent
-                shadow-soft hover:shadow-soft-lg hover:opacity-95
-                disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed
-                active:scale-95 transition-all duration-200 ease-out"
+              class={`px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5
+                transition-all duration-150 active:scale-95
+                ${
+                  canSend
+                    ? "bg-[var(--color-accent)] text-white hover:opacity-90"
+                    : "bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] cursor-not-allowed"
+                }`}
             >
               <SendIcon class="w-4 h-4" />
-              <span class="text-xs font-medium hidden sm:inline">
-                {isStreaming ? "Queue" : "Send"}
-              </span>
+              {(hasText || isStreaming) && (
+                <span class="text-xs font-medium">{isStreaming ? "Queue" : "Send"}</span>
+              )}
             </button>
           </div>
         </div>
 
         {/* Keyboard hint */}
-        <div class="mt-1.5 text-[10px] text-[var(--color-text-muted)] text-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
-          <span class="hidden sm:inline">
-            <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
-              Enter
-            </kbd>{" "}
-            {isStreaming ? "queue" : "send"} ·{" "}
-            <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
-              Shift+Enter
-            </kbd>{" "}
-            new line
-          </span>
+        <div class="mt-1.5 text-[10px] text-[var(--color-text-muted)] text-center">
+          <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
+            Enter
+          </kbd>{" "}
+          {isStreaming ? "queue" : "send"} ·{" "}
+          <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
+            Shift+Enter
+          </kbd>{" "}
+          new line
         </div>
       </div>
     </div>
