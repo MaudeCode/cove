@@ -5,18 +5,13 @@
  */
 
 import { t } from "@/lib/i18n";
-import { connectionState, reconnectAttempt, isInitialLoad } from "@/lib/gateway";
+import { connectionState, reconnectAttempt } from "@/lib/gateway";
 import { hasQueuedMessages, messageQueue } from "@/signals/chat";
 
 export function ConnectionBanner() {
   const state = connectionState.value;
 
-  // Don't show during initial page load (before first connection attempt)
-  if (isInitialLoad.value) {
-    return null;
-  }
-
-  // Only show when disconnected or reconnecting
+  // Only show when disconnected or reconnecting (not during connecting/authenticating)
   if (state === "connected" || state === "connecting" || state === "authenticating") {
     return null;
   }
@@ -28,6 +23,7 @@ export function ConnectionBanner() {
     <div
       class={`
         px-4 py-2 text-sm flex items-center justify-center gap-2
+        animate-[fade-in_150ms_ease-out_100ms_forwards] opacity-0
         ${isReconnecting ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-red-500/10 text-red-600 dark:text-red-400"}
       `}
       role="alert"

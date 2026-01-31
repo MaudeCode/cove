@@ -51,13 +51,11 @@ export function App() {
     });
   }, []);
 
-  // Show login only if:
-  // - No saved auth, OR
-  // - Auth check complete and connection failed
-  // Key: only read isConnected AFTER authChecked to prevent re-render during initial connect
-  let showLogin = !hasSavedAuth.value;
-  if (!showLogin && authChecked.value) {
-    showLogin = !isConnected.value;
+  // Determine if we should show login content
+  // Key: only check isConnected after authChecked to avoid re-render during connect
+  let showLoginContent = !hasSavedAuth.value;
+  if (!showLoginContent && authChecked.value) {
+    showLoginContent = !isConnected.value;
   }
 
   return (
@@ -67,7 +65,8 @@ export function App() {
           toast.error(`Error: ${error.message}`);
         }}
       >
-        <AppShell>{showLogin ? <LoginView /> : <MainRouter />}</AppShell>
+        {/* Always render AppShell - just change content inside */}
+        <AppShell>{showLoginContent ? <LoginView /> : <MainRouter />}</AppShell>
       </ErrorBoundary>
       <ToastContainer position="top-right" />
     </>
