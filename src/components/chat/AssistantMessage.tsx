@@ -20,7 +20,7 @@ interface AssistantMessageProps {
 type ContentBlock = { type: "text"; content: string } | { type: "tool"; toolCall: ToolCall };
 
 /**
- * Split content into blocks interleaved with tool calls at their insertion points
+ * Split content into blocks interleaved with tool calls at their insertion points.
  */
 function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBlock[] {
   if (!toolCalls || toolCalls.length === 0) {
