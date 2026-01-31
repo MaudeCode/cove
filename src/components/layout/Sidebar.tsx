@@ -1,23 +1,69 @@
 /**
  * Sidebar
  *
- * Sessions list and navigation sections.
- * Navigation items are driven by src/lib/navigation.tsx config.
+ * Sessions list with management actions and navigation sections.
  */
 
+import { useState } from "preact/hooks";
 import { useSignal, signal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
-import { isConnected } from "@/lib/gateway";
-import { activeSessionKey, sessionsByRecent } from "@/signals/sessions";
+import { log } from "@/lib/logger";
+import { send, isConnected } from "@/lib/gateway";
+import {
+  activeSessionKey,
+  sessionsByRecent,
+  updateSession,
+  removeSession,
+} from "@/signals/sessions";
 import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon } from "@/components/ui";
-import { SessionItem } from "@/components/sessions";
+import { SessionItem, SessionRenameModal, SessionDeleteModal } from "@/components/sessions";
 import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
+import type { Session } from "@/types/sessions";
 
 // Track current path for active state (updated by router)
 export const currentPath = signal<string>(window.location.pathname);
 
 export function Sidebar() {
+  const [renameSession, setRenameSession] = useState<Session | null>(null);
+  const [deleteSession, setDeleteSession] = useState<Session | null>(null);
+
+  /**
+   * Handle session rename
+   */
+  const handleRename = async (session: Session, newLabel: string) => {
+    try {
+      await send("sessions.patch", {
+        sessionKey: session.key,
+        label: newLabel,
+      });
+      updateSession(session.key, { label: newLabel });
+    } catch (err) {
+      log.ui.error("Failed to rename session:", err);
+      throw err;
+    }
+  };
+
+  /**
+   * Handle session delete
+   */
+  const handleDelete = async (session: Session) => {
+    try {
+      await send("sessions.delete", {
+        sessionKey: session.key,
+      });
+      removeSession(session.key);
+
+      // If we deleted the active session, go back to main
+      if (activeSessionKey.value === session.key) {
+        route("/chat");
+      }
+    } catch (err) {
+      log.ui.error("Failed to delete session:", err);
+      throw err;
+    }
+  };
+
   return (
     <div class="h-full flex flex-col">
       {/* New Chat button */}
@@ -41,7 +87,7 @@ export function Sidebar() {
         {sessionsByRecent.value.length === 0 ? (
           <p class="text-sm text-[var(--color-text-muted)] px-2 py-4">{t("sessions.noSessions")}</p>
         ) : (
-          <ul class="space-y-1">
+          <ul class="space-y-0.5">
             {sessionsByRecent.value.map((session) => (
               <li key={session.key}>
                 <SessionItem
@@ -50,6 +96,8 @@ export function Sidebar() {
                     activeSessionKey.value === session.key && currentPath.value.startsWith("/chat")
                   }
                   onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
+                  onRename={setRenameSession}
+                  onDelete={setDeleteSession}
                 />
               </li>
             ))}
@@ -63,6 +111,18 @@ export function Sidebar() {
           <CollapsibleNavSection key={section.titleKey} section={section} />
         ))}
       </div>
+
+      {/* Modals */}
+      <SessionRenameModal
+        session={renameSession}
+        onClose={() => setRenameSession(null)}
+        onRename={handleRename}
+      />
+      <SessionDeleteModal
+        session={deleteSession}
+        onClose={() => setDeleteSession(null)}
+        onDelete={handleDelete}
+      />
     </div>
   );
 }
@@ -77,9 +137,6 @@ interface CollapsibleNavSectionProps {
 
 function CollapsibleNavSection({ section }: CollapsibleNavSectionProps) {
   const isOpen = useSignal(false);
-
-  // Show all items regardless of connection state (like OpenClaw)
-  // Items that require connection will show appropriate content when clicked
   const visibleItems = section.items;
 
   if (visibleItems.length === 0) return null;
@@ -115,7 +172,6 @@ interface NavItemComponentProps {
 }
 
 function NavItemComponent({ item }: NavItemComponentProps) {
-  // Check if this nav item matches the current path
   const itemPath = `/${item.id}`;
   const isActive =
     !item.external &&

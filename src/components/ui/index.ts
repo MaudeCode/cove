@@ -77,4 +77,7 @@ export {
   ExternalLinkIcon,
   SendIcon,
   StopIcon,
+  MoreIcon,
+  EditIcon,
+  TrashIcon,
 } from "./icons";
