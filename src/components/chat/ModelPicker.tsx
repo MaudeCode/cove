@@ -181,8 +181,8 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
                   onClick={(e) => toggleFavorite(model.id, e)}
                   class={`p-1 -m-1 text-xs transition-colors rounded hover:bg-[var(--color-bg-tertiary)] ${
                     isFavorite
-                      ? "text-yellow-500"
-                      : "text-[var(--color-text-muted)] hover:text-yellow-400"
+                      ? "text-[var(--color-warning)]"
+                      : "text-[var(--color-text-muted)] hover:text-[var(--color-warning)]/70"
                   }`}
                   title={isFavorite ? t("models.removeFavorite") : t("models.addFavorite")}
                   aria-label={isFavorite ? t("models.removeFavorite") : t("models.addFavorite")}

@@ -25,7 +25,7 @@ export function ConnectionBanner() {
       class={`
         px-4 py-2 text-sm flex items-center justify-center gap-2
         animate-[fade-in_150ms_ease-out_100ms_forwards] opacity-0
-        ${isReconnecting ? "bg-amber-500/10 text-amber-600 dark:text-amber-400" : "bg-red-500/10 text-red-600 dark:text-red-400"}
+        ${isReconnecting ? "bg-[var(--color-warning)]/10 text-[var(--color-warning)]" : "bg-[var(--color-error)]/10 text-[var(--color-error)]"}
       `}
       role="alert"
     >
