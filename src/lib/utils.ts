@@ -38,3 +38,17 @@ export function debounce<T extends (...args: unknown[]) => void>(
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
+
+/**
+ * Capitalize the first letter of a string
+ */
+export function capitalize(s: string): string {
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+/**
+ * Check if a string has content (non-empty after trimming)
+ */
+export function hasContent(s?: string | null): s is string {
+  return typeof s === "string" && s.trim().length > 0;
+}

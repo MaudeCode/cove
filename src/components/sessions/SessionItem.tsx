@@ -8,6 +8,7 @@ import { useState, useRef } from "preact/hooks";
 import type { Session } from "@/types/sessions";
 import { formatRelativeTime, t } from "@/lib/i18n";
 import { getAgentId, formatAgentName, looksLikeUuid, formatTokens } from "@/lib/session-utils";
+import { capitalize } from "@/lib/utils";
 import { deletingSessionKey } from "@/signals/sessions";
 import { getStreamingRun } from "@/signals/chat";
 import { useClickOutside } from "@/hooks";
@@ -58,7 +59,7 @@ export function getSessionLabel(session: Session): string {
       return formatAgentName(parts[1]);
     }
     // For other kinds (cron, spawn), show the kind
-    return kind.charAt(0).toUpperCase() + kind.slice(1);
+    return capitalize(kind);
   }
 
   // Fallback: just capitalize the last part (but not if it looks like a UUID)
@@ -69,10 +70,10 @@ export function getSessionLabel(session: Session): string {
       // Try the part before it
       const kindPart = parts[parts.length - 2];
       if (kindPart && !looksLikeUuid(kindPart)) {
-        return kindPart.charAt(0).toUpperCase() + kindPart.slice(1);
+        return capitalize(kindPart);
       }
     }
-    return lastPart.charAt(0).toUpperCase() + lastPart.slice(1);
+    return capitalize(lastPart);
   }
 
   return session.key;
@@ -101,8 +102,7 @@ function getChannelBadge(session: Session): string | null {
   const channel = session.channel ?? session.lastChannel;
   if (!channel || channel === "webchat") return null;
 
-  // Capitalize first letter
-  return channel.charAt(0).toUpperCase() + channel.slice(1);
+  return capitalize(channel);
 }
 
 export function SessionItem({
