@@ -9,15 +9,7 @@ import { themePreference, setTheme, getAllThemes } from "@/lib/theme";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
 import { sidebarOpen } from "@/signals/ui";
-import {
-  IconButton,
-  Select,
-  Badge,
-  CloseIcon,
-  MenuIcon,
-  SettingsIcon,
-  LogoutIcon,
-} from "@/components/ui";
+import { IconButton, Select, CloseIcon, MenuIcon, SettingsIcon, LogoutIcon } from "@/components/ui";
 
 export function TopBar() {
   const themes = getAllThemes();
@@ -59,15 +51,17 @@ export function TopBar() {
         {/* Right side: connection status + theme + settings */}
         <div class="flex items-center gap-4">
           {/* Connection status */}
-          <div class="flex items-center gap-2">
-            <Badge variant={getStatusVariant(connectionState.value)} dot size="sm">
-              <span class="hidden sm:inline">
-                {getStatusLabel(connectionState.value)}
-                {isConnected.value && gatewayVersion.value && (
-                  <span class="text-[var(--color-text-muted)]"> v{gatewayVersion.value}</span>
-                )}
-              </span>
-            </Badge>
+          <div class="flex items-center gap-2 text-sm">
+            <span
+              class={`w-2 h-2 rounded-full ${getStatusDotColor(connectionState.value)}`}
+              aria-hidden="true"
+            />
+            <span class={`hidden sm:inline ${getStatusTextColor(connectionState.value)}`}>
+              {getStatusLabel(connectionState.value)}
+              {isConnected.value && gatewayVersion.value && gatewayVersion.value !== "dev" && (
+                <span class="text-[var(--color-text-muted)]"> v{gatewayVersion.value}</span>
+              )}
+            </span>
           </div>
 
           {/* Theme selector */}
@@ -102,18 +96,33 @@ export function TopBar() {
 // Helpers
 // ============================================
 
-function getStatusVariant(state: string): "success" | "warning" | "error" | "default" {
+function getStatusDotColor(state: string): string {
   switch (state) {
     case "connected":
-      return "success";
+      return "bg-[var(--color-success)]";
     case "connecting":
     case "authenticating":
     case "reconnecting":
-      return "warning";
+      return "bg-[var(--color-warning)]";
     case "error":
-      return "error";
+      return "bg-[var(--color-error)]";
     default:
-      return "default";
+      return "bg-[var(--color-text-muted)]";
+  }
+}
+
+function getStatusTextColor(state: string): string {
+  switch (state) {
+    case "connected":
+      return "text-[var(--color-success)]";
+    case "connecting":
+    case "authenticating":
+    case "reconnecting":
+      return "text-[var(--color-warning)]";
+    case "error":
+      return "text-[var(--color-error)]";
+    default:
+      return "text-[var(--color-text-muted)]";
   }
 }
 

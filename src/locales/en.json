@@ -73,7 +73,7 @@
   },
 
   "status": {
-    "connected": "Connected",
+    "connected": "Healthy",
     "disconnected": "Disconnected",
     "connecting": "Connecting",
     "reconnecting": "Reconnecting",
