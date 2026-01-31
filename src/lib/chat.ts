@@ -360,11 +360,18 @@ function handleToolEvent(evt: AgentEvent): void {
   const { runId, data } = evt;
   if (!data) return;
 
+  console.log("[TOOL EVENT]", {
+    runId,
+    phase: data.phase,
+    name: data.name,
+    toolCallId: data.toolCallId,
+  });
+
   let run = activeRuns.value.get(runId);
 
   // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
   if (!run) {
-    log.chat.debug("Creating run on-the-fly for tool event:", runId);
+    console.log("[TOOL EVENT] Creating run on-the-fly for:", runId);
     startRun(runId, "unknown");
     run = activeRuns.value.get(runId);
     if (!run) return;
@@ -492,6 +499,7 @@ function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
   console.log("[FINAL]", {
     runId,
     hasRun: !!existingRun,
+    accumulatedContent: existingRun?.content,
     existingToolCalls: existingRun?.toolCalls?.map((tc) => ({ id: tc.id, name: tc.name, status: tc.status })),
     messageContent: message?.content,
   });
