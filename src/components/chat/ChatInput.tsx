@@ -10,6 +10,7 @@ import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { SendIcon, StopIcon } from "@/components/ui";
 import { ModelPicker } from "./ModelPicker";
+import { QueuedMessages } from "./QueuedMessages";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -105,7 +106,10 @@ export function ChatInput({
   return (
     <div class="pb-3 pt-2">
       <div class="max-w-5xl mx-auto px-6">
-        {/* Unified container */}
+        {/* Queued messages display */}
+        <QueuedMessages />
+
+        {/* Unified input container */}
         <div
           class="relative bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl
             shadow-soft-sm focus-within:shadow-soft focus-within:border-[var(--color-accent)]/50

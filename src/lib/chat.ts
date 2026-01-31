@@ -34,7 +34,6 @@ import {
   markMessageFailed,
   markMessageSending,
   markMessageSent,
-  markMessageQueued,
   saveCachedMessages,
   activeRuns,
   isStreaming,
@@ -215,40 +214,37 @@ export async function sendMessage(
   const messageId = `user_${idempotencyKey}`;
   const isRetry = options?.messageId != null;
 
-  // Determine initial status: queued if streaming, sending otherwise
-  const initialStatus = isStreaming.value ? "queued" : "sending";
+  const userMessage: Message = {
+    id: messageId,
+    role: "user",
+    content: message,
+    timestamp: Date.now(),
+    isStreaming: false,
+    status: "sending",
+    sessionKey,
+  };
 
-  if (!isRetry) {
-    const userMessage: Message = {
-      id: messageId,
-      role: "user",
-      content: message,
-      timestamp: Date.now(),
-      isStreaming: false,
-      status: initialStatus,
-      sessionKey,
-    };
-    addMessage(userMessage);
-  } else {
-    if (isStreaming.value) {
-      markMessageQueued(messageId);
-    } else {
-      markMessageSending(messageId);
-    }
-  }
-
-  // Queue if disconnected
+  // Queue if disconnected - don't add to chat yet
   if (!isConnected.value) {
     log.chat.info("Not connected, queuing message");
-    queueMessage({
-      id: messageId,
-      role: "user",
-      content: message,
-      timestamp: Date.now(),
-      status: initialStatus,
-      sessionKey,
-    });
+    userMessage.status = "queued";
+    queueMessage(userMessage);
     return idempotencyKey;
+  }
+
+  // Queue if currently streaming - don't add to chat yet
+  if (isStreaming.value && !isRetry) {
+    log.chat.info("Currently streaming, queuing message");
+    userMessage.status = "queued";
+    queueMessage(userMessage);
+    return idempotencyKey;
+  }
+
+  // Not queued - add to chat and send immediately
+  if (!isRetry) {
+    addMessage(userMessage);
+  } else {
+    markMessageSending(messageId);
   }
 
   startRun(idempotencyKey, sessionKey);
@@ -284,6 +280,7 @@ export async function sendMessage(
 
 /**
  * Resend a message (shared logic for retry and queue processing).
+ * Adds message to chat if not already there, then sends.
  */
 async function resendMessage(message: Message): Promise<void> {
   if (!message.sessionKey) {
@@ -291,9 +288,45 @@ async function resendMessage(message: Message): Promise<void> {
     return;
   }
 
+  // Remove from queue
   dequeueMessage(message.id);
+
+  // Add to chat if not already there (for queued messages that weren't in chat)
+  const existingInChat = messages.value.find((m) => m.id === message.id);
+  if (!existingInChat) {
+    addMessage({ ...message, status: "sending" });
+  } else {
+    markMessageSending(message.id);
+  }
+
   const idempotencyKey = message.id.replace(/^user_/, "");
   await sendMessage(message.sessionKey, message.content, { messageId: idempotencyKey });
+}
+
+/**
+ * Process the next queued message for a session (called after streaming completes).
+ */
+async function processNextQueuedMessage(sessionKey: string): Promise<void> {
+  // Check if still streaming (another run might have started)
+  if (isStreaming.value) {
+    log.chat.debug("Still streaming, not processing queue");
+    return;
+  }
+
+  // Find first queued message for this session
+  const nextMessage = messageQueue.value.find((m) => m.sessionKey === sessionKey);
+  if (!nextMessage) {
+    log.chat.debug("No queued messages for session");
+    return;
+  }
+
+  log.chat.info("Processing next queued message:", nextMessage.id);
+
+  try {
+    await resendMessage(nextMessage);
+  } catch (err) {
+    log.chat.error("Failed to send queued message:", err);
+  }
 }
 
 /**
@@ -615,6 +648,11 @@ function handleFinalEvent(event: ChatEvent): void {
   };
 
   completeRun(runId, finalMessage);
+
+  // Process next queued message after a short delay (let UI update first)
+  setTimeout(() => {
+    processNextQueuedMessage(sessionKey);
+  }, 100);
 }
 
 // ============================================
