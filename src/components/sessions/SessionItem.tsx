@@ -8,7 +8,6 @@ import { useState, useRef } from "preact/hooks";
 import type { Session } from "@/types/sessions";
 import { formatRelativeTime, t } from "@/lib/i18n";
 import { useClickOutside } from "@/hooks";
-import { getModelDisplayName } from "@/signals/models";
 import { MoreIcon, EditIcon, TrashIcon } from "@/components/ui";
 
 export interface SessionItemProps {
@@ -45,6 +44,31 @@ export function getSessionLabel(session: Session): string {
 }
 
 /**
+ * Extract the agent ID from a session key
+ * e.g. "agent:main:main" → "main"
+ *      "agent:maude-pm:spawn:uuid" → "maude-pm"
+ */
+function getAgentId(sessionKey: string): string | null {
+  const parts = sessionKey.split(":");
+  // Format: agent:<agentId>:<kind>[:uuid]
+  if (parts.length >= 2 && parts[0] === "agent") {
+    return parts[1];
+  }
+  return null;
+}
+
+/**
+ * Format agent ID for display (capitalize, handle dashes)
+ * e.g. "main" → "Main", "maude-pm" → "Maude PM"
+ */
+function formatAgentName(agentId: string): string {
+  return agentId
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+/**
  * Get session kind badge
  */
 function getKindBadge(session: Session): { label: string; color: string } | null {
@@ -76,8 +100,9 @@ export function SessionItem({
   const kindBadge = getKindBadge(session);
   const lastActive = session.updatedAt || session.lastActiveAt;
 
-  // Format model name (reuse shared helper)
-  const shortModel = session.model ? getModelDisplayName(session.model) : undefined;
+  // Extract agent name from session key
+  const agentId = getAgentId(session.key);
+  const agentName = agentId ? formatAgentName(agentId) : null;
 
   return (
     <div class="relative group">
@@ -112,11 +137,13 @@ export function SessionItem({
             )}
           </span>
 
-          {/* Meta row */}
+          {/* Meta row - show agent name + time */}
           <span class="flex items-center gap-2 text-xs text-[var(--color-text-muted)] mt-0.5">
-            {shortModel && <span class="truncate">{shortModel}</span>}
-            {shortModel && lastActive && <span>·</span>}
-            {lastActive && <span>{formatRelativeTime(new Date(lastActive))}</span>}
+            {agentName && <span>{agentName}</span>}
+            {agentName && lastActive && <span>·</span>}
+            {lastActive && (
+              <span class="whitespace-nowrap">{formatRelativeTime(new Date(lastActive))}</span>
+            )}
           </span>
         </span>
       </button>
