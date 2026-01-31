@@ -50,8 +50,17 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
+  // Debug logging
+  log.ui.debug("ModelPicker state:", {
+    modelsCount: models.value.length,
+    currentModel,
+    firstModel: models.value[0]?.id,
+    providers: Array.from(modelsByProvider.value.keys()),
+  });
+
   // Don't render if no models available
   if (models.value.length === 0) {
+    log.ui.debug("ModelPicker: no models loaded, hiding");
     return null;
   }
 
@@ -63,8 +72,15 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     ? (modelsByProvider.value.get(currentProvider) ?? [])
     : [];
 
+  log.ui.debug("ModelPicker filtering:", {
+    effectiveModel,
+    currentProvider,
+    availableModelsCount: availableModels.length,
+  });
+
   // Don't render if no models for this provider
   if (availableModels.length === 0) {
+    log.ui.debug("ModelPicker: no models for provider, hiding");
     return null;
   }
 
