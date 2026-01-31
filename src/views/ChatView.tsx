@@ -18,6 +18,7 @@ import {
   hasQueuedMessages,
 } from "@/signals/chat";
 import { activeSessionKey, setActiveSession, effectiveSessionKey } from "@/signals/sessions";
+import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
 import { MessageList, ChatInput, ConnectionBanner } from "@/components/chat";
 
 interface ChatViewProps {
@@ -101,6 +102,10 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         error={historyError.value}
         streamingContent={streamingContent.value}
         isStreaming={isStreaming.value}
+        assistantName={assistantName.value}
+        assistantAvatar={assistantAvatar.value ?? undefined}
+        userName={userName.value}
+        userAvatar={userAvatar.value ?? undefined}
       />
 
       <ChatInput

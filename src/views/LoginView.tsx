@@ -10,6 +10,7 @@ import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
+import { loadAssistantIdentity } from "@/signals/identity";
 import { getAuth, saveAuth } from "@/lib/storage";
 import { Input, Select, Button, Toggle, Card, FormField } from "@/components/ui";
 
@@ -73,6 +74,9 @@ export function LoginView() {
 
       // Load sessions list for sidebar
       await loadSessions();
+
+      // Load assistant identity
+      await loadAssistantIdentity();
 
       // Initialize chat with main session
       setActiveSession("main");
