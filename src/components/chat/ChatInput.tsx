@@ -1,13 +1,14 @@
 /**
  * ChatInput
  *
- * Message input with auto-resize, keyboard shortcuts, and send button.
+ * Message input with auto-resize, keyboard shortcuts, send and stop buttons.
+ * Supports queuing messages while streaming.
  */
 
 import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
-import { IconButton, SendIcon, StopIcon } from "@/components/ui";
+import { SendIcon, StopIcon } from "@/components/ui";
 
 interface ChatInputProps {
   onSend: (message: string) => void;
@@ -54,11 +55,11 @@ export function ChatInput({
   );
 
   /**
-   * Send message
+   * Send message (queues if streaming)
    */
   const handleSend = useCallback(() => {
     const message = value.value.trim();
-    if (!message || disabled || isStreaming) return;
+    if (!message || disabled) return;
 
     onSend(message);
     value.value = "";
@@ -67,7 +68,7 @@ export function ChatInput({
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [onSend, disabled, isStreaming]);
+  }, [onSend, disabled]);
 
   /**
    * Handle keyboard shortcuts
@@ -97,7 +98,7 @@ export function ChatInput({
     textareaRef.current?.focus();
   }, []);
 
-  const canSend = value.value.trim().length > 0 && !disabled && !isStreaming;
+  const canSend = value.value.trim().length > 0 && !disabled;
 
   return (
     <div class="px-3 pb-3 pt-2">
@@ -125,36 +126,51 @@ export function ChatInput({
           </div>
 
           {/* Action buttons */}
-          <div class="flex gap-2 flex-shrink-0">
-            {isStreaming ? (
-              <IconButton
-                icon={<StopIcon />}
-                label={t("actions.stop")}
+          <div class="flex gap-1.5 flex-shrink-0">
+            {/* Stop button - only during streaming */}
+            {isStreaming && (
+              <button
+                type="button"
                 onClick={onAbort}
-                variant="danger"
-                size="md"
-                class="rounded-xl shadow-soft-sm"
-              />
-            ) : (
-              <IconButton
-                icon={<SendIcon />}
-                label={t("actions.send")}
-                onClick={handleSend}
-                disabled={!canSend}
-                size="md"
-                class="rounded-xl bg-[var(--color-accent)] text-white shadow-soft hover:shadow-soft-lg hover:opacity-95 disabled:opacity-50 disabled:shadow-none"
-              />
+                aria-label={t("actions.stop")}
+                title={t("actions.stop")}
+                class="h-[42px] px-3 rounded-2xl flex items-center justify-center gap-1.5
+                  bg-[var(--color-error)]/10 text-[var(--color-error)]
+                  border border-[var(--color-error)]/20
+                  hover:bg-[var(--color-error)]/20 hover:border-[var(--color-error)]/30
+                  active:scale-95 transition-all duration-200 ease-out"
+              >
+                <StopIcon class="w-4 h-4" />
+                <span class="text-xs font-medium hidden sm:inline">Stop</span>
+              </button>
             )}
+
+            {/* Send button - always visible */}
+            <button
+              type="button"
+              onClick={handleSend}
+              disabled={!canSend}
+              aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
+              title={isStreaming ? "Queue message" : t("actions.send")}
+              class="h-[42px] px-3 rounded-2xl flex items-center justify-center gap-1.5
+                bg-[var(--color-accent)] text-white
+                shadow-soft hover:shadow-soft-lg hover:opacity-95
+                disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed
+                active:scale-95 transition-all duration-200 ease-out"
+            >
+              <SendIcon class="w-4 h-4" />
+              {isStreaming && <span class="text-xs font-medium hidden sm:inline">Queue</span>}
+            </button>
           </div>
         </div>
 
-        {/* Keyboard hint - only on hover/focus */}
-        <div class="mt-1 text-[10px] text-[var(--color-text-muted)] text-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
+        {/* Keyboard hint */}
+        <div class="mt-1.5 text-[10px] text-[var(--color-text-muted)] text-center opacity-0 hover:opacity-100 focus-within:opacity-100 transition-opacity">
           <span class="hidden sm:inline">
             <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
               Enter
             </kbd>{" "}
-            send ·{" "}
+            {isStreaming ? "queue" : "send"} ·{" "}
             <kbd class="px-1 py-0.5 rounded bg-[var(--color-bg-surface)] border border-[var(--color-border)]">
               Shift+Enter
             </kbd>{" "}
