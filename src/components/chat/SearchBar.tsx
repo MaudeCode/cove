@@ -4,13 +4,19 @@
  * Search bar for filtering messages in chat history.
  */
 
-import { useRef, useEffect } from "preact/hooks";
+import { useRef, useEffect, useCallback } from "preact/hooks";
 import { searchQuery, isSearchOpen, searchMatchCount } from "@/signals/chat";
 import { Input, IconButton, SearchIcon, CloseIcon } from "@/components/ui";
 import { t } from "@/lib/i18n";
 
 export function SearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
+
+  /** Close search and clear query */
+  const closeSearch = useCallback(() => {
+    isSearchOpen.value = false;
+    searchQuery.value = "";
+  }, []);
 
   // Focus input when search opens
   useEffect(() => {
@@ -29,14 +35,13 @@ export function SearchBar() {
       }
       // Escape to close search
       if (e.key === "Escape" && isSearchOpen.value) {
-        isSearchOpen.value = false;
-        searchQuery.value = "";
+        closeSearch();
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, []);
+  }, [closeSearch]);
 
   if (!isSearchOpen.value) {
     return (
@@ -74,10 +79,7 @@ export function SearchBar() {
       <IconButton
         icon={<CloseIcon />}
         label={t("actions.close")}
-        onClick={() => {
-          isSearchOpen.value = false;
-          searchQuery.value = "";
-        }}
+        onClick={closeSearch}
         variant="ghost"
         size="sm"
       />
