@@ -502,11 +502,22 @@ function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
     return tc;
   });
 
-  // Build final message using accumulated content (gateway's final only has last block)
+  // Gateway's final event may contain the last text block (text after tool calls).
+  // Merge it with accumulated content to get the complete message.
+  let finalContent = existingRun?.content ?? "";
+  if (message?.content) {
+    const parsed = parseMessageContent(message.content);
+    if (parsed.text) {
+      // Merge final text with accumulated content
+      const merged = mergeDeltaText(finalContent, parsed.text, existingRun?.lastBlockStart);
+      finalContent = merged.content;
+    }
+  }
+
   const finalMessage: Message = {
     id: `assistant_${runId}`,
     role: "assistant",
-    content: existingRun?.content ?? "",
+    content: finalContent,
     toolCalls: finalToolCalls?.length ? finalToolCalls : undefined,
     timestamp: message?.timestamp ?? Date.now(),
   };
