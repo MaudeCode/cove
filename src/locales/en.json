@@ -140,6 +140,7 @@
     "searchPlaceholder": "Search in conversation...",
     "match": "match",
     "matches": "matches",
+    "dateRange": "Date",
     "noMatches": "No matches found",
     "newMessages": "{count} new message",
     "newMessages_plural": "{count} new messages",
