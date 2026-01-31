@@ -103,8 +103,8 @@ export function ChatInput({
   const hasText = value.value.trim().length > 0;
 
   return (
-    <div class="px-3 pb-3 pt-2">
-      <div class="max-w-5xl mx-auto">
+    <div class="pb-3 pt-2">
+      <div class="max-w-5xl mx-auto px-6">
         {/* Unified container */}
         <div
           class="relative bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl
