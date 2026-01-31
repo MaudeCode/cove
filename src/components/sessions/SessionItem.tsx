@@ -8,6 +8,7 @@ import { useState, useRef } from "preact/hooks";
 import type { Session } from "@/types/sessions";
 import { formatRelativeTime, t } from "@/lib/i18n";
 import { getAgentId, formatAgentName, looksLikeUuid, formatTokens } from "@/lib/session-utils";
+import { deletingSessionKey } from "@/signals/sessions";
 import { useClickOutside } from "@/hooks";
 import { MoreIcon, EditIcon, TrashIcon, PinIcon } from "@/components/ui";
 
@@ -151,8 +152,14 @@ export function SessionItem({
   const agentId = getAgentId(session.key);
   const agentName = agentId ? formatAgentName(agentId) : null;
 
+  const isDeleting = deletingSessionKey.value === session.key;
+
   return (
-    <div class="relative group">
+    <div
+      class={`relative group transition-all duration-300 ${
+        isDeleting ? "opacity-0 scale-95 -translate-x-2" : ""
+      }`}
+    >
       <button
         type="button"
         onClick={onClick}
