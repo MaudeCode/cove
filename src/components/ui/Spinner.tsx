@@ -6,7 +6,7 @@
 
 import { t } from "@/lib/i18n";
 
-export type SpinnerSize = "sm" | "md" | "lg";
+export type SpinnerSize = "xs" | "sm" | "md" | "lg";
 
 export interface SpinnerProps {
   /** Spinner size */
@@ -18,6 +18,7 @@ export interface SpinnerProps {
 }
 
 const sizeStyles: Record<SpinnerSize, string> = {
+  xs: "w-3 h-3",
   sm: "w-4 h-4",
   md: "w-6 h-6",
   lg: "w-8 h-8",

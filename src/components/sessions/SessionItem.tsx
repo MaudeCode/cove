@@ -9,8 +9,9 @@ import type { Session } from "@/types/sessions";
 import { formatRelativeTime, t } from "@/lib/i18n";
 import { getAgentId, formatAgentName, looksLikeUuid, formatTokens } from "@/lib/session-utils";
 import { deletingSessionKey } from "@/signals/sessions";
+import { getStreamingRun } from "@/signals/chat";
 import { useClickOutside } from "@/hooks";
-import { MoreIcon, EditIcon, TrashIcon, PinIcon } from "@/components/ui";
+import { MoreIcon, EditIcon, TrashIcon, PinIcon, Spinner } from "@/components/ui";
 
 export interface SessionItemProps {
   /** The session to display */
@@ -153,12 +154,14 @@ export function SessionItem({
   const agentName = agentId ? formatAgentName(agentId) : null;
 
   const isDeleting = deletingSessionKey.value === session.key;
+  const streamingRun = getStreamingRun(session.key);
+  const isSessionStreaming = !!streamingRun;
 
   return (
     <div
       class={`relative group transition-all duration-300 ${
         isDeleting ? "opacity-0 scale-95 -translate-x-2" : ""
-      }`}
+      } ${isSessionStreaming ? "ai-glow" : ""}`}
     >
       <button
         type="button"
@@ -173,8 +176,10 @@ export function SessionItem({
           }
         `}
       >
-        {/* Pin icon for main session, otherwise active indicator dot */}
-        {isMain ? (
+        {/* Streaming spinner, pin icon for main, or active indicator dot */}
+        {isSessionStreaming ? (
+          <Spinner size="xs" class="flex-shrink-0 mt-0.5 text-[var(--color-accent)]" />
+        ) : isMain ? (
           <PinIcon
             class={`w-3.5 h-3.5 flex-shrink-0 mt-1 ${isActive ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
           />
