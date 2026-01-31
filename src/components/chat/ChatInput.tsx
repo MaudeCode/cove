@@ -101,7 +101,7 @@ export function ChatInput({
 
   return (
     <div class="px-3 pb-3 pt-2">
-      <div class="max-w-4xl mx-auto">
+      <div class="max-w-5xl mx-auto">
         <div class="flex gap-2 items-end">
           {/* Textarea */}
           <div class="flex-1 relative">
