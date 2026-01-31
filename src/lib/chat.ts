@@ -386,12 +386,14 @@ function handleToolEvent(evt: AgentEvent): void {
         return;
       }
       // Add new tool call with running status
+      // Track where in the content stream this tool was called
       const newToolCall: ToolCall = {
         id: toolCallId,
         name: toolName,
         args: data.args as Record<string, unknown> | undefined,
         status: "running",
         startedAt: Date.now(),
+        insertedAtContentLength: run.content.length,
       };
       existingToolCalls.push(newToolCall);
       updateRunContent(runId, run.content, existingToolCalls);

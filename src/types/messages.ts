@@ -60,4 +60,7 @@ export interface ToolCall {
 
   /** When the tool call completed */
   completedAt?: number;
+
+  /** Position in content string where this tool call was inserted (for interleaved rendering) */
+  insertedAtContentLength?: number;
 }
