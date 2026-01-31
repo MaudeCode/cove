@@ -15,7 +15,6 @@ export const CHANNEL_KEY_PATTERNS = [
   ":slack:",
   ":whatsapp:",
   ":imessage:",
-  ":webchat:",
 ] as const;
 
 /**
