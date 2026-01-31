@@ -446,21 +446,7 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
   const parsed = parseMessageContent(message.content);
   const existingRun = activeRuns.value.get(runId);
 
-  // Debug: log delta details
-  console.log("[DELTA]", {
-    runId,
-    hasRun: !!existingRun,
-    parsedTextLen: parsed.text.length,
-    parsedToolCalls: parsed.toolCalls.length,
-    existingContentLen: existingRun?.content.length ?? 0,
-    existingToolCalls: existingRun?.toolCalls.length ?? 0,
-    lastBlockStart: existingRun?.lastBlockStart,
-  });
-
-  if (!existingRun) {
-    console.log("[DELTA] No existing run found for:", runId);
-    return;
-  }
+  if (!existingRun) return;
 
   // Merge tool calls
   const mergedToolCalls = mergeToolCalls(existingRun.toolCalls, parsed.toolCalls);
@@ -472,12 +458,6 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
     existingRun.lastBlockStart,
   );
 
-  console.log("[DELTA] After merge:", {
-    contentLen: content.length,
-    lastBlockStart,
-    mergedToolCalls: mergedToolCalls.length,
-  });
-
   updateRunContent(runId, content, mergedToolCalls, lastBlockStart);
 }
 
@@ -487,14 +467,6 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
 function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
   const existingRun = activeRuns.value.get(runId);
 
-  console.log("[FINAL]", {
-    runId,
-    hasRun: !!existingRun,
-    accumulatedContentLen: existingRun?.content.length ?? 0,
-    accumulatedToolCalls: existingRun?.toolCalls.length ?? 0,
-    gatewayMessageContent: message?.content,
-  });
-
   // Build final message using accumulated content (gateway's final only has last block)
   const finalMessage: Message = {
     id: `assistant_${runId}`,
@@ -503,11 +475,6 @@ function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
     toolCalls: existingRun?.toolCalls?.length ? existingRun.toolCalls : undefined,
     timestamp: message?.timestamp ?? Date.now(),
   };
-
-  console.log("[FINAL] Completing run with:", {
-    contentLen: finalMessage.content.length,
-    toolCalls: finalMessage.toolCalls?.length ?? 0,
-  });
 
   completeRun(runId, finalMessage);
 }
