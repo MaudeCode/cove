@@ -201,13 +201,16 @@ export function normalizeMessageContent(content: string | ContentBlock[]): strin
 }
 
 /**
- * Convert raw message to normalized Message with tool calls
+ * Convert raw message to normalized Message with tool calls.
+ * Note: Only call with user/assistant/system roles - skip toolResult messages.
  */
 export function normalizeMessage(raw: RawMessage, id: string): Message {
   const parsed = parseMessageContent(raw.content);
+  // Filter role - toolResult should not be passed here (they're merged into assistant messages)
+  const role = raw.role === "toolResult" ? "assistant" : raw.role;
   return {
     id,
-    role: raw.role,
+    role,
     content: parsed.text,
     toolCalls: parsed.toolCalls.length > 0 ? parsed.toolCalls : undefined,
     timestamp: raw.timestamp ?? Date.now(),

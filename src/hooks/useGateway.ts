@@ -19,7 +19,7 @@ import {
   isConnected,
   lastError,
   gatewayVersion,
-  sessionKey,
+  mainSessionKey,
   capabilities,
   reconnectAttempt,
   connect,
@@ -40,7 +40,7 @@ export function useGateway() {
     isConnected,
     error: lastError,
     version: gatewayVersion,
-    sessionKey,
+    sessionKey: mainSessionKey,
     capabilities,
     reconnectAttempt,
 
