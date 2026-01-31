@@ -70,6 +70,27 @@ export interface ChatEvent {
   stopReason?: string;
 }
 
+/** Agent event from gateway (includes tool events) */
+export interface AgentEvent {
+  runId: string;
+  sessionKey?: string;
+  stream: "lifecycle" | "assistant" | "tool" | "error";
+  seq: number;
+  ts: number;
+  data?: {
+    phase?: "start" | "update" | "result";
+    name?: string;
+    toolCallId?: string;
+    args?: unknown;
+    partialResult?: unknown;
+    result?: unknown;
+    isError?: boolean;
+    meta?: string;
+    text?: string;
+    delta?: string;
+  };
+}
+
 /** Active chat run state */
 export interface ChatRun {
   runId: string;

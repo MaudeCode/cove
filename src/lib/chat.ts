@@ -33,8 +33,8 @@ import {
   markMessageSent,
   activeRuns,
 } from "@/signals/chat";
-import type { Message } from "@/types/messages";
-import type { ChatHistoryResult, ChatSendResult, ChatEvent } from "@/types/chat";
+import type { Message, ToolCall } from "@/types/messages";
+import type { ChatHistoryResult, ChatSendResult, ChatEvent, AgentEvent } from "@/types/chat";
 import { parseMessageContent, mergeToolCalls, normalizeMessage } from "@/types/chat";
 
 // ============================================
@@ -272,6 +272,15 @@ export function subscribeToChatEvents(): () => void {
     handleChatEvent(event);
   });
 
+  // Also subscribe to agent events for tool calls
+  on("agent", (payload) => {
+    const evt = payload as AgentEvent;
+    if (evt.stream === "tool") {
+      console.log("[AGENT] Tool event:", evt.data);
+      handleToolEvent(evt);
+    }
+  });
+
   return chatEventUnsubscribe;
 }
 
@@ -282,6 +291,70 @@ export function unsubscribeFromChatEvents(): void {
   if (chatEventUnsubscribe) {
     chatEventUnsubscribe();
     chatEventUnsubscribe = null;
+  }
+}
+
+/**
+ * Handle a tool event from the agent stream
+ */
+function handleToolEvent(evt: AgentEvent): void {
+  const { runId, data } = evt;
+  if (!data) return;
+
+  const run = activeRuns.value.get(runId);
+  if (!run) {
+    console.log("[AGENT] No run found for tool event:", runId);
+    return;
+  }
+
+  const toolCallId = data.toolCallId ?? `tool_${Date.now()}`;
+  const toolName = data.name ?? "unknown";
+
+  // Get existing tool calls
+  const existingToolCalls = [...run.toolCalls];
+
+  switch (data.phase) {
+    case "start": {
+      // Add new tool call with running status
+      const newToolCall: ToolCall = {
+        id: toolCallId,
+        name: toolName,
+        args: data.args as Record<string, unknown> | undefined,
+        status: "running",
+        startedAt: Date.now(),
+      };
+      existingToolCalls.push(newToolCall);
+      updateRunContent(runId, run.content, existingToolCalls);
+      break;
+    }
+
+    case "update": {
+      // Update partial result (not commonly used, but handle it)
+      const idx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
+      if (idx >= 0) {
+        existingToolCalls[idx] = {
+          ...existingToolCalls[idx],
+          result: data.partialResult,
+        };
+        updateRunContent(runId, run.content, existingToolCalls);
+      }
+      break;
+    }
+
+    case "result": {
+      // Mark tool call as complete
+      const idx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
+      if (idx >= 0) {
+        existingToolCalls[idx] = {
+          ...existingToolCalls[idx],
+          result: data.result,
+          status: data.isError ? "error" : "complete",
+          completedAt: Date.now(),
+        };
+        updateRunContent(runId, run.content, existingToolCalls);
+      }
+      break;
+    }
   }
 }
 
