@@ -3,6 +3,9 @@
  *
  * Search bar for filtering messages in chat history.
  * Includes text search and date range filter.
+ *
+ * Both collapsed and expanded states render in the same container
+ * to prevent layout shifts when toggling.
  */
 
 import { useRef, useEffect, useCallback } from "preact/hooks";
@@ -22,6 +25,7 @@ import { t } from "@/lib/i18n";
 
 export function SearchBar() {
   const inputRef = useRef<HTMLInputElement>(null);
+  const isOpen = isSearchOpen.value;
 
   /** Close search and clear all filters */
   const closeSearch = useCallback(() => {
@@ -55,9 +59,16 @@ export function SearchBar() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [closeSearch]);
 
-  if (!isSearchOpen.value) {
-    return (
-      <div class="absolute top-2 left-2 z-10 flex items-center gap-2">
+  const matchCount = searchMatchCount.value;
+  const hasQuery = hasContent(searchQuery.value);
+  const hasFilters = hasQuery || hasDateFilter.value;
+
+  return (
+    <>
+      {/* Collapsed state - floating buttons */}
+      <div
+        class={`absolute top-2 left-2 z-10 flex items-center gap-2 transition-opacity ${isOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+      >
         <IconButton
           icon={<SearchIcon />}
           label={t("chat.search")}
@@ -68,63 +79,61 @@ export function SearchBar() {
         />
         <HeartbeatIndicator />
       </div>
-    );
-  }
 
-  const matchCount = searchMatchCount.value;
-  const hasQuery = hasContent(searchQuery.value);
-  const hasFilters = hasQuery || hasDateFilter.value;
+      {/* Expanded state - full search bar */}
+      <div
+        class={`absolute top-0 left-0 right-0 z-10 flex items-center gap-3 px-3 py-2 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)] transition-opacity ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
+      >
+        {/* Search icon */}
+        <SearchIcon class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
 
-  return (
-    <div class="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 px-3 py-2 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)]">
-      {/* Search icon */}
-      <SearchIcon class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
+        {/* Text search input */}
+        <div class="flex-1 flex items-center gap-2 min-w-[120px]">
+          <input
+            ref={inputRef}
+            type="text"
+            value={searchQuery.value}
+            onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+            placeholder={t("chat.searchPlaceholder")}
+            class="flex-1 px-2.5 py-1.5 text-sm rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/50 transition-colors"
+            tabIndex={isOpen ? 0 : -1}
+          />
+          {/* Match count - inline with search to avoid layout shift */}
+          {hasFilters && (
+            <span class="text-xs text-[var(--color-text-muted)] whitespace-nowrap">
+              {matchCount} {matchCount === 1 ? t("chat.match") : t("chat.matches")}
+            </span>
+          )}
+        </div>
 
-      {/* Text search input */}
-      <div class="flex-1 flex items-center gap-2 min-w-[120px]">
-        <input
-          ref={inputRef}
-          type="text"
-          value={searchQuery.value}
-          onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-          placeholder={t("chat.searchPlaceholder")}
-          class="flex-1 px-2.5 py-1.5 text-sm rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/50 transition-colors"
+        {/* Date range */}
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+          <DatePicker
+            value={dateRangeStart.value}
+            onChange={(date) => (dateRangeStart.value = date)}
+            placeholder={t("chat.dateFrom")}
+            class="w-[130px]"
+            maxDate={dateRangeEnd.value}
+          />
+          <span class="text-[var(--color-text-muted)] text-sm">–</span>
+          <DatePicker
+            value={dateRangeEnd.value}
+            onChange={(date) => (dateRangeEnd.value = date)}
+            placeholder={t("chat.dateTo")}
+            class="w-[130px]"
+            minDate={dateRangeStart.value}
+          />
+        </div>
+
+        {/* Close button */}
+        <IconButton
+          icon={<CloseIcon />}
+          label={t("actions.close")}
+          onClick={closeSearch}
+          variant="ghost"
+          size="sm"
         />
-        {/* Match count - inline with search to avoid layout shift */}
-        {hasFilters && (
-          <span class="text-xs text-[var(--color-text-muted)] whitespace-nowrap">
-            {matchCount} {matchCount === 1 ? t("chat.match") : t("chat.matches")}
-          </span>
-        )}
       </div>
-
-      {/* Date range */}
-      <div class="flex items-center gap-1.5 flex-shrink-0">
-        <DatePicker
-          value={dateRangeStart.value}
-          onChange={(date) => (dateRangeStart.value = date)}
-          placeholder={t("chat.dateFrom")}
-          class="w-[130px]"
-          maxDate={dateRangeEnd.value}
-        />
-        <span class="text-[var(--color-text-muted)] text-sm">–</span>
-        <DatePicker
-          value={dateRangeEnd.value}
-          onChange={(date) => (dateRangeEnd.value = date)}
-          placeholder={t("chat.dateTo")}
-          class="w-[130px]"
-          minDate={dateRangeStart.value}
-        />
-      </div>
-
-      {/* Close button */}
-      <IconButton
-        icon={<CloseIcon />}
-        label={t("actions.close")}
-        onClick={closeSearch}
-        variant="ghost"
-        size="sm"
-      />
-    </div>
+    </>
   );
 }
