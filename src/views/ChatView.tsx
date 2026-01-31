@@ -6,9 +6,8 @@
  */
 
 import { useEffect, useRef } from "preact/hooks";
-import { t } from "@/lib/i18n";
-import { isConnected } from "@/lib/gateway";
-import { sendMessage, abortChat, loadHistory } from "@/lib/chat";
+import { isConnected, connectionState } from "@/lib/gateway";
+import { sendMessage, abortChat, loadHistory, processMessageQueue } from "@/lib/chat";
 import {
   messages,
   isLoadingHistory,
@@ -16,9 +15,10 @@ import {
   isStreaming,
   streamingContent,
   clearMessages,
+  hasQueuedMessages,
 } from "@/signals/chat";
 import { activeSessionKey, setActiveSession, effectiveSessionKey } from "@/signals/sessions";
-import { MessageList, ChatInput } from "@/components/chat";
+import { MessageList, ChatInput, ConnectionBanner } from "@/components/chat";
 
 interface ChatViewProps {
   /** Route path (from preact-router) */
@@ -29,6 +29,7 @@ interface ChatViewProps {
 
 export function ChatView({ sessionKey }: ChatViewProps) {
   const prevSessionRef = useRef<string | null>(null);
+  const wasConnectedRef = useRef<boolean>(false);
 
   // Sync session from URL to signal
   useEffect(() => {
@@ -59,6 +60,18 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     });
   }, [effectiveSessionKey.value]);
 
+  // Process queued messages on reconnect
+  useEffect(() => {
+    const connected = isConnected.value;
+
+    // Detect reconnection (was disconnected, now connected)
+    if (connected && !wasConnectedRef.current && hasQueuedMessages.value) {
+      processMessageQueue();
+    }
+
+    wasConnectedRef.current = connected;
+  }, [connectionState.value]);
+
   const handleSend = async (message: string) => {
     const sessionKey = effectiveSessionKey.value;
     if (!sessionKey) return;
@@ -66,7 +79,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     try {
       await sendMessage(sessionKey, message);
     } catch {
-      // Error is displayed via historyError signal
+      // Error is handled by sendMessage (marks message as failed)
     }
   };
 
@@ -77,20 +90,11 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
   };
 
-  if (!isConnected.value) {
-    return (
-      <div class="flex-1 flex items-center justify-center p-8">
-        <div class="text-center">
-          <div class="text-6xl mb-4">🏖️</div>
-          <h2 class="text-xl font-semibold mb-2">{t("app.name")}</h2>
-          <p class="text-[var(--color-text-muted)]">{t("chat.placeholderDisabled")}</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
+      {/* Connection status banner */}
+      <ConnectionBanner />
+
       <MessageList
         messages={messages.value}
         isLoading={isLoadingHistory.value}
@@ -102,7 +106,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
       <ChatInput
         onSend={handleSend}
         onAbort={handleAbort}
-        disabled={!isConnected.value}
+        disabled={false} // Allow typing even when disconnected (will queue)
         isStreaming={isStreaming.value}
       />
     </div>
