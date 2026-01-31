@@ -10,15 +10,44 @@ import { darkTheme } from "./dark";
 import { draculaTheme } from "./dracula";
 import { catppuccinMochaTheme, catppuccinLatteTheme } from "./catppuccin";
 import { nordTheme } from "./nord";
+import { gruvboxDarkTheme, gruvboxLightTheme } from "./gruvbox";
+import { solarizedDarkTheme, solarizedLightTheme } from "./solarized";
+import { oneDarkTheme } from "./one-dark";
+import { tokyoNightTheme, tokyoNightDayTheme } from "./tokyo-night";
+import { rosePineTheme, rosePineMoonTheme, rosePineDawnTheme } from "./rose-pine";
+import { githubDarkTheme, githubLightTheme, githubDimmedTheme } from "./github";
+import { monokaiTheme } from "./monokai";
 
 /** All built-in themes */
 export const builtInThemes: Theme[] = [
+  // Defaults
   lightTheme,
   darkTheme,
+  // Popular dark themes
   draculaTheme,
+  oneDarkTheme,
+  monokaiTheme,
+  tokyoNightTheme,
+  nordTheme,
+  // Catppuccin family
   catppuccinMochaTheme,
   catppuccinLatteTheme,
-  nordTheme,
+  // Rosé Pine family
+  rosePineTheme,
+  rosePineMoonTheme,
+  rosePineDawnTheme,
+  // Gruvbox family
+  gruvboxDarkTheme,
+  gruvboxLightTheme,
+  // Solarized family
+  solarizedDarkTheme,
+  solarizedLightTheme,
+  // GitHub family
+  githubDarkTheme,
+  githubLightTheme,
+  githubDimmedTheme,
+  // Tokyo Night light
+  tokyoNightDayTheme,
 ];
 
 /** Map of theme ID to theme definition */
