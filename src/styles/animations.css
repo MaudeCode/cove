@@ -242,7 +242,6 @@
 /* Spinning gradient border for active AI sessions */
 .ai-glow {
   position: relative;
-  border-radius: 1rem;
 }
 
 .ai-glow::before {
