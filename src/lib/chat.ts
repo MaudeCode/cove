@@ -360,18 +360,11 @@ function handleToolEvent(evt: AgentEvent): void {
   const { runId, data } = evt;
   if (!data) return;
 
-  console.log("[TOOL EVENT]", {
-    runId,
-    phase: data.phase,
-    name: data.name,
-    toolCallId: data.toolCallId,
-  });
-
   let run = activeRuns.value.get(runId);
 
   // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
   if (!run) {
-    console.log("[TOOL EVENT] Creating run on-the-fly for:", runId);
+    log.chat.debug("Creating run on-the-fly for tool event:", runId);
     startRun(runId, "unknown");
     run = activeRuns.value.get(runId);
     if (!run) return;
@@ -386,7 +379,7 @@ function handleToolEvent(evt: AgentEvent): void {
     let idx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
     if (idx < 0) {
       // Tool call doesn't exist (missed 'start' event after refresh) - create it
-      console.log("[TOOL EVENT] Creating missing tool call:", toolCallId);
+      log.chat.debug("Creating missing tool call:", toolCallId);
       existingToolCalls.push({
         id: toolCallId,
         name: toolName,
@@ -474,21 +467,12 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
   const parsed = parseMessageContent(message.content);
   let existingRun = activeRuns.value.get(runId);
 
-  // Debug: log what we're receiving
-  console.log("[DELTA]", {
-    runId,
-    hasRun: !!existingRun,
-    messageContent: message.content,
-    parsedText: parsed.text.slice(0, 50),
-    parsedToolCalls: parsed.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, status: tc.status })),
-  });
-
   // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
   if (!existingRun) {
-    console.log("[DELTA] Creating run on-the-fly for:", runId);
-    startRun(runId, "unknown"); // sessionKey unknown but not critical for streaming
+    log.chat.debug("Creating run on-the-fly for delta:", runId);
+    startRun(runId, "unknown");
     existingRun = activeRuns.value.get(runId);
-    if (!existingRun) return; // shouldn't happen, but be safe
+    if (!existingRun) return;
   }
 
   // Merge tool calls
@@ -509,14 +493,6 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
  */
 function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
   const existingRun = activeRuns.value.get(runId);
-
-  console.log("[FINAL]", {
-    runId,
-    hasRun: !!existingRun,
-    accumulatedContent: existingRun?.content,
-    existingToolCalls: existingRun?.toolCalls?.map((tc) => ({ id: tc.id, name: tc.name, status: tc.status })),
-    messageContent: message?.content,
-  });
 
   // Mark any still-running tool calls as complete (we may have missed result events after refresh)
   const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
