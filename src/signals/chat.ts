@@ -213,6 +213,11 @@ export function markMessageFailed(messageId: string, error: string): void {
   setMessageStatus(messageId, "failed", error);
 }
 
+/** Mark a message as queued (waiting for current stream to finish) */
+export function markMessageQueued(messageId: string): void {
+  setMessageStatus(messageId, "queued", undefined);
+}
+
 // ============================================
 // Run Lifecycle Actions
 // ============================================
