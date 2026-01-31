@@ -48,6 +48,9 @@ export const sessions = signal<Session[]>(loadCachedSessions());
 /** Currently active session key */
 export const activeSessionKey = signal<string | null>(null);
 
+/** Filter by session kind (null = all) */
+export const sessionKindFilter = signal<string | null>(null);
+
 /** Whether we're loading sessions */
 export const isLoadingSessions = signal<boolean>(false);
 
@@ -78,10 +81,18 @@ export const effectiveSessionKey = computed(() => {
   return current;
 });
 
-/** Sessions sorted by last active time */
-export const sessionsByRecent = computed(() =>
-  [...sessions.value].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)),
-);
+/** Sessions sorted by last active time, filtered by kind */
+export const sessionsByRecent = computed(() => {
+  let filtered = sessions.value;
+
+  // Apply kind filter if set
+  if (sessionKindFilter.value) {
+    filtered = filtered.filter((s) => s.kind === sessionKindFilter.value);
+  }
+
+  // Sort by most recent
+  return [...filtered].sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
+});
 
 /** Number of sessions */
 export const sessionCount = computed(() => sessions.value.length);
@@ -119,6 +130,13 @@ export async function loadSessions(params?: SessionsListParams): Promise<void> {
  */
 export function setActiveSession(sessionKey: string | null): void {
   activeSessionKey.value = sessionKey;
+}
+
+/**
+ * Set the session kind filter
+ */
+export function setSessionKindFilter(kind: string | null): void {
+  sessionKindFilter.value = kind;
 }
 
 /**
