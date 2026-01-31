@@ -117,6 +117,15 @@ export function AssistantMessage({
   const blocks = buildContentBlocks(message.content, message.toolCalls ?? []);
   const hasContent = blocks.length > 0 || isStreaming;
 
+  // Debug: log every render to track reactivity issues
+  log.chat.debug("AssistantMessage render", {
+    messageId: message.id,
+    contentLen: message.content.length,
+    toolCallsCount: message.toolCalls?.length ?? 0,
+    blocksCount: blocks.length,
+    isStreaming,
+  });
+
   return (
     <div class="group">
       {/* Header: Avatar + Name + Timestamp */}
