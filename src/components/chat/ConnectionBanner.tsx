@@ -40,22 +40,17 @@ export function ConnectionBanner() {
 
       {/* Message */}
       <span>
-        {isReconnecting ? (
-          <>
-            {t("connection.reconnecting")}
-            {reconnectAttempt.value > 1 && (
-              <span class="text-xs opacity-75 ml-1">(attempt {reconnectAttempt.value})</span>
-            )}
-          </>
-        ) : (
-          t("connection.disconnected")
-        )}
+        {isReconnecting
+          ? reconnectAttempt.value > 1
+            ? t("connection.reconnectingAttempt", { count: reconnectAttempt.value })
+            : t("connection.reconnecting")
+          : t("connection.disconnected")}
       </span>
 
       {/* Queued messages indicator */}
       {hasQueuedMessages.value && (
         <span class="text-xs opacity-75">
-          • {queuedCount} {queuedCount === 1 ? "message" : "messages"} queued
+          • {t("connection.messagesQueued", { count: queuedCount })}
         </span>
       )}
     </div>
