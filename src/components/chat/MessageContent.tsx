@@ -15,8 +15,11 @@ interface MessageContentProps {
   isStreaming?: boolean;
 }
 
+/** CSS classes for search highlight marks */
+const SEARCH_HIGHLIGHT_CLASS = "bg-[var(--color-warning-muted)] rounded px-0.5";
+
 /**
- * Highlight search matches in text nodes (not in code blocks)
+ * Highlight ALL search matches in text nodes (not in code blocks)
  */
 function highlightSearchMatches(container: HTMLElement, query: string) {
   if (!query) return;
@@ -47,25 +50,44 @@ function highlightSearchMatches(container: HTMLElement, query: string) {
   for (const textNode of textNodes) {
     const text = textNode.textContent || "";
     const lowerText = text.toLowerCase();
-    const index = lowerText.indexOf(lowerQuery);
 
-    if (index >= 0) {
-      const before = text.slice(0, index);
-      const match = text.slice(index, index + query.length);
-      const after = text.slice(index + query.length);
+    // Find ALL matches in this text node
+    const matches: Array<{ start: number; end: number }> = [];
+    let searchStart = 0;
+    let index: number;
 
-      const fragment = document.createDocumentFragment();
-      if (before) fragment.appendChild(document.createTextNode(before));
+    while ((index = lowerText.indexOf(lowerQuery, searchStart)) !== -1) {
+      matches.push({ start: index, end: index + query.length });
+      searchStart = index + 1; // Move past this match to find overlapping matches
+    }
 
+    if (matches.length === 0) continue;
+
+    // Build fragment with all matches highlighted
+    const fragment = document.createDocumentFragment();
+    let lastEnd = 0;
+
+    for (const match of matches) {
+      // Add text before this match
+      if (match.start > lastEnd) {
+        fragment.appendChild(document.createTextNode(text.slice(lastEnd, match.start)));
+      }
+
+      // Add highlighted match
       const mark = document.createElement("mark");
-      mark.className = "bg-yellow-200 dark:bg-yellow-800 rounded px-0.5";
-      mark.textContent = match;
+      mark.className = SEARCH_HIGHLIGHT_CLASS;
+      mark.textContent = text.slice(match.start, match.end);
       fragment.appendChild(mark);
 
-      if (after) fragment.appendChild(document.createTextNode(after));
-
-      textNode.replaceWith(fragment);
+      lastEnd = match.end;
     }
+
+    // Add remaining text after last match
+    if (lastEnd < text.length) {
+      fragment.appendChild(document.createTextNode(text.slice(lastEnd)));
+    }
+
+    textNode.replaceWith(fragment);
   }
 }
 
