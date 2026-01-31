@@ -54,6 +54,9 @@ export async function loadHistory(sessionKey: string, limit = 200): Promise<void
       limit,
     });
 
+    // Debug: log raw history to see what format tool calls come in
+    console.log("[HISTORY] Raw messages:", JSON.stringify(result.messages.slice(-3), null, 2));
+
     // Convert raw messages to our Message type with tool calls
     const normalized: Message[] = result.messages.map((raw, index) =>
       normalizeMessage(raw, `hist_${index}_${Date.now()}`),
