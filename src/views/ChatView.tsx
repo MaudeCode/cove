@@ -14,6 +14,7 @@ import {
   historyError,
   isStreaming,
   streamingContent,
+  streamingToolCalls,
   clearMessages,
   hasQueuedMessages,
 } from "@/signals/chat";
@@ -101,6 +102,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         isLoading={isLoadingHistory.value}
         error={historyError.value}
         streamingContent={streamingContent.value}
+        streamingToolCalls={streamingToolCalls.value}
         isStreaming={isStreaming.value}
         assistantName={assistantName.value}
         assistantAvatar={assistantAvatar.value ?? undefined}
