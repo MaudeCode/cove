@@ -185,3 +185,9 @@ See ROADMAP.md for full details.
 3. **Console warnings OK** - `console.warn/error` for debugging is intentional
 4. **CSS variables** - all colors use `var(--color-*)` for theming
 5. **OpenClaw protocol** - refer to https://github.com/openclaw/openclaw for protocol details
+6. **Icons** - use `lucide-preact` for ALL icons. Do NOT create custom SVG icons.
+   ```tsx
+   import { Check, X, Settings } from "lucide-preact";
+   <Check class="w-5 h-5" aria-hidden="true" />
+   ```
+   Browse available icons at https://lucide.dev/icons
