@@ -177,8 +177,7 @@ export async function loadSessions(params?: SessionsListParams): Promise<void> {
 
   try {
     const result = await send<SessionsListResult>("sessions.list", {
-      limit: params?.limit ?? 50,
-      activeMinutes: params?.activeMinutes ?? 60 * 24 * 7, // Last week by default
+      limit: params?.limit ?? 100,
       ...params,
     });
 
