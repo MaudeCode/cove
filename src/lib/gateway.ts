@@ -196,7 +196,7 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
     minProtocol: PROTOCOL_VERSION,
     maxProtocol: PROTOCOL_VERSION,
     client: {
-      id: "cove",
+      id: "webchat",
       displayName: "Cove",
       version: "0.1.0",
       platform: getBrowserPlatform(),
