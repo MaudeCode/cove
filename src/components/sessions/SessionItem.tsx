@@ -4,9 +4,11 @@
  * A clickable session item with metadata and action menu.
  */
 
-import { useState, useRef, useEffect } from "preact/hooks";
+import { useState, useRef } from "preact/hooks";
 import type { Session } from "@/types/sessions";
 import { formatRelativeTime, t } from "@/lib/i18n";
+import { useClickOutside } from "@/hooks";
+import { getModelDisplayName } from "@/signals/models";
 import { MoreIcon, EditIcon, TrashIcon } from "@/components/ui";
 
 export interface SessionItemProps {
@@ -69,28 +71,13 @@ export function SessionItem({
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close menu on click outside
-  useEffect(() => {
-    if (!menuOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [menuOpen]);
+  useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
   const kindBadge = getKindBadge(session);
   const lastActive = session.updatedAt || session.lastActiveAt;
 
-  // Format model name (shorten)
-  const shortModel = session.model
-    ?.replace(/^anthropic\//, "")
-    .replace(/^claude-/, "")
-    .replace(/^openai\//, "")
-    .replace(/^gpt-/, "");
+  // Format model name (reuse shared helper)
+  const shortModel = session.model ? getModelDisplayName(session.model) : undefined;
 
   return (
     <div class="relative group">

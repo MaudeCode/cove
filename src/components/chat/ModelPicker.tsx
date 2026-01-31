@@ -11,10 +11,11 @@
  * @see src/signals/models.ts for details
  */
 
-import { useState, useRef, useEffect, useMemo } from "preact/hooks";
+import { useState, useRef, useMemo } from "preact/hooks";
 import { models, modelsByProvider, getModelDisplayName, defaultModel } from "@/signals/models";
 import { send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
+import { useClickOutside } from "@/hooks";
 import { ChevronDownIcon } from "@/components/ui";
 
 const FAVORITES_KEY = "cove:model-favorites";
@@ -73,16 +74,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close on click outside
-  useEffect(() => {
-    if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
+  useClickOutside(menuRef, () => setOpen(false), open);
 
   // Don't render if no models available
   if (models.value.length === 0) {
