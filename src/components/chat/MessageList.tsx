@@ -22,6 +22,8 @@ interface MessageListProps {
   assistantAvatar?: string;
   userName?: string;
   userAvatar?: string;
+  /** Number of queued messages (triggers scroll when changed) */
+  queuedCount?: number;
 }
 
 export function MessageList({
@@ -35,6 +37,7 @@ export function MessageList({
   assistantAvatar,
   userName,
   userAvatar,
+  queuedCount = 0,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -89,8 +92,9 @@ export function MessageList({
       lastMessage?.role === "user" && lastMessage.id !== lastMessageRef.current;
 
     // Always scroll for new user messages (they just sent it)
+    // Also always scroll when new messages are queued (so user can see queue + typing indicator)
     // Otherwise respect auto-scroll preference
-    if (isNewUserMessage || isAutoScrolling.current) {
+    if (isNewUserMessage || queuedCount > 0 || isAutoScrolling.current) {
       scrollToBottom(false);
     }
 
@@ -100,6 +104,7 @@ export function MessageList({
     streamingContent.length,
     streamingToolCalls.length,
     completedToolCount,
+    queuedCount,
     scrollToBottom,
   ]);
 
