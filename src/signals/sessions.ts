@@ -14,6 +14,7 @@ import {
   isMainSession,
   isCronSession,
   isSpawnSession,
+  getSessionKind,
   groupSessionsByTime,
 } from "@/lib/session-utils";
 import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
@@ -107,9 +108,12 @@ function getSessionDisplayLabel(session: Session): string {
 export const sessionsByRecent = computed(() => {
   let filtered = sessions.value;
 
-  // Apply kind filter if set
+  // Apply kind filter if set (use getSessionKind since session.kind may not be populated)
   if (sessionKindFilter.value) {
-    filtered = filtered.filter((s) => s.kind === sessionKindFilter.value);
+    filtered = filtered.filter((s) => {
+      const kind = getSessionKind(s.key);
+      return kind === sessionKindFilter.value;
+    });
   }
 
   // Hide cron sessions unless toggled
