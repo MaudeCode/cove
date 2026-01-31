@@ -6,7 +6,8 @@
  */
 
 import { useEffect, useRef } from "preact/hooks";
-import { isConnected, connectionState } from "@/lib/gateway";
+import { route } from "preact-router";
+import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
 import { sendMessage, abortChat, loadHistory, processMessageQueue } from "@/lib/chat";
 import {
   messages,
@@ -42,16 +43,23 @@ export function ChatView({ sessionKey }: ChatViewProps) {
   const prevSessionRef = useRef<string | null>(null);
   const wasConnectedRef = useRef<boolean>(false);
 
-  // Sync session from URL to signal
+  // Sync session from URL to signal, and redirect /chat to actual main session URL
   useEffect(() => {
     // Decode URL-encoded session key (e.g., "agent%3Amain%3Amain" -> "agent:main:main")
     const decodedKey = sessionKey ? decodeURIComponent(sessionKey) : null;
+
+    // If on /chat without a session key and we know the main session, redirect
+    if (!decodedKey && mainSessionKey.value) {
+      route(`/chat/${encodeURIComponent(mainSessionKey.value)}`, true);
+      return;
+    }
+
     const targetSession = decodedKey || "main";
 
     if (targetSession !== activeSessionKey.value) {
       setActiveSession(targetSession);
     }
-  }, [sessionKey]);
+  }, [sessionKey, mainSessionKey.value]);
 
   // Load history when session changes
   // Note: We track activeSessionKey.value directly because Preact signals
