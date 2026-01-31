@@ -265,7 +265,9 @@ export function subscribeToChatEvents(): () => void {
     return chatEventUnsubscribe;
   }
 
+  console.log("[CHAT] Subscribing to chat events");
   chatEventUnsubscribe = on("chat", (payload) => {
+    console.log("[CHAT] Received chat event payload:", payload);
     const event = payload as ChatEvent;
     handleChatEvent(event);
   });
@@ -289,6 +291,8 @@ export function unsubscribeFromChatEvents(): void {
 function handleChatEvent(event: ChatEvent): void {
   const { runId, state, message, errorMessage } = event;
 
+  // Debug: log full event to console
+  console.log("[CHAT EVENT]", JSON.stringify(event, null, 2));
   log.chat.debug("Chat event:", state, runId, message ? "has message" : "no message");
 
   switch (state) {
