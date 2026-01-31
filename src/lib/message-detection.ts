@@ -16,6 +16,10 @@ const HEARTBEAT_PROMPT_PATTERNS = [
 /** Heartbeat response pattern */
 const HEARTBEAT_RESPONSE = /^\s*heartbeat_ok\s*$/i;
 
+/** NO_REPLY pattern (should be hidden - these are signals to not send anything)
+ * Also catches truncated versions like "NO_" from streaming race conditions */
+const NO_REPLY_PATTERN = /^\s*no_(?:reply|repl|rep|re|r|_?)?\s*$/i;
+
 /**
  * Check if a message is a heartbeat prompt
  */
@@ -30,6 +34,15 @@ export function isHeartbeatPrompt(message: Message): boolean {
 export function isHeartbeatResponse(message: Message): boolean {
   if (message.role !== "assistant") return false;
   return HEARTBEAT_RESPONSE.test(message.content);
+}
+
+/**
+ * Check if a message is a NO_REPLY signal (or truncated version like "NO_")
+ * These should be hidden entirely - they're signals to not send anything.
+ */
+export function isNoReply(message: Message): boolean {
+  if (message.role !== "assistant") return false;
+  return NO_REPLY_PATTERN.test(message.content);
 }
 
 /**
@@ -58,11 +71,17 @@ export function isCompactionSummary(message: Message): boolean {
 /**
  * Get the type of special message (if any)
  */
-export type SpecialMessageType = "heartbeat-prompt" | "heartbeat-response" | "compaction" | null;
+export type SpecialMessageType =
+  | "heartbeat-prompt"
+  | "heartbeat-response"
+  | "compaction"
+  | "no-reply"
+  | null;
 
 export function getSpecialMessageType(message: Message): SpecialMessageType {
   if (isHeartbeatPrompt(message)) return "heartbeat-prompt";
   if (isHeartbeatResponse(message)) return "heartbeat-response";
+  if (isNoReply(message)) return "no-reply";
   if (isCompactionSummary(message)) return "compaction";
   return null;
 }

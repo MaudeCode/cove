@@ -133,11 +133,11 @@ export function ChatView({ sessionKey }: ChatViewProps) {
   const sessionStreamingState = getStreamingStateForSession(effectiveSessionKey.value);
 
   return (
-    <div class="flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col overflow-hidden relative">
       {/* Connection status banner */}
       <ConnectionBanner />
 
-      {/* Compaction status banner */}
+      {/* Compaction status banner (floating overlay) */}
       <CompactionBanner />
 
       {/* Search bar */}

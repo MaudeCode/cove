@@ -5,7 +5,7 @@
  */
 
 import type { Message } from "@/types/messages";
-import { isHeartbeatMessage, isCompactionSummary } from "./message-detection";
+import { isHeartbeatMessage, isCompactionSummary, isNoReply } from "./message-detection";
 
 export type MessageGroup =
   | { type: "message"; message: Message }
@@ -27,6 +27,11 @@ export function groupMessages(messages: Message[]): MessageGroup[] {
   };
 
   for (const msg of messages) {
+    // Skip NO_REPLY messages entirely - they're internal signals
+    if (isNoReply(msg)) {
+      continue;
+    }
+
     if (isHeartbeatMessage(msg)) {
       currentHeartbeatGroup.push(msg);
     } else if (isCompactionSummary(msg)) {
