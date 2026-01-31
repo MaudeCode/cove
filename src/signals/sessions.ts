@@ -186,7 +186,11 @@ export function updateSession(sessionKey: string, updates: Partial<Session>): vo
   
   const after = sessions.value.find((s) => s.key === sessionKey);
   console.log("[sessions] after:", after?.model);
-  console.log("[sessions] activeSession after update:", activeSession.value?.model);
+  console.log("[sessions] activeSessionKey:", activeSessionKey.value);
+  console.log("[sessions] activeSession after update:", activeSession.value);
+  console.log("[sessions] activeSession.model:", activeSession.value?.model);
+  console.log("[sessions] sessions count:", sessions.value.length);
+  console.log("[sessions] updated session key:", sessionKey, "matches active?", sessionKey === activeSessionKey.value);
 }
 
 /**
