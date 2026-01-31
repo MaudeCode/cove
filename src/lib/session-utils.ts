@@ -5,6 +5,7 @@
  */
 
 import { mainSessionKey } from "@/lib/gateway";
+import { capitalize } from "@/lib/utils";
 import type { Session } from "@/types/sessions";
 
 /** Known channel types that appear in session keys */
@@ -90,10 +91,7 @@ export function getSessionKind(sessionKey: string): string | null {
  * e.g. "main" → "Main", "maude-pm" → "Maude PM"
  */
 export function formatAgentName(agentId: string): string {
-  return agentId
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+  return agentId.split("-").map(capitalize).join(" ");
 }
 
 /**
