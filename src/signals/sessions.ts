@@ -61,11 +61,6 @@ export const sessionsError = signal<string | null>(null);
 // Derived State
 // ============================================
 
-/** The currently active session (derived) */
-export const activeSession = computed(
-  () => sessions.value.find((s) => s.key === activeSessionKey.value) ?? null,
-);
-
 /**
  * The effective session key to use for chat operations.
  * Resolves "main" to the actual mainSessionKey from the gateway.
@@ -80,6 +75,11 @@ export const effectiveSessionKey = computed(() => {
 
   return current;
 });
+
+/** The currently active session (derived) - uses effectiveSessionKey to handle "main" alias */
+export const activeSession = computed(
+  () => sessions.value.find((s) => s.key === effectiveSessionKey.value) ?? null,
+);
 
 /** Sessions sorted by last active time, filtered by kind */
 export const sessionsByRecent = computed(() => {
