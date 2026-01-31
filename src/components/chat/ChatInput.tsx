@@ -126,7 +126,7 @@ export function ChatInput({
           </div>
 
           {/* Action buttons */}
-          <div class="flex gap-1.5 flex-shrink-0 self-end pb-px">
+          <div class="flex gap-1.5 flex-shrink-0">
             {/* Stop button - only during streaming */}
             {isStreaming && (
               <button
@@ -134,7 +134,7 @@ export function ChatInput({
                 onClick={onAbort}
                 aria-label={t("actions.stop")}
                 title={t("actions.stop")}
-                class="h-[42px] px-3 rounded-2xl flex items-center justify-center gap-1.5
+                class="px-3 py-2.5 rounded-2xl flex items-center justify-center gap-1.5
                   bg-[var(--color-error)]/10 text-[var(--color-error)]
                   border border-[var(--color-error)]/20
                   hover:bg-[var(--color-error)]/20 hover:border-[var(--color-error)]/30
@@ -152,8 +152,9 @@ export function ChatInput({
               disabled={!canSend}
               aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
               title={isStreaming ? "Queue message" : t("actions.send")}
-              class="h-[42px] px-4 rounded-2xl flex items-center justify-center gap-1.5
+              class="px-4 py-2.5 rounded-2xl flex items-center justify-center gap-1.5
                 bg-[var(--color-accent)] text-white
+                border border-transparent
                 shadow-soft hover:shadow-soft-lg hover:opacity-95
                 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed
                 active:scale-95 transition-all duration-200 ease-out"
