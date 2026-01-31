@@ -5,9 +5,10 @@
  * Designed to feel native to chat, not like a separate UI element.
  */
 
+import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import type { ToolCall as ToolCallType } from "@/types/messages";
-import { ChevronDownIcon } from "@/components/ui";
+import { ChevronDownIcon, Spinner } from "@/components/ui";
 
 interface ToolCallProps {
   toolCall: ToolCallType;
@@ -140,7 +141,7 @@ function CodeBlock({ content, maxLines = 30, error = false }: CodeBlockProps) {
 // ============================================
 
 interface StatusConfig {
-  icon: string;
+  icon: ComponentChildren;
   color: string;
 }
 
@@ -149,7 +150,10 @@ function getStatusConfig(status: string): StatusConfig {
     case "pending":
       return { icon: "○", color: "text-[var(--color-text-muted)]" };
     case "running":
-      return { icon: "◐", color: "text-[var(--color-accent)] animate-spin" };
+      return {
+        icon: <Spinner size="xs" class="text-[var(--color-accent)]" />,
+        color: "",
+      };
     case "complete":
       return { icon: "✓", color: "text-[var(--color-success)]" };
     case "error":
