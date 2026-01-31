@@ -28,19 +28,14 @@ export interface SessionItemProps {
 }
 
 /**
- * Get a display label for a session
+ * Format agent ID for display (capitalize, handle dashes)
+ * e.g. "main" → "Main", "maude-pm" → "Maude PM"
  */
-export function getSessionLabel(session: Session): string {
-  if (session.label) return session.label;
-  if (session.displayName) return session.displayName;
-
-  const parts = session.key.split(":");
-  if (parts.length >= 2) {
-    const name = parts[parts.length - 1];
-    return name.charAt(0).toUpperCase() + name.slice(1);
-  }
-
-  return session.key;
+function formatAgentName(agentId: string): string {
+  return agentId
+    .split("-")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 }
 
 /**
@@ -58,14 +53,48 @@ function getAgentId(sessionKey: string): string | null {
 }
 
 /**
- * Format agent ID for display (capitalize, handle dashes)
- * e.g. "main" → "Main", "maude-pm" → "Maude PM"
+ * Get a display label for a session
+ *
+ * Session key format: agent:<agentId>:<kind>[:uuid]
+ * Examples:
+ *   - agent:main:main → "Main"
+ *   - agent:main:cron:6dff7c7f-... → "Cron"
+ *   - agent:maude-pm:spawn:abc123 → "Spawn"
  */
-function formatAgentName(agentId: string): string {
-  return agentId
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+export function getSessionLabel(session: Session): string {
+  // User-set label takes priority
+  if (session.label) return session.label;
+  // Gateway-provided display name (e.g., "Cove" for main)
+  if (session.displayName) return session.displayName;
+
+  // Parse the session key
+  const parts = session.key.split(":");
+  // Format: agent:<agentId>:<kind>[:uuid]
+  if (parts.length >= 3 && parts[0] === "agent") {
+    const kind = parts[2];
+    // For "main" kind, show the agent name
+    if (kind === "main") {
+      return formatAgentName(parts[1]);
+    }
+    // For other kinds (cron, spawn), show the kind
+    return kind.charAt(0).toUpperCase() + kind.slice(1);
+  }
+
+  // Fallback: just capitalize the last part (but not if it looks like a UUID)
+  if (parts.length >= 2) {
+    const lastPart = parts[parts.length - 1];
+    // Skip if it looks like a UUID (contains dashes and is long)
+    if (lastPart.includes("-") && lastPart.length > 20) {
+      // Try the part before it
+      const kindPart = parts[parts.length - 2];
+      if (kindPart && !kindPart.includes("-")) {
+        return kindPart.charAt(0).toUpperCase() + kindPart.slice(1);
+      }
+    }
+    return lastPart.charAt(0).toUpperCase() + lastPart.slice(1);
+  }
+
+  return session.key;
 }
 
 /**
