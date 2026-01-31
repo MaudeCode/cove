@@ -218,30 +218,12 @@ export function MessageList({
           {/* Messages */}
           <div class="space-y-6">
             {messageGroups.map((group, idx) => {
-              if (group.type === "heartbeat") {
-                return (
-                  <CollapsedMessage
-                    key={`heartbeat-${idx}`}
-                    messages={group.messages}
-                    type="heartbeat"
-                    assistantName={assistantName}
-                    assistantAvatar={assistantAvatar}
-                    userName={userName}
-                    userAvatar={userAvatar}
-                  />
-                );
-              }
-
               if (group.type === "compaction") {
                 return (
                   <CollapsedMessage
                     key={`compaction-${idx}`}
                     messages={group.messages}
                     type="compaction"
-                    assistantName={assistantName}
-                    assistantAvatar={assistantAvatar}
-                    userName={userName}
-                    userAvatar={userAvatar}
                   />
                 );
               }
