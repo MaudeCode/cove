@@ -10,6 +10,7 @@ import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
 import { sidebarOpen } from "@/signals/ui";
 import { IconButton, Select, CloseIcon, MenuIcon, SettingsIcon, LogoutIcon } from "@/components/ui";
+import { UsageBadge } from "@/components/usage";
 
 export function TopBar() {
   const themes = getAllThemes();
@@ -63,6 +64,9 @@ export function TopBar() {
               )}
             </span>
           </div>
+
+          {/* Usage badge - only shows when Anthropic OAuth is active */}
+          <UsageBadge />
 
           {/* Theme selector */}
           <Select
