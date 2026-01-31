@@ -450,6 +450,9 @@ function handleChatEvent(event: ChatEvent): void {
         const parsed = parseMessageContent(message.content);
         const existingRun = activeRuns.value.get(runId);
 
+        console.log("[CHAT DELTA] text length:", parsed.text.length, "existing:", existingRun?.content.length ?? 0);
+        console.log("[CHAT DELTA] text preview:", parsed.text.slice(-100));
+
         // Merge tool calls with existing ones (to track status changes)
         const mergedToolCalls = existingRun
           ? mergeToolCalls(existingRun.toolCalls, parsed.toolCalls)
