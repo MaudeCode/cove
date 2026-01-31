@@ -54,7 +54,7 @@ export function AppShell({ children }: AppShellProps) {
             lg:translate-x-0 lg:p-2 lg:pr-0
           `}
         >
-          <div class="h-full rounded-2xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-soft-sm overflow-hidden">
+          <div class="h-full rounded-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-soft-sm overflow-hidden">
             <Sidebar />
           </div>
         </aside>
@@ -83,7 +83,7 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* Main content area - rounded panel */}
         <main id="main-content" class="flex-1 flex flex-col overflow-hidden p-2 pl-0 lg:pl-0">
-          <div class="h-full rounded-2xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] shadow-soft overflow-hidden flex flex-col">
+          <div class="h-full rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] shadow-soft overflow-hidden flex flex-col">
             {children}
           </div>
         </main>
