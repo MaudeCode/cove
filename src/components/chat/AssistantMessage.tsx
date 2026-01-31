@@ -42,29 +42,20 @@ function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBloc
   });
 
   // Sort tool calls by their insertion position
-  // Treat insertedAt:0 as "unknown" if there's content - this happens when tool events
-  // arrive before text deltas (race condition after page refresh or reconnection)
-  const getEffectivePosition = (tc: ToolCall): number => {
-    const pos = tc.insertedAtContentLength;
-    if (pos === undefined) return Infinity;
-    // If tool claims position 0 but there's content, it's likely a race condition
-    // Put it at the end instead of breaking the text flow
-    if (pos === 0 && content.length > 0) return Infinity;
-    return pos;
-  };
-
   const sortedTools = [...toolCalls].sort((a, b) => {
-    return getEffectivePosition(a) - getEffectivePosition(b);
+    const posA = a.insertedAtContentLength ?? Infinity;
+    const posB = b.insertedAtContentLength ?? Infinity;
+    return posA - posB;
   });
 
   const blocks: ContentBlock[] = [];
   let currentPos = 0;
 
   for (const tool of sortedTools) {
-    const insertPos = getEffectivePosition(tool);
+    const insertPos = tool.insertedAtContentLength;
 
-    // If no insertion position (or corrected to end), tool goes at end
-    if (insertPos === Infinity) {
+    // If no insertion position, tool goes at end
+    if (insertPos === undefined || insertPos === Infinity) {
       continue; // Will add at end
     }
 
@@ -102,10 +93,9 @@ function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBloc
     }
   }
 
-  // Add any tool calls without valid insertion positions at the end
-  // (includes undefined positions and position:0 with existing content)
+  // Add any tool calls without insertion positions at the end
   for (const tool of sortedTools) {
-    if (getEffectivePosition(tool) === Infinity) {
+    if (tool.insertedAtContentLength === undefined) {
       blocks.push({ type: "tool", toolCall: tool });
     }
   }
