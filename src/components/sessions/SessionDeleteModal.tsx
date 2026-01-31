@@ -25,9 +25,12 @@ export function SessionDeleteModal({ session, onClose, onDelete }: SessionDelete
     setDeleting(true);
     try {
       await onDelete(session);
-      onClose();
+    } catch (err) {
+      // Log error but still close the modal
+      console.error("Failed to delete session:", err);
     } finally {
       setDeleting(false);
+      onClose();
     }
   };
 
