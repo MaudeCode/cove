@@ -85,13 +85,34 @@ export async function loadHistory(sessionKey: string, limit = 200): Promise<void
       // Attach results to tool calls
       if (msg.toolCalls) {
         for (const tc of msg.toolCalls) {
-          const result = toolResults.get(tc.id);
-          if (result) {
-            tc.result = result.content;
-            tc.status = result.isError ? "error" : "complete";
+          const tcResult = toolResults.get(tc.id);
+          if (tcResult) {
+            tc.result = tcResult.content;
+            tc.status = tcResult.isError ? "error" : "complete";
             tc.completedAt = Date.now();
           }
         }
+      }
+
+      // Merge consecutive assistant messages (same turn split across API calls)
+      const prev = normalized[normalized.length - 1];
+      if (
+        prev &&
+        prev.role === "assistant" &&
+        msg.role === "assistant" &&
+        Math.abs(msg.timestamp - prev.timestamp) < 60000 // Within 1 minute = same turn
+      ) {
+        // Merge tool calls
+        if (msg.toolCalls && msg.toolCalls.length > 0) {
+          prev.toolCalls = [...(prev.toolCalls ?? []), ...msg.toolCalls];
+        }
+        // Merge content (append with newline if both have content)
+        if (msg.content) {
+          prev.content = prev.content ? `${prev.content}\n\n${msg.content}` : msg.content;
+        }
+        // Update timestamp to latest
+        prev.timestamp = Math.max(prev.timestamp, msg.timestamp);
+        continue; // Don't add as separate message
       }
 
       normalized.push(msg);
