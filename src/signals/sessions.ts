@@ -10,6 +10,7 @@
 
 import { signal, computed } from "@preact/signals";
 import { send, mainSessionKey } from "@/lib/gateway";
+import { isMainSession } from "@/lib/session-utils";
 import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
 
 // ============================================
@@ -91,11 +92,10 @@ export const sessionsByRecent = computed(() => {
   }
 
   // Sort by most recent, but pin main session to top
-  const mainKey = mainSessionKey.value;
   return [...filtered].sort((a, b) => {
     // Main session always first
-    const aIsMain = a.key === mainKey || a.key === "main" || a.key.endsWith(":main");
-    const bIsMain = b.key === mainKey || b.key === "main" || b.key.endsWith(":main");
+    const aIsMain = isMainSession(a.key);
+    const bIsMain = isMainSession(b.key);
     if (aIsMain && !bIsMain) return -1;
     if (bIsMain && !aIsMain) return 1;
     // Otherwise sort by recency

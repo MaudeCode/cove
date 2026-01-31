@@ -81,4 +81,5 @@ export {
   EditIcon,
   TrashIcon,
   FilterIcon,
+  PinIcon,
 } from "./icons";
