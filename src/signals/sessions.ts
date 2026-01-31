@@ -177,7 +177,12 @@ export function clearSessions(): void {
  * Update a session in the list
  */
 export function updateSession(sessionKey: string, updates: Partial<Session>): void {
+  console.log("[sessions] updateSession:", sessionKey, updates);
+  const before = sessions.value.find((s) => s.key === sessionKey);
+  console.log("[sessions] before:", before?.model);
   sessions.value = sessions.value.map((s) => (s.key === sessionKey ? { ...s, ...updates } : s));
+  const after = sessions.value.find((s) => s.key === sessionKey);
+  console.log("[sessions] after:", after?.model);
 }
 
 /**
