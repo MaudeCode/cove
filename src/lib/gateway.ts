@@ -357,8 +357,12 @@ function handleResponse(res: GatewayResponse): void {
  * Handle an event message
  */
 function handleEvent(event: GatewayEvent): void {
-  // Debug: log all events
-  console.log("[GATEWAY EVENT]", event.event, event.payload);
+  // Debug: log all events with full payload for agent events
+  if (event.event === "agent") {
+    console.log("[GATEWAY EVENT] agent FULL:", JSON.stringify(event.payload, null, 2));
+  } else {
+    console.log("[GATEWAY EVENT]", event.event, event.payload);
+  }
 
   // Notify all subscribers
   for (const handler of eventHandlers) {
