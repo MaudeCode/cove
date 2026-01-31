@@ -177,7 +177,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
                     : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
                 }`}
               >
-                {/* Favorite star - span with role=button avoids invalid nested button */}
+                {/* Favorite star - using span with role="button" because HTML forbids nested <button> elements */}
                 <span
                   role="button"
                   tabIndex={0}
