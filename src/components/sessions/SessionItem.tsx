@@ -7,8 +7,9 @@
 import { useState, useRef } from "preact/hooks";
 import type { Session } from "@/types/sessions";
 import { formatRelativeTime, t } from "@/lib/i18n";
+import { getAgentId, formatAgentName, looksLikeUuid } from "@/lib/session-utils";
 import { useClickOutside } from "@/hooks";
-import { MoreIcon, EditIcon, TrashIcon } from "@/components/ui";
+import { MoreIcon, EditIcon, TrashIcon, PinIcon } from "@/components/ui";
 
 export interface SessionItemProps {
   /** The session to display */
@@ -28,31 +29,6 @@ export interface SessionItemProps {
 
   /** Delete handler */
   onDelete?: (session: Session) => void;
-}
-
-/**
- * Format agent ID for display (capitalize, handle dashes)
- * e.g. "main" → "Main", "maude-pm" → "Maude PM"
- */
-function formatAgentName(agentId: string): string {
-  return agentId
-    .split("-")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-}
-
-/**
- * Extract the agent ID from a session key
- * e.g. "agent:main:main" → "main"
- *      "agent:maude-pm:spawn:uuid" → "maude-pm"
- */
-function getAgentId(sessionKey: string): string | null {
-  const parts = sessionKey.split(":");
-  // Format: agent:<agentId>:<kind>[:uuid]
-  if (parts.length >= 2 && parts[0] === "agent") {
-    return parts[1];
-  }
-  return null;
 }
 
 /**
@@ -86,11 +62,11 @@ export function getSessionLabel(session: Session): string {
   // Fallback: just capitalize the last part (but not if it looks like a UUID)
   if (parts.length >= 2) {
     const lastPart = parts[parts.length - 1];
-    // Skip if it looks like a UUID (contains dashes and is long)
-    if (lastPart.includes("-") && lastPart.length > 20) {
+    // Skip if it looks like a UUID
+    if (looksLikeUuid(lastPart)) {
       // Try the part before it
       const kindPart = parts[parts.length - 2];
-      if (kindPart && !kindPart.includes("-")) {
+      if (kindPart && !looksLikeUuid(kindPart)) {
         return kindPart.charAt(0).toUpperCase() + kindPart.slice(1);
       }
     }
@@ -154,14 +130,9 @@ export function SessionItem({
       >
         {/* Pin icon for main session, otherwise active indicator dot */}
         {isMain ? (
-          <svg
+          <PinIcon
             class={`w-3.5 h-3.5 flex-shrink-0 mt-1 ${isActive ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            aria-label="Main session"
-          >
-            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
-          </svg>
+          />
         ) : (
           <span
             class={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${
