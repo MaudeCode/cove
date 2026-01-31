@@ -78,14 +78,22 @@ export function SearchBar() {
       <SearchIcon class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
 
       {/* Text search input */}
-      <input
-        ref={inputRef}
-        type="text"
-        value={searchQuery.value}
-        onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-        placeholder={t("chat.searchPlaceholder")}
-        class="flex-1 min-w-[120px] px-2.5 py-1.5 text-sm rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/50 transition-colors"
-      />
+      <div class="flex-1 flex items-center gap-2 min-w-[120px]">
+        <input
+          ref={inputRef}
+          type="text"
+          value={searchQuery.value}
+          onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+          placeholder={t("chat.searchPlaceholder")}
+          class="flex-1 px-2.5 py-1.5 text-sm rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/50 transition-colors"
+        />
+        {/* Match count - inline with search to avoid layout shift */}
+        {hasFilters && (
+          <span class="text-xs text-[var(--color-text-muted)] whitespace-nowrap">
+            {matchCount} {matchCount === 1 ? t("chat.match") : t("chat.matches")}
+          </span>
+        )}
+      </div>
 
       {/* Date range */}
       <div class="flex items-center gap-1.5 flex-shrink-0">
@@ -113,13 +121,6 @@ export function SearchBar() {
           </button>
         )}
       </div>
-
-      {/* Match count */}
-      {hasFilters && (
-        <span class="text-xs text-[var(--color-text-muted)] whitespace-nowrap flex-shrink-0">
-          {matchCount} {matchCount === 1 ? t("chat.match") : t("chat.matches")}
-        </span>
-      )}
 
       {/* Close button */}
       <IconButton
