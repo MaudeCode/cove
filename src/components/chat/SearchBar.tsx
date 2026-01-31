@@ -15,7 +15,7 @@ import {
   hasDateFilter,
   clearDateFilter,
 } from "@/signals/chat";
-import { Input, IconButton, SearchIcon, CloseIcon, XIcon } from "@/components/ui";
+import { IconButton, SearchIcon, CloseIcon, XIcon } from "@/components/ui";
 import { hasContent } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 
@@ -85,64 +85,80 @@ export function SearchBar() {
   const hasQuery = hasContent(searchQuery.value);
   const hasFilters = hasQuery || hasDateFilter.value;
 
-  return (
-    <div class="flex flex-col gap-2 px-3 py-2 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)]">
-      {/* Text search row */}
-      <div class="flex items-center gap-2">
-        <SearchIcon class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
-        <Input
-          ref={inputRef}
-          type="text"
-          value={searchQuery.value}
-          onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-          placeholder={t("chat.searchPlaceholder")}
-          class="flex-1 !bg-transparent !border-none !shadow-none !ring-0 text-sm"
-        />
-        {hasFilters && (
-          <span class="text-xs text-[var(--color-text-muted)] whitespace-nowrap">
-            {matchCount} {matchCount === 1 ? t("chat.match") : t("chat.matches")}
-          </span>
-        )}
-        <IconButton
-          icon={<CloseIcon />}
-          label={t("actions.close")}
-          onClick={closeSearch}
-          variant="ghost"
-          size="sm"
-        />
-      </div>
+  // Shared input styling
+  const inputClass = `
+    px-2.5 py-1.5 text-sm rounded-lg
+    bg-[var(--color-bg-primary)] 
+    border border-[var(--color-border)]
+    text-[var(--color-text-primary)]
+    placeholder:text-[var(--color-text-muted)]
+    focus:outline-none focus:border-[var(--color-accent)]/50
+    transition-colors
+  `;
 
-      {/* Date range row */}
-      <div class="flex items-center gap-2 text-sm">
-        <span class="text-[var(--color-text-muted)] text-xs">{t("chat.dateRange")}:</span>
+  return (
+    <div class="flex items-center gap-3 px-3 py-2 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)]">
+      {/* Search icon */}
+      <SearchIcon class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
+
+      {/* Text search input */}
+      <input
+        ref={inputRef}
+        type="text"
+        value={searchQuery.value}
+        onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+        placeholder={t("chat.searchPlaceholder")}
+        class={`flex-1 min-w-[120px] ${inputClass}`}
+      />
+
+      {/* Date range */}
+      <div class="flex items-center gap-1.5 flex-shrink-0">
         <input
           type="date"
           value={formatDateInput(dateRangeStart.value)}
           onChange={(e) =>
             (dateRangeStart.value = parseDateInput((e.target as HTMLInputElement).value))
           }
-          class="px-2 py-1 text-xs rounded border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
+          class={`w-[130px] ${inputClass}`}
+          title={t("chat.dateRange")}
         />
-        <span class="text-[var(--color-text-muted)]">—</span>
+        <span class="text-[var(--color-text-muted)] text-sm">–</span>
         <input
           type="date"
           value={formatDateInput(dateRangeEnd.value)}
           onChange={(e) =>
             (dateRangeEnd.value = parseDateInput((e.target as HTMLInputElement).value))
           }
-          class="px-2 py-1 text-xs rounded border border-[var(--color-border)] bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
+          class={`w-[130px] ${inputClass}`}
+          title={t("chat.dateRange")}
         />
         {hasDateFilter.value && (
           <button
             type="button"
             onClick={clearDateFilter}
-            class="p-1 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
+            class="p-1 rounded-md text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
             title={t("actions.clear")}
           >
-            <XIcon class="w-3 h-3" />
+            <XIcon class="w-3.5 h-3.5" />
           </button>
         )}
       </div>
+
+      {/* Match count */}
+      {hasFilters && (
+        <span class="text-xs text-[var(--color-text-muted)] whitespace-nowrap flex-shrink-0">
+          {matchCount} {matchCount === 1 ? t("chat.match") : t("chat.matches")}
+        </span>
+      )}
+
+      {/* Close button */}
+      <IconButton
+        icon={<CloseIcon />}
+        label={t("actions.close")}
+        onClick={closeSearch}
+        variant="ghost"
+        size="sm"
+      />
     </div>
   );
 }
