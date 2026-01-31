@@ -5,7 +5,7 @@
  * Heartbeats are filtered out of the main chat - this is where they live.
  */
 
-import { useState, useRef, useEffect } from "preact/hooks";
+import { useState, useRef, useEffect, useCallback } from "preact/hooks";
 import { Heart } from "lucide-preact";
 import { IconButton, Badge } from "@/components/ui";
 import { heartbeatMessages, heartbeatCount } from "@/signals/chat";
@@ -24,10 +24,10 @@ export function HeartbeatIndicator() {
   const unseenCount = Math.max(0, exchangeCount - seenCount);
 
   // Mark as seen when dropdown closes
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     setSeenCount(exchangeCount);
     setIsOpen(false);
-  };
+  }, [exchangeCount]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -46,7 +46,7 @@ export function HeartbeatIndicator() {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, exchangeCount]);
+  }, [isOpen, handleClose]);
 
   // Get heartbeat exchanges (pair prompt + response)
   const heartbeats = heartbeatMessages.value;

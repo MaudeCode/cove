@@ -172,7 +172,7 @@ export function MessageList({
       }
     : null;
 
-  // Group messages for collapsed display (heartbeats, compaction)
+  // Group messages for display (filters heartbeats, collapses compaction summaries)
   const messageGroups = useMemo(() => groupMessages(messages), [messages]);
 
   return (
