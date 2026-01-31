@@ -6,9 +6,10 @@
  * Expands to show all windows on click.
  */
 
-import { useState, useRef, useEffect } from "preact/hooks";
+import { useState, useRef } from "preact/hooks";
 import { hasAnthropicUsage, anthropicUsage, primaryUsageWindow } from "@/signals/usage";
 import { getUsageLevel } from "@/types/usage";
+import { useClickOutside } from "@/hooks";
 import type { UsageWindow } from "@/types/usage";
 
 export function UsageBadge() {
@@ -20,26 +21,15 @@ export function UsageBadge() {
     return null;
   }
 
+  // Close on click outside
+  useClickOutside(containerRef, () => setExpanded(false), expanded);
+
   const usage = anthropicUsage.value;
   const primary = primaryUsageWindow.value;
 
   if (!usage || !primary) {
     return null;
   }
-
-  // Close on click outside
-  useEffect(() => {
-    if (!expanded) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setExpanded(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [expanded]);
 
   const level = getUsageLevel(primary.usedPercent);
 
