@@ -745,17 +745,24 @@ export const navigation: NavSection[] = [
 
 > Sidebar session list with quick actions.
 
-- [ ] Fetch session list from gateway (`sessions.list`)
-- [ ] Session metadata display (model, channel, tokens, last active)
-- [ ] Active session indicator
-- [ ] Click to switch sessions
-- [ ] Session rename/label (inline edit or modal)
-- [ ] Delete session (with confirmation modal)
+**Completed:**
+- [x] Fetch session list from gateway (`sessions.list`)
+- [x] Session metadata display (agent name, last active)
+- [x] Active session indicator
+- [x] Click to switch sessions
+- [x] Session rename/label (modal)
+- [x] Delete session (with confirmation modal)
+- [x] Main session pinned to top with pin icon
+- [x] Filter by kind (dropdown: All/Main/Isolated/Channel)
+
+**TODO:**
+- [ ] **Hide cron sessions by default** — cron sessions clutter the sidebar; add toggle or exclude by default
+- [ ] **Improved session filtering** — better UX for filtering (search box, multi-select kinds, etc.)
 - [ ] Archive session (hide from main list, show in admin view)
-- [ ] Model override per session
-- [ ] Filter by kind (main/isolated/channel)
+- [ ] Model override per session (UI exists in chat input, needs polish)
 - [ ] Group by time (Today, Yesterday, Older) — optional
 - [ ] Session status card (usage, cost, tokens) — expandable or tooltip
+- [ ] Session metadata: show channel, tokens used
 
 ### 2.2 Session History
 
