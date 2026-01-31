@@ -9,6 +9,7 @@ import { MessageContent } from "./MessageContent";
 import { ToolCall as ToolCallComponent } from "./ToolCall";
 import { BouncingDots } from "@/components/ui";
 import { formatRelativeTime, t } from "@/lib/i18n";
+import { log } from "@/lib/logger";
 
 interface AssistantMessageProps {
   message: Message;
@@ -27,6 +28,18 @@ function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBloc
   if (!toolCalls || toolCalls.length === 0) {
     return content ? [{ type: "text", content }] : [];
   }
+
+  log.chat.debug("buildContentBlocks called", {
+    contentLen: content.length,
+    contentPreview: content.slice(0, 100),
+    contentEnd: content.slice(-100),
+    toolCallsCount: toolCalls.length,
+    toolCallPositions: toolCalls.map((tc) => ({
+      id: tc.id.slice(-8),
+      name: tc.name,
+      insertedAt: tc.insertedAtContentLength,
+    })),
+  });
 
   // Sort tool calls by their insertion position
   const sortedTools = [...toolCalls].sort((a, b) => {
@@ -51,6 +64,11 @@ function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBloc
       const textBefore = content.slice(currentPos, insertPos);
       if (textBefore.trim()) {
         blocks.push({ type: "text", content: textBefore });
+        log.chat.debug("buildContentBlocks: added text block", {
+          from: currentPos,
+          to: insertPos,
+          textLen: textBefore.length,
+        });
       }
     }
 
@@ -62,8 +80,16 @@ function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBloc
   // Add remaining text after all tool calls
   if (currentPos < content.length) {
     const remainingText = content.slice(currentPos);
+    log.chat.debug("buildContentBlocks: checking remaining text", {
+      currentPos,
+      contentLen: content.length,
+      remainingLen: remainingText.length,
+      remainingTrimmedLen: remainingText.trim().length,
+      remainingPreview: remainingText.slice(0, 100),
+    });
     if (remainingText.trim()) {
       blocks.push({ type: "text", content: remainingText });
+      log.chat.debug("buildContentBlocks: added remaining text block");
     }
   }
 
@@ -73,6 +99,11 @@ function buildContentBlocks(content: string, toolCalls: ToolCall[]): ContentBloc
       blocks.push({ type: "tool", toolCall: tool });
     }
   }
+
+  log.chat.debug("buildContentBlocks result", {
+    totalBlocks: blocks.length,
+    blockTypes: blocks.map((b) => b.type),
+  });
 
   return blocks;
 }
