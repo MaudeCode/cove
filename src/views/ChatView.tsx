@@ -27,18 +27,13 @@ interface ChatViewProps {
   path?: string;
   /** Session key from URL (from preact-router) */
   sessionKey?: string;
+  /** Default route (from preact-router) */
+  default?: boolean;
 }
 
 export function ChatView({ sessionKey }: ChatViewProps) {
   const prevSessionRef = useRef<string | null>(null);
   const wasConnectedRef = useRef<boolean>(false);
-
-  // Debug: log when component renders and what streaming values are
-  console.log("[RENDER] ChatView", {
-    isStreaming: isStreaming.value,
-    contentLen: streamingContent.value.length,
-    toolCallsLen: streamingToolCalls.value.length,
-  });
 
   // Sync session from URL to signal
   useEffect(() => {
