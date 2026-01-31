@@ -196,12 +196,14 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
     minProtocol: PROTOCOL_VERSION,
     maxProtocol: PROTOCOL_VERSION,
     client: {
-      id: "webchat-ui",
+      id: "cove",
       displayName: "Cove",
       version: "0.1.0",
       platform: getBrowserPlatform(),
       mode: "webchat",
     },
+    role: "operator",
+    scopes: ["operator.read", "operator.write"],
     auth: {} as { token?: string; password?: string },
   };
 
