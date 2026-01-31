@@ -162,6 +162,21 @@
   }
 }
 
+/* AI glow pulse */
+@keyframes ai-glow-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 8px 2px var(--color-accent-glow, rgba(99, 102, 241, 0.3)),
+      0 0 16px 4px var(--color-accent-glow, rgba(99, 102, 241, 0.15));
+  }
+  50% {
+    box-shadow:
+      0 0 12px 4px var(--color-accent-glow, rgba(99, 102, 241, 0.5)),
+      0 0 24px 8px var(--color-accent-glow, rgba(99, 102, 241, 0.25));
+  }
+}
+
 /* ============================================
    Animation Utility Classes
    ============================================ */
@@ -221,6 +236,11 @@
 
 .animate-blink {
   animation: blink 1s step-end infinite;
+}
+
+.ai-glow {
+  animation: ai-glow-pulse 2s ease-in-out infinite;
+  border-radius: 0.75rem;
 }
 
 /* ============================================
