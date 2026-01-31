@@ -140,9 +140,22 @@ export function MessageList({
       messageEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
       // Add a brief highlight effect
-      messageEl.classList.add("bg-[var(--color-bg-hover)]", "transition-colors");
+      messageEl.classList.add(
+        "bg-[var(--color-bg-hover)]",
+        "rounded-lg",
+        "-mx-2",
+        "px-2",
+        "py-1",
+        "transition-colors",
+      );
       setTimeout(() => {
-        messageEl.classList.remove("bg-[var(--color-bg-hover)]");
+        messageEl.classList.remove(
+          "bg-[var(--color-bg-hover)]",
+          "rounded-lg",
+          "-mx-2",
+          "px-2",
+          "py-1",
+        );
       }, 2000);
     }
 
