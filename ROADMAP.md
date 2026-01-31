@@ -691,21 +691,55 @@ export const navigation: NavSection[] = [
 
 ---
 
+### 1.6 Additional Infrastructure ✅
+
+**Identity Signals (`src/signals/identity.ts`):**
+- [x] Assistant identity (name, avatar, agentId) from gateway
+- [x] User identity (name, avatar) from settings
+- [x] `loadAssistantIdentity()` fetches from gateway
+- [x] Reset to defaults on logout
+
+**Message Caching (`src/signals/chat.ts`):**
+- [x] Cache messages to localStorage (`cove:messages-cache`)
+- [x] Track cached session key (`cove:messages-session`)
+- [x] Restore messages on page reload (same session)
+- [x] `saveCachedMessages()` called after history load
+
+**Session Caching (`src/signals/sessions.ts`):**
+- [x] Cache sessions list to localStorage (`cove:sessions-cache`)
+- [x] Restore on page load for instant sidebar
+
+**Logger (`src/lib/logger.ts`):**
+- [x] Namespaced logging (gateway, chat, ui, auth)
+- [x] Consistent prefix formatting
+- [x] Debug/info/warn/error levels
+
+**Streaming Utilities (`src/lib/streaming.ts`):**
+- [x] `mergeDeltaText()` — handles text block merging during streaming
+- [x] Tracks `lastBlockStart` for proper delta insertion
+
+**Constants (`src/lib/constants.ts`):**
+- [x] Centralized timing constants (cleanup delays, thresholds)
+- [x] Default history limit
+
+---
+
 ## Phase 2: Session & History
 
 > **Note on Sessions views:**
 > - 2.1 = Sidebar quick-access session list (always visible, lightweight)
 > - 3.4 = Dedicated Sessions admin view (bulk actions, advanced filters, stats)
 
-### 2.0 Chat Reliability (Phase 1.3 completion)
+### 2.0 Chat Reliability (Phase 1.3 completion) 🟡
 
 > Complete the error recovery features that were incomplete in Phase 1.3.
 
-- [ ] Failed send → inline error with retry button
-- [ ] Connection lost → banner notification (dismissible)
-- [ ] Message queuing while disconnected
-- [ ] Auto-resend queued messages on reconnect
-- [ ] Visual indicator for pending/queued messages
+- [ ] Failed send → inline error with retry button (logic exists in `retryMessage`, needs UI)
+- [x] Connection lost → banner notification (`ConnectionBanner.tsx`)
+- [x] Message queuing while disconnected (`messageQueue` in signals/chat.ts)
+- [x] Auto-resend queued messages on reconnect (`processMessageQueue` in lib/chat.ts)
+- [x] Message status tracking (sending/sent/failed state in Message type)
+- [ ] Visual indicator for pending/queued messages in UI (status field exists, needs rendering)
 
 ### 2.1 Session Management
 
