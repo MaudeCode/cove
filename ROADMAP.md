@@ -771,9 +771,9 @@ export const navigation: NavSection[] = [
 - [ ] ~~Infinite scroll / pagination~~ — **Blocked**: Gateway `chat.history` only supports `limit`, not `offset`. Would need upstream change.
 - [x] Loading state while fetching history
 - [x] Jump to bottom button (when scrolled up)
-- [ ] Search within current session (client-side filter)
+- [x] Search within current session (client-side filter)
 - [ ] Filter by date range (client-side filter)
-- [ ] Highlight search matches in messages
+- [x] Highlight search matches in messages
 
 ### 2.3 Chat Enhancements
 
