@@ -60,6 +60,13 @@ export function App() {
     showLoginContent = !isConnected.value;
   }
 
+  console.log("[App] render state:", {
+    hasSavedAuth: hasSavedAuth.value,
+    authChecked: authChecked.value,
+    isConnected: isConnected.value,
+    showLoginContent,
+  });
+
   return (
     <>
       <ErrorBoundary
