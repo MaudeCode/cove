@@ -30,13 +30,7 @@ import {
   updateSession,
 } from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
-import {
-  MessageList,
-  ChatInput,
-  ConnectionBanner,
-  CompactionBanner,
-  SearchBar,
-} from "@/components/chat";
+import { MessageList, ChatInput, ConnectionBanner, CompactionBanner } from "@/components/chat";
 
 interface ChatViewProps {
   /** Route path (from preact-router) */
@@ -139,9 +133,6 @@ export function ChatView({ sessionKey }: ChatViewProps) {
 
       {/* Compaction status banner (floating overlay) */}
       <CompactionBanner />
-
-      {/* Search bar */}
-      <SearchBar />
 
       <MessageList
         messages={filteredMessages.value}
