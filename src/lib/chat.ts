@@ -449,16 +449,27 @@ function handleChatEvent(event: ChatEvent): void {
       if (message) {
         const parsed = parseMessageContent(message.content);
         const existingRun = activeRuns.value.get(runId);
-
-        console.log("[CHAT DELTA] text length:", parsed.text.length, "existing:", existingRun?.content.length ?? 0);
-        console.log("[CHAT DELTA] text preview:", parsed.text.slice(-100));
+        const existingContent = existingRun?.content ?? "";
 
         // Merge tool calls with existing ones (to track status changes)
         const mergedToolCalls = existingRun
           ? mergeToolCalls(existingRun.toolCalls, parsed.toolCalls)
           : parsed.toolCalls;
 
-        updateRunContent(runId, parsed.text, mergedToolCalls);
+        // Determine if this is a continuation or new text block
+        // If new text doesn't start with existing content, it's a new block (append)
+        let newContent: string;
+        if (parsed.text.startsWith(existingContent)) {
+          // Continuation - use the new accumulated text
+          newContent = parsed.text;
+        } else if (existingContent && parsed.text) {
+          // New text block after tool call - append with separator
+          newContent = existingContent + "\n\n" + parsed.text;
+        } else {
+          newContent = parsed.text;
+        }
+
+        updateRunContent(runId, newContent, mergedToolCalls);
       }
       break;
     }
