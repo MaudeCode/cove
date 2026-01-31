@@ -64,4 +64,5 @@ export const log = {
   chat: createLogger("chat"),
   i18n: createLogger("i18n"),
   ui: createLogger("ui"),
+  usage: createLogger("usage"),
 };
