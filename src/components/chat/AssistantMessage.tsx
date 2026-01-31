@@ -113,7 +113,7 @@ export function AssistantMessage({
       </div>
 
       {/* Message Content - interleaved blocks */}
-      <div class="ml-8 space-y-3">
+      <div class="space-y-3">
         {blocks.map((block, idx) =>
           block.type === "text" ? (
             <div
