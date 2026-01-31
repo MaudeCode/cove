@@ -13,9 +13,8 @@ import {
   dateRangeStart,
   dateRangeEnd,
   hasDateFilter,
-  clearDateFilter,
 } from "@/signals/chat";
-import { IconButton, DatePicker, SearchIcon, CloseIcon, XIcon } from "@/components/ui";
+import { IconButton, DatePicker, SearchIcon, CloseIcon } from "@/components/ui";
 import { hasContent } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 
@@ -110,16 +109,6 @@ export function SearchBar() {
           placeholder="To"
           class="w-[130px]"
         />
-        {hasDateFilter.value && (
-          <button
-            type="button"
-            onClick={clearDateFilter}
-            class="p-1 rounded-md text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)] transition-colors"
-            title={t("actions.clear")}
-          >
-            <XIcon class="w-3.5 h-3.5" />
-          </button>
-        )}
       </div>
 
       {/* Close button */}
