@@ -105,6 +105,27 @@ export function getStreamingRun(sessionKey: string): ChatRun | null {
   return null;
 }
 
+/** Get streaming state for a specific session */
+export function getStreamingStateForSession(sessionKey: string): {
+  isStreaming: boolean;
+  content: string;
+  toolCalls: ToolCall[];
+} {
+  const run = getStreamingRun(sessionKey);
+  if (run) {
+    return {
+      isStreaming: true,
+      content: run.content,
+      toolCalls: run.toolCalls,
+    };
+  }
+  return {
+    isStreaming: false,
+    content: "",
+    toolCalls: [],
+  };
+}
+
 // ============================================
 // Internal Helpers
 // ============================================
