@@ -4,15 +4,15 @@
  * Reactive state for chat messages and streaming.
  *
  * Usage:
- *   import { messages, isStreaming, streamingContent } from '@/signals/chat'
+ *   import { messages, isStreaming, streamingContent, streamingToolCalls } from '@/signals/chat'
  *
  *   // In components
  *   {messages.value.map(msg => <Message key={msg.id} message={msg} />)}
- *   {isStreaming.value && <StreamingIndicator content={streamingContent.value} />}
+ *   {isStreaming.value && <StreamingMessage content={streamingContent.value} toolCalls={streamingToolCalls.value} />}
  */
 
 import { signal, computed } from "@preact/signals";
-import type { Message } from "@/types/messages";
+import type { Message, ToolCall } from "@/types/messages";
 import type { ChatRun } from "@/types/chat";
 
 // ============================================
@@ -68,14 +68,24 @@ export function getStreamingRun(sessionKey: string): ChatRun | null {
   return null;
 }
 
-/** Content being streamed (for display) */
+/** Text content being streamed (for display) */
 export const streamingContent = computed(() => {
   for (const run of activeRuns.value.values()) {
-    if (run.status === "streaming" && run.content) {
+    if (run.status === "streaming" || run.status === "pending") {
       return run.content;
     }
   }
   return "";
+});
+
+/** Tool calls being streamed (for display) */
+export const streamingToolCalls = computed((): ToolCall[] => {
+  for (const run of activeRuns.value.values()) {
+    if (run.status === "streaming" || run.status === "pending") {
+      return run.toolCalls;
+    }
+  }
+  return [];
 });
 
 // ============================================
@@ -122,14 +132,15 @@ export function startRun(runId: string, sessionKey: string): void {
     startedAt: Date.now(),
     status: "pending",
     content: "",
+    toolCalls: [],
   });
   activeRuns.value = newRuns;
 }
 
 /**
- * Update a chat run with streaming content
+ * Update a chat run with streaming content and tool calls
  */
-export function updateRunContent(runId: string, content: string): void {
+export function updateRunContent(runId: string, content: string, toolCalls: ToolCall[] = []): void {
   const run = activeRuns.value.get(runId);
   if (!run) return;
 
@@ -138,6 +149,7 @@ export function updateRunContent(runId: string, content: string): void {
     ...run,
     status: "streaming",
     content,
+    toolCalls,
   });
   activeRuns.value = newRuns;
 }
@@ -167,7 +179,7 @@ export function completeRun(runId: string, message?: Message): void {
     const runs = new Map(activeRuns.value);
     runs.delete(runId);
     activeRuns.value = runs;
-  }, 1000);
+  }, 100);
 }
 
 /**

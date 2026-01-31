@@ -6,7 +6,7 @@
 
 import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-import type { Message } from "@/types/messages";
+import type { Message, ToolCall } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
 import { IconButton, Spinner, ArrowDownIcon } from "@/components/ui";
 import { t } from "@/lib/i18n";
@@ -16,6 +16,7 @@ interface MessageListProps {
   isLoading?: boolean;
   error?: string | null;
   streamingContent?: string;
+  streamingToolCalls?: ToolCall[];
   isStreaming?: boolean;
   assistantName?: string;
   assistantAvatar?: string;
@@ -28,6 +29,7 @@ export function MessageList({
   isLoading = false,
   error = null,
   streamingContent = "",
+  streamingToolCalls = [],
   isStreaming = false,
   assistantName,
   assistantAvatar,
@@ -90,7 +92,9 @@ export function MessageList({
         id: "streaming",
         role: "assistant",
         content: streamingContent,
+        toolCalls: streamingToolCalls.length > 0 ? streamingToolCalls : undefined,
         timestamp: Date.now(),
+        isStreaming: true,
       }
     : null;
 
