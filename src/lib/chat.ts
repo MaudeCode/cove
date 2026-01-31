@@ -283,6 +283,20 @@ export async function sendMessage(
 }
 
 /**
+ * Resend a message (shared logic for retry and queue processing).
+ */
+async function resendMessage(message: Message): Promise<void> {
+  if (!message.sessionKey) {
+    log.chat.warn("Cannot resend message - missing sessionKey:", message.id);
+    return;
+  }
+
+  dequeueMessage(message.id);
+  const idempotencyKey = message.id.replace(/^user_/, "");
+  await sendMessage(message.sessionKey, message.content, { messageId: idempotencyKey });
+}
+
+/**
  * Retry sending a failed message.
  * Looks in both the message queue (for queued messages) and messages list (for failed sends).
  */
@@ -295,16 +309,12 @@ export async function retryMessage(messageId: string): Promise<void> {
     message = messages.value.find((m) => m.id === messageId && m.status === "failed");
   }
 
-  if (!message?.sessionKey) {
-    log.chat.warn("Cannot retry message - not found or missing sessionKey:", messageId);
+  if (!message) {
+    log.chat.warn("Cannot retry message - not found:", messageId);
     return;
   }
 
-  // Remove from queue if it was there
-  dequeueMessage(messageId);
-
-  const idempotencyKey = messageId.replace(/^user_/, "");
-  await sendMessage(message.sessionKey, message.content, { messageId: idempotencyKey });
+  await resendMessage(message);
 }
 
 /**
@@ -317,12 +327,8 @@ export async function processMessageQueue(): Promise<void> {
   log.chat.info(`Processing ${queue.length} queued messages`);
 
   for (const message of queue) {
-    if (!message.sessionKey) continue;
-
     try {
-      dequeueMessage(message.id);
-      const idempotencyKey = message.id.replace(/^user_/, "");
-      await sendMessage(message.sessionKey, message.content, { messageId: idempotencyKey });
+      await resendMessage(message);
     } catch (err) {
       log.chat.error("Failed to send queued message:", err);
     }
