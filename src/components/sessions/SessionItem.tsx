@@ -161,7 +161,7 @@ export function SessionItem({
     <div
       class={`relative group transition-all duration-300 ${
         isDeleting ? "opacity-0 scale-95 -translate-x-2" : ""
-      } ${isSessionStreaming ? "ai-glow" : ""}`}
+      }`}
     >
       <button
         type="button"
@@ -169,6 +169,7 @@ export function SessionItem({
         class={`
           w-full text-left px-3 py-2.5 rounded-xl text-sm
           flex items-start gap-2.5 transition-all duration-200 ease-out
+          ${isSessionStreaming ? "ai-glow" : ""}
           ${
             isActive
               ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
