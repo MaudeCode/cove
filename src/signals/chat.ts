@@ -264,19 +264,9 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
         
         // Merge content: keep existing content, append new content
         let mergedContent = existing.content;
-        if (newMessage.content) {
-          // Check if new content is already at the end of existing (avoid duplicate append)
-          const alreadyAppended = existing.content.endsWith(newMessage.content);
-          console.log("[CHAT] Merge content:", {
-            existingLen: existing.content.length,
-            newLen: newMessage.content.length,
-            alreadyAppended,
-          });
-          if (!alreadyAppended) {
-            const separator = existing.content ? "\n\n" : "";
-            mergedContent = existing.content + separator + newMessage.content;
-            console.log("[CHAT] Merged result length:", mergedContent.length);
-          }
+        if (newMessage.content && !existing.content.endsWith(newMessage.content)) {
+          const separator = existing.content ? "\n\n" : "";
+          mergedContent = existing.content + separator + newMessage.content;
         }
         
         messages.value = existingMessages.map((msg) =>
@@ -284,7 +274,6 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
             ? { ...msg, content: mergedContent, toolCalls: mergedToolCalls }
             : msg,
         );
-        console.log("[CHAT] Merged streaming content into existing message:", existing.id);
         return true;
       }
     }
