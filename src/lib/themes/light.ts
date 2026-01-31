@@ -48,5 +48,18 @@ export const lightTheme: Theme = {
     "--shadow-sm": "0 1px 3px 0 rgb(0 0 0 / 0.08), 0 1px 2px -1px rgb(0 0 0 / 0.08)",
     "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
     "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.12), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
+
+    // Syntax highlighting (One Light inspired)
+    "--color-syntax-comment": "#a0a1a7",
+    "--color-syntax-string": "#50a14f",
+    "--color-syntax-keyword": "#a626a4",
+    "--color-syntax-function": "#4078f2",
+    "--color-syntax-number": "#986801",
+    "--color-syntax-operator": "#0184bc",
+    "--color-syntax-variable": "#e45649",
+    "--color-syntax-punctuation": "#383a42",
+    "--color-syntax-property": "#e45649",
+    "--color-syntax-tag": "#e45649",
+    "--color-syntax-class": "#c18401",
   },
 };
