@@ -161,20 +161,6 @@ export function MessageList({
     scrollToMessageId.value = null;
   }, [scrollToMessageId.value]);
 
-  /**
-   * Scroll to bottom when search bar opens/closes to prevent content shift
-   */
-  const prevSearchOpen = useRef(isSearchOpen.value);
-  useEffect(() => {
-    const wasOpen = prevSearchOpen.current;
-    const isOpen = isSearchOpen.value;
-    prevSearchOpen.current = isOpen;
-
-    if (wasOpen !== isOpen) {
-      scrollToBottom(false);
-    }
-  }, [isSearchOpen.value, scrollToBottom]);
-
   // Create streaming message placeholder
   const streamingMessage: Message | null = isStreaming
     ? {
@@ -201,8 +187,7 @@ export function MessageList({
         aria-label="Messages"
       >
         {/* Centered container with max-width */}
-        {/* Extra top padding when search bar is open (overlays the content) */}
-        <div class={`max-w-5xl mx-auto px-6 py-6 ${isSearchOpen.value ? "pt-14" : ""}`}>
+        <div class="max-w-5xl mx-auto px-6 py-6">
           {/* Loading state */}
           {isLoading && (
             <div class="flex justify-center py-8">
