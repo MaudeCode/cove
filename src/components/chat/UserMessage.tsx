@@ -1,7 +1,7 @@
 /**
  * UserMessage
  *
- * User message with subtle accent background.
+ * User message with status indicators and retry functionality.
  */
 
 import type { Message } from "@/types/messages";
@@ -16,8 +16,10 @@ interface UserMessageProps {
 }
 
 export function UserMessage({ message, userName = "You", userAvatar }: UserMessageProps) {
+  const isQueued = message.status === "queued";
   const isSending = message.status === "sending";
   const isFailed = message.status === "failed";
+  const isPending = isQueued || isSending;
 
   const handleRetry = () => {
     if (message.id) {
@@ -39,19 +41,21 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
 
         {/* Timestamp or Status */}
         <span class="text-xs text-[var(--color-text-muted)]">
-          {isSending ? (
+          {isQueued ? (
+            <span class="flex items-center gap-1 text-[var(--color-warning)]">
+              <QueueIcon />
+              Queued
+            </span>
+          ) : isSending ? (
             <span class="flex items-center gap-1">
               <LoadingDots />
-              {t("connection.messageSending")}
+              Sending
             </span>
           ) : isFailed ? (
-            <button
-              onClick={handleRetry}
-              class="text-[var(--color-error)] hover:underline flex items-center gap-1"
-            >
+            <span class="flex items-center gap-1 text-[var(--color-error)]">
               <FailedIcon />
-              {t("actions.retry")}
-            </button>
+              Failed
+            </span>
           ) : (
             formatRelativeTime(new Date(message.timestamp))
           )}
@@ -65,13 +69,32 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
           ${
             isFailed
               ? "bg-[var(--color-error)]/10 border border-[var(--color-error)]/20"
-              : "bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/20"
+              : isPending
+                ? "bg-[var(--color-bg-secondary)] border border-[var(--color-border)] opacity-80"
+                : "bg-[var(--color-accent)]/10 border border-[var(--color-accent)]/20"
           }
         `}
       >
         <div class="text-[var(--color-text-primary)]">
           <MessageContent content={message.content} />
         </div>
+
+        {/* Retry button for failed messages */}
+        {isFailed && (
+          <div class="mt-2 pt-2 border-t border-[var(--color-error)]/20">
+            <button
+              onClick={handleRetry}
+              class="px-3 py-1.5 rounded-lg text-xs font-medium
+                bg-[var(--color-error)]/10 text-[var(--color-error)]
+                hover:bg-[var(--color-error)]/20
+                active:scale-95 transition-all duration-150
+                flex items-center gap-1.5"
+            >
+              <RetryIcon />
+              {t("actions.retry")}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -87,6 +110,19 @@ function LoadingDots() {
   );
 }
 
+function QueueIcon() {
+  return (
+    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
 function FailedIcon() {
   return (
     <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -95,6 +131,19 @@ function FailedIcon() {
         stroke-linejoin="round"
         stroke-width="2"
         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  );
+}
+
+function RetryIcon() {
+  return (
+    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
       />
     </svg>
   );
