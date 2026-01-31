@@ -19,6 +19,7 @@ import { ChevronDownIcon } from "@/components/ui";
 
 const FAVORITES_KEY = "cove:model-favorites";
 
+/** Load favorite model IDs from localStorage */
 function loadFavorites(): Set<string> {
   try {
     const stored = localStorage.getItem(FAVORITES_KEY);
@@ -28,8 +29,35 @@ function loadFavorites(): Set<string> {
   }
 }
 
+/** Save favorite model IDs to localStorage */
 function saveFavorites(favorites: Set<string>): void {
   localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
+}
+
+/**
+ * Extract provider from a model ID (e.g., "anthropic" from "anthropic/claude-opus-4-5")
+ * Returns null if no slash separator found.
+ */
+function getProviderFromModelId(modelId: string): string | null {
+  if (!modelId) return null;
+  const slashIndex = modelId.indexOf("/");
+  return slashIndex === -1 ? null : modelId.substring(0, slashIndex);
+}
+
+/**
+ * Resolve the provider for a model ID.
+ * First tries slash-separated format, then looks up in models list.
+ */
+function resolveProvider(modelId: string | undefined): string | null {
+  if (!modelId) return null;
+
+  // Try slash-separated format first (e.g., "anthropic/claude-opus-4-5")
+  const fromId = getProviderFromModelId(modelId);
+  if (fromId) return fromId;
+
+  // Look up in models list
+  const found = models.value.find((m) => m.id === modelId);
+  return found?.provider ?? null;
 }
 
 interface ModelPickerProps {
@@ -38,33 +66,11 @@ interface ModelPickerProps {
   onModelChange?: (modelId: string) => void;
 }
 
-/**
- * Extract provider from a model ID (e.g., "anthropic" from "anthropic/claude-opus-4-5")
- */
-function getProviderFromModelId(modelId: string): string | null {
-  if (!modelId) return null;
-  const slashIndex = modelId.indexOf("/");
-  if (slashIndex === -1) return null;
-  return modelId.substring(0, slashIndex);
-}
-
 export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
   const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
   const menuRef = useRef<HTMLDivElement>(null);
-
-  const toggleFavorite = (modelId: string, e: MouseEvent) => {
-    e.stopPropagation(); // Don't trigger model selection
-    const newFavorites = new Set(favorites);
-    if (newFavorites.has(modelId)) {
-      newFavorites.delete(modelId);
-    } else {
-      newFavorites.add(modelId);
-    }
-    setFavorites(newFavorites);
-    saveFavorites(newFavorites);
-  };
 
   // Close on click outside
   useEffect(() => {
@@ -78,76 +84,56 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [open]);
 
-  // Debug logging
-  console.log("[ModelPicker] state:", {
-    modelsCount: models.value.length,
-    currentModel,
-    firstModel: models.value[0]?.id,
-    providers: Array.from(modelsByProvider.value.keys()),
-  });
-
   // Don't render if no models available
   if (models.value.length === 0) {
-    console.log("[ModelPicker] no models loaded, hiding");
     return null;
   }
 
-  // Filter to current provider only (workaround for OpenClaw showing all models)
-  // Priority: session override > gateway default model > first model in list
+  // Determine effective model: session override > gateway default > first in list
   const effectiveModel = currentModel ?? defaultModel.value ?? models.value[0]?.id;
-  
-  // Try to get provider from model ID (if slash-separated format like "anthropic/claude-opus-4-5")
-  let currentProvider = getProviderFromModelId(effectiveModel ?? "");
-  
-  // If model ID doesn't have provider prefix, find it in the models list
-  if (!currentProvider && effectiveModel) {
-    const foundModel = models.value.find((m) => m.id === effectiveModel);
-    currentProvider = foundModel?.provider ?? null;
-  }
-  
-  // Get models for this provider, dedupe by ID, and sort with current model first, then favorites
-  const providerModels = currentProvider
-    ? (modelsByProvider.value.get(currentProvider) ?? [])
-    : [];
-  const dedupedModels = providerModels.filter(
-    (model, index, self) => self.findIndex((m) => m.id === model.id) === index,
-  );
-  const availableModels = useMemo(
-    () =>
-      [...dedupedModels].sort((a, b) => {
-        // Current model always first
-        if (a.id === effectiveModel) return -1;
-        if (b.id === effectiveModel) return 1;
-        // Then favorites
-        const aFav = favorites.has(a.id);
-        const bFav = favorites.has(b.id);
-        if (aFav && !bFav) return -1;
-        if (!aFav && bFav) return 1;
-        // Then alphabetically by name
-        return a.name.localeCompare(b.name);
-      }),
-    [dedupedModels, effectiveModel, favorites],
-  );
+  const currentProvider = resolveProvider(effectiveModel);
 
-  console.log("[ModelPicker] filtering:", {
-    currentModel,
-    defaultModelValue: defaultModel.value,
-    effectiveModel,
-    currentProvider,
-    providerModelsCount: providerModels.length,
-    dedupedCount: availableModels.length,
-  });
+  // Get models for this provider, dedupe, and sort
+  const providerModels = currentProvider ? (modelsByProvider.value.get(currentProvider) ?? []) : [];
+
+  const availableModels = useMemo(() => {
+    // Dedupe by ID
+    const deduped = providerModels.filter(
+      (model, index, self) => self.findIndex((m) => m.id === model.id) === index,
+    );
+
+    // Sort: current first, then favorites, then alphabetically
+    return [...deduped].sort((a, b) => {
+      if (a.id === effectiveModel) return -1;
+      if (b.id === effectiveModel) return 1;
+      const aFav = favorites.has(a.id);
+      const bFav = favorites.has(b.id);
+      if (aFav && !bFav) return -1;
+      if (!aFav && bFav) return 1;
+      return a.name.localeCompare(b.name);
+    });
+  }, [providerModels, effectiveModel, favorites]);
 
   // Don't render if no models for this provider
   if (availableModels.length === 0) {
-    console.log("[ModelPicker] no models for provider, hiding");
     return null;
   }
 
   const displayName = currentModel ? getModelDisplayName(currentModel) : "Default";
 
+  const toggleFavorite = (modelId: string, e: MouseEvent) => {
+    e.stopPropagation();
+    const newFavorites = new Set(favorites);
+    if (newFavorites.has(modelId)) {
+      newFavorites.delete(modelId);
+    } else {
+      newFavorites.add(modelId);
+    }
+    setFavorites(newFavorites);
+    saveFavorites(newFavorites);
+  };
+
   const handleSelect = async (modelId: string) => {
-    console.log("[ModelPicker] selecting:", modelId, "current:", currentModel);
     if (modelId === currentModel) {
       setOpen(false);
       return;
@@ -155,16 +141,10 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
 
     setUpdating(true);
     try {
-      console.log("[ModelPicker] sending sessions.patch:", { key: sessionKey, model: modelId });
-      await send("sessions.patch", {
-        key: sessionKey,
-        model: modelId,
-      });
-      console.log("[ModelPicker] patch succeeded");
+      await send("sessions.patch", { key: sessionKey, model: modelId });
       onModelChange?.(modelId);
       log.ui.debug("Model changed to:", modelId);
     } catch (err) {
-      console.error("[ModelPicker] patch failed:", err);
       log.ui.error("Failed to change model:", err);
     } finally {
       setUpdating(false);
@@ -204,21 +184,21 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
                 }`}
               >
                 {/* Favorite star */}
-                <span
+                <button
+                  type="button"
                   onClick={(e) => toggleFavorite(model.id, e)}
-                  class={`cursor-pointer text-xs transition-colors ${
+                  class={`cursor-pointer text-xs transition-colors bg-transparent border-none p-0 ${
                     isFavorite
                       ? "text-yellow-500"
                       : "text-[var(--color-text-muted)] hover:text-yellow-400"
                   }`}
                   title={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                  aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
                 >
                   {isFavorite ? "★" : "☆"}
-                </span>
+                </button>
                 <span class="truncate flex-1">{model.name}</span>
-                {model.reasoning && (
-                  <span class="text-[10px] text-[var(--color-warning)]">🧠</span>
-                )}
+                {model.reasoning && <span class="text-[10px] text-[var(--color-warning)]">🧠</span>}
               </button>
             );
           })}
