@@ -730,16 +730,16 @@ export const navigation: NavSection[] = [
 > - 2.1 = Sidebar quick-access session list (always visible, lightweight)
 > - 3.4 = Dedicated Sessions admin view (bulk actions, advanced filters, stats)
 
-### 2.0 Chat Reliability (Phase 1.3 completion) 🟡
+### 2.0 Chat Reliability (Phase 1.3 completion) ✅
 
 > Complete the error recovery features that were incomplete in Phase 1.3.
 
-- [ ] Failed send → inline error with retry button (logic exists in `retryMessage`, needs UI)
+- [x] Failed send → inline error with retry button (`UserMessage.tsx`)
 - [x] Connection lost → banner notification (`ConnectionBanner.tsx`)
 - [x] Message queuing while disconnected (`messageQueue` in signals/chat.ts)
 - [x] Auto-resend queued messages on reconnect (`processMessageQueue` in lib/chat.ts)
 - [x] Message status tracking (sending/sent/failed state in Message type)
-- [ ] Visual indicator for pending/queued messages in UI (status field exists, needs rendering)
+- [x] Visual indicator for pending/queued messages in UI (`UserMessage.tsx` - clock/dots/error icons + status text)
 
 ### 2.1 Session Management
 
