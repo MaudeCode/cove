@@ -5,12 +5,13 @@
  * Heartbeats are filtered out of the main chat - this is where they live.
  */
 
-import { useState, useRef, useEffect, useCallback } from "preact/hooks";
+import { useState, useRef, useCallback } from "preact/hooks";
 import { Heart } from "lucide-preact";
 import { IconButton, Badge } from "@/components/ui";
 import { heartbeatMessages, heartbeatCount } from "@/signals/chat";
 import { t, formatRelativeTime } from "@/lib/i18n";
 import { isHeartbeatResponse } from "@/lib/message-detection";
+import { useClickOutside } from "@/hooks";
 
 export function HeartbeatIndicator() {
   const count = heartbeatCount.value;
@@ -30,23 +31,7 @@ export function HeartbeatIndicator() {
   }, [exchangeCount]);
 
   // Close dropdown when clicking outside
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(e.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
-        handleClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen, handleClose]);
+  useClickOutside([buttonRef, dropdownRef], handleClose, isOpen);
 
   // Get heartbeat exchanges (pair prompt + response)
   const heartbeats = heartbeatMessages.value;
@@ -66,7 +51,7 @@ export function HeartbeatIndicator() {
         />
         {unseenCount > 0 && (
           <Badge
-            variant="muted"
+            variant="default"
             class="absolute -top-1.5 -right-1.5 min-w-[1.25rem] h-5 text-xs px-1 pointer-events-none"
           >
             {unseenCount}

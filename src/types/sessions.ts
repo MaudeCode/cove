@@ -12,7 +12,7 @@ export interface Session {
   sessionId?: string;
 
   /** Session kind */
-  kind?: "main" | "isolated" | "channel" | "other";
+  kind?: "main" | "isolated" | "channel" | "group" | "other";
 
   /** Display name */
   displayName?: string;
