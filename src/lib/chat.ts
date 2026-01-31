@@ -368,6 +368,10 @@ export function subscribeToChatEvents(): () => void {
     const evt = payload as AgentEvent;
     if (evt.stream === "tool") {
       handleToolEvent(evt);
+    } else if (evt.stream === "lifecycle" && evt.data?.phase === "start") {
+      // Handle lifecycle start - creates run on-the-fly if we reconnected mid-run
+      // This ensures spinner shows even before any text deltas arrive
+      handleLifecycleStart(evt);
     }
   });
 
@@ -378,6 +382,20 @@ export function unsubscribeFromChatEvents(): void {
   if (chatEventUnsubscribe) {
     chatEventUnsubscribe();
     chatEventUnsubscribe = null;
+  }
+}
+
+/**
+ * Handle lifecycle start event - ensures run exists even before text deltas.
+ * This makes the spinner show immediately after reconnect during thinking/tool phase.
+ */
+function handleLifecycleStart(evt: AgentEvent): void {
+  const { runId, sessionKey } = evt;
+  const existingRun = activeRuns.value.get(runId);
+
+  if (!existingRun && sessionKey) {
+    log.chat.debug("Creating run on-the-fly for lifecycle start:", runId, "session:", sessionKey);
+    startRun(runId, sessionKey);
   }
 }
 
