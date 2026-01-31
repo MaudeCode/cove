@@ -453,9 +453,18 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
   const parsed = parseMessageContent(message.content);
   let existingRun = activeRuns.value.get(runId);
 
+  // Debug: log what we're receiving
+  console.log("[DELTA]", {
+    runId,
+    hasRun: !!existingRun,
+    messageContent: message.content,
+    parsedText: parsed.text.slice(0, 50),
+    parsedToolCalls: parsed.toolCalls.map((tc) => ({ id: tc.id, name: tc.name, status: tc.status })),
+  });
+
   // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
   if (!existingRun) {
-    log.chat.debug("Creating run on-the-fly for delta:", runId);
+    console.log("[DELTA] Creating run on-the-fly for:", runId);
     startRun(runId, "unknown"); // sessionKey unknown but not critical for streaming
     existingRun = activeRuns.value.get(runId);
     if (!existingRun) return; // shouldn't happen, but be safe
@@ -479,6 +488,13 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
  */
 function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
   const existingRun = activeRuns.value.get(runId);
+
+  console.log("[FINAL]", {
+    runId,
+    hasRun: !!existingRun,
+    existingToolCalls: existingRun?.toolCalls?.map((tc) => ({ id: tc.id, name: tc.name, status: tc.status })),
+    messageContent: message?.content,
+  });
 
   // Mark any still-running tool calls as complete (we may have missed result events after refresh)
   const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
