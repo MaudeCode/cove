@@ -76,16 +76,21 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     currentProvider = foundModel?.provider ?? null;
   }
   
-  const availableModels = currentProvider
+  // Get models for this provider and dedupe by ID
+  const providerModels = currentProvider
     ? (modelsByProvider.value.get(currentProvider) ?? [])
     : [];
+  const availableModels = providerModels.filter(
+    (model, index, self) => self.findIndex((m) => m.id === model.id) === index,
+  );
 
   console.log("[ModelPicker] filtering:", {
     currentModel,
     defaultModelValue: defaultModel.value,
     effectiveModel,
     currentProvider,
-    availableModelsCount: availableModels.length,
+    providerModelsCount: providerModels.length,
+    dedupedCount: availableModels.length,
   });
 
   // Don't render if no models for this provider
