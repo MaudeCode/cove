@@ -471,21 +471,15 @@ function handleToolEvent(evt: AgentEvent): void {
   const findOrCreateToolCall = (): number => {
     let idx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
     if (idx < 0) {
-      // Tool call doesn't exist (missed 'start' event after refresh/reconnect) - create it
-      // IMPORTANT: Don't set insertedAtContentLength here because content may not have arrived yet
-      // (tool events can arrive before text deltas after reconnection)
-      // Leave it undefined so buildContentBlocks puts it at the end
-      log.chat.debug("Creating missing tool call:", {
-        toolCallId,
-        currentContentLen: run.content.length,
-        note: "Position unknown - will render at end",
-      });
+      // Tool call doesn't exist (missed 'start' event after refresh) - create it
+      log.chat.debug("Creating missing tool call:", toolCallId);
       existingToolCalls.push({
         id: toolCallId,
         name: toolName,
         status: "running",
         startedAt: Date.now(),
-        // intentionally omitting insertedAtContentLength
+        insertedAtContentLength: run.content.length,
+        contentSnapshotAtStart: run.content,
       });
       idx = existingToolCalls.length - 1;
     }
