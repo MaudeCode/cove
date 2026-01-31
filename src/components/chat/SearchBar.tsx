@@ -57,7 +57,7 @@ export function SearchBar() {
 
   if (!isSearchOpen.value) {
     return (
-      <div class="h-12 flex items-center px-2 gap-2">
+      <div class="absolute top-2 left-2 z-10 flex items-center gap-2">
         <IconButton
           icon={<SearchIcon />}
           label={t("chat.search")}
@@ -76,7 +76,7 @@ export function SearchBar() {
   const hasFilters = hasQuery || hasDateFilter.value;
 
   return (
-    <div class="h-12 flex items-center gap-3 px-3 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)]">
+    <div class="absolute top-0 left-0 right-0 z-10 flex items-center gap-3 px-3 py-2 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)]">
       {/* Search icon */}
       <SearchIcon class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
 
