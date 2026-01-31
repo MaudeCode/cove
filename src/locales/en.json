@@ -278,7 +278,16 @@
     "monthsAgo": "{count} month ago",
     "monthsAgo_plural": "{count} months ago",
     "yearsAgo": "{count} year ago",
-    "yearsAgo_plural": "{count} years ago"
+    "yearsAgo_plural": "{count} years ago",
+    "compact": {
+      "now": "now",
+      "minutes": "{count}m",
+      "hours": "{count}h",
+      "days": "{count}d",
+      "weeks": "{count}w",
+      "months": "{count}mo",
+      "years": "{count}y"
+    }
   },
 
   "accessibility": {
