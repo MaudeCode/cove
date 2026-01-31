@@ -14,17 +14,25 @@ This file documents how Cove works for LLMs and developers working on the projec
 
 ```
 src/
-├── app.tsx              # Root component
+├── app.tsx              # Root component with router
 ├── main.tsx             # Entry point
-├── lib/                 # Core libraries (non-React)
+├── lib/                 # Core libraries (non-component)
 │   ├── gateway.ts       # WebSocket client for OpenClaw
+│   ├── chat.ts          # Chat actions (sendMessage, loadHistory, etc.)
+│   ├── session-utils.ts # Session key parsing helpers
 │   ├── auth.ts          # Authentication state
 │   ├── theme.ts         # Theme management
 │   ├── i18n.ts          # Internationalization
+│   ├── navigation.tsx   # Navigation config (single source of truth)
 │   └── themes/          # Theme color definitions
 ├── hooks/               # Preact hooks
-├── components/          # UI components (coming)
-├── views/               # Page-level components (coming)
+├── components/
+│   ├── ui/              # Reusable primitives (Button, Input, Modal, etc.)
+│   ├── chat/            # Chat-specific (MessageList, ChatInput, etc.)
+│   ├── sessions/        # Session management (SessionItem, modals)
+│   ├── layout/          # App shell (Sidebar, TopBar)
+│   └── usage/           # Usage tracking components
+├── views/               # Page-level components (ChatView, LoginView, etc.)
 ├── signals/             # Global state signals
 ├── types/               # TypeScript types
 ├── locales/             # Translation files
@@ -127,7 +135,34 @@ formatBytes(1048576)                 // "1 MB"
 2. Use dot notation: `t('section.subsection.key')`
 3. Plurals: add `_plural` suffix key
 
-### 4. Auth State (`src/lib/auth.ts`)
+### 4. Session Utilities (`src/lib/session-utils.ts`)
+
+Shared helpers for working with session keys.
+
+```ts
+import { isMainSession, getAgentId, formatAgentName } from '@/lib/session-utils'
+
+isMainSession('agent:main:main')     // true
+getAgentId('agent:maude-pm:cron:uuid') // 'maude-pm'
+formatAgentName('maude-pm')          // 'Maude PM'
+```
+
+### 5. UI Component Library (`src/components/ui/`)
+
+Reusable primitives - **always check here before creating new components**:
+
+- **Buttons**: `Button`, `IconButton`
+- **Form**: `Input`, `Select`, `Toggle`, `Checkbox`, `FormField`
+- **Layout**: `Card`, `Modal`, `ResizeHandle`
+- **Feedback**: `Spinner`, `Badge`, `Toast`, `Skeleton`
+- **Error**: `ErrorBoundary`, `InlineError`
+- **Icons**: Re-exports from lucide-preact (see icons section)
+
+```tsx
+import { Button, Input, Modal, Toast } from '@/components/ui'
+```
+
+### 6. Auth State (`src/lib/auth.ts`)
 
 Manages gateway credentials and auto-connect.
 
@@ -180,14 +215,43 @@ See ROADMAP.md for full details.
 
 ## Notes for LLMs
 
+### Code Style
 1. **Signals over useState** - use `@preact/signals` for reactive state
 2. **No default exports** - project uses named exports only (lint enforced)
 3. **Console warnings OK** - `console.warn/error` for debugging is intentional
 4. **CSS variables** - all colors use `var(--color-*)` for theming
-5. **OpenClaw protocol** - refer to https://github.com/openclaw/openclaw for protocol details
-6. **Icons** - use `lucide-preact` for ALL icons. Do NOT create custom SVG icons.
-   ```tsx
-   import { Check, X, Settings } from "lucide-preact";
-   <Check class="w-5 h-5" aria-hidden="true" />
-   ```
-   Browse available icons at https://lucide.dev/icons
+
+### Icons
+Use `lucide-preact` for ALL icons. **Do NOT create custom SVG icons.**
+```tsx
+import { Check, X, Settings } from "lucide-preact";
+<Check class="w-5 h-5" aria-hidden="true" />
+```
+Browse available icons at https://lucide.dev/icons
+
+### Important Gotchas
+
+**Preact Signals in useEffect:**
+Computed signals don't re-trigger useEffect. Track the underlying signal instead:
+```tsx
+// ❌ BAD - effect won't re-run when activeSessionKey changes
+useEffect(() => { ... }, [effectiveSessionKey.value])
+
+// ✅ GOOD - track the signal that actually changes  
+useEffect(() => { ... }, [activeSessionKey.value])
+```
+
+**Gateway API Parameter Names:**
+Some methods use `key`, not `sessionKey`:
+```tsx
+// ❌ BAD
+await send('sessions.patch', { sessionKey: key, label: 'foo' })
+
+// ✅ GOOD
+await send('sessions.patch', { key: key, label: 'foo' })
+await send('sessions.delete', { key: key })
+```
+
+### Reference
+- **OpenClaw protocol**: https://github.com/openclaw/openclaw
+- **Protocol schema**: `openclaw/src/gateway/protocol/schema/frames.ts`
