@@ -48,5 +48,18 @@ export const nordTheme: Theme = {
     "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.3)",
     "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.4), 0 2px 4px -2px rgb(0 0 0 / 0.4)",
     "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.5), 0 4px 6px -4px rgb(0 0 0 / 0.5)",
+
+    // Syntax highlighting (Nord palette)
+    "--color-syntax-comment": "#616e88",
+    "--color-syntax-string": "#a3be8c",
+    "--color-syntax-keyword": "#81a1c1",
+    "--color-syntax-function": "#88c0d0",
+    "--color-syntax-number": "#b48ead",
+    "--color-syntax-operator": "#81a1c1",
+    "--color-syntax-variable": "#d8dee9",
+    "--color-syntax-punctuation": "#eceff4",
+    "--color-syntax-property": "#8fbcbb",
+    "--color-syntax-tag": "#81a1c1",
+    "--color-syntax-class": "#8fbcbb",
   },
 };

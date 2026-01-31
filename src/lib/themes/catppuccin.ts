@@ -48,6 +48,19 @@ export const catppuccinMochaTheme: Theme = {
     "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.35)",
     "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.45), 0 2px 4px -2px rgb(0 0 0 / 0.45)",
     "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.55), 0 4px 6px -4px rgb(0 0 0 / 0.55)",
+
+    // Syntax highlighting (Catppuccin Mocha)
+    "--color-syntax-comment": "#6c7086",
+    "--color-syntax-string": "#a6e3a1",
+    "--color-syntax-keyword": "#cba6f7",
+    "--color-syntax-function": "#89b4fa",
+    "--color-syntax-number": "#fab387",
+    "--color-syntax-operator": "#89dceb",
+    "--color-syntax-variable": "#f38ba8",
+    "--color-syntax-punctuation": "#cdd6f4",
+    "--color-syntax-property": "#f5c2e7",
+    "--color-syntax-tag": "#cba6f7",
+    "--color-syntax-class": "#f9e2af",
   },
 };
 
@@ -99,5 +112,18 @@ export const catppuccinLatteTheme: Theme = {
     "--shadow-sm": "0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06)",
     "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.08), 0 2px 4px -2px rgb(0 0 0 / 0.08)",
     "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.08)",
+
+    // Syntax highlighting (Catppuccin Latte)
+    "--color-syntax-comment": "#9ca0b0",
+    "--color-syntax-string": "#40a02b",
+    "--color-syntax-keyword": "#8839ef",
+    "--color-syntax-function": "#1e66f5",
+    "--color-syntax-number": "#fe640b",
+    "--color-syntax-operator": "#04a5e5",
+    "--color-syntax-variable": "#d20f39",
+    "--color-syntax-punctuation": "#4c4f69",
+    "--color-syntax-property": "#ea76cb",
+    "--color-syntax-tag": "#8839ef",
+    "--color-syntax-class": "#df8e1d",
   },
 };
