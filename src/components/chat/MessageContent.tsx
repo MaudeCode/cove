@@ -68,10 +68,10 @@ export function MessageContent({ content, isStreaming = false }: MessageContentP
     return (
       <span class="inline-flex items-center gap-2 text-[var(--color-text-muted)]">
         {t("chat.thinking")}
-        <span class="inline-flex items-end gap-0.5">
+        <span class="inline-flex items-end gap-1">
           <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot" />
-          <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:150ms]" />
-          <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:300ms]" />
+          <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:200ms]" />
+          <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:400ms]" />
         </span>
       </span>
     );

@@ -162,20 +162,20 @@
   }
 }
 
-/* Bouncing dots for typing/loading indicators */
+/* Bouncing dots for typing/loading indicators - sequential wave effect */
 @keyframes bounce-dot {
   0%,
-  80%,
+  60%,
   100% {
     transform: translateY(0);
   }
-  40% {
+  30% {
     transform: translateY(-4px);
   }
 }
 
 .animate-bounce-dot {
-  animation: bounce-dot 1s ease-in-out infinite;
+  animation: bounce-dot 1.4s ease-in-out infinite;
 }
 
 /* AI glow spin - rotating gradient border for streaming sessions */
