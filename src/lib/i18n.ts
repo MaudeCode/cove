@@ -223,6 +223,42 @@ export function formatRelativeTime(date: Date | number): string {
 }
 
 /**
+ * Format relative time in compact form (e.g., "6h", "2d", "3w")
+ *
+ * @example
+ * formatRelativeTimeCompact(pastDate)  // "6h"
+ * formatRelativeTimeCompact(olderDate) // "2d"
+ */
+export function formatRelativeTimeCompact(date: Date | number): string {
+  const d = typeof date === "number" ? new Date(date) : date;
+  const now = Date.now();
+  const diffMs = Math.abs(d.getTime() - now);
+  const diffSec = Math.round(diffMs / 1000);
+  const diffMin = Math.round(diffSec / 60);
+  const diffHour = Math.round(diffMin / 60);
+  const diffDay = Math.round(diffHour / 24);
+  const diffWeek = Math.round(diffDay / 7);
+  const diffMonth = Math.round(diffDay / 30);
+  const diffYear = Math.round(diffDay / 365);
+
+  if (diffSec < 60) {
+    return t("time.compact.now");
+  } else if (diffMin < 60) {
+    return t("time.compact.minutes", { count: diffMin });
+  } else if (diffHour < 24) {
+    return t("time.compact.hours", { count: diffHour });
+  } else if (diffDay < 7) {
+    return t("time.compact.days", { count: diffDay });
+  } else if (diffWeek < 4) {
+    return t("time.compact.weeks", { count: diffWeek });
+  } else if (diffMonth < 12) {
+    return t("time.compact.months", { count: diffMonth });
+  } else {
+    return t("time.compact.years", { count: diffYear });
+  }
+}
+
+/**
  * Format a number
  *
  * @example
