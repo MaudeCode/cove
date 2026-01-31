@@ -5,6 +5,7 @@
  */
 
 import { useEffect } from "preact/hooks";
+import { signal } from "@preact/signals";
 import Router from "preact-router";
 import { initTheme } from "@/lib/theme";
 import { initI18n } from "@/lib/i18n";
@@ -31,14 +32,33 @@ import {
   LogsView,
 } from "@/views";
 
+// Initialize storage synchronously so we can check saved auth immediately
+initStorage();
+
+// Check saved auth BEFORE first render (prevents flash)
+const savedAuth = getAuth();
+const hasSavedAuth = signal(!!(savedAuth?.url && savedAuth.rememberMe));
+const authChecked = signal(false);
+
 export function App() {
-  // Initialize systems on mount
+  // Initialize remaining systems on mount
   useEffect(() => {
-    initStorage();
     initTheme();
     initI18n();
-    tryAutoConnect();
+
+    tryAutoConnect().finally(() => {
+      authChecked.value = true;
+    });
   }, []);
+
+  // Show login only if:
+  // - No saved auth, OR
+  // - Auth check complete and connection failed
+  // Key: only read isConnected AFTER authChecked to prevent re-render during initial connect
+  let showLogin = !hasSavedAuth.value;
+  if (!showLogin && authChecked.value) {
+    showLogin = !isConnected.value;
+  }
 
   return (
     <>
@@ -47,7 +67,7 @@ export function App() {
           toast.error(`Error: ${error.message}`);
         }}
       >
-        <AppShell>{isConnected.value ? <MainRouter /> : <LoginView />}</AppShell>
+        <AppShell>{showLogin ? <LoginView /> : <MainRouter />}</AppShell>
       </ErrorBoundary>
       <ToastContainer position="top-right" />
     </>

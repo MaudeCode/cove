@@ -45,6 +45,9 @@ export const connectionState = signal<ConnectionState>("disconnected");
 /** Whether we're fully connected and authenticated */
 export const isConnected = computed(() => connectionState.value === "connected");
 
+/** Whether this is the initial page load (before first connection attempt) */
+export const isInitialLoad = signal(true);
+
 /** Last error message */
 export const lastError = signal<string | null>(null);
 
@@ -126,6 +129,7 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
 
   currentConfig = config;
   connectionState.value = "connecting";
+  isInitialLoad.value = false;
   lastError.value = null;
   reconnectAttempt.value = 0;
 

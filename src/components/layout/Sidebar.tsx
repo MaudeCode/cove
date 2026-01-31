@@ -8,7 +8,7 @@
 import { useSignal, signal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
-import { isConnected } from "@/lib/gateway";
+import { isConnected, isInitialLoad } from "@/lib/gateway";
 import { activeSessionKey, sessionsByRecent } from "@/signals/sessions";
 import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon } from "@/components/ui";
 import { SessionItem } from "@/components/sessions";
@@ -24,7 +24,7 @@ export function Sidebar() {
       <div class="p-3">
         <Button
           variant="primary"
-          disabled={!isConnected.value}
+          disabled={!isConnected.value && !isInitialLoad.value}
           onClick={() => route("/chat")}
           fullWidth
           icon={<PlusIcon />}
@@ -78,9 +78,9 @@ interface CollapsibleNavSectionProps {
 function CollapsibleNavSection({ section }: CollapsibleNavSectionProps) {
   const isOpen = useSignal(false);
 
-  // Filter items based on connection requirement
+  // Filter items based on connection requirement (during initial load, assume connected)
   const visibleItems = section.items.filter(
-    (item) => !item.requiresConnection || isConnected.value,
+    (item) => !item.requiresConnection || isConnected.value || isInitialLoad.value,
   );
 
   if (visibleItems.length === 0) return null;
