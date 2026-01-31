@@ -18,6 +18,7 @@ export { Input, type InputProps, type InputSize } from "./Input";
 export { DatePicker } from "./DatePicker";
 export { Select, type SelectProps, type SelectOption, type SelectSize } from "./Select";
 export { Dropdown, type DropdownProps, type DropdownOption, type DropdownSize } from "./Dropdown";
+export { ThemePicker } from "./ThemePicker";
 export { Toggle, type ToggleProps, type ToggleSize } from "./Toggle";
 export { Checkbox, type CheckboxProps, type CheckboxSize } from "./Checkbox";
 export { FormField, type FormFieldProps } from "./FormField";

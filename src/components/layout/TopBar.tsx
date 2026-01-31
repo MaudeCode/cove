@@ -5,13 +5,12 @@
  */
 
 import { t } from "@/lib/i18n";
-import { themePreference, setTheme, getAllThemes } from "@/lib/theme";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
 import { sidebarOpen } from "@/signals/ui";
 import {
   IconButton,
-  Dropdown,
+  ThemePicker,
   CloseIcon,
   MenuIcon,
   SettingsIcon,
@@ -20,15 +19,6 @@ import {
 import { UsageBadge } from "@/components/usage";
 
 export function TopBar() {
-  const themes = getAllThemes();
-  const pref = themePreference.value;
-
-  // Build theme options for Select
-  const themeOptions = [
-    { value: "system", label: t("settings.appearance.themeSystem") },
-    ...themes.map((theme) => ({ value: theme.id, label: theme.name })),
-  ];
-
   return (
     <header class="h-14 flex-shrink-0 bg-[var(--color-bg-secondary)]">
       <div class="h-full px-4 flex items-center justify-between">
@@ -78,13 +68,7 @@ export function TopBar() {
           <UsageBadge />
 
           {/* Theme selector */}
-          <Dropdown
-            value={pref.selected}
-            onChange={setTheme}
-            options={themeOptions}
-            size="sm"
-            aria-label={t("settings.appearance.theme")}
-          />
+          <ThemePicker />
 
           {/* Settings button */}
           <IconButton icon={<SettingsIcon />} label={t("nav.settings")} variant="ghost" size="md" />
