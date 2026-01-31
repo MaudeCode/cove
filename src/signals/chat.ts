@@ -253,17 +253,23 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
       const hasMatchingTool = existing.toolCalls.some((tc) => newToolIds.has(tc.id));
       
       if (hasMatchingTool) {
-        // Update the existing message with new content and tool call status
+        // Merge tool calls: update status of existing ones, keep content intact
+        const mergedToolCalls = existing.toolCalls.map((existingTc) => {
+          const newTc = newMessage.toolCalls?.find((tc) => tc.id === existingTc.id);
+          if (newTc) {
+            // Update status and result from the new data
+            return { ...existingTc, status: newTc.status, result: newTc.result, completedAt: newTc.completedAt };
+          }
+          return existingTc;
+        });
+        
+        // Update the existing message - keep existing content, just update tool calls
         messages.value = existingMessages.map((msg) =>
           msg.id === existing.id
-            ? {
-                ...msg,
-                content: newMessage.content || msg.content,
-                toolCalls: newMessage.toolCalls,
-              }
+            ? { ...msg, toolCalls: mergedToolCalls }
             : msg,
         );
-        console.log("[CHAT] Updated existing message instead of adding duplicate:", existing.id);
+        console.log("[CHAT] Updated tool call status in existing message:", existing.id);
         return true;
       }
     }
