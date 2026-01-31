@@ -362,18 +362,26 @@ function handleToolEvent(evt: AgentEvent): void {
 
   const run = activeRuns.value.get(runId);
   if (!run) {
-    console.log("[AGENT] No run found for tool event:", runId);
+    console.log("[TOOL] No run found for tool event:", runId);
     return;
   }
 
   const toolCallId = data.toolCallId ?? `tool_${Date.now()}`;
   const toolName = data.name ?? "unknown";
 
-  // Get existing tool calls
+  // Get existing tool calls (make a copy)
   const existingToolCalls = [...run.toolCalls];
+
+  console.log(`[TOOL] ${data.phase}: ${toolName} (${toolCallId}) - existing tools:`, existingToolCalls.map(tc => tc.id));
 
   switch (data.phase) {
     case "start": {
+      // Check if already exists (avoid duplicates)
+      const existingIdx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
+      if (existingIdx >= 0) {
+        console.log("[TOOL] Skipping duplicate start for:", toolCallId);
+        return;
+      }
       // Add new tool call with running status
       const newToolCall: ToolCall = {
         id: toolCallId,
@@ -396,6 +404,8 @@ function handleToolEvent(evt: AgentEvent): void {
           result: data.partialResult,
         };
         updateRunContent(runId, run.content, existingToolCalls);
+      } else {
+        console.log("[TOOL] No tool found for update:", toolCallId);
       }
       break;
     }
@@ -403,6 +413,7 @@ function handleToolEvent(evt: AgentEvent): void {
     case "result": {
       // Mark tool call as complete
       const idx = existingToolCalls.findIndex((tc) => tc.id === toolCallId);
+      console.log(`[TOOL] Result for ${toolCallId}, found at idx:`, idx);
       if (idx >= 0) {
         existingToolCalls[idx] = {
           ...existingToolCalls[idx],
@@ -411,6 +422,8 @@ function handleToolEvent(evt: AgentEvent): void {
           completedAt: Date.now(),
         };
         updateRunContent(runId, run.content, existingToolCalls);
+      } else {
+        console.log("[TOOL] No tool found for result:", toolCallId);
       }
       break;
     }
