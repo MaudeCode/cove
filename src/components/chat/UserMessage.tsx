@@ -4,6 +4,7 @@
  * User message with status indicators and retry functionality.
  */
 
+import { Clock, AlertCircle, RefreshCw } from "lucide-preact";
 import type { Message } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
 import { formatRelativeTime, t } from "@/lib/i18n";
@@ -111,40 +112,13 @@ function LoadingDots() {
 }
 
 function QueueIcon() {
-  return (
-    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
+  return <Clock class="w-3 h-3" aria-hidden="true" />;
 }
 
 function FailedIcon() {
-  return (
-    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-  );
+  return <AlertCircle class="w-3 h-3" aria-hidden="true" />;
 }
 
 function RetryIcon() {
-  return (
-    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-      />
-    </svg>
-  );
+  return <RefreshCw class="w-3 h-3" aria-hidden="true" />;
 }
