@@ -162,8 +162,7 @@ export function MessageList({
   }, [scrollToMessageId.value]);
 
   /**
-   * Compensate scroll position when search bar opens/closes
-   * The search bar overlay adds/removes padding, so we adjust scroll to prevent shift
+   * Scroll to bottom when search bar opens/closes to prevent content shift
    */
   const prevSearchOpen = useRef(isSearchOpen.value);
   useEffect(() => {
@@ -171,19 +170,10 @@ export function MessageList({
     const isOpen = isSearchOpen.value;
     prevSearchOpen.current = isOpen;
 
-    if (!containerRef.current || wasOpen === isOpen) return;
-
-    // pt-14 = 56px padding
-    const SEARCH_BAR_HEIGHT = 56;
-
-    if (isOpen) {
-      // Search opened - scroll down to compensate for added padding
-      containerRef.current.scrollTop += SEARCH_BAR_HEIGHT;
-    } else {
-      // Search closed - scroll up to compensate for removed padding
-      containerRef.current.scrollTop -= SEARCH_BAR_HEIGHT;
+    if (wasOpen !== isOpen) {
+      scrollToBottom(false);
     }
-  }, [isSearchOpen.value]);
+  }, [isSearchOpen.value, scrollToBottom]);
 
   // Create streaming message placeholder
   const streamingMessage: Message | null = isStreaming
