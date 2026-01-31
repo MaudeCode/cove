@@ -54,11 +54,9 @@ export function App() {
   }, []);
 
   // Determine if we should show login content
-  // Key: only check isConnected after authChecked to avoid re-render during connect
-  let showLoginContent = !hasSavedAuth.value;
-  if (!showLoginContent && authChecked.value) {
-    showLoginContent = !isConnected.value;
-  }
+  // Before auth check completes: use hasSavedAuth to prevent flash of login for auto-connect
+  // After auth check completes: use isConnected directly
+  const showLoginContent = authChecked.value ? !isConnected.value : !hasSavedAuth.value;
 
   return (
     <>
