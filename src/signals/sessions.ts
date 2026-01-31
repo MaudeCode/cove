@@ -180,9 +180,13 @@ export function updateSession(sessionKey: string, updates: Partial<Session>): vo
   console.log("[sessions] updateSession:", sessionKey, updates);
   const before = sessions.value.find((s) => s.key === sessionKey);
   console.log("[sessions] before:", before?.model);
+  
+  // Update sessions array (creates new reference to trigger reactivity)
   sessions.value = sessions.value.map((s) => (s.key === sessionKey ? { ...s, ...updates } : s));
+  
   const after = sessions.value.find((s) => s.key === sessionKey);
   console.log("[sessions] after:", after?.model);
+  console.log("[sessions] activeSession after update:", activeSession.value?.model);
 }
 
 /**
