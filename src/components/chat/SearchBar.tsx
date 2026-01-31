@@ -84,8 +84,15 @@ export function SearchBar() {
       <div
         class={`absolute top-0 left-0 right-0 z-10 flex items-center gap-3 px-3 py-2 bg-[var(--color-bg-surface)] border-b border-[var(--color-border)] transition-opacity ${isOpen ? "opacity-100" : "opacity-0 pointer-events-none"}`}
       >
-        {/* Search icon */}
-        <SearchIcon class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
+        {/* Close button - on left so it's easy to close if opened accidentally */}
+        <IconButton
+          icon={<CloseIcon />}
+          label={t("actions.close")}
+          onClick={closeSearch}
+          variant="ghost"
+          size="sm"
+          tabIndex={isOpen ? 0 : -1}
+        />
 
         {/* Text search input */}
         <div class="flex-1 flex items-center gap-2 min-w-[120px]">
@@ -124,15 +131,6 @@ export function SearchBar() {
             minDate={dateRangeStart.value}
           />
         </div>
-
-        {/* Close button */}
-        <IconButton
-          icon={<CloseIcon />}
-          label={t("actions.close")}
-          onClick={closeSearch}
-          variant="ghost"
-          size="sm"
-        />
       </div>
     </>
   );
