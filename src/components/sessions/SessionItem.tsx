@@ -17,6 +17,9 @@ export interface SessionItemProps {
   /** Whether this session is currently active */
   isActive?: boolean;
 
+  /** Whether this is the main/primary session */
+  isMain?: boolean;
+
   /** Click handler */
   onClick?: () => void;
 
@@ -116,6 +119,7 @@ function getKindBadge(session: Session): { label: string; color: string } | null
 export function SessionItem({
   session,
   isActive = false,
+  isMain = false,
   onClick,
   onRename,
   onDelete,
@@ -148,13 +152,24 @@ export function SessionItem({
           }
         `}
       >
-        {/* Active indicator dot */}
-        <span
-          class={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${
-            isActive ? "bg-[var(--color-accent)]" : "bg-[var(--color-text-muted)]"
-          }`}
-          aria-hidden="true"
-        />
+        {/* Pin icon for main session, otherwise active indicator dot */}
+        {isMain ? (
+          <svg
+            class={`w-3.5 h-3.5 flex-shrink-0 mt-1 ${isActive ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            aria-label="Main session"
+          >
+            <path d="M16 12V4h1V2H7v2h1v8l-2 2v2h5v6l1 1 1-1v-6h5v-2l-2-2z" />
+          </svg>
+        ) : (
+          <span
+            class={`w-2 h-2 rounded-full flex-shrink-0 mt-1.5 ${
+              isActive ? "bg-[var(--color-accent)]" : "bg-[var(--color-text-muted)]"
+            }`}
+            aria-hidden="true"
+          />
+        )}
 
         {/* Content */}
         <span class="flex-1 min-w-0">
