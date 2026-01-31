@@ -125,6 +125,7 @@ export function updateMessage(id: string, updates: Partial<Message>): void {
  * Start a new chat run
  */
 export function startRun(runId: string, sessionKey: string): void {
+  console.log("[SIGNAL] startRun called", { runId, sessionKey });
   const newRuns = new Map(activeRuns.value);
   newRuns.set(runId, {
     runId,
@@ -135,6 +136,7 @@ export function startRun(runId: string, sessionKey: string): void {
     toolCalls: [],
   });
   activeRuns.value = newRuns;
+  console.log("[SIGNAL] Run started, activeRuns keys:", Array.from(activeRuns.value.keys()));
 }
 
 /**
@@ -142,7 +144,11 @@ export function startRun(runId: string, sessionKey: string): void {
  */
 export function updateRunContent(runId: string, content: string, toolCalls: ToolCall[] = []): void {
   const run = activeRuns.value.get(runId);
-  if (!run) return;
+  console.log("[SIGNAL] updateRunContent called", { runId, contentLen: content.length, hasRun: !!run });
+  if (!run) {
+    console.log("[SIGNAL] No run found! Active runs:", Array.from(activeRuns.value.keys()));
+    return;
+  }
 
   const newRuns = new Map(activeRuns.value);
   newRuns.set(runId, {
@@ -152,6 +158,7 @@ export function updateRunContent(runId: string, content: string, toolCalls: Tool
     toolCalls,
   });
   activeRuns.value = newRuns;
+  console.log("[SIGNAL] Updated activeRuns, streamingContent should be:", content.slice(0, 50));
 }
 
 /**
