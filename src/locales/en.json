@@ -90,9 +90,13 @@
   "connection": {
     "disconnected": "Connection lost. Messages will be sent when reconnected.",
     "reconnecting": "Reconnecting to gateway...",
+    "reconnectingAttempt": "Reconnecting... (attempt {count})",
     "messageFailed": "Failed to send. Tap to retry.",
-    "messageSending": "Sending...",
-    "messageQueued": "Queued"
+    "messageFailedStatus": "Failed",
+    "messageSending": "Sending",
+    "messageQueued": "Queued",
+    "messagesQueued": "{count} message queued",
+    "messagesQueued_plural": "{count} messages queued"
   },
 
   "nav": {

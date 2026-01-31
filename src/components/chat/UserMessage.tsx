@@ -44,18 +44,18 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
         <span class="text-xs text-[var(--color-text-muted)]">
           {isQueued ? (
             <span class="flex items-center gap-1 text-[var(--color-warning)]">
-              <QueueIcon />
-              Queued
+              <Clock class="w-3 h-3" aria-hidden="true" />
+              {t("connection.messageQueued")}
             </span>
           ) : isSending ? (
             <span class="flex items-center gap-1">
               <LoadingDots />
-              Sending
+              {t("connection.messageSending")}
             </span>
           ) : isFailed ? (
             <span class="flex items-center gap-1 text-[var(--color-error)]">
-              <FailedIcon />
-              Failed
+              <AlertCircle class="w-3 h-3" aria-hidden="true" />
+              {t("connection.messageFailedStatus")}
             </span>
           ) : (
             formatRelativeTime(new Date(message.timestamp))
@@ -91,7 +91,7 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
                 active:scale-95 transition-all duration-150
                 flex items-center gap-1.5"
             >
-              <RetryIcon />
+              <RefreshCw class="w-3 h-3" aria-hidden="true" />
               {t("actions.retry")}
             </button>
           </div>
@@ -109,16 +109,4 @@ function LoadingDots() {
       <span class="w-1 h-1 rounded-full bg-current animate-pulse [animation-delay:300ms]" />
     </span>
   );
-}
-
-function QueueIcon() {
-  return <Clock class="w-3 h-3" aria-hidden="true" />;
-}
-
-function FailedIcon() {
-  return <AlertCircle class="w-3 h-3" aria-hidden="true" />;
-}
-
-function RetryIcon() {
-  return <RefreshCw class="w-3 h-3" aria-hidden="true" />;
 }
