@@ -8,7 +8,7 @@
  */
 
 /** Message send status */
-export type MessageStatus = "sending" | "sent" | "failed";
+export type MessageStatus = "queued" | "sending" | "sent" | "failed";
 
 export interface Message {
   /** Unique message ID */

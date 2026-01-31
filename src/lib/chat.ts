@@ -33,8 +33,10 @@ import {
   markMessageFailed,
   markMessageSending,
   markMessageSent,
+  markMessageQueued,
   saveCachedMessages,
   activeRuns,
+  isStreaming,
 } from "@/signals/chat";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatHistoryResult, ChatSendResult, ChatEvent, AgentEvent } from "@/types/chat";
@@ -212,6 +214,9 @@ export async function sendMessage(
   const messageId = `user_${idempotencyKey}`;
   const isRetry = options?.messageId != null;
 
+  // Determine initial status: queued if streaming, sending otherwise
+  const initialStatus = isStreaming.value ? "queued" : "sending";
+
   if (!isRetry) {
     const userMessage: Message = {
       id: messageId,
@@ -219,12 +224,16 @@ export async function sendMessage(
       content: message,
       timestamp: Date.now(),
       isStreaming: false,
-      status: "sending",
+      status: initialStatus,
       sessionKey,
     };
     addMessage(userMessage);
   } else {
-    markMessageSending(messageId);
+    if (isStreaming.value) {
+      markMessageQueued(messageId);
+    } else {
+      markMessageSending(messageId);
+    }
   }
 
   // Queue if disconnected
@@ -235,7 +244,7 @@ export async function sendMessage(
       role: "user",
       content: message,
       timestamp: Date.now(),
-      status: "sending",
+      status: initialStatus,
       sessionKey,
     });
     return idempotencyKey;
