@@ -944,36 +944,66 @@ export const navigation: NavSection[] = [
 - [ ] Model usage breakdown
 - [ ] Export reports
 
-### 4.6 Multi-Session View
+### 4.6 Provider Usage Limits (Enhancements)
+
+> Extends Phase 2.2 (Anthropic Usage Tracker)
+
+**Warning System:**
+- [ ] Toast notification when usage exceeds 80%
+- [ ] Toast notification when usage exceeds 90% (more urgent)
+- [ ] Configurable warning thresholds
+- [ ] "Don't show again" option per threshold
+
+**Additional Providers:**
+
+| Provider | API | Limits Tracked | Priority |
+|----------|-----|----------------|----------|
+| Anthropic | ✅ Done | 5h, Weekly, Model-specific | — |
+| GitHub Copilot | `github-copilot` | Premium interactions, Chat quota | High |
+| OpenAI Codex/ChatGPT | `openai-codex` | Primary/secondary windows, Credits | High |
+| Google Gemini CLI | `google-gemini-cli` | Model-specific quotas | Medium |
+| Google Antigravity | `google-antigravity` | Monthly credits, Model quotas | Medium |
+| z.ai | `zai` | Plan limits with reset times | Low |
+| MiniMax | `minimax` | Various usage windows | Low |
+| Xiaomi | `xiaomi` | TBD | Low |
+
+**UI Enhancements:**
+- [ ] Multi-provider support in UsageBadge (tabs or stacked)
+- [ ] Provider icon/logo in badge
+- [ ] Collapsed view shows worst usage across providers
+- [ ] Settings to show/hide specific providers
+- [ ] Historical usage graph (sparkline in popover)
+
+### 4.7 Multi-Session View
 - [ ] Split pane layout
 - [ ] Monitor multiple sessions
 - [ ] Drag/drop session arrangement
 
-### 4.7 Browser Automation Viewer
+### 4.8 Browser Automation Viewer
 - [ ] View snapshots from browser tool
 - [ ] Screenshot gallery
 - [ ] Interactive element highlighting
 
-### 4.8 Sub-Agent Spawner
+### 4.9 Sub-Agent Spawner
 - [ ] UI to spawn background tasks
 - [ ] Select agent, model, task
 - [ ] Monitor progress
 - [ ] View results when complete
 
-### 4.9 UX Polish
+### 4.10 UX Polish
 - [ ] Dark/light theme toggle
 - [ ] Mobile responsive
 - [ ] Keyboard shortcuts (global navigation)
 - [ ] Customizable layout
 - [ ] Notifications (desktop/browser)
 
-### 4.10 PWA Support
+### 4.11 PWA Support
 - [ ] manifest.json (app name, icons, theme colors, display mode)
 - [ ] Service worker for install prompt
 - [ ] Offline caching (optional)
 - [ ] iOS/Android home screen install support
 
-### 4.11 Custom Theming
+### 4.12 Custom Theming
 - [ ] Theme schema (colors, code theme, fonts, spacing)
 - [ ] Built-in theme presets (light, dark, etc.)
 - [ ] Theme editor UI (color pickers, live preview)
