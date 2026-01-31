@@ -480,12 +480,20 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
 function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
   const existingRun = activeRuns.value.get(runId);
 
+  // Mark any still-running tool calls as complete (we may have missed result events after refresh)
+  const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
+    if (tc.status === "running" || tc.status === "pending") {
+      return { ...tc, status: "complete" as const, completedAt: Date.now() };
+    }
+    return tc;
+  });
+
   // Build final message using accumulated content (gateway's final only has last block)
   const finalMessage: Message = {
     id: `assistant_${runId}`,
     role: "assistant",
     content: existingRun?.content ?? "",
-    toolCalls: existingRun?.toolCalls?.length ? existingRun.toolCalls : undefined,
+    toolCalls: finalToolCalls?.length ? finalToolCalls : undefined,
     timestamp: message?.timestamp ?? Date.now(),
   };
 
