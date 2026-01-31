@@ -40,6 +40,7 @@ export { Spinner, type SpinnerProps, type SpinnerSize } from "./Spinner";
 export { Badge, type BadgeProps, type BadgeVariant, type BadgeSize } from "./Badge";
 export { Chip, type ChipProps, type ChipSize } from "./Chip";
 export { Skeleton, SkeletonText, SkeletonAvatar, type SkeletonProps } from "./Skeleton";
+export { BouncingDots, type BouncingDotsProps } from "./BouncingDots";
 
 // Overlays
 export { Modal, type ModalProps, type ModalSize } from "./Modal";

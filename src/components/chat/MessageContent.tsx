@@ -6,6 +6,7 @@
 
 import { useMemo, useRef, useEffect } from "preact/hooks";
 import { renderMarkdown } from "@/lib/markdown";
+import { BouncingDots } from "@/components/ui";
 import { t } from "@/lib/i18n";
 
 interface MessageContentProps {
@@ -68,11 +69,7 @@ export function MessageContent({ content, isStreaming = false }: MessageContentP
     return (
       <span class="inline-flex items-center gap-2 text-[var(--color-text-muted)]">
         {t("chat.thinking")}
-        <span class="inline-flex items-end gap-1">
-          <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-1" />
-          <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-2" />
-          <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-3" />
-        </span>
+        <BouncingDots />
       </span>
     );
   }

@@ -7,6 +7,7 @@
 import { Clock, AlertCircle, RefreshCw } from "lucide-preact";
 import type { Message } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
+import { BouncingDots } from "@/components/ui";
 import { formatRelativeTime, t } from "@/lib/i18n";
 import { retryMessage } from "@/lib/chat";
 
@@ -49,7 +50,7 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
             </span>
           ) : isSending ? (
             <span class="flex items-center gap-1">
-              <LoadingDots />
+              <BouncingDots size="sm" colorClass="bg-current" />
               {t("connection.messageSending")}
             </span>
           ) : isFailed ? (
@@ -98,15 +99,5 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
         )}
       </div>
     </div>
-  );
-}
-
-function LoadingDots() {
-  return (
-    <span class="inline-flex items-end gap-1">
-      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot-1" />
-      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot-2" />
-      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot-3" />
-    </span>
   );
 }
