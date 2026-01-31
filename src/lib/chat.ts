@@ -372,7 +372,10 @@ function handleToolEvent(evt: AgentEvent): void {
   // Get existing tool calls (make a copy)
   const existingToolCalls = [...run.toolCalls];
 
-  console.log(`[TOOL] ${data.phase}: ${toolName} (${toolCallId}) - existing tools:`, existingToolCalls.map(tc => tc.id));
+  console.log(
+    `[TOOL] ${data.phase}: ${toolName} (${toolCallId}) - existing tools:`,
+    existingToolCalls.map((tc) => tc.id),
+  );
 
   switch (data.phase) {
     case "start": {
