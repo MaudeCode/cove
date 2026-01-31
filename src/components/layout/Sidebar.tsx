@@ -12,6 +12,7 @@ import { log } from "@/lib/logger";
 import { send, isConnected } from "@/lib/gateway";
 import { isMainSession } from "@/lib/session-utils";
 import {
+  activeSessionKey,
   effectiveSessionKey,
   sessionsGrouped,
   sessionsByRecent,
@@ -22,7 +23,7 @@ import {
   showCronSessions,
   toggleCronSessions,
   updateSession,
-  removeSession,
+  removeSessionAnimated,
 } from "@/signals/sessions";
 import type { TimeGroup } from "@/lib/session-utils";
 import {
@@ -70,7 +71,9 @@ export function Sidebar() {
       await send("sessions.delete", {
         key: session.key,
       });
-      removeSession(session.key);
+
+      // Animate out then remove
+      await removeSessionAnimated(session.key);
 
       // If we deleted the active session, go back to main
       if (activeSessionKey.value === session.key) {
