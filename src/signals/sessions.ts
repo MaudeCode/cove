@@ -157,12 +157,6 @@ export const hasHiddenSessions = computed(() => {
   return visible < total;
 });
 
-/** Count of hidden cron sessions */
-export const hiddenCronCount = computed(() => {
-  if (showCronSessions.value) return 0;
-  return sessions.value.filter((s) => isCronSession(s)).length;
-});
-
 /** Number of sessions */
 export const sessionCount = computed(() => sessions.value.length);
 
