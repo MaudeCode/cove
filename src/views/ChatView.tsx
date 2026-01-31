@@ -13,12 +13,11 @@ import {
   messages,
   isLoadingHistory,
   historyError,
-  isStreaming,
-  streamingContent,
-  streamingToolCalls,
+  activeRuns,
   clearMessages,
   hasQueuedMessages,
   getCachedSessionKey,
+  getStreamingStateForSession,
 } from "@/signals/chat";
 import {
   activeSessionKey,
@@ -117,6 +116,10 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
   };
 
+  // Get streaming state for current session only (accessing activeRuns.value for reactivity)
+  const _runs = activeRuns.value; // Access for reactivity
+  const sessionStreamingState = getStreamingStateForSession(effectiveSessionKey.value);
+
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
       {/* Connection status banner */}
@@ -126,9 +129,9 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         messages={messages.value}
         isLoading={isLoadingHistory.value}
         error={historyError.value}
-        streamingContent={streamingContent.value}
-        streamingToolCalls={streamingToolCalls.value}
-        isStreaming={isStreaming.value}
+        streamingContent={sessionStreamingState.content}
+        streamingToolCalls={sessionStreamingState.toolCalls}
+        isStreaming={sessionStreamingState.isStreaming}
         assistantName={assistantName.value}
         assistantAvatar={assistantAvatar.value ?? undefined}
         userName={userName.value}
@@ -139,7 +142,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         onSend={handleSend}
         onAbort={handleAbort}
         disabled={false} // Allow typing even when disconnected (will queue)
-        isStreaming={isStreaming.value}
+        isStreaming={sessionStreamingState.isStreaming}
         sessionKey={effectiveSessionKey.value}
         currentModel={activeSession.value?.model}
         onModelChange={(modelId) => {
