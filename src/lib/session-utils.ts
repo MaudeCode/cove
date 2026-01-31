@@ -7,6 +7,17 @@
 import { mainSessionKey } from "@/lib/gateway";
 import type { Session } from "@/types/sessions";
 
+/** Known channel types that appear in session keys */
+export const CHANNEL_KEY_PATTERNS = [
+  ":discord:",
+  ":telegram:",
+  ":signal:",
+  ":slack:",
+  ":whatsapp:",
+  ":imessage:",
+  ":webchat:",
+] as const;
+
 /**
  * Check if a session key represents the main session
  */
@@ -31,6 +42,20 @@ export function isCronSession(session: Session): boolean {
 export function isSpawnSession(session: Session): boolean {
   const kind = getSessionKind(session.key);
   return kind === "spawn";
+}
+
+/**
+ * Check if a session is a channel session (discord, telegram, etc.)
+ * Checks both session key pattern and gateway kind.
+ */
+export function isChannelSession(session: Session): boolean {
+  const keyLower = session.key.toLowerCase();
+  // Check key pattern for known channels
+  if (CHANNEL_KEY_PATTERNS.some((pattern) => keyLower.includes(pattern))) {
+    return true;
+  }
+  // Gateway kind "group" = channel session
+  return session.kind === "group";
 }
 
 /**
