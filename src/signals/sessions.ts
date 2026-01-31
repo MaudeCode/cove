@@ -109,11 +109,12 @@ function getSessionDisplayLabel(session: Session): string {
  * Checks multiple sources since kind detection varies by session type.
  */
 function getEffectiveKind(session: Session): string | null {
-  // 1. Explicit kind field from gateway
+  // 1. Explicit kind field from gateway (most reliable)
   if (session.kind) return session.kind;
 
-  // 2. If it has a channel field (discord, telegram, etc.), it's a channel session
-  if (session.channel && session.channel !== "webchat") return "channel";
+  // 2. Check channel/lastChannel fields - non-webchat channels are "channel" kind
+  const channel = session.channel ?? session.lastChannel;
+  if (channel && channel !== "webchat") return "channel";
 
   // 3. Parse from session key (agent:<agentId>:<kind>[:uuid])
   const keyKind = getSessionKind(session.key);
@@ -122,7 +123,19 @@ function getEffectiveKind(session: Session): string | null {
   // 4. Check if key starts with "channel:"
   if (session.key.startsWith("channel:")) return "channel";
 
-  return null;
+  // 5. Default: if it's not main/cron/spawn, assume isolated
+  return "isolated";
+}
+
+// Debug helper - remove after fixing
+function debugSession(session: Session): void {
+  console.log("[session-debug]", {
+    key: session.key,
+    kind: session.kind,
+    channel: session.channel,
+    lastChannel: session.lastChannel,
+    effectiveKind: getEffectiveKind(session),
+  });
 }
 
 /** Sessions filtered and sorted by last active time, with main pinned to top */
@@ -131,6 +144,11 @@ export const sessionsByRecent = computed(() => {
 
   // Apply kind filter if set
   if (sessionKindFilter.value) {
+    // Debug: log all sessions and their kinds when filtering
+    if (sessionKindFilter.value === "channel") {
+      console.log("[filter-debug] Looking for channel sessions:");
+      filtered.forEach((s) => debugSession(s));
+    }
     filtered = filtered.filter((s) => {
       const effectiveKind = getEffectiveKind(s);
       return effectiveKind === sessionKindFilter.value;
