@@ -13,6 +13,15 @@ import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { searchQuery, isSearchOpen, scrollToMessageId } from "@/signals/chat";
 
+/** Base classes for message highlight styling (without bg) */
+const MESSAGE_HIGHLIGHT_BASE = "rounded-lg -mx-2 px-2 py-1 transition-colors";
+
+/** Classes for active highlight (scroll-to effect) */
+const MESSAGE_HIGHLIGHT_ACTIVE = `bg-[var(--color-bg-hover)] ${MESSAGE_HIGHLIGHT_BASE}`.split(" ");
+
+/** Classes for hover highlight (search results) */
+const MESSAGE_HIGHLIGHT_HOVER = `cursor-pointer hover:bg-[var(--color-bg-hover)] ${MESSAGE_HIGHLIGHT_BASE}`;
+
 interface MessageListProps {
   messages: Message[];
   isLoading?: boolean;
@@ -140,22 +149,9 @@ export function MessageList({
       messageEl.scrollIntoView({ behavior: "smooth", block: "center" });
 
       // Add a brief highlight effect
-      messageEl.classList.add(
-        "bg-[var(--color-bg-hover)]",
-        "rounded-lg",
-        "-mx-2",
-        "px-2",
-        "py-1",
-        "transition-colors",
-      );
+      messageEl.classList.add(...MESSAGE_HIGHLIGHT_ACTIVE);
       setTimeout(() => {
-        messageEl.classList.remove(
-          "bg-[var(--color-bg-hover)]",
-          "rounded-lg",
-          "-mx-2",
-          "px-2",
-          "py-1",
-        );
+        messageEl.classList.remove(...MESSAGE_HIGHLIGHT_ACTIVE);
       }, 2000);
     }
 
@@ -240,11 +236,7 @@ export function MessageList({
                   }
                   role={isSearchOpen.value ? "button" : undefined}
                   tabIndex={isSearchOpen.value ? 0 : undefined}
-                  class={
-                    isSearchOpen.value
-                      ? "cursor-pointer hover:bg-[var(--color-bg-hover)] rounded-lg -mx-2 px-2 py-1 transition-colors"
-                      : ""
-                  }
+                  class={isSearchOpen.value ? MESSAGE_HIGHLIGHT_HOVER : ""}
                 >
                   <ChatMessage
                     message={message}
