@@ -98,17 +98,8 @@ export function Sidebar() {
 
       {/* Sessions section - scrollable */}
       <div class="flex-1 overflow-y-auto px-3 pb-3">
-        {/* Header with title */}
-        <div class="flex items-center justify-between px-2 py-1.5">
-          <h3 class="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider">
-            {t("nav.sessions")}
-          </h3>
-        </div>
-
-        {/* Search and filters */}
-        <div class="px-1 mb-2">
-          <SessionFilters />
-        </div>
+        {/* Header with title and filter controls */}
+        <SessionHeader />
 
         {/* Session list with time groups */}
         <SessionList onRename={setRenameSession} onDelete={setDeleteSession} />
@@ -141,123 +132,27 @@ export function Sidebar() {
 // ============================================
 
 /**
- * Session filters - inline search with filter chips
+ * Session header with inline filter controls
  */
-function SessionFilters() {
-  const [showSearch, setShowSearch] = useState(false);
+function SessionHeader() {
+  const [showFilters, setShowFilters] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const hasSearch = sessionSearchQuery.value.trim() !== "";
   const hasKindFilter = sessionKindFilter.value !== null;
-  const hasFilters = hasSearch || hasKindFilter || showCronSessions.value;
+  const hasActiveFilters = hasSearch || hasKindFilter || showCronSessions.value;
 
-  // Focus input when showing search
+  // Keep filters open if there are active filters
   useEffect(() => {
-    if (showSearch && inputRef.current) {
+    if (hasActiveFilters) setShowFilters(true);
+  }, [hasActiveFilters]);
+
+  // Focus search when opening filters
+  useEffect(() => {
+    if (showFilters && inputRef.current) {
       inputRef.current.focus();
     }
-  }, [showSearch]);
-
-  // Show search if there's a query
-  useEffect(() => {
-    if (hasSearch) setShowSearch(true);
-  }, [hasSearch]);
-
-  const kindLabel = sessionKindFilter.value
-    ? t(
-        `sessions.filter${sessionKindFilter.value.charAt(0).toUpperCase()}${sessionKindFilter.value.slice(1)}`,
-      )
-    : null;
-
-  return (
-    <div class="space-y-2">
-      {/* Search bar row */}
-      <div class="flex items-center gap-1">
-        {showSearch ? (
-          <div class="flex-1 relative">
-            <SearchIcon class="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-            <input
-              ref={inputRef}
-              type="text"
-              value={sessionSearchQuery.value}
-              onInput={(e) => setSessionSearchQuery((e.target as HTMLInputElement).value)}
-              onBlur={() => {
-                if (!hasSearch) setShowSearch(false);
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Escape") {
-                  setSessionSearchQuery("");
-                  setShowSearch(false);
-                }
-              }}
-              placeholder={t("sessions.searchPlaceholder")}
-              class="w-full pl-7 pr-7 py-1 text-xs rounded-md
-                bg-[var(--color-bg-primary)] border border-[var(--color-border)]
-                text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]
-                focus:outline-none focus:border-[var(--color-accent)]/50"
-            />
-            {hasSearch && (
-              <button
-                type="button"
-                onClick={() => {
-                  setSessionSearchQuery("");
-                  inputRef.current?.focus();
-                }}
-                class="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded
-                  text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-              >
-                <XIcon class="w-3 h-3" />
-              </button>
-            )}
-          </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowSearch(true)}
-            class={`p-1 rounded transition-colors ${
-              hasFilters
-                ? "text-[var(--color-accent)]"
-                : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
-            }`}
-            aria-label={t("sessions.searchPlaceholder")}
-          >
-            <SearchIcon class="w-3.5 h-3.5" />
-          </button>
-        )}
-
-        {/* Filter dropdown */}
-        <FilterDropdown />
-      </div>
-
-      {/* Active filter chips */}
-      {(hasKindFilter || showCronSessions.value) && (
-        <div class="flex flex-wrap gap-1 px-1">
-          {hasKindFilter && (
-            <FilterChip label={kindLabel!} onRemove={() => setSessionKindFilter(null)} />
-          )}
-          {showCronSessions.value && (
-            <FilterChip label={t("sessions.showCron")} onRemove={toggleCronSessions} />
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function FilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] rounded-md bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
-      {label}
-      <button type="button" onClick={onRemove} class="hover:text-[var(--color-accent)]/70">
-        <XIcon class="w-2.5 h-2.5" />
-      </button>
-    </span>
-  );
-}
-
-function FilterDropdown() {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  }, [showFilters]);
 
   const kinds = [
     { value: null, label: t("sessions.filterAll") },
@@ -266,73 +161,89 @@ function FilterDropdown() {
     { value: "channel", label: t("sessions.filterChannel") },
   ];
 
-  useEffect(() => {
-    if (!open) return;
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [open]);
-
-  const hasActiveFilter = sessionKindFilter.value !== null || showCronSessions.value;
-
   return (
-    <div ref={menuRef} class="relative">
-      <button
-        type="button"
-        onClick={() => setOpen(!open)}
-        class={`p-1 rounded transition-colors ${
-          hasActiveFilter
-            ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
-            : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
-        }`}
-        aria-label={t("sessions.filterSessions")}
-      >
-        <FilterIcon class="w-3.5 h-3.5" />
-      </button>
+    <div class="px-2 py-1.5">
+      {/* Title row with buttons */}
+      <div class="flex items-center justify-between">
+        <h3 class="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider">
+          {t("nav.sessions")}
+        </h3>
+        <button
+          type="button"
+          onClick={() => setShowFilters(!showFilters)}
+          class={`p-1 rounded transition-colors ${
+            hasActiveFilters
+              ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
+              : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
+          }`}
+          aria-label={t("sessions.filterSessions")}
+        >
+          <FilterIcon class="w-3.5 h-3.5" />
+        </button>
+      </div>
 
-      {open && (
-        <div class="absolute right-0 top-full mt-1 w-36 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 py-1">
-          <div class="px-2 py-1 text-[10px] font-medium text-[var(--color-text-muted)] uppercase">
-            {t("sessions.filterSessions")}
-          </div>
-          {kinds.map((kind) => (
-            <button
-              key={kind.value ?? "all"}
-              type="button"
-              onClick={() => {
-                setSessionKindFilter(kind.value);
-                setOpen(false);
+      {/* Expanded filter panel - inline, not a popup */}
+      {showFilters && (
+        <div class="mt-2 space-y-2">
+          {/* Search input */}
+          <div class="relative">
+            <SearchIcon class="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
+            <input
+              ref={inputRef}
+              type="text"
+              value={sessionSearchQuery.value}
+              onInput={(e) => setSessionSearchQuery((e.target as HTMLInputElement).value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape" && !hasActiveFilters) {
+                  setShowFilters(false);
+                }
               }}
-              class={`w-full text-left px-3 py-1.5 text-xs transition-colors ${
-                sessionKindFilter.value === kind.value
-                  ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
-                  : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
-              }`}
-            >
-              {kind.label}
-            </button>
-          ))}
-          <div class="border-t border-[var(--color-border)] mt-1 pt-1">
-            <button
-              type="button"
-              onClick={() => {
-                toggleCronSessions();
-                setOpen(false);
-              }}
-              class={`w-full text-left px-3 py-1.5 text-xs transition-colors flex items-center justify-between ${
-                showCronSessions.value
-                  ? "text-[var(--color-accent)]"
-                  : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
-              }`}
-            >
-              {t("sessions.showCron")}
-              {showCronSessions.value && <span>✓</span>}
-            </button>
+              placeholder={t("sessions.searchPlaceholder")}
+              class="w-full pl-7 pr-7 py-1.5 text-xs rounded-md
+                bg-[var(--color-bg-primary)] border border-[var(--color-border)]
+                text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]
+                focus:outline-none focus:border-[var(--color-accent)]/50"
+            />
+            {hasSearch && (
+              <button
+                type="button"
+                onClick={() => setSessionSearchQuery("")}
+                class="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded
+                  text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+              >
+                <XIcon class="w-3 h-3" />
+              </button>
+            )}
           </div>
+
+          {/* Kind filter chips */}
+          <div class="flex flex-wrap gap-1">
+            {kinds.map((kind) => (
+              <button
+                key={kind.value ?? "all"}
+                type="button"
+                onClick={() => setSessionKindFilter(kind.value)}
+                class={`px-2 py-0.5 text-[10px] rounded-md transition-colors ${
+                  sessionKindFilter.value === kind.value
+                    ? "bg-[var(--color-accent)] text-white font-medium"
+                    : "bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]"
+                }`}
+              >
+                {kind.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Cron toggle */}
+          <label class="flex items-center gap-2 cursor-pointer text-xs text-[var(--color-text-secondary)]">
+            <input
+              type="checkbox"
+              checked={showCronSessions.value}
+              onChange={toggleCronSessions}
+              class="w-3 h-3 rounded border-[var(--color-border)] text-[var(--color-accent)]"
+            />
+            {t("sessions.showCron")}
+          </label>
         </div>
       )}
     </div>
