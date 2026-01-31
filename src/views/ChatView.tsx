@@ -15,7 +15,6 @@ import {
   isSearchOpen,
   isLoadingHistory,
   historyError,
-  activeRuns,
   clearMessages,
   hasQueuedMessages,
   messageQueue,
@@ -122,8 +121,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
   };
 
-  // Get streaming state for current session only (accessing activeRuns.value for reactivity)
-  const _runs = activeRuns.value; // Access for reactivity
+  // Get streaming state for current session only
   const sessionStreamingState = getStreamingStateForSession(effectiveSessionKey.value);
 
   return (

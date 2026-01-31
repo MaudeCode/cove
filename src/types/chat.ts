@@ -80,11 +80,11 @@ export interface ChatEvent {
 export interface AgentEvent {
   runId: string;
   sessionKey?: string;
-  stream: "lifecycle" | "assistant" | "tool" | "error";
+  stream: "lifecycle" | "assistant" | "tool" | "error" | "compaction";
   seq: number;
   ts: number;
   data?: {
-    phase?: "start" | "update" | "result";
+    phase?: "start" | "update" | "result" | "end";
     name?: string;
     toolCallId?: string;
     args?: unknown;
