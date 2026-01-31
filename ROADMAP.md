@@ -790,6 +790,11 @@ export const navigation: NavSection[] = [
 - [ ] Image/media preview in messages
 - [ ] Reply/quote support (if channel supports)
 - [ ] Typing indicator improvements (show who's typing)
+- [ ] Heartbeat message UX
+  - [ ] Detect heartbeat prompt + HEARTBEAT_OK responses
+  - [ ] Collapsed/muted styling (expandable on click)
+  - [ ] Group consecutive heartbeats into single collapsible block
+  - [ ] Optional: filter toggle to hide/show heartbeats
 
 ### 2.4 Settings View
 
