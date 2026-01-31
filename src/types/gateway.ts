@@ -56,6 +56,12 @@ export interface HelloPayload {
       health: number;
     };
     health?: unknown;
+    sessionDefaults?: {
+      defaultAgentId?: string;
+      mainKey?: string;
+      mainSessionKey?: string;
+      scope?: string;
+    };
   };
   canvasHostUrl?: string;
   auth?: {
