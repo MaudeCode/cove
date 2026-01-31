@@ -204,25 +204,34 @@ export function SessionItem({
           </span>
 
           {/* Meta row - info left, time right */}
-          <span class="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mt-0.5">
-            {agentName && <span>{agentName}</span>}
+          <span class="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mt-0.5 overflow-hidden">
+            {agentName && <span class="truncate flex-shrink">{agentName}</span>}
             {channelBadge && (
               <>
-                {agentName && <span class="text-[var(--color-border)]">•</span>}
-                <span class="text-[var(--color-accent)]/70">{channelBadge}</span>
+                {agentName && <span class="flex-shrink-0 text-[var(--color-border)]">•</span>}
+                <span class="truncate flex-shrink text-[var(--color-accent)]/70">
+                  {channelBadge}
+                </span>
               </>
             )}
             {tokenDisplay && (
               <>
-                {(agentName || channelBadge) && <span class="text-[var(--color-border)]">•</span>}
-                <span title={`${session.totalTokens ?? session.contextTokens} tokens`}>
+                {(agentName || channelBadge) && (
+                  <span class="flex-shrink-0 text-[var(--color-border)]">•</span>
+                )}
+                <span
+                  class="flex-shrink-0"
+                  title={`${session.totalTokens ?? session.contextTokens} tokens`}
+                >
                   {tokenDisplay}
                 </span>
               </>
             )}
-            <span class="flex-1" />
+            <span class="flex-1 min-w-0" />
             {lastActive && (
-              <span class="whitespace-nowrap">{formatRelativeTime(new Date(lastActive))}</span>
+              <span class="whitespace-nowrap flex-shrink-0">
+                {formatRelativeTime(new Date(lastActive))}
+              </span>
             )}
           </span>
         </span>
