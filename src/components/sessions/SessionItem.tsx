@@ -7,7 +7,7 @@
 import { useState, useRef } from "preact/hooks";
 import type { Session } from "@/types/sessions";
 import { formatRelativeTime, t } from "@/lib/i18n";
-import { getAgentId, formatAgentName, looksLikeUuid } from "@/lib/session-utils";
+import { getAgentId, formatAgentName, looksLikeUuid, formatTokens } from "@/lib/session-utils";
 import { useClickOutside } from "@/hooks";
 import { MoreIcon, EditIcon, TrashIcon, PinIcon } from "@/components/ui";
 
@@ -92,6 +92,17 @@ function getKindBadge(session: Session): { label: string; color: string } | null
   }
 }
 
+/**
+ * Get channel badge for display
+ */
+function getChannelBadge(session: Session): string | null {
+  const channel = session.channel ?? session.lastChannel;
+  if (!channel || channel === "webchat") return null;
+
+  // Capitalize first letter
+  return channel.charAt(0).toUpperCase() + channel.slice(1);
+}
+
 export function SessionItem({
   session,
   isActive = false,
@@ -107,6 +118,8 @@ export function SessionItem({
   useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
   const kindBadge = getKindBadge(session);
+  const channelBadge = getChannelBadge(session);
+  const tokenDisplay = formatTokens(session.totalTokens ?? session.contextTokens);
   const lastActive = session.updatedAt || session.lastActiveAt;
 
   // Extract agent name from session key
@@ -152,9 +165,23 @@ export function SessionItem({
             )}
           </span>
 
-          {/* Meta row - agent name left, time pinned right */}
-          <span class="flex items-center text-xs text-[var(--color-text-muted)] mt-0.5">
+          {/* Meta row - info left, time right */}
+          <span class="flex items-center gap-1.5 text-xs text-[var(--color-text-muted)] mt-0.5">
             {agentName && <span>{agentName}</span>}
+            {channelBadge && (
+              <>
+                {agentName && <span class="text-[var(--color-border)]">•</span>}
+                <span class="text-[var(--color-accent)]/70">{channelBadge}</span>
+              </>
+            )}
+            {tokenDisplay && (
+              <>
+                {(agentName || channelBadge) && <span class="text-[var(--color-border)]">•</span>}
+                <span title={`${session.totalTokens ?? session.contextTokens} tokens`}>
+                  {tokenDisplay}
+                </span>
+              </>
+            )}
             <span class="flex-1" />
             {lastActive && (
               <span class="whitespace-nowrap">{formatRelativeTime(new Date(lastActive))}</span>

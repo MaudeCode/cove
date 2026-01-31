@@ -82,4 +82,7 @@ export {
   TrashIcon,
   FilterIcon,
   PinIcon,
+  SearchIcon,
+  ClockIcon,
+  XIcon,
 } from "./icons";

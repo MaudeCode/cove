@@ -10,7 +10,12 @@
 
 import { signal, computed } from "@preact/signals";
 import { send, mainSessionKey } from "@/lib/gateway";
-import { isMainSession } from "@/lib/session-utils";
+import {
+  isMainSession,
+  isCronSession,
+  isSpawnSession,
+  groupSessionsByTime,
+} from "@/lib/session-utils";
 import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
 
 // ============================================
@@ -52,6 +57,15 @@ export const activeSessionKey = signal<string | null>(null);
 /** Filter by session kind (null = all) */
 export const sessionKindFilter = signal<string | null>(null);
 
+/** Search query for filtering sessions */
+export const sessionSearchQuery = signal<string>("");
+
+/** Whether to show cron sessions (hidden by default) */
+export const showCronSessions = signal<boolean>(false);
+
+/** Whether to show spawn/sub-agent sessions (shown by default) */
+export const showSpawnSessions = signal<boolean>(true);
+
 /** Whether we're loading sessions */
 export const isLoadingSessions = signal<boolean>(false);
 
@@ -82,13 +96,41 @@ export const activeSession = computed(
   () => sessions.value.find((s) => s.key === effectiveSessionKey.value) ?? null,
 );
 
-/** Sessions sorted by last active time, filtered by kind, with main pinned to top */
+/** Get display label for a session (for search matching) */
+function getSessionDisplayLabel(session: Session): string {
+  if (session.label) return session.label;
+  if (session.displayName) return session.displayName;
+  return session.key;
+}
+
+/** Sessions filtered and sorted by last active time, with main pinned to top */
 export const sessionsByRecent = computed(() => {
   let filtered = sessions.value;
 
   // Apply kind filter if set
   if (sessionKindFilter.value) {
     filtered = filtered.filter((s) => s.kind === sessionKindFilter.value);
+  }
+
+  // Hide cron sessions unless toggled
+  if (!showCronSessions.value) {
+    filtered = filtered.filter((s) => !isCronSession(s));
+  }
+
+  // Hide spawn sessions if toggled off
+  if (!showSpawnSessions.value) {
+    filtered = filtered.filter((s) => !isSpawnSession(s));
+  }
+
+  // Apply search filter
+  const query = sessionSearchQuery.value.toLowerCase().trim();
+  if (query) {
+    filtered = filtered.filter((s) => {
+      const label = getSessionDisplayLabel(s).toLowerCase();
+      const channel = (s.channel ?? "").toLowerCase();
+      const model = (s.model ?? "").toLowerCase();
+      return label.includes(query) || channel.includes(query) || model.includes(query);
+    });
   }
 
   // Sort by most recent, but pin main session to top
@@ -101,6 +143,24 @@ export const sessionsByRecent = computed(() => {
     // Otherwise sort by recency
     return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
   });
+});
+
+/** Sessions grouped by time period */
+export const sessionsGrouped = computed(() => {
+  return groupSessionsByTime(sessionsByRecent.value);
+});
+
+/** Whether any sessions are hidden by filters */
+export const hasHiddenSessions = computed(() => {
+  const total = sessions.value.length;
+  const visible = sessionsByRecent.value.length;
+  return visible < total;
+});
+
+/** Count of hidden cron sessions */
+export const hiddenCronCount = computed(() => {
+  if (showCronSessions.value) return 0;
+  return sessions.value.filter((s) => isCronSession(s)).length;
 });
 
 /** Number of sessions */
@@ -146,6 +206,27 @@ export function setActiveSession(sessionKey: string | null): void {
  */
 export function setSessionKindFilter(kind: string | null): void {
   sessionKindFilter.value = kind;
+}
+
+/**
+ * Set the session search query
+ */
+export function setSessionSearchQuery(query: string): void {
+  sessionSearchQuery.value = query;
+}
+
+/**
+ * Toggle showing cron sessions
+ */
+export function toggleCronSessions(): void {
+  showCronSessions.value = !showCronSessions.value;
+}
+
+/**
+ * Toggle showing spawn sessions
+ */
+export function toggleSpawnSessions(): void {
+  showSpawnSessions.value = !showSpawnSessions.value;
 }
 
 /**

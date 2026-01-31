@@ -21,6 +21,8 @@ import {
   Trash2,
   Filter,
   Pin,
+  Search,
+  Clock,
 } from "lucide-preact";
 
 type IconProps = {
@@ -103,3 +105,14 @@ export function FilterIcon({ class: className }: IconProps) {
 export function PinIcon({ class: className }: IconProps) {
   return <Pin class={className || "w-5 h-5"} aria-hidden="true" />;
 }
+
+export function SearchIcon({ class: className }: IconProps) {
+  return <Search class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+export function ClockIcon({ class: className }: IconProps) {
+  return <Clock class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+// Alias for CloseIcon
+export const XIcon = CloseIcon;
