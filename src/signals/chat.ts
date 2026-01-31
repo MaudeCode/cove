@@ -11,7 +11,7 @@
  *   {isStreaming.value && <StreamingMessage content={streamingContent.value} toolCalls={streamingToolCalls.value} />}
  */
 
-import { signal, computed } from "@preact/signals";
+import { signal } from "@preact/signals";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatRun } from "@/types/chat";
 
@@ -48,15 +48,10 @@ export const hasQueuedMessages = computed(() => messageQueue.value.length > 0);
 /** Active chat runs (keyed by runId) */
 export const activeRuns = signal<Map<string, ChatRun>>(new Map());
 
-/** Whether any message is currently streaming */
-export const isStreaming = computed(() => {
-  for (const run of activeRuns.value.values()) {
-    if (run.status === "pending" || run.status === "streaming") {
-      return true;
-    }
-  }
-  return false;
-});
+/** Direct signals for streaming state (more reliable than computed with Maps) */
+export const isStreaming = signal<boolean>(false);
+export const streamingContent = signal<string>("");
+export const streamingToolCalls = signal<ToolCall[]>([]);
 
 /** Get the current streaming run for a session (if any) */
 export function getStreamingRun(sessionKey: string): ChatRun | null {
@@ -68,25 +63,24 @@ export function getStreamingRun(sessionKey: string): ChatRun | null {
   return null;
 }
 
-/** Text content being streamed (for display) */
-export const streamingContent = computed(() => {
+/** Update the streaming display signals from activeRuns */
+function syncStreamingSignals(): void {
+  let foundStreaming = false;
   for (const run of activeRuns.value.values()) {
-    if (run.status === "streaming" || run.status === "pending") {
-      return run.content;
+    if (run.status === "pending" || run.status === "streaming") {
+      foundStreaming = true;
+      streamingContent.value = run.content;
+      streamingToolCalls.value = run.toolCalls;
+      break;
     }
   }
-  return "";
-});
-
-/** Tool calls being streamed (for display) */
-export const streamingToolCalls = computed((): ToolCall[] => {
-  for (const run of activeRuns.value.values()) {
-    if (run.status === "streaming" || run.status === "pending") {
-      return run.toolCalls;
-    }
+  if (!foundStreaming) {
+    streamingContent.value = "";
+    streamingToolCalls.value = [];
   }
-  return [];
-});
+  isStreaming.value = foundStreaming;
+  console.log("[SIGNAL] syncStreamingSignals:", { isStreaming: isStreaming.value, contentLen: streamingContent.value.length });
+}
 
 // ============================================
 // Actions
@@ -136,6 +130,7 @@ export function startRun(runId: string, sessionKey: string): void {
     toolCalls: [],
   });
   activeRuns.value = newRuns;
+  syncStreamingSignals();
   console.log("[SIGNAL] Run started, activeRuns keys:", Array.from(activeRuns.value.keys()));
 }
 
@@ -158,7 +153,7 @@ export function updateRunContent(runId: string, content: string, toolCalls: Tool
     toolCalls,
   });
   activeRuns.value = newRuns;
-  console.log("[SIGNAL] Updated activeRuns, streamingContent should be:", content.slice(0, 50));
+  syncStreamingSignals();
 }
 
 /**
@@ -175,6 +170,7 @@ export function completeRun(runId: string, message?: Message): void {
     message,
   });
   activeRuns.value = newRuns;
+  syncStreamingSignals();
 
   // Add the final message to the list
   if (message) {
@@ -186,6 +182,7 @@ export function completeRun(runId: string, message?: Message): void {
     const runs = new Map(activeRuns.value);
     runs.delete(runId);
     activeRuns.value = runs;
+    syncStreamingSignals();
   }, 100);
 }
 
@@ -203,12 +200,14 @@ export function errorRun(runId: string, error: string): void {
     error,
   });
   activeRuns.value = newRuns;
+  syncStreamingSignals();
 
   // Clean up after delay
   setTimeout(() => {
     const runs = new Map(activeRuns.value);
     runs.delete(runId);
     activeRuns.value = runs;
+    syncStreamingSignals();
   }, 5000);
 }
 
@@ -225,12 +224,14 @@ export function abortRun(runId: string): void {
     status: "aborted",
   });
   activeRuns.value = newRuns;
+  syncStreamingSignals();
 
   // Clean up after delay
   setTimeout(() => {
     const runs = new Map(activeRuns.value);
     runs.delete(runId);
     activeRuns.value = runs;
+    syncStreamingSignals();
   }, 1000);
 }
 
