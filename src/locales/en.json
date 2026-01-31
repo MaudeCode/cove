@@ -210,6 +210,8 @@
       "themeSystem": "System",
       "lightTheme": "Light Theme",
       "darkTheme": "Dark Theme",
+      "lightThemes": "Light",
+      "darkThemes": "Dark",
       "fontSize": "Font Size",
       "fontSizeSm": "Small",
       "fontSizeMd": "Medium",
