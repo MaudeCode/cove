@@ -385,15 +385,15 @@ export function unsubscribeFromChatEvents(): void {
  * Handle a tool event from the agent stream.
  */
 function handleToolEvent(evt: AgentEvent): void {
-  const { runId, data } = evt;
+  const { runId, sessionKey, data } = evt;
   if (!data) return;
 
   let run = activeRuns.value.get(runId);
 
   // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
   if (!run) {
-    log.chat.debug("Creating run on-the-fly for tool event:", runId);
-    startRun(runId, "unknown");
+    log.chat.debug("Creating run on-the-fly for tool event:", runId, "session:", sessionKey);
+    startRun(runId, sessionKey ?? "unknown");
     run = activeRuns.value.get(runId);
     if (!run) return;
   }
@@ -476,17 +476,17 @@ function handleToolEvent(evt: AgentEvent): void {
  * Handle a chat event from the gateway.
  */
 function handleChatEvent(event: ChatEvent): void {
-  const { runId, state, message, errorMessage } = event;
+  const { runId, state, errorMessage } = event;
 
-  log.chat.debug("Chat event:", state, runId);
+  log.chat.debug("Chat event:", state, runId, "session:", event.sessionKey);
 
   switch (state) {
     case "delta":
-      handleDeltaEvent(runId, message);
+      handleDeltaEvent(event);
       break;
 
     case "final":
-      handleFinalEvent(runId, message);
+      handleFinalEvent(event);
       break;
 
     case "aborted":
@@ -502,7 +502,8 @@ function handleChatEvent(event: ChatEvent): void {
 /**
  * Handle streaming delta event.
  */
-function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
+function handleDeltaEvent(event: ChatEvent): void {
+  const { runId, sessionKey, message } = event;
   if (!message) return;
 
   const parsed = parseMessageContent(message.content);
@@ -510,8 +511,8 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
 
   // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
   if (!existingRun) {
-    log.chat.debug("Creating run on-the-fly for delta:", runId);
-    startRun(runId, "unknown");
+    log.chat.debug("Creating run on-the-fly for delta:", runId, "session:", sessionKey);
+    startRun(runId, sessionKey);
     existingRun = activeRuns.value.get(runId);
     if (!existingRun) return;
   }
@@ -532,8 +533,17 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
 /**
  * Handle final message event.
  */
-function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
-  const existingRun = activeRuns.value.get(runId);
+function handleFinalEvent(event: ChatEvent): void {
+  const { runId, sessionKey, message } = event;
+  let existingRun = activeRuns.value.get(runId);
+
+  // If no run exists (e.g., page refreshed and we only caught the final event),
+  // create one on-the-fly so the message gets properly recorded
+  if (!existingRun && message) {
+    log.chat.debug("Creating run on-the-fly for final:", runId, "session:", sessionKey);
+    startRun(runId, sessionKey);
+    existingRun = activeRuns.value.get(runId);
+  }
 
   // Try to get complete content from the final message
   // The gateway may send complete content that's more accurate than our accumulated deltas
