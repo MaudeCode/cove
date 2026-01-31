@@ -9,6 +9,7 @@ import { useSignal } from "@preact/signals";
 import type { Message, ToolCall } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
 import { CollapsedMessage } from "./CollapsedMessage";
+import { SearchBar } from "./SearchBar";
 import { IconButton, Spinner, ArrowDownIcon } from "@/components/ui";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
@@ -178,6 +179,9 @@ export function MessageList({
 
   return (
     <div class="relative flex-1 flex flex-col overflow-hidden">
+      {/* Search bar overlay - positioned relative to this container */}
+      <SearchBar />
+
       {/* Scrollable message area */}
       <div
         ref={containerRef}
