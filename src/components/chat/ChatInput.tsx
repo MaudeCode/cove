@@ -129,10 +129,6 @@ export function ChatInput({
           />
 
           {/* Model picker - bottom left */}
-          {(() => {
-            console.log("[ChatInput] sessionKey:", sessionKey, "currentModel:", currentModel);
-            return null;
-          })()}
           {sessionKey && (
             <div class="absolute bottom-2 left-2">
               <ModelPicker
