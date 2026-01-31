@@ -10,7 +10,9 @@ import { route } from "preact-router";
 import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
 import { sendMessage, abortChat, loadHistory, processMessageQueue } from "@/lib/chat";
 import {
-  messages,
+  filteredMessages,
+  searchQuery,
+  isSearchOpen,
   isLoadingHistory,
   historyError,
   activeRuns,
@@ -28,7 +30,7 @@ import {
   updateSession,
 } from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
-import { MessageList, ChatInput, ConnectionBanner } from "@/components/chat";
+import { MessageList, ChatInput, ConnectionBanner, SearchBar } from "@/components/chat";
 
 interface ChatViewProps {
   /** Route path (from preact-router) */
@@ -79,6 +81,9 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     const cachedSession = getCachedSessionKey();
     if (cachedSession !== currentSession) {
       clearMessages();
+      // Clear search when switching sessions
+      searchQuery.value = "";
+      isSearchOpen.value = false;
     }
 
     // Load fresh history (will update cache when done)
@@ -126,8 +131,11 @@ export function ChatView({ sessionKey }: ChatViewProps) {
       {/* Connection status banner */}
       <ConnectionBanner />
 
+      {/* Search bar */}
+      <SearchBar />
+
       <MessageList
-        messages={messages.value}
+        messages={filteredMessages.value}
         isLoading={isLoadingHistory.value}
         error={historyError.value}
         streamingContent={sessionStreamingState.content}

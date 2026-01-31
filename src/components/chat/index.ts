@@ -12,3 +12,4 @@ export { MessageContent } from "./MessageContent";
 export { ToolCall } from "./ToolCall";
 export { ConnectionBanner } from "./ConnectionBanner";
 export { ModelPicker } from "./ModelPicker";
+export { SearchBar } from "./SearchBar";

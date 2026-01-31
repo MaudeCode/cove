@@ -136,6 +136,11 @@
     "viewRaw": "View raw",
     "viewRendered": "View rendered",
     "scrollToBottom": "Scroll to bottom",
+    "search": "Search messages",
+    "searchPlaceholder": "Search in conversation...",
+    "match": "match",
+    "matches": "matches",
+    "noMatches": "No matches found",
     "newMessages": "{count} new message",
     "newMessages_plural": "{count} new messages",
     "emptyState": {
