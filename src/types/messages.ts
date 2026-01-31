@@ -63,4 +63,7 @@ export interface ToolCall {
 
   /** Position in content string where this tool call was inserted (for interleaved rendering) */
   insertedAtContentLength?: number;
+
+  /** Content snapshot when tool started (for calculating final insertion position) */
+  contentSnapshotAtStart?: string;
 }

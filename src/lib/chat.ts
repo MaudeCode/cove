@@ -386,6 +386,7 @@ function handleToolEvent(evt: AgentEvent): void {
         status: "running",
         startedAt: Date.now(),
         insertedAtContentLength: run.content.length,
+        contentSnapshotAtStart: run.content,
       });
       idx = existingToolCalls.length - 1;
     }
@@ -397,16 +398,28 @@ function handleToolEvent(evt: AgentEvent): void {
       // Avoid duplicates
       if (existingToolCalls.some((tc) => tc.id === toolCallId)) return;
 
-      const newToolCall: ToolCall = {
-        id: toolCallId,
-        name: toolName,
-        args: data.args as Record<string, unknown> | undefined,
-        status: "running",
-        startedAt: Date.now(),
-        insertedAtContentLength: run.content.length,
-      };
-      existingToolCalls.push(newToolCall);
-      updateRunContent(runId, run.content, existingToolCalls);
+      // Defer tool start processing to allow any pending text deltas to be processed first
+      // This fixes race conditions where tool events arrive before text is fully updated
+      setTimeout(() => {
+        const currentRun = activeRuns.value.get(runId);
+        if (!currentRun) return;
+
+        const currentToolCalls = [...currentRun.toolCalls];
+        // Check again for duplicates after defer
+        if (currentToolCalls.some((tc) => tc.id === toolCallId)) return;
+
+        const newToolCall: ToolCall = {
+          id: toolCallId,
+          name: toolName,
+          args: data.args as Record<string, unknown> | undefined,
+          status: "running",
+          startedAt: Date.now(),
+          insertedAtContentLength: currentRun.content.length,
+          contentSnapshotAtStart: currentRun.content,
+        };
+        currentToolCalls.push(newToolCall);
+        updateRunContent(runId, currentRun.content, currentToolCalls);
+      }, 0);
       break;
     }
 
@@ -494,25 +507,48 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
 function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
   const existingRun = activeRuns.value.get(runId);
 
-  // Mark any still-running tool calls as complete (we may have missed result events after refresh)
-  const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
-    if (tc.status === "running" || tc.status === "pending") {
-      return { ...tc, status: "complete" as const, completedAt: Date.now() };
-    }
-    return tc;
-  });
-
-  // Gateway's final event may contain the last text block (text after tool calls).
-  // Merge it with accumulated content to get the complete message.
+  // Try to get complete content from the final message
+  // The gateway may send complete content that's more accurate than our accumulated deltas
   let finalContent = existingRun?.content ?? "";
+  let finalParsedToolCalls: ToolCall[] = [];
+
   if (message?.content) {
     const parsed = parseMessageContent(message.content);
-    if (parsed.text) {
-      // Merge final text with accumulated content
+
+    // If final message has complete content (with tool positions), use it
+    // This is more reliable than accumulated deltas which may have race conditions
+    if (parsed.text.length >= finalContent.length) {
+      finalContent = parsed.text;
+      finalParsedToolCalls = parsed.toolCalls;
+    } else if (parsed.text) {
+      // Otherwise merge the final text (likely just the last block after tools)
       const merged = mergeDeltaText(finalContent, parsed.text, existingRun?.lastBlockStart);
       finalContent = merged.content;
     }
   }
+
+  // Build final tool calls list
+  // Prefer positions from parsed final message (more accurate than streaming positions)
+  const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
+    const updated = { ...tc };
+
+    // Mark still-running tools as complete
+    if (updated.status === "running" || updated.status === "pending") {
+      updated.status = "complete";
+      updated.completedAt = Date.now();
+    }
+
+    // Check if final message has better position info for this tool
+    const parsedTc = finalParsedToolCalls.find((p) => p.id === tc.id);
+    if (parsedTc?.insertedAtContentLength !== undefined) {
+      updated.insertedAtContentLength = parsedTc.insertedAtContentLength;
+    }
+
+    // Clear snapshot to save memory
+    delete updated.contentSnapshotAtStart;
+
+    return updated;
+  });
 
   const finalMessage: Message = {
     id: `assistant_${runId}`,
