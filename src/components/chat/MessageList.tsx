@@ -16,14 +16,12 @@ import { log } from "@/lib/logger";
 import { searchQuery, isSearchOpen, scrollToMessageId } from "@/signals/chat";
 import { groupMessages } from "@/lib/message-grouping";
 
-/** Base classes for message highlight styling (without bg) */
-const MESSAGE_HIGHLIGHT_BASE = "rounded-lg -mx-2 px-2 py-1 transition-colors";
-
 /** Classes for active highlight (scroll-to effect) */
-const MESSAGE_HIGHLIGHT_ACTIVE = `bg-[var(--color-bg-hover)] ${MESSAGE_HIGHLIGHT_BASE}`.split(" ");
+const MESSAGE_HIGHLIGHT_ACTIVE = ["bg-[var(--color-bg-hover)]", "rounded-lg", "transition-colors"];
 
-/** Classes for hover highlight (search results) */
-const MESSAGE_HIGHLIGHT_HOVER = `cursor-pointer hover:bg-[var(--color-bg-hover)] ${MESSAGE_HIGHLIGHT_BASE}`;
+/** Classes for hover highlight (search results) - no padding to prevent layout shift */
+const MESSAGE_HIGHLIGHT_HOVER =
+  "cursor-pointer hover:bg-[var(--color-bg-hover)] rounded-lg transition-colors";
 
 interface MessageListProps {
   messages: Message[];
