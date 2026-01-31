@@ -16,6 +16,7 @@ import {
   activeRuns,
   clearMessages,
   hasQueuedMessages,
+  messageQueue,
   getCachedSessionKey,
   getStreamingStateForSession,
 } from "@/signals/chat";
@@ -136,6 +137,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         assistantAvatar={assistantAvatar.value ?? undefined}
         userName={userName.value}
         userAvatar={userAvatar.value ?? undefined}
+        queuedCount={messageQueue.value.length}
       />
 
       <ChatInput
