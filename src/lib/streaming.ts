@@ -54,17 +54,18 @@ export function mergeDeltaText(
       newTextStart30: newText.slice(0, 30),
     });
 
-    // Check if new text continues the last block
+    // Check if new text continues/replaces the last block
     if (newText.startsWith(lastBlock)) {
-      console.log("[MERGE] Case 3a: Continues last block");
-      return { content: baseContent + newText };
+      console.log("[MERGE] Case 3a: Continues last block - replacing");
+      // newText is the updated last block - replace it (baseContent + newText)
+      return { content: baseContent + newText, lastBlockStart };
     }
 
-    // Check if it's a prefix match (partial continuation)
+    // Check if it's a prefix match (partial continuation)  
     const prefixLen = Math.min(lastBlock.length, 30);
     if (lastBlock.length > 0 && newText.startsWith(lastBlock.slice(0, prefixLen))) {
-      console.log("[MERGE] Case 3b: Prefix match");
-      return { content: baseContent + newText };
+      console.log("[MERGE] Case 3b: Prefix match - replacing");
+      return { content: baseContent + newText, lastBlockStart };
     }
 
     // New block - append with separator
