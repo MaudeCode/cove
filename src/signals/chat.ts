@@ -86,22 +86,61 @@ export const isSearchOpen = signal<boolean>(false);
 /** Message ID to scroll to (set when clicking a search result) */
 export const scrollToMessageId = signal<string | null>(null);
 
-/** Filter messages by search query */
+/** Date range filter - start (inclusive) */
+export const dateRangeStart = signal<Date | null>(null);
+
+/** Date range filter - end (inclusive) */
+export const dateRangeEnd = signal<Date | null>(null);
+
+/** Whether date range filter is active */
+export const hasDateFilter = computed(
+  () => dateRangeStart.value !== null || dateRangeEnd.value !== null,
+);
+
+/** Clear date range filter */
+export function clearDateFilter(): void {
+  dateRangeStart.value = null;
+  dateRangeEnd.value = null;
+}
+
+/** Filter messages by search query and date range */
 export const filteredMessages = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase();
-  if (!query) {
-    return messages.value;
+  let result = messages.value;
+
+  // Filter by date range
+  const start = dateRangeStart.value;
+  const end = dateRangeEnd.value;
+
+  if (start || end) {
+    result = result.filter((msg) => {
+      const msgDate = new Date(msg.timestamp);
+      if (start && msgDate < start) return false;
+      if (end) {
+        // End date is inclusive - include entire day
+        const endOfDay = new Date(end);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (msgDate > endOfDay) return false;
+      }
+      return true;
+    });
   }
-  return messages.value.filter((msg) => msg.content.toLowerCase().includes(query));
+
+  // Filter by search query
+  const query = searchQuery.value.trim().toLowerCase();
+  if (query) {
+    result = result.filter((msg) => msg.content.toLowerCase().includes(query));
+  }
+
+  return result;
 });
 
-/** Number of search matches */
+/** Number of search matches (after date filter) */
 export const searchMatchCount = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
-  if (!query) {
+  if (!query && !hasDateFilter.value) {
     return 0;
   }
-  return messages.value.filter((msg) => msg.content.toLowerCase().includes(query)).length;
+  return filteredMessages.value.length;
 });
 
 // ============================================
