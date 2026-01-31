@@ -39,7 +39,6 @@ interface ChatViewProps {
 }
 
 export function ChatView({ sessionKey }: ChatViewProps) {
-  console.log("[ChatView] rendering with sessionKey:", sessionKey);
   const prevSessionRef = useRef<string | null>(null);
   const wasConnectedRef = useRef<boolean>(false);
 
@@ -132,14 +131,8 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         disabled={false} // Allow typing even when disconnected (will queue)
         isStreaming={isStreaming.value}
         sessionKey={effectiveSessionKey.value}
-        currentModel={(() => {
-          const model = activeSession.value?.model;
-          console.log("[ChatView] passing currentModel to ChatInput:", model, "activeSession:", activeSession.value?.key);
-          return model;
-        })()}
+        currentModel={activeSession.value?.model}
         onModelChange={(modelId) => {
-          console.log("[ChatView] onModelChange:", modelId, "sessionKey:", effectiveSessionKey.value);
-          // Update local session state
           if (effectiveSessionKey.value) {
             updateSession(effectiveSessionKey.value, { model: modelId });
           }

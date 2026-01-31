@@ -177,20 +177,7 @@ export function clearSessions(): void {
  * Update a session in the list
  */
 export function updateSession(sessionKey: string, updates: Partial<Session>): void {
-  console.log("[sessions] updateSession:", sessionKey, updates);
-  const before = sessions.value.find((s) => s.key === sessionKey);
-  console.log("[sessions] before:", before?.model);
-  
-  // Update sessions array (creates new reference to trigger reactivity)
   sessions.value = sessions.value.map((s) => (s.key === sessionKey ? { ...s, ...updates } : s));
-  
-  const after = sessions.value.find((s) => s.key === sessionKey);
-  console.log("[sessions] after:", after?.model);
-  console.log("[sessions] activeSessionKey:", activeSessionKey.value);
-  console.log("[sessions] activeSession after update:", activeSession.value);
-  console.log("[sessions] activeSession.model:", activeSession.value?.model);
-  console.log("[sessions] sessions count:", sessions.value.length);
-  console.log("[sessions] updated session key:", sessionKey, "matches active?", sessionKey === activeSessionKey.value);
 }
 
 /**
