@@ -212,13 +212,64 @@ export function updateRunContent(
 
 /** Complete a chat run */
 export function completeRun(runId: string, message?: Message): void {
+  const run = activeRuns.value.get(runId);
   updateRun(runId, { status: "complete", message });
 
   if (message) {
-    addMessage(message);
+    // If run was created on-the-fly (after refresh), try to update existing message
+    // instead of adding a duplicate
+    if (run?.sessionKey === "unknown") {
+      const updated = tryUpdateExistingMessage(message);
+      if (!updated) {
+        addMessage(message);
+      }
+    } else {
+      addMessage(message);
+    }
   }
 
   scheduleRunCleanup(runId, RUN_CLEANUP_DELAY_MS);
+}
+
+/**
+ * Try to update an existing message from history that matches this one.
+ * Used when completing a run that was created on-the-fly after page refresh.
+ * Returns true if an existing message was updated.
+ */
+function tryUpdateExistingMessage(newMessage: Message): boolean {
+  // Look for a recent assistant message with matching tool calls
+  const existingMessages = messages.value;
+  
+  for (let i = existingMessages.length - 1; i >= 0; i--) {
+    const existing = existingMessages[i];
+    
+    // Only check recent assistant messages
+    if (existing.role !== "assistant") continue;
+    if (Date.now() - existing.timestamp > 60000) break; // Only check last minute
+    
+    // Check if tool calls match by ID
+    if (newMessage.toolCalls && existing.toolCalls) {
+      const newToolIds = new Set(newMessage.toolCalls.map((tc) => tc.id));
+      const hasMatchingTool = existing.toolCalls.some((tc) => newToolIds.has(tc.id));
+      
+      if (hasMatchingTool) {
+        // Update the existing message with new content and tool call status
+        messages.value = existingMessages.map((msg) =>
+          msg.id === existing.id
+            ? {
+                ...msg,
+                content: newMessage.content || msg.content,
+                toolCalls: newMessage.toolCalls,
+              }
+            : msg,
+        );
+        console.log("[CHAT] Updated existing message instead of adding duplicate:", existing.id);
+        return true;
+      }
+    }
+  }
+  
+  return false;
 }
 
 /** Mark a run as errored */
