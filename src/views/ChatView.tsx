@@ -17,6 +17,7 @@ import {
   streamingToolCalls,
   clearMessages,
   hasQueuedMessages,
+  getCachedSessionKey,
 } from "@/signals/chat";
 import { activeSessionKey, setActiveSession, effectiveSessionKey } from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
@@ -57,8 +58,14 @@ export function ChatView({ sessionKey }: ChatViewProps) {
 
     prevSessionRef.current = currentSession;
 
-    // Clear existing messages and load new history
-    clearMessages();
+    // Only clear messages if switching to a different session than cached
+    // (keeps cached messages visible for the same session until fresh ones load)
+    const cachedSession = getCachedSessionKey();
+    if (cachedSession !== currentSession) {
+      clearMessages();
+    }
+
+    // Load fresh history (will update cache when done)
     loadHistory(currentSession).catch(() => {
       // Error will be shown via historyError signal
     });

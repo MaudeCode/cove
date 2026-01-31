@@ -5,11 +5,16 @@
  */
 
 import { t } from "@/lib/i18n";
-import { connectionState, reconnectAttempt } from "@/lib/gateway";
+import { connectionState, reconnectAttempt, isInitialLoad } from "@/lib/gateway";
 import { hasQueuedMessages, messageQueue } from "@/signals/chat";
 
 export function ConnectionBanner() {
   const state = connectionState.value;
+
+  // Don't show during initial page load (before first connection attempt)
+  if (isInitialLoad.value) {
+    return null;
+  }
 
   // Only show when disconnected or reconnecting
   if (state === "connected" || state === "connecting" || state === "authenticating") {

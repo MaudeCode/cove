@@ -21,11 +21,48 @@ import {
 } from "@/lib/constants";
 
 // ============================================
+// Message Cache
+// ============================================
+
+const MESSAGES_CACHE_KEY = "cove:messages-cache";
+const MESSAGES_SESSION_KEY = "cove:messages-session";
+
+/** Current cached session key */
+let cachedSessionKey: string | null = null;
+
+function loadCachedMessages(): Message[] {
+  try {
+    cachedSessionKey = localStorage.getItem(MESSAGES_SESSION_KEY);
+    const cached = localStorage.getItem(MESSAGES_CACHE_KEY);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch {
+    // Ignore
+  }
+  return [];
+}
+
+export function saveCachedMessages(sessionKey: string, msgs: Message[]): void {
+  try {
+    localStorage.setItem(MESSAGES_SESSION_KEY, sessionKey);
+    localStorage.setItem(MESSAGES_CACHE_KEY, JSON.stringify(msgs));
+    cachedSessionKey = sessionKey;
+  } catch {
+    // Ignore
+  }
+}
+
+export function getCachedSessionKey(): string | null {
+  return cachedSessionKey;
+}
+
+// ============================================
 // Message State
 // ============================================
 
-/** All messages in the current session */
-export const messages = signal<Message[]>([]);
+/** All messages in the current session (initialized from cache) */
+export const messages = signal<Message[]>(loadCachedMessages());
 
 /** Whether we're currently loading history */
 export const isLoadingHistory = signal<boolean>(false);

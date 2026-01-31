@@ -33,6 +33,7 @@ import {
   markMessageFailed,
   markMessageSending,
   markMessageSent,
+  saveCachedMessages,
   activeRuns,
 } from "@/signals/chat";
 import type { Message, ToolCall } from "@/types/messages";
@@ -164,6 +165,7 @@ export async function loadHistory(
     }
 
     setMessages(normalized);
+    saveCachedMessages(sessionKey, normalized);
 
     if (result.thinkingLevel) {
       thinkingLevel.value = result.thinkingLevel;
