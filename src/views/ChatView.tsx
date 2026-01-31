@@ -39,6 +39,7 @@ interface ChatViewProps {
 }
 
 export function ChatView({ sessionKey }: ChatViewProps) {
+  console.log("[ChatView] rendering with sessionKey:", sessionKey);
   const prevSessionRef = useRef<string | null>(null);
   const wasConnectedRef = useRef<boolean>(false);
 
