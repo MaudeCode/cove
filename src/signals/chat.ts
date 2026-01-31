@@ -121,11 +121,7 @@ function scheduleRunCleanup(runId: string, delayMs: number): void {
 /**
  * Update message status by ID.
  */
-function setMessageStatus(
-  messageId: string,
-  status: MessageStatus,
-  error?: string,
-): void {
+function setMessageStatus(messageId: string, status: MessageStatus, error?: string): void {
   messages.value = messages.value.map((msg) =>
     msg.id === messageId ? { ...msg, status, error } : msg,
   );
@@ -146,16 +142,23 @@ export function setMessages(newMessages: Message[]): void {
   messages.value = newMessages;
 }
 
-/** Add a message to the list */
+/** Add a message to the list (deduplicates by ID) */
 export function addMessage(message: Message): void {
+  // Check for existing message with same ID
+  const existingIdx = messages.value.findIndex((m) => m.id === message.id);
+  if (existingIdx >= 0) {
+    // Update existing message instead of adding duplicate
+    messages.value = messages.value.map((m, idx) =>
+      idx === existingIdx ? { ...m, ...message } : m,
+    );
+    return;
+  }
   messages.value = [...messages.value, message];
 }
 
 /** Update an existing message by ID */
 export function updateMessage(id: string, updates: Partial<Message>): void {
-  messages.value = messages.value.map((msg) =>
-    msg.id === id ? { ...msg, ...updates } : msg,
-  );
+  messages.value = messages.value.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg));
 }
 
 /** Mark a message as sending */
@@ -239,36 +242,41 @@ export function completeRun(runId: string, message?: Message): void {
 function tryUpdateExistingMessage(newMessage: Message): boolean {
   // Look for a recent assistant message with matching tool calls
   const existingMessages = messages.value;
-  
+
   for (let i = existingMessages.length - 1; i >= 0; i--) {
     const existing = existingMessages[i];
-    
+
     // Only check recent assistant messages
     if (existing.role !== "assistant") continue;
     if (Date.now() - existing.timestamp > 60000) break; // Only check last minute
-    
+
     // Check if tool calls match by ID
     if (newMessage.toolCalls && existing.toolCalls) {
       const newToolIds = new Set(newMessage.toolCalls.map((tc) => tc.id));
       const hasMatchingTool = existing.toolCalls.some((tc) => newToolIds.has(tc.id));
-      
+
       if (hasMatchingTool) {
         // Merge tool calls: update status of existing ones
         const mergedToolCalls = existing.toolCalls.map((existingTc) => {
           const newTc = newMessage.toolCalls?.find((tc) => tc.id === existingTc.id);
           if (newTc) {
-            return { ...existingTc, status: newTc.status, result: newTc.result, completedAt: newTc.completedAt };
+            return {
+              ...existingTc,
+              status: newTc.status,
+              result: newTc.result,
+              completedAt: newTc.completedAt,
+            };
           }
           return existingTc;
         });
-        
+
         // Merge content: keep existing content, append new content
         let mergedContent = existing.content;
         if (newMessage.content && !existing.content.endsWith(newMessage.content)) {
           const separator = existing.content ? "\n\n" : "";
           mergedContent = existing.content + separator + newMessage.content;
         }
-        
+
         messages.value = existingMessages.map((msg) =>
           msg.id === existing.id
             ? { ...msg, content: mergedContent, toolCalls: mergedToolCalls }
@@ -278,7 +286,7 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
       }
     }
   }
-  
+
   return false;
 }
 

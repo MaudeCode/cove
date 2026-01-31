@@ -45,12 +45,15 @@ export function MessageList({
    * Scroll to bottom of message list
    */
   const scrollToBottom = useCallback((smooth = true) => {
-    if (bottomRef.current) {
-      bottomRef.current.scrollIntoView({
-        behavior: smooth ? "smooth" : "auto",
-        block: "end",
-      });
-    }
+    // Use requestAnimationFrame to ensure DOM is updated before scrolling
+    requestAnimationFrame(() => {
+      if (containerRef.current) {
+        containerRef.current.scrollTo({
+          top: containerRef.current.scrollHeight,
+          behavior: smooth ? "smooth" : "auto",
+        });
+      }
+    });
   }, []);
 
   /**
@@ -82,7 +85,13 @@ export function MessageList({
     if (isAutoScrolling.current) {
       scrollToBottom(false);
     }
-  }, [messages.length, streamingContent.length, streamingToolCalls.length, completedToolCount, scrollToBottom]);
+  }, [
+    messages.length,
+    streamingContent.length,
+    streamingToolCalls.length,
+    completedToolCount,
+    scrollToBottom,
+  ]);
 
   /**
    * Initial scroll to bottom
