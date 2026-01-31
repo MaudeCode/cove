@@ -98,17 +98,10 @@ export function AssistantMessage({
         {/* Name */}
         <span class="text-sm font-medium text-[var(--color-text-primary)]">{assistantName}</span>
 
-        {/* Timestamp */}
+        {/* Timestamp (hide while streaming) */}
         {!isStreaming && message.timestamp && (
           <span class="text-xs text-[var(--color-text-muted)]">
             {formatRelativeTime(new Date(message.timestamp))}
-          </span>
-        )}
-
-        {/* Streaming indicator */}
-        {isStreaming && (
-          <span class="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
-            <BouncingDots />
           </span>
         )}
       </div>
