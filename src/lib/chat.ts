@@ -494,6 +494,12 @@ function handleDeltaEvent(runId: string, message?: ChatEvent["message"]): void {
 function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
   const existingRun = activeRuns.value.get(runId);
 
+  console.log("[FINAL] Content check:", {
+    runId,
+    accumulatedLen: existingRun?.content.length,
+    accumulatedEnd: existingRun?.content.slice(-50),
+  });
+
   // Mark any still-running tool calls as complete (we may have missed result events after refresh)
   const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
     if (tc.status === "running" || tc.status === "pending") {
@@ -510,6 +516,11 @@ function handleFinalEvent(runId: string, message?: ChatEvent["message"]): void {
     toolCalls: finalToolCalls?.length ? finalToolCalls : undefined,
     timestamp: message?.timestamp ?? Date.now(),
   };
+
+  console.log("[FINAL] Message to add:", {
+    contentLen: finalMessage.content.length,
+    contentEnd: finalMessage.content.slice(-50),
+  });
 
   completeRun(runId, finalMessage);
 }
