@@ -129,6 +129,8 @@
     "placeholderDisabled": "Connect to gateway to start chatting",
     "sending": "Sending...",
     "thinking": "Thinking...",
+    "queuedMessages": "Queued ({count})",
+    "queuedMessages_plural": "Queued ({count})",
     "streaming": "Generating response...",
     "copyCode": "Copy code",
     "viewRaw": "View raw",
