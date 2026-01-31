@@ -2,9 +2,11 @@
  * Modal Component
  *
  * Accessible modal dialog with focus trap and keyboard handling.
+ * Uses createPortal to render at document body level (avoids stacking context issues).
  */
 
 import type { ComponentChildren } from "preact";
+import { createPortal } from "preact/compat";
 import { useEffect, useRef, useCallback } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { IconButton } from "./IconButton";
@@ -92,7 +94,8 @@ export function Modal({
 
   if (!open) return null;
 
-  return (
+  // Render modal at document body level using portal to avoid stacking context issues
+  return createPortal(
     <div
       class="fixed inset-0 z-50 flex items-center justify-center p-4"
       role="dialog"
@@ -151,6 +154,7 @@ export function Modal({
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
