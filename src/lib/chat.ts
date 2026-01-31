@@ -461,41 +461,55 @@ function handleChatEvent(event: ChatEvent): void {
         // Gateway sends accumulated text per-block, resetting after tool calls
         let newContent: string;
         let newBlockStart: number | undefined;
+        let reason = "";
 
         if (!existingContent) {
           // First content
           newContent = parsed.text;
+          reason = "first";
         } else if (parsed.text.startsWith(existingContent)) {
           // Direct continuation of existing (same block, no tool call in between)
           newContent = parsed.text;
+          reason = "direct-continuation";
         } else if (lastBlockStart > 0) {
           // We previously appended a block - check if this continues that block
           const baseContent = existingContent.slice(0, lastBlockStart);
           const lastBlock = existingContent.slice(lastBlockStart);
 
+          console.log("[DELTA] lastBlockStart check:", { lastBlockStart, baseLen: baseContent.length, lastBlockLen: lastBlock.length, newTextLen: parsed.text.length });
+          console.log("[DELTA] lastBlock:", lastBlock.slice(0, 50));
+          console.log("[DELTA] newText:", parsed.text.slice(0, 50));
+
           if (parsed.text.startsWith(lastBlock)) {
             // Continuation of the last appended block - replace the block portion
             newContent = baseContent + parsed.text;
+            reason = "continues-last-block";
           } else if (lastBlock.length > 0 && parsed.text.length > lastBlock.length) {
             // New text is longer and might be a continuation
             // Check if the last block is a prefix of new text
             if (parsed.text.startsWith(lastBlock.slice(0, Math.min(lastBlock.length, 30)))) {
               newContent = baseContent + parsed.text;
+              reason = "continues-last-block-prefix";
             } else {
               // Truly new block
               newContent = existingContent + "\n\n" + parsed.text;
               newBlockStart = existingContent.length + 2;
+              reason = "new-block-3";
             }
           } else {
             // Unclear - treat as continuation of last block
             newContent = baseContent + parsed.text;
+            reason = "unclear-assume-continue";
           }
         } else {
           // No lastBlockStart but content doesn't continue - new block after tool
           newContent = existingContent + "\n\n" + parsed.text;
           newBlockStart = existingContent.length + 2;
+          reason = "new-block-no-lastBlockStart";
+          console.log("[DELTA] APPENDING - setting lastBlockStart to:", newBlockStart);
         }
 
+        console.log("[DELTA]", { reason, existingLen: existingContent.length, newLen: newContent.length, lastBlockStart, newBlockStart });
         updateRunContent(runId, newContent, mergedToolCalls, newBlockStart);
       }
       break;
