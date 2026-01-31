@@ -21,3 +21,6 @@ export const RUN_ABORT_CLEANUP_DELAY_MS = 1_000;
 
 /** Separator for appended text blocks */
 export const TEXT_BLOCK_SEPARATOR = "\n\n";
+
+/** Animation duration for session deletion (ms) */
+export const SESSION_DELETE_ANIMATION_MS = 300;

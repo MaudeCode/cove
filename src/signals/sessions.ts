@@ -14,8 +14,10 @@ import {
   isMainSession,
   isCronSession,
   isSpawnSession,
+  isChannelSession,
   groupSessionsByTime,
 } from "@/lib/session-utils";
+import { SESSION_DELETE_ANIMATION_MS } from "@/lib/constants";
 import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
 
 // ============================================
@@ -114,25 +116,9 @@ function getSessionDisplayLabel(session: Session): string {
  * Our filters: "main", "isolated", "channel"
  */
 function getEffectiveKind(session: Session): string {
-  // Check if it's a channel session by key pattern (discord, telegram, signal, etc.)
-  const key = session.key.toLowerCase();
-  if (
-    key.includes(":discord:") ||
-    key.includes(":telegram:") ||
-    key.includes(":signal:") ||
-    key.includes(":slack:") ||
-    key.includes(":whatsapp:")
-  ) {
-    return "channel";
-  }
-
-  // Gateway kind "group" = channel session
-  if (session.kind === "group") return "channel";
-
-  // Check if it's the main session
+  if (isChannelSession(session)) return "channel";
   if (isMainSession(session.key)) return "main";
-
-  // Everything else is isolated (cron, spawn, openai, etc.)
+  // Everything else is isolated (cron, spawn, etc.)
   return "isolated";
 }
 
@@ -310,9 +296,6 @@ export function removeSession(sessionKey: string): void {
   deletingSessionKey.value = null;
 }
 
-/** Animation duration for session deletion (ms) */
-const DELETE_ANIMATION_MS = 300;
-
 /**
  * Remove a session with fade-out animation.
  * Sets deletingSessionKey to trigger animation, then removes after delay.
@@ -323,6 +306,6 @@ export function removeSessionAnimated(sessionKey: string): Promise<void> {
     setTimeout(() => {
       removeSession(sessionKey);
       resolve();
-    }, DELETE_ANIMATION_MS);
+    }, SESSION_DELETE_ANIMATION_MS);
   });
 }
