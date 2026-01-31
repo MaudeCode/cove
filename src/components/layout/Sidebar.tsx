@@ -29,6 +29,7 @@ import type { TimeGroup } from "@/lib/session-utils";
 import {
   Button,
   Toggle,
+  Chip,
   PlusIcon,
   ChevronDownIcon,
   ExternalLinkIcon,
@@ -223,18 +224,14 @@ function SessionHeader() {
           {/* Kind filter chips */}
           <div class="flex flex-wrap gap-1">
             {kinds.map((kind) => (
-              <button
+              <Chip
                 key={kind.value ?? "all"}
-                type="button"
+                size="xs"
+                selected={sessionKindFilter.value === kind.value}
                 onClick={() => setSessionKindFilter(kind.value)}
-                class={`px-2 py-0.5 text-[10px] rounded-md transition-colors ${
-                  sessionKindFilter.value === kind.value
-                    ? "bg-[var(--color-accent)] text-white font-medium"
-                    : "bg-[var(--color-bg-primary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]"
-                }`}
               >
                 {kind.label}
-              </button>
+              </Chip>
             ))}
           </div>
 

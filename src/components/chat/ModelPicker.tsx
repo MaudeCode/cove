@@ -167,25 +167,19 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
             const isFavorite = favorites.has(model.id);
             const isCurrent = (currentModel ?? effectiveModel) === model.id;
             return (
-              <button
+              <div
                 key={model.id}
-                type="button"
-                onClick={() => handleSelect(model.id)}
-                class={`w-full text-left px-3 py-2 text-sm transition-colors flex items-center gap-2 ${
+                class={`flex items-center gap-1 px-2 py-2 transition-colors ${
                   isCurrent
                     ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
                     : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
                 }`}
               >
-                {/* Favorite star - using span with role="button" because HTML forbids nested <button> elements */}
-                <span
-                  role="button"
-                  tabIndex={0}
+                {/* Favorite star - separate button, not nested */}
+                <button
+                  type="button"
                   onClick={(e) => toggleFavorite(model.id, e)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") toggleFavorite(model.id, e);
-                  }}
-                  class={`cursor-pointer text-xs transition-colors ${
+                  class={`p-1 -m-1 text-xs transition-colors rounded hover:bg-[var(--color-bg-tertiary)] ${
                     isFavorite
                       ? "text-yellow-500"
                       : "text-[var(--color-text-muted)] hover:text-yellow-400"
@@ -194,10 +188,19 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
                   aria-label={isFavorite ? t("models.removeFavorite") : t("models.addFavorite")}
                 >
                   {isFavorite ? "★" : "☆"}
-                </span>
-                <span class="truncate flex-1">{model.name}</span>
-                {model.reasoning && <span class="text-[10px] text-[var(--color-warning)]">🧠</span>}
-              </button>
+                </button>
+                {/* Model selection button */}
+                <button
+                  type="button"
+                  onClick={() => handleSelect(model.id)}
+                  class="flex-1 text-left text-sm flex items-center gap-2 min-w-0"
+                >
+                  <span class="truncate">{model.name}</span>
+                  {model.reasoning && (
+                    <span class="text-[10px] text-[var(--color-warning)] flex-shrink-0">🧠</span>
+                  )}
+                </button>
+              </div>
             );
           })}
         </div>
