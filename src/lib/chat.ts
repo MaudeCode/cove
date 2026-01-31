@@ -386,12 +386,34 @@ function handleChatEvent(event: ChatEvent): void {
     }
 
     case "final": {
-      // Message complete - create final message with tool calls
+      // Message complete - merge streaming tool calls with final message
+      const existingRun = activeRuns.value.get(runId);
+      const streamedToolCalls = existingRun?.toolCalls ?? [];
+
       if (message) {
         const finalMessage = normalizeMessage(message, `assistant_${runId}`);
+        // Preserve tool calls from streaming if final message doesn't have them
+        if (
+          streamedToolCalls.length > 0 &&
+          (!finalMessage.toolCalls || finalMessage.toolCalls.length === 0)
+        ) {
+          finalMessage.toolCalls = streamedToolCalls;
+        }
         completeRun(runId, finalMessage);
       } else {
-        completeRun(runId);
+        // No message content, but might have tool calls
+        if (streamedToolCalls.length > 0) {
+          const toolOnlyMessage: Message = {
+            id: `assistant_${runId}`,
+            role: "assistant",
+            content: existingRun?.content ?? "",
+            toolCalls: streamedToolCalls,
+            timestamp: Date.now(),
+          };
+          completeRun(runId, toolOnlyMessage);
+        } else {
+          completeRun(runId);
+        }
       }
       break;
     }
