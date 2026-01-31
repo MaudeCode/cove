@@ -9,7 +9,7 @@
  */
 
 import { signal, computed } from "@preact/signals";
-import { send } from "@/lib/gateway";
+import { send, mainSessionKey } from "@/lib/gateway";
 import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
 
 // ============================================
@@ -36,6 +36,21 @@ export const sessionsError = signal<string | null>(null);
 export const activeSession = computed(
   () => sessions.value.find((s) => s.key === activeSessionKey.value) ?? null,
 );
+
+/**
+ * The effective session key to use for chat operations.
+ * Resolves "main" to the actual mainSessionKey from the gateway.
+ */
+export const effectiveSessionKey = computed(() => {
+  const current = activeSessionKey.value;
+
+  // If no session selected or "main", use the gateway's mainSessionKey
+  if (!current || current === "main") {
+    return mainSessionKey.value ?? "main";
+  }
+
+  return current;
+});
 
 /** Sessions sorted by last active time */
 export const sessionsByRecent = computed(() =>

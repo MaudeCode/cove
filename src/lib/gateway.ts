@@ -51,8 +51,11 @@ export const lastError = signal<string | null>(null);
 /** Gateway version (from hello response) */
 export const gatewayVersion = signal<string | null>(null);
 
-/** Current session key */
-export const sessionKey = signal<string | null>(null);
+/** Current connection ID */
+export const connectionId = signal<string | null>(null);
+
+/** Main session key from gateway (e.g., "agent:main:main") */
+export const mainSessionKey = signal<string | null>(null);
 
 /** Gateway capabilities */
 export const capabilities = signal<string[]>([]);
@@ -146,8 +149,16 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
               .then((hello) => {
                 connectionState.value = "connected";
                 gatewayVersion.value = hello.server?.version ?? null;
-                sessionKey.value = hello.server?.connId ?? null;
+                connectionId.value = hello.server?.connId ?? null;
                 capabilities.value = hello.features?.methods ?? [];
+
+                // Capture main session key from snapshot
+                const sessionDefaults = hello.snapshot?.sessionDefaults;
+                if (sessionDefaults?.mainSessionKey) {
+                  mainSessionKey.value = sessionDefaults.mainSessionKey;
+                  log.gateway.info("Main session key:", mainSessionKey.value);
+                }
+
                 startHeartbeat();
                 resolve(hello);
               })
@@ -247,7 +258,8 @@ export function disconnect(): void {
 
   connectionState.value = "disconnected";
   gatewayVersion.value = null;
-  sessionKey.value = null;
+  connectionId.value = null;
+  mainSessionKey.value = null;
   capabilities.value = [];
 }
 
@@ -465,8 +477,11 @@ export const gateway = {
   /** Gateway version */
   version: gatewayVersion,
 
-  /** Session key */
-  sessionKey,
+  /** Connection ID */
+  connectionId,
+
+  /** Main session key (from gateway) */
+  mainSessionKey,
 
   /** Capabilities */
   capabilities,

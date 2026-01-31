@@ -17,7 +17,7 @@ import {
   streamingContent,
   clearMessages,
 } from "@/signals/chat";
-import { activeSessionKey, setActiveSession } from "@/signals/sessions";
+import { activeSessionKey, setActiveSession, effectiveSessionKey } from "@/signals/sessions";
 import { MessageList, ChatInput } from "@/components/chat";
 
 interface ChatViewProps {
@@ -41,9 +41,9 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
   }, [sessionKey]);
 
-  // Load history when session changes
+  // Load history when effective session changes
   useEffect(() => {
-    const currentSession = activeSessionKey.value;
+    const currentSession = effectiveSessionKey.value;
 
     // Skip if no session or same session
     if (!currentSession || currentSession === prevSessionRef.current) {
@@ -57,20 +57,23 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     loadHistory(currentSession).catch(() => {
       // Error will be shown via historyError signal
     });
-  }, [activeSessionKey.value]);
+  }, [effectiveSessionKey.value]);
+
   const handleSend = async (message: string) => {
-    if (!activeSessionKey.value) return;
+    const sessionKey = effectiveSessionKey.value;
+    if (!sessionKey) return;
 
     try {
-      await sendMessage(activeSessionKey.value, message);
+      await sendMessage(sessionKey, message);
     } catch {
       // Error is displayed via historyError signal
     }
   };
 
   const handleAbort = () => {
-    if (activeSessionKey.value) {
-      abortChat(activeSessionKey.value);
+    const sessionKey = effectiveSessionKey.value;
+    if (sessionKey) {
+      abortChat(sessionKey);
     }
   };
 
