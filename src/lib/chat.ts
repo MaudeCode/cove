@@ -439,6 +439,13 @@ function handleToolEvent(evt: AgentEvent): void {
   const { runId, sessionKey, data } = evt;
   if (!data) return;
 
+  log.chat.debug("Tool event received", {
+    runId,
+    phase: data.phase,
+    toolCallId: data.toolCallId,
+    toolName: data.name,
+  });
+
   let run = activeRuns.value.get(runId);
 
   // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
@@ -452,6 +459,13 @@ function handleToolEvent(evt: AgentEvent): void {
   const toolCallId = data.toolCallId ?? `tool_${Date.now()}`;
   const toolName = data.name ?? "unknown";
   const existingToolCalls = [...run.toolCalls];
+
+  log.chat.debug("Tool event state before processing", {
+    runId,
+    currentContentLen: run.content.length,
+    existingToolCallsCount: existingToolCalls.length,
+    existingToolCallIds: existingToolCalls.map((tc) => tc.id),
+  });
 
   // Helper to find or create a tool call entry
   const findOrCreateToolCall = (): number => {
@@ -475,17 +489,26 @@ function handleToolEvent(evt: AgentEvent): void {
   switch (data.phase) {
     case "start": {
       // Avoid duplicates
-      if (existingToolCalls.some((tc) => tc.id === toolCallId)) return;
+      if (existingToolCalls.some((tc) => tc.id === toolCallId)) {
+        log.chat.debug("Tool start skipped - duplicate", { toolCallId });
+        return;
+      }
 
       // Defer tool start processing to allow any pending text deltas to be processed first
       // This fixes race conditions where tool events arrive before text is fully updated
       setTimeout(() => {
         const currentRun = activeRuns.value.get(runId);
-        if (!currentRun) return;
+        if (!currentRun) {
+          log.chat.warn("Tool start deferred - run no longer exists", { runId, toolCallId });
+          return;
+        }
 
         const currentToolCalls = [...currentRun.toolCalls];
         // Check again for duplicates after defer
-        if (currentToolCalls.some((tc) => tc.id === toolCallId)) return;
+        if (currentToolCalls.some((tc) => tc.id === toolCallId)) {
+          log.chat.debug("Tool start deferred skipped - duplicate", { toolCallId });
+          return;
+        }
 
         const newToolCall: ToolCall = {
           id: toolCallId,
@@ -496,6 +519,14 @@ function handleToolEvent(evt: AgentEvent): void {
           insertedAtContentLength: currentRun.content.length,
           contentSnapshotAtStart: currentRun.content,
         };
+
+        log.chat.debug("Tool start processed", {
+          toolCallId,
+          toolName,
+          insertedAtContentLength: newToolCall.insertedAtContentLength,
+          contentSnapshotLen: currentRun.content.length,
+        });
+
         currentToolCalls.push(newToolCall);
         updateRunContent(runId, currentRun.content, currentToolCalls);
       }, 0);
@@ -568,6 +599,17 @@ function handleDeltaEvent(event: ChatEvent): void {
     if (!existingRun) return;
   }
 
+  // Detailed logging for debugging text/tool interleaving issues
+  log.chat.debug("Delta event received", {
+    runId,
+    parsedTextLen: parsed.text.length,
+    parsedTextPreview: parsed.text.slice(0, 100),
+    parsedToolCallsCount: parsed.toolCalls.length,
+    existingContentLen: existingRun.content.length,
+    existingToolCallsCount: existingRun.toolCalls.length,
+    lastBlockStart: existingRun.lastBlockStart,
+  });
+
   // Merge tool calls
   const mergedToolCalls = mergeToolCalls(existingRun.toolCalls, parsed.toolCalls);
 
@@ -578,6 +620,14 @@ function handleDeltaEvent(event: ChatEvent): void {
     existingRun.lastBlockStart,
   );
 
+  log.chat.debug("Delta merged result", {
+    runId,
+    newContentLen: content.length,
+    newLastBlockStart: lastBlockStart,
+    contentPreview: content.slice(-100),
+    mergedToolCallsCount: mergedToolCalls.length,
+  });
+
   updateRunContent(runId, content, mergedToolCalls, lastBlockStart);
 }
 
@@ -587,6 +637,14 @@ function handleDeltaEvent(event: ChatEvent): void {
 function handleFinalEvent(event: ChatEvent): void {
   const { runId, sessionKey, message } = event;
   let existingRun = activeRuns.value.get(runId);
+
+  log.chat.debug("Final event received", {
+    runId,
+    hasExistingRun: !!existingRun,
+    existingContentLen: existingRun?.content?.length,
+    existingToolCallsCount: existingRun?.toolCalls?.length,
+    hasMessage: !!message,
+  });
 
   // If no run exists (e.g., page refreshed and we only caught the final event),
   // create one on-the-fly so the message gets properly recorded
@@ -604,6 +662,14 @@ function handleFinalEvent(event: ChatEvent): void {
   if (message?.content) {
     const parsed = parseMessageContent(message.content);
 
+    log.chat.debug("Final message parsed", {
+      runId,
+      parsedTextLen: parsed.text.length,
+      parsedToolCallsCount: parsed.toolCalls.length,
+      existingContentLen: finalContent.length,
+      willUseFinaContent: parsed.text.length >= finalContent.length,
+    });
+
     // If final message has complete content (with tool positions), use it
     // This is more reliable than accumulated deltas which may have race conditions
     if (parsed.text.length >= finalContent.length) {
@@ -611,10 +677,20 @@ function handleFinalEvent(event: ChatEvent): void {
       finalParsedToolCalls = parsed.toolCalls;
     } else if (parsed.text) {
       // Otherwise merge the final text (likely just the last block after tools)
+      log.chat.debug("Final merging partial text", {
+        existingLen: finalContent.length,
+        parsedLen: parsed.text.length,
+      });
       const merged = mergeDeltaText(finalContent, parsed.text, existingRun?.lastBlockStart);
       finalContent = merged.content;
     }
   }
+
+  log.chat.debug("Final content determined", {
+    runId,
+    finalContentLen: finalContent.length,
+    finalContentPreview: finalContent.slice(-200),
+  });
 
   // Build final tool calls list
   // Prefer positions from parsed final message (more accurate than streaming positions)
