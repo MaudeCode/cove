@@ -17,6 +17,10 @@ interface MessageListProps {
   error?: string | null;
   streamingContent?: string;
   isStreaming?: boolean;
+  assistantName?: string;
+  assistantAvatar?: string;
+  userName?: string;
+  userAvatar?: string;
 }
 
 export function MessageList({
@@ -25,6 +29,10 @@ export function MessageList({
   error = null,
   streamingContent = "",
   isStreaming = false,
+  assistantName,
+  assistantAvatar,
+  userName,
+  userAvatar,
 }: MessageListProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -92,49 +100,66 @@ export function MessageList({
       <div
         ref={containerRef}
         onScroll={handleScroll}
-        class="flex-1 overflow-y-auto px-4 py-4"
+        class="flex-1 overflow-y-auto"
         role="list"
         aria-label="Messages"
       >
-        {/* Loading state */}
-        {isLoading && (
-          <div class="flex justify-center py-8">
-            <Spinner size="md" label={t("status.loading")} />
-          </div>
-        )}
-
-        {/* Error state */}
-        {error && (
-          <div class="flex justify-center py-8">
-            <div class="text-[var(--color-error)] text-center">
-              <p>{error}</p>
+        {/* Centered container with max-width */}
+        <div class="max-w-3xl mx-auto px-4 py-6">
+          {/* Loading state */}
+          {isLoading && (
+            <div class="flex justify-center py-8">
+              <Spinner size="md" label={t("status.loading")} />
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Empty state */}
-        {!isLoading && !error && messages.length === 0 && !isStreaming && (
-          <div class="flex-1 flex items-center justify-center py-16">
-            <div class="text-center">
-              <div class="text-5xl mb-4">💬</div>
-              <h3 class="text-lg font-medium mb-1">{t("chat.emptyState.title")}</h3>
-              <p class="text-[var(--color-text-muted)]">{t("chat.emptyState.description")}</p>
+          {/* Error state */}
+          {error && (
+            <div class="flex justify-center py-8">
+              <div class="text-[var(--color-error)] text-center">
+                <p>{error}</p>
+              </div>
             </div>
+          )}
+
+          {/* Empty state */}
+          {!isLoading && !error && messages.length === 0 && !isStreaming && (
+            <div class="flex-1 flex items-center justify-center py-16">
+              <div class="text-center">
+                <div class="text-5xl mb-4">💬</div>
+                <h3 class="text-lg font-medium mb-1">{t("chat.emptyState.title")}</h3>
+                <p class="text-[var(--color-text-muted)]">{t("chat.emptyState.description")}</p>
+              </div>
+            </div>
+          )}
+
+          {/* Messages */}
+          <div class="space-y-6">
+            {messages.map((message) => (
+              <ChatMessage
+                key={message.id}
+                message={message}
+                assistantName={assistantName}
+                assistantAvatar={assistantAvatar}
+                userName={userName}
+                userAvatar={userAvatar}
+              />
+            ))}
+
+            {/* Streaming message */}
+            {streamingMessage && (
+              <ChatMessage
+                message={streamingMessage}
+                isStreaming
+                assistantName={assistantName}
+                assistantAvatar={assistantAvatar}
+              />
+            )}
           </div>
-        )}
 
-        {/* Messages */}
-        <div class="space-y-4">
-          {messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
-          ))}
-
-          {/* Streaming message */}
-          {streamingMessage && <ChatMessage message={streamingMessage} isStreaming />}
+          {/* Scroll anchor */}
+          <div ref={bottomRef} class="h-1" />
         </div>
-
-        {/* Scroll anchor */}
-        <div ref={bottomRef} class="h-1" />
       </div>
 
       {/* Scroll to bottom button */}
