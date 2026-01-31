@@ -52,9 +52,20 @@ export function DatePicker({
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [viewDate, setViewDate] = useState(() => value ?? new Date());
+  const [alignRight, setAlignRight] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useClickOutside(containerRef, () => setIsOpen(false), isOpen);
+
+  // Check if dropdown would overflow right edge
+  const handleOpen = () => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const dropdownWidth = 280;
+      setAlignRight(rect.left + dropdownWidth > window.innerWidth);
+    }
+    setIsOpen(!isOpen);
+  };
 
   const year = viewDate.getFullYear();
   const month = viewDate.getMonth();
@@ -98,7 +109,7 @@ export function DatePicker({
       {/* Trigger button */}
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={handleOpen}
         class={`
           flex items-center justify-between gap-2 w-full
           px-2.5 py-1.5 text-sm rounded-lg
@@ -117,7 +128,9 @@ export function DatePicker({
 
       {/* Dropdown */}
       {isOpen && (
-        <div class="absolute top-full left-0 mt-1 z-50 p-3 rounded-lg shadow-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] min-w-[260px]">
+        <div
+          class={`absolute top-full mt-1 z-50 p-3 rounded-lg shadow-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] min-w-[260px] ${alignRight ? "right-0" : "left-0"}`}
+        >
           {/* Header with month/year nav */}
           <div class="flex items-center justify-between mb-3">
             <button
