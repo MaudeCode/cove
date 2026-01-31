@@ -152,14 +152,16 @@ export function ChatInput({
               disabled={!canSend}
               aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
               title={isStreaming ? "Queue message" : t("actions.send")}
-              class="h-[42px] px-3 rounded-2xl flex items-center justify-center gap-1.5
+              class="h-[42px] px-4 rounded-2xl flex items-center justify-center gap-1.5
                 bg-[var(--color-accent)] text-white
                 shadow-soft hover:shadow-soft-lg hover:opacity-95
                 disabled:opacity-40 disabled:shadow-none disabled:cursor-not-allowed
                 active:scale-95 transition-all duration-200 ease-out"
             >
               <SendIcon class="w-4 h-4" />
-              {isStreaming && <span class="text-xs font-medium hidden sm:inline">Queue</span>}
+              <span class="text-xs font-medium hidden sm:inline">
+                {isStreaming ? "Queue" : "Send"}
+              </span>
             </button>
           </div>
         </div>
