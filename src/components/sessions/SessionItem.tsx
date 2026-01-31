@@ -119,11 +119,23 @@ export function SessionItem({
   // Close menu on click outside
   useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
 
-  // Check if menu should open above or below
+  // Check if menu should open above or below (relative to scrollable container)
   const handleMenuToggle = () => {
     if (!menuOpen && buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
-      const spaceBelow = window.innerHeight - rect.bottom;
+      const buttonRect = buttonRef.current.getBoundingClientRect();
+
+      // Find the scrollable parent container
+      let scrollParent = buttonRef.current.parentElement;
+      while (scrollParent && getComputedStyle(scrollParent).overflowY !== "auto") {
+        scrollParent = scrollParent.parentElement;
+      }
+
+      // Check space relative to scroll container (or viewport as fallback)
+      const containerBottom = scrollParent
+        ? scrollParent.getBoundingClientRect().bottom
+        : window.innerHeight;
+
+      const spaceBelow = containerBottom - buttonRect.bottom;
       // Menu is roughly 80px tall, add some padding
       setMenuAbove(spaceBelow < 100);
     }
