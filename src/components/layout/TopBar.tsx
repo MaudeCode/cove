@@ -39,7 +39,7 @@ export function TopBar() {
           </div>
 
           {/* Logo */}
-          <a href="/" class="flex items-center gap-2.5 font-semibold text-lg group">
+          <a href="/" class="flex items-center gap-2.5 font-semibold text-lg group no-underline">
             <span class="text-xl group-hover:scale-110 transition-transform" aria-hidden="true">
               🦞
             </span>
