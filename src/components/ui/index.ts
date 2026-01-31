@@ -39,7 +39,7 @@ export { ResizeHandle, type ResizeHandleProps } from "./ResizeHandle";
 export { Spinner, type SpinnerProps, type SpinnerSize } from "./Spinner";
 export { Badge, type BadgeProps, type BadgeVariant, type BadgeSize } from "./Badge";
 export { Chip, type ChipProps, type ChipSize } from "./Chip";
-export { Skeleton, SkeletonText, SkeletonAvatar, type SkeletonProps } from "./Skeleton";
+// Skeleton components removed - not currently used
 export { BouncingDots, type BouncingDotsProps } from "./BouncingDots";
 
 // Overlays
@@ -49,7 +49,6 @@ export {
   ToastContainer,
   showToast,
   dismissToast,
-  clearToasts,
   toast,
   toasts,
   type ToastProps,
@@ -60,12 +59,7 @@ export {
 } from "./Toast";
 
 // Error handling
-export {
-  ErrorBoundary,
-  InlineError,
-  type ErrorBoundaryProps,
-  type InlineErrorProps,
-} from "./ErrorBoundary";
+export { ErrorBoundary, type ErrorBoundaryProps } from "./ErrorBoundary";
 
 // Icons (shared)
 export {
