@@ -2,6 +2,16 @@
  * Models Signals
  *
  * Available model choices from the gateway.
+ *
+ * KNOWN ISSUE: OpenClaw's models.list returns ALL known models, not just those
+ * the user has auth for. This is a bug in OpenClaw's loadModelCatalog() which
+ * should filter by hasAuthForProvider().
+ *
+ * WORKAROUND: ModelPicker filters to only show models from the current session's
+ * provider. This prevents users from seeing models they can't use.
+ *
+ * PROPER FIX: In openclaw/src/agents/model-catalog.ts, filter the catalog to
+ * only include models where the provider has valid auth (env key or profile).
  */
 
 import { signal, computed } from "@preact/signals";
