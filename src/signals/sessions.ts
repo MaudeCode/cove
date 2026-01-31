@@ -104,15 +104,36 @@ function getSessionDisplayLabel(session: Session): string {
   return session.key;
 }
 
+/**
+ * Get the effective kind for filtering.
+ * Checks multiple sources since kind detection varies by session type.
+ */
+function getEffectiveKind(session: Session): string | null {
+  // 1. Explicit kind field from gateway
+  if (session.kind) return session.kind;
+
+  // 2. If it has a channel field (discord, telegram, etc.), it's a channel session
+  if (session.channel && session.channel !== "webchat") return "channel";
+
+  // 3. Parse from session key (agent:<agentId>:<kind>[:uuid])
+  const keyKind = getSessionKind(session.key);
+  if (keyKind) return keyKind;
+
+  // 4. Check if key starts with "channel:"
+  if (session.key.startsWith("channel:")) return "channel";
+
+  return null;
+}
+
 /** Sessions filtered and sorted by last active time, with main pinned to top */
 export const sessionsByRecent = computed(() => {
   let filtered = sessions.value;
 
-  // Apply kind filter if set (use getSessionKind since session.kind may not be populated)
+  // Apply kind filter if set
   if (sessionKindFilter.value) {
     filtered = filtered.filter((s) => {
-      const kind = getSessionKind(s.key);
-      return kind === sessionKindFilter.value;
+      const effectiveKind = getEffectiveKind(s);
+      return effectiveKind === sessionKindFilter.value;
     });
   }
 
