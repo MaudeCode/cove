@@ -126,7 +126,7 @@ export function ChatInput({
           </div>
 
           {/* Action buttons */}
-          <div class="flex gap-1.5 flex-shrink-0">
+          <div class="flex gap-1.5 flex-shrink-0 self-end pb-px">
             {/* Stop button - only during streaming */}
             {isStreaming && (
               <button
