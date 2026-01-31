@@ -7,6 +7,7 @@
 
 import { Loader2 } from "lucide-preact";
 import { isCompacting } from "@/signals/chat";
+import { t } from "@/lib/i18n";
 
 export function CompactionBanner() {
   if (!isCompacting.value) {
@@ -19,7 +20,7 @@ export function CompactionBanner() {
       role="status"
     >
       <Loader2 class="w-4 h-4 animate-spin" aria-hidden="true" />
-      <span>Compacting conversation...</span>
+      <span>{t("chat.compacting")}</span>
     </div>
   );
 }

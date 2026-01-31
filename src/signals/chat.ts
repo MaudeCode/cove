@@ -19,6 +19,7 @@ import {
   RUN_ERROR_CLEANUP_DELAY_MS,
   RUN_ABORT_CLEANUP_DELAY_MS,
 } from "@/lib/constants";
+import { isHeartbeatMessage } from "@/lib/message-detection";
 
 // ============================================
 // Message Cache
@@ -75,6 +76,16 @@ export const thinkingLevel = signal<string>("off");
 
 /** Whether the session is currently being compacted */
 export const isCompacting = signal<boolean>(false);
+
+// ============================================
+// Heartbeat Tracking
+// ============================================
+
+/** Heartbeat messages in current session */
+export const heartbeatMessages = computed(() => messages.value.filter(isHeartbeatMessage));
+
+/** Count of heartbeat messages */
+export const heartbeatCount = computed(() => heartbeatMessages.value.length);
 
 // ============================================
 // Search & Filter

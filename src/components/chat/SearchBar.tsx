@@ -13,8 +13,10 @@ import {
   dateRangeStart,
   dateRangeEnd,
   hasDateFilter,
+  clearDateFilter,
 } from "@/signals/chat";
 import { IconButton, DatePicker, SearchIcon, CloseIcon } from "@/components/ui";
+import { HeartbeatIndicator } from "./HeartbeatIndicator";
 import { hasContent } from "@/lib/utils";
 import { t } from "@/lib/i18n";
 
@@ -55,15 +57,16 @@ export function SearchBar() {
 
   if (!isSearchOpen.value) {
     return (
-      <div class="flex items-center p-2">
+      <div class="absolute top-2 left-2 z-10 flex items-center gap-2">
         <IconButton
           icon={<SearchIcon />}
           label={t("chat.search")}
           onClick={() => (isSearchOpen.value = true)}
           variant="ghost"
           size="sm"
-          class="border border-[var(--color-border)]"
+          class="border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
         />
+        <HeartbeatIndicator />
       </div>
     );
   }
@@ -100,7 +103,7 @@ export function SearchBar() {
         <DatePicker
           value={dateRangeStart.value}
           onChange={(date) => (dateRangeStart.value = date)}
-          placeholder="From"
+          placeholder={t("chat.dateFrom")}
           class="w-[130px]"
           maxDate={dateRangeEnd.value}
         />
@@ -108,7 +111,7 @@ export function SearchBar() {
         <DatePicker
           value={dateRangeEnd.value}
           onChange={(date) => (dateRangeEnd.value = date)}
-          placeholder="To"
+          placeholder={t("chat.dateTo")}
           class="w-[130px]"
           minDate={dateRangeStart.value}
         />
