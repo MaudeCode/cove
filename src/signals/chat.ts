@@ -74,6 +74,34 @@ export const historyError = signal<string | null>(null);
 export const thinkingLevel = signal<string>("off");
 
 // ============================================
+// Search & Filter
+// ============================================
+
+/** Current search query */
+export const searchQuery = signal<string>("");
+
+/** Whether search is active (panel open) */
+export const isSearchOpen = signal<boolean>(false);
+
+/** Filter messages by search query */
+export const filteredMessages = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) {
+    return messages.value;
+  }
+  return messages.value.filter((msg) => msg.content.toLowerCase().includes(query));
+});
+
+/** Number of search matches */
+export const searchMatchCount = computed(() => {
+  const query = searchQuery.value.trim().toLowerCase();
+  if (!query) {
+    return 0;
+  }
+  return messages.value.filter((msg) => msg.content.toLowerCase().includes(query)).length;
+});
+
+// ============================================
 // Message Queue (for offline/failed messages)
 // ============================================
 
