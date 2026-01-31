@@ -81,10 +81,20 @@ export function MessageList({
     (tc) => tc.status === "complete" || tc.status === "error",
   ).length;
 
+  const lastMessageRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (isAutoScrolling.current) {
+    const lastMessage = messages[messages.length - 1];
+    const isNewUserMessage =
+      lastMessage?.role === "user" && lastMessage.id !== lastMessageRef.current;
+
+    // Always scroll for new user messages (they just sent it)
+    // Otherwise respect auto-scroll preference
+    if (isNewUserMessage || isAutoScrolling.current) {
       scrollToBottom(false);
     }
+
+    lastMessageRef.current = lastMessage?.id ?? null;
   }, [
     messages.length,
     streamingContent.length,
