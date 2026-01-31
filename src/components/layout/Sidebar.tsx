@@ -36,7 +36,7 @@ export function Sidebar() {
   const handleRename = async (session: Session, newLabel: string) => {
     try {
       await send("sessions.patch", {
-        sessionKey: session.key,
+        key: session.key,
         label: newLabel,
       });
       updateSession(session.key, { label: newLabel });
@@ -52,7 +52,7 @@ export function Sidebar() {
   const handleDelete = async (session: Session) => {
     try {
       await send("sessions.delete", {
-        sessionKey: session.key,
+        key: session.key,
       });
       removeSession(session.key);
 
