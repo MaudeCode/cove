@@ -162,19 +162,20 @@
   }
 }
 
-/* AI glow pulse - subtle ambient glow for streaming sessions */
-@keyframes ai-glow-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 4px 1px var(--color-accent-glow, rgba(99, 102, 241, 0.15)),
-      0 0 8px 2px var(--color-accent-glow, rgba(99, 102, 241, 0.08));
+/* AI glow spin - rotating gradient border for streaming sessions */
+@keyframes ai-glow-spin {
+  from {
+    --glow-angle: 0deg;
   }
-  50% {
-    box-shadow:
-      0 0 6px 2px var(--color-accent-glow, rgba(99, 102, 241, 0.25)),
-      0 0 12px 4px var(--color-accent-glow, rgba(99, 102, 241, 0.12));
+  to {
+    --glow-angle: 360deg;
   }
+}
+
+@property --glow-angle {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
 }
 
 /* ============================================
@@ -238,9 +239,34 @@
   animation: blink 1s step-end infinite;
 }
 
+/* Spinning gradient border for active AI sessions */
 .ai-glow {
-  animation: ai-glow-pulse 2s ease-in-out infinite;
-  border-radius: 1rem; /* Match rounded-xl on session button */
+  position: relative;
+  border-radius: 1rem;
+}
+
+.ai-glow::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--glow-angle),
+    transparent 0deg,
+    var(--color-accent, #6366f1) 60deg,
+    transparent 120deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: ai-glow-spin 2s linear infinite;
+  pointer-events: none;
 }
 
 /* ============================================
