@@ -14,7 +14,6 @@
 import { useState, useRef, useEffect } from "preact/hooks";
 import { models, modelsByProvider, getModelDisplayName } from "@/signals/models";
 import { send } from "@/lib/gateway";
-import { log } from "@/lib/logger";
 import { ChevronDownIcon } from "@/components/ui";
 
 interface ModelPickerProps {
@@ -51,7 +50,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
   }, [open]);
 
   // Debug logging
-  log.ui.debug("ModelPicker state:", {
+  console.log("[ModelPicker] state:", {
     modelsCount: models.value.length,
     currentModel,
     firstModel: models.value[0]?.id,
@@ -60,7 +59,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
 
   // Don't render if no models available
   if (models.value.length === 0) {
-    log.ui.debug("ModelPicker: no models loaded, hiding");
+    console.log("[ModelPicker] no models loaded, hiding");
     return null;
   }
 
@@ -72,7 +71,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     ? (modelsByProvider.value.get(currentProvider) ?? [])
     : [];
 
-  log.ui.debug("ModelPicker filtering:", {
+  console.log("[ModelPicker] filtering:", {
     effectiveModel,
     currentProvider,
     availableModelsCount: availableModels.length,
@@ -80,7 +79,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
 
   // Don't render if no models for this provider
   if (availableModels.length === 0) {
-    log.ui.debug("ModelPicker: no models for provider, hiding");
+    console.log("[ModelPicker] no models for provider, hiding");
     return null;
   }
 
