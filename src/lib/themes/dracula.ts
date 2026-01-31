@@ -48,5 +48,18 @@ export const draculaTheme: Theme = {
     "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.4)",
     "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
     "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
+
+    // Syntax highlighting (Dracula palette)
+    "--color-syntax-comment": "#6272a4",
+    "--color-syntax-string": "#f1fa8c",
+    "--color-syntax-keyword": "#ff79c6",
+    "--color-syntax-function": "#50fa7b",
+    "--color-syntax-number": "#bd93f9",
+    "--color-syntax-operator": "#ff79c6",
+    "--color-syntax-variable": "#f8f8f2",
+    "--color-syntax-punctuation": "#f8f8f2",
+    "--color-syntax-property": "#66d9ef",
+    "--color-syntax-tag": "#ff79c6",
+    "--color-syntax-class": "#8be9fd",
   },
 };

@@ -48,5 +48,18 @@ export const darkTheme: Theme = {
     "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.4)",
     "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
     "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
+
+    // Syntax highlighting (One Dark inspired)
+    "--color-syntax-comment": "#5c6370",
+    "--color-syntax-string": "#98c379",
+    "--color-syntax-keyword": "#c678dd",
+    "--color-syntax-function": "#61afef",
+    "--color-syntax-number": "#d19a66",
+    "--color-syntax-operator": "#56b6c2",
+    "--color-syntax-variable": "#e06c75",
+    "--color-syntax-punctuation": "#abb2bf",
+    "--color-syntax-property": "#e06c75",
+    "--color-syntax-tag": "#e06c75",
+    "--color-syntax-class": "#e5c07b",
   },
 };
