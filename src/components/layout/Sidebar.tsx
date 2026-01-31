@@ -27,6 +27,7 @@ import {
 import type { TimeGroup } from "@/lib/session-utils";
 import {
   Button,
+  Toggle,
   PlusIcon,
   ChevronDownIcon,
   ExternalLinkIcon,
@@ -235,15 +236,12 @@ function SessionHeader() {
           </div>
 
           {/* Cron toggle */}
-          <label class="flex items-center gap-2 cursor-pointer text-xs text-[var(--color-text-secondary)]">
-            <input
-              type="checkbox"
-              checked={showCronSessions.value}
-              onChange={toggleCronSessions}
-              class="w-3 h-3 rounded border-[var(--color-border)] text-[var(--color-accent)]"
-            />
-            {t("sessions.showCron")}
-          </label>
+          <Toggle
+            size="sm"
+            checked={showCronSessions.value}
+            onChange={toggleCronSessions}
+            label={t("sessions.showCron")}
+          />
         </div>
       )}
     </div>
