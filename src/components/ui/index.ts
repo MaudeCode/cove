@@ -80,4 +80,5 @@ export {
   MoreIcon,
   EditIcon,
   TrashIcon,
+  FilterIcon,
 } from "./icons";

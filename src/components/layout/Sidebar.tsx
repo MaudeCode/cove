@@ -4,7 +4,7 @@
  * Sessions list with management actions and navigation sections.
  */
 
-import { useState } from "preact/hooks";
+import { useState, useRef, useEffect } from "preact/hooks";
 import { useSignal, signal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
@@ -13,10 +13,12 @@ import { send, isConnected } from "@/lib/gateway";
 import {
   activeSessionKey,
   sessionsByRecent,
+  sessionKindFilter,
+  setSessionKindFilter,
   updateSession,
   removeSession,
 } from "@/signals/sessions";
-import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon } from "@/components/ui";
+import { Button, PlusIcon, ChevronDownIcon, ExternalLinkIcon, FilterIcon } from "@/components/ui";
 import { SessionItem, SessionRenameModal, SessionDeleteModal } from "@/components/sessions";
 import { navigation, type NavItem, type NavSection } from "@/lib/navigation";
 import type { Session } from "@/types/sessions";
@@ -81,9 +83,13 @@ export function Sidebar() {
 
       {/* Sessions section - scrollable */}
       <div class="flex-1 overflow-y-auto px-3 pb-3">
-        <h3 class="px-2 py-1.5 text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider">
-          {t("nav.sessions")}
-        </h3>
+        <div class="flex items-center justify-between px-2 py-1.5">
+          <h3 class="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider">
+            {t("nav.sessions")}
+          </h3>
+          {/* Filter dropdown */}
+          <SessionKindFilter />
+        </div>
         {sessionsByRecent.value.length === 0 ? (
           <p class="text-sm text-[var(--color-text-muted)] px-2 py-4">{t("sessions.noSessions")}</p>
         ) : (
@@ -130,6 +136,75 @@ export function Sidebar() {
 // ============================================
 // Sub-components
 // ============================================
+
+/**
+ * Session kind filter dropdown
+ */
+function SessionKindFilter() {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  const kinds = [
+    { value: null, label: "All" },
+    { value: "main", label: "Main" },
+    { value: "isolated", label: "Isolated" },
+    { value: "channel", label: "Channel" },
+  ];
+
+  const currentKind = kinds.find((k) => k.value === sessionKindFilter.value) ?? kinds[0];
+
+  // Close on click outside
+  useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [open]);
+
+  return (
+    <div ref={menuRef} class="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(!open)}
+        class={`p-1 rounded transition-colors ${
+          sessionKindFilter.value
+            ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
+            : "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]"
+        }`}
+        aria-label="Filter sessions"
+        title={`Filter: ${currentKind.label}`}
+      >
+        <FilterIcon class="w-3.5 h-3.5" />
+      </button>
+
+      {open && (
+        <div class="absolute right-0 top-full mt-1 w-28 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 py-1">
+          {kinds.map((kind) => (
+            <button
+              key={kind.value ?? "all"}
+              type="button"
+              onClick={() => {
+                setSessionKindFilter(kind.value);
+                setOpen(false);
+              }}
+              class={`w-full text-left px-3 py-1.5 text-sm transition-colors ${
+                sessionKindFilter.value === kind.value
+                  ? "text-[var(--color-accent)] bg-[var(--color-accent)]/10"
+                  : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
+              }`}
+            >
+              {kind.label}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface CollapsibleNavSectionProps {
   section: NavSection;
