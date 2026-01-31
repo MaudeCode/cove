@@ -44,7 +44,6 @@ export function ChatInput({
 
   /**
    * Handle input changes
-   * Note: value is a Preact Signal (stable ref), not React state
    */
   const handleInput = useCallback(
     (e: Event) => {
@@ -53,6 +52,22 @@ export function ChatInput({
     },
     [autoResize],
   );
+
+  /**
+   * Send message
+   */
+  const handleSend = useCallback(() => {
+    const message = value.value.trim();
+    if (!message || disabled || isStreaming) return;
+
+    onSend(message);
+    value.value = "";
+
+    // Reset textarea height
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
+  }, [onSend, disabled, isStreaming]);
 
   /**
    * Handle keyboard shortcuts
@@ -74,23 +89,6 @@ export function ChatInput({
     },
     [handleSend],
   );
-
-  /**
-   * Send message
-   * Note: value is a Preact Signal (stable ref), not React state
-   */
-  const handleSend = useCallback(() => {
-    const message = value.value.trim();
-    if (!message || disabled || isStreaming) return;
-
-    onSend(message);
-    value.value = "";
-
-    // Reset textarea height
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-    }
-  }, [onSend, disabled, isStreaming]);
 
   /**
    * Focus textarea on mount
