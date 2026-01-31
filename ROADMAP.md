@@ -741,11 +741,10 @@ export const navigation: NavSection[] = [
 - [x] Message status tracking (sending/sent/failed state in Message type)
 - [x] Visual indicator for pending/queued messages in UI (`UserMessage.tsx` - clock/dots/error icons + status text)
 
-### 2.1 Session Management
+### 2.1 Session Management ✅
 
 > Sidebar session list with quick actions.
 
-**Completed:**
 - [x] Fetch session list from gateway (`sessions.list`)
 - [x] Session metadata display (agent name, last active)
 - [x] Active session indicator
@@ -754,15 +753,15 @@ export const navigation: NavSection[] = [
 - [x] Delete session (with confirmation modal)
 - [x] Main session pinned to top with pin icon
 - [x] Filter by kind (dropdown: All/Main/Isolated/Channel)
+- [x] **Hide cron sessions by default** — toggle to show cron sessions
+- [x] **Search box** — filter sessions by name/channel/model
+- [x] **Group by time** — Today, Yesterday, This Week, Older
+- [x] **Session metadata** — show channel badge & token count
+- [x] **Model picker polish** — i18n strings, semantic HTML fix
 
-**TODO:**
-- [ ] **Hide cron sessions by default** — cron sessions clutter the sidebar; add toggle or exclude by default
-- [ ] **Improved session filtering** — better UX for filtering (search box, multi-select kinds, etc.)
-- [ ] Archive session (hide from main list, show in admin view)
-- [ ] Model override per session (UI exists in chat input, needs polish)
-- [ ] Group by time (Today, Yesterday, Older) — optional
-- [ ] Session status card (usage, cost, tokens) — expandable or tooltip
-- [ ] Session metadata: show channel, tokens used
+**Not implemented (low priority):**
+- Archive session (hide from main list, show in admin view) — needs backend support
+- Session status card (expandable usage/cost) — deferred to Phase 4
 
 ### 2.2 Session History
 

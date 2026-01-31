@@ -152,11 +152,13 @@
     "title": "Sessions",
     "main": "Main",
     "current": "Current",
+    "pinned": "Pinned",
     "today": "Today",
     "yesterday": "Yesterday",
     "thisWeek": "This Week",
     "older": "Older",
     "noSessions": "No sessions yet",
+    "noResults": "No sessions match your search",
     "newSession": "New Session",
     "rename": "Rename Session",
     "label": "Session Label",
@@ -166,7 +168,19 @@
     "deleteWarning": "This action cannot be undone. All messages in this session will be permanently deleted.",
     "switchTo": "Switch to {name}",
     "count": "{count} session",
-    "count_plural": "{count} sessions"
+    "count_plural": "{count} sessions",
+    "searchPlaceholder": "Search sessions...",
+    "showCron": "Show cron jobs",
+    "hiddenCron": "{count} cron session hidden",
+    "hiddenCron_plural": "{count} cron sessions hidden",
+    "tokens": "{count} tokens",
+    "model": "Model: {model}",
+    "defaultModel": "Default"
+  },
+
+  "models": {
+    "addFavorite": "Add to favorites",
+    "removeFavorite": "Remove from favorites"
   },
 
   "settings": {

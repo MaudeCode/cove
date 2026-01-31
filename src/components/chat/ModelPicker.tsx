@@ -15,6 +15,7 @@ import { useState, useRef, useMemo } from "preact/hooks";
 import { models, modelsByProvider, getModelDisplayName, defaultModel } from "@/signals/models";
 import { send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
+import { t } from "@/lib/i18n";
 import { useClickOutside } from "@/hooks";
 import { ChevronDownIcon } from "@/components/ui";
 
@@ -111,9 +112,10 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     return null;
   }
 
-  const displayName = currentModel ? getModelDisplayName(currentModel) : "Default";
+  const displayName = currentModel ? getModelDisplayName(currentModel) : t("sessions.defaultModel");
 
-  const toggleFavorite = (modelId: string, e: MouseEvent) => {
+  const toggleFavorite = (modelId: string, e: Event) => {
+    e.preventDefault();
     e.stopPropagation();
     const newFavorites = new Set(favorites);
     if (newFavorites.has(modelId)) {
@@ -175,20 +177,24 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
                     : "text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]"
                 }`}
               >
-                {/* Favorite star */}
-                <button
-                  type="button"
+                {/* Favorite star - span with role=button avoids invalid nested button */}
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={(e) => toggleFavorite(model.id, e)}
-                  class={`cursor-pointer text-xs transition-colors bg-transparent border-none p-0 ${
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") toggleFavorite(model.id, e);
+                  }}
+                  class={`cursor-pointer text-xs transition-colors ${
                     isFavorite
                       ? "text-yellow-500"
                       : "text-[var(--color-text-muted)] hover:text-yellow-400"
                   }`}
-                  title={isFavorite ? "Remove from favorites" : "Add to favorites"}
-                  aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                  title={isFavorite ? t("models.removeFavorite") : t("models.addFavorite")}
+                  aria-label={isFavorite ? t("models.removeFavorite") : t("models.addFavorite")}
                 >
                   {isFavorite ? "★" : "☆"}
-                </button>
+                </span>
                 <span class="truncate flex-1">{model.name}</span>
                 {model.reasoning && <span class="text-[10px] text-[var(--color-warning)]">🧠</span>}
               </button>
