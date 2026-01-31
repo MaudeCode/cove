@@ -104,9 +104,9 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
 function LoadingDots() {
   return (
     <span class="inline-flex items-end gap-1">
-      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot" />
-      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot [animation-delay:200ms]" />
-      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot [animation-delay:400ms]" />
+      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot-1" />
+      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot-2" />
+      <span class="w-1 h-1 rounded-full bg-current animate-bounce-dot-3" />
     </span>
   );
 }

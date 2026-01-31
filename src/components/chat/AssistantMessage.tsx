@@ -132,9 +132,9 @@ export function AssistantMessage({
         {/* Show streaming indicator after all content */}
         {isStreaming && (
           <span class="inline-flex items-end gap-1 ml-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot" />
-            <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:200ms]" />
-            <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:400ms]" />
+            <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-1" />
+            <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-2" />
+            <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-3" />
           </span>
         )}
 
@@ -143,9 +143,9 @@ export function AssistantMessage({
           <span class="inline-flex items-center gap-2 text-[var(--color-text-muted)]">
             Thinking
             <span class="inline-flex items-end gap-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot" />
-              <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:200ms]" />
-              <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:400ms]" />
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-1" />
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-2" />
+              <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-3" />
             </span>
           </span>
         )}
@@ -157,9 +157,9 @@ export function AssistantMessage({
 function StreamingDots() {
   return (
     <span class="inline-flex items-end gap-1">
-      <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot" />
-      <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:200ms]" />
-      <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot [animation-delay:400ms]" />
+      <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-1" />
+      <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-2" />
+      <span class="w-1.5 h-1.5 rounded-full bg-[var(--color-accent)] animate-bounce-dot-3" />
     </span>
   );
 }

@@ -165,17 +165,33 @@
 /* Bouncing dots for typing/loading indicators - sequential wave effect */
 @keyframes bounce-dot {
   0%,
-  60%,
+  80%,
   100% {
     transform: translateY(0);
   }
-  30% {
-    transform: translateY(-4px);
+  40% {
+    transform: translateY(-5px);
   }
 }
 
 .animate-bounce-dot {
-  animation: bounce-dot 1.4s ease-in-out infinite;
+  animation: bounce-dot 1s ease-in-out infinite;
+}
+
+/* Staggered delays for wave effect */
+.animate-bounce-dot-1 {
+  animation: bounce-dot 1s ease-in-out infinite;
+  animation-delay: 0ms;
+}
+
+.animate-bounce-dot-2 {
+  animation: bounce-dot 1s ease-in-out infinite;
+  animation-delay: 150ms;
+}
+
+.animate-bounce-dot-3 {
+  animation: bounce-dot 1s ease-in-out infinite;
+  animation-delay: 300ms;
 }
 
 /* AI glow spin - rotating gradient border for streaming sessions */
