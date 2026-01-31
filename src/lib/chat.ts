@@ -54,13 +54,48 @@ export async function loadHistory(sessionKey: string, limit = 200): Promise<void
       limit,
     });
 
-    // Debug: log raw history to see what format tool calls come in
-    console.log("[HISTORY] Raw messages:", JSON.stringify(result.messages.slice(-3), null, 2));
-
     // Convert raw messages to our Message type with tool calls
-    const normalized: Message[] = result.messages.map((raw, index) =>
-      normalizeMessage(raw, `hist_${index}_${Date.now()}`),
-    );
+    // Also pair toolResult messages with their corresponding tool calls
+    const toolResults = new Map<string, { content: unknown; isError: boolean }>();
+
+    // First pass: collect tool results
+    for (const raw of result.messages) {
+      if (raw.role === "toolResult" && raw.toolCallId) {
+        const resultContent =
+          Array.isArray(raw.content) && raw.content[0]?.type === "text"
+            ? raw.content[0].text
+            : raw.content;
+        toolResults.set(raw.toolCallId, {
+          content: resultContent,
+          isError: raw.isError ?? false,
+        });
+      }
+    }
+
+    // Second pass: normalize messages and attach tool results
+    const normalized: Message[] = [];
+    for (let index = 0; index < result.messages.length; index++) {
+      const raw = result.messages[index];
+
+      // Skip toolResult messages - they're merged into assistant messages
+      if (raw.role === "toolResult") continue;
+
+      const msg = normalizeMessage(raw, `hist_${index}_${Date.now()}`);
+
+      // Attach results to tool calls
+      if (msg.toolCalls) {
+        for (const tc of msg.toolCalls) {
+          const result = toolResults.get(tc.id);
+          if (result) {
+            tc.result = result.content;
+            tc.status = result.isError ? "error" : "complete";
+            tc.completedAt = Date.now();
+          }
+        }
+      }
+
+      normalized.push(msg);
+    }
 
     setMessages(normalized);
 
