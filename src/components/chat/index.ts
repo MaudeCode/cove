@@ -3,6 +3,9 @@
  */
 
 export { ChatMessage } from "./ChatMessage";
+export { UserMessage } from "./UserMessage";
+export { AssistantMessage } from "./AssistantMessage";
+export { SystemMessage } from "./SystemMessage";
 export { ChatInput } from "./ChatInput";
 export { MessageList } from "./MessageList";
 export { MessageContent } from "./MessageContent";
