@@ -112,10 +112,23 @@ export function SessionItem({
   onDelete,
 }: SessionItemProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [menuAbove, setMenuAbove] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Close menu on click outside
   useClickOutside(menuRef, () => setMenuOpen(false), menuOpen);
+
+  // Check if menu should open above or below
+  const handleMenuToggle = () => {
+    if (!menuOpen && buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      // Menu is roughly 80px tall, add some padding
+      setMenuAbove(spaceBelow < 100);
+    }
+    setMenuOpen(!menuOpen);
+  };
 
   const kindBadge = getKindBadge(session);
   const channelBadge = getChannelBadge(session);
@@ -194,10 +207,11 @@ export function SessionItem({
       {(onRename || onDelete) && (
         <div ref={menuRef} class="absolute right-2 top-2">
           <button
+            ref={buttonRef}
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setMenuOpen(!menuOpen);
+              handleMenuToggle();
             }}
             class={`p-1 rounded-lg transition-all duration-150
               ${
@@ -210,9 +224,13 @@ export function SessionItem({
             <MoreIcon class="w-4 h-4" />
           </button>
 
-          {/* Dropdown menu */}
+          {/* Dropdown menu - opens above if near bottom of viewport */}
           {menuOpen && (
-            <div class="absolute right-0 top-full mt-1 w-36 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 py-1">
+            <div
+              class={`absolute right-0 w-36 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 py-1 ${
+                menuAbove ? "bottom-full mb-1" : "top-full mt-1"
+              }`}
+            >
               {onRename && (
                 <button
                   type="button"
