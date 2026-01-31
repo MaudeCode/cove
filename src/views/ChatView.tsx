@@ -53,7 +53,9 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
   }, [sessionKey]);
 
-  // Load history when effective session changes
+  // Load history when session changes
+  // Note: We track activeSessionKey.value directly because Preact signals
+  // don't re-trigger useEffect when a computed signal changes
   useEffect(() => {
     const currentSession = effectiveSessionKey.value;
 
@@ -75,7 +77,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     loadHistory(currentSession).catch(() => {
       // Error will be shown via historyError signal
     });
-  }, [effectiveSessionKey.value]);
+  }, [activeSessionKey.value]);
 
   // Process queued messages on reconnect
   useEffect(() => {
