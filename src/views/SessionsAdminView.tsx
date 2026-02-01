@@ -21,6 +21,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { Spinner } from "@/components/ui/Spinner";
 import { Modal } from "@/components/ui/Modal";
 import { IconButton } from "@/components/ui/IconButton";
+import { FormField } from "@/components/ui/FormField";
 import {
   RefreshCw,
   Search,
@@ -584,54 +585,40 @@ function SessionDetailModal() {
 
         {/* Edit Form */}
         <div class="space-y-5">
-          <div>
-            <label class="block text-sm font-medium mb-2">{t("sessions.admin.label")}</label>
+          <FormField label={t("sessions.admin.label")} hint={t("sessions.admin.labelHelp")}>
             <Input
               value={editLabel.value}
               onInput={(e) => (editLabel.value = (e.target as HTMLInputElement).value)}
               placeholder={t("sessions.admin.labelPlaceholder")}
               fullWidth
             />
-            <p class="text-xs text-[var(--color-text-muted)] mt-1.5">
-              {t("sessions.admin.labelHelp")}
-            </p>
-          </div>
+          </FormField>
 
-          <div>
-            <label class="block text-sm font-medium mb-2">{t("sessions.admin.overrides")}</label>
+          <FormField label={t("sessions.admin.overrides")}>
             <div class="grid grid-cols-3 gap-4">
-              <div>
-                <label class="block text-xs text-[var(--color-text-muted)] mb-1.5">
-                  {t("sessions.admin.thinking")}
-                </label>
+              <FormField label={t("sessions.admin.thinking")}>
                 <Dropdown
                   value={editThinking.value}
                   onChange={(val) => (editThinking.value = val)}
                   options={LEVEL_OPTIONS}
                 />
-              </div>
-              <div>
-                <label class="block text-xs text-[var(--color-text-muted)] mb-1.5">
-                  {t("sessions.admin.verbose")}
-                </label>
+              </FormField>
+              <FormField label={t("sessions.admin.verbose")}>
                 <Dropdown
                   value={editVerbose.value}
                   onChange={(val) => (editVerbose.value = val)}
                   options={LEVEL_OPTIONS}
                 />
-              </div>
-              <div>
-                <label class="block text-xs text-[var(--color-text-muted)] mb-1.5">
-                  {t("sessions.admin.reasoning")}
-                </label>
+              </FormField>
+              <FormField label={t("sessions.admin.reasoning")}>
                 <Dropdown
                   value={editReasoning.value}
                   onChange={(val) => (editReasoning.value = val)}
                   options={LEVEL_OPTIONS}
                 />
-              </div>
+              </FormField>
             </div>
-          </div>
+          </FormField>
         </div>
 
         {/* Open in Chat (multi-chat mode only) */}
