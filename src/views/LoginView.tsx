@@ -125,7 +125,11 @@ export function LoginView() {
       <div class="w-full max-w-sm">
         {/* Logo */}
         <div class="text-center mb-8">
-          <div class="text-6xl mb-3">🏖️</div>
+          <img
+            src="/cove-icon.png"
+            alt="Cove"
+            class="w-24 h-24 mx-auto mb-3 rounded-2xl shadow-lg"
+          />
           <h1 class="text-2xl font-bold">{t("app.name")}</h1>
           <p class="text-[var(--color-text-muted)] mt-1">{t("app.tagline")}</p>
         </div>
