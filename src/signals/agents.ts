@@ -47,6 +47,14 @@ export const agentsLoaded = computed(() => {
   return agents.value.length > 0;
 });
 
+/** Agent options for dropdowns (id + formatted label) */
+export const agentOptions = computed(() => {
+  return agents.value.map((agent) => ({
+    value: agent.id,
+    label: `${agent.identity?.emoji || "🤖"} ${agent.identity?.name || agent.name || agent.id}`,
+  }));
+});
+
 // ============================================================================
 // Actions
 // ============================================================================
