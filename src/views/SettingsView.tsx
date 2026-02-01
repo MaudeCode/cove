@@ -9,6 +9,7 @@ import { t } from "@/lib/i18n";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { Toggle } from "@/components/ui/Toggle";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { gatewayVersion, gatewayUrl, isConnected } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
@@ -16,6 +17,8 @@ import {
   fontSize,
   fontFamily,
   timeFormat,
+  newChatSettings,
+  autoTitleSettings,
   FONT_SIZE_OPTIONS,
   FONT_FAMILY_OPTIONS,
   TIME_FORMAT_OPTIONS,
@@ -24,6 +27,9 @@ import {
   type FontFamily,
   type TimeFormat,
 } from "@/signals/settings";
+import { agents, defaultAgentId } from "@/signals/agents";
+import { models } from "@/signals/models";
+import { getAgentDisplayName, getAgentEmoji } from "@/types/agents";
 import { APP_VERSION } from "@/lib/constants";
 
 // ============================================
@@ -165,6 +171,137 @@ export function SettingsView(_props: SettingsViewProps) {
                 size="sm"
               />
             </SettingRow>
+          </div>
+        </SettingsSection>
+
+        {/* New Chat Section */}
+        <SettingsSection titleKey="settings.newChat.title">
+          <div class="space-y-6">
+            <SettingRow
+              labelKey="settings.newChat.useDefaults"
+              descriptionKey="settings.newChat.useDefaultsDescription"
+            >
+              <Toggle
+                checked={newChatSettings.value.useDefaults}
+                onChange={(checked) => {
+                  newChatSettings.value = { ...newChatSettings.value, useDefaults: checked };
+                }}
+              />
+            </SettingRow>
+
+            <SettingRow
+              labelKey="settings.newChat.defaultAgent"
+              descriptionKey="settings.newChat.defaultAgentDescription"
+            >
+              <Dropdown
+                value={newChatSettings.value.defaultAgentId}
+                onChange={(value) => {
+                  newChatSettings.value = { ...newChatSettings.value, defaultAgentId: value };
+                }}
+                options={agents.value.map((agent) => ({
+                  value: agent.id,
+                  label: `${getAgentEmoji(agent)} ${getAgentDisplayName(agent)}`,
+                }))}
+                size="sm"
+              />
+            </SettingRow>
+
+            <SettingRow
+              labelKey="settings.newChat.defaultModel"
+              descriptionKey="settings.newChat.defaultModelDescription"
+            >
+              <Dropdown
+                value={newChatSettings.value.defaultModel || "_default"}
+                onChange={(value) => {
+                  newChatSettings.value = {
+                    ...newChatSettings.value,
+                    defaultModel: value === "_default" ? null : value,
+                  };
+                }}
+                options={[
+                  { value: "_default", label: t("settings.newChat.agentDefault") },
+                  ...models.value.map((model) => ({
+                    value: model.id,
+                    label: model.displayName || model.id,
+                  })),
+                ]}
+                size="sm"
+              />
+            </SettingRow>
+          </div>
+        </SettingsSection>
+
+        {/* Auto-Title Section */}
+        <SettingsSection titleKey="settings.autoTitle.title">
+          <div class="space-y-6">
+            <SettingRow
+              labelKey="settings.autoTitle.enabled"
+              descriptionKey="settings.autoTitle.enabledDescription"
+            >
+              <Toggle
+                checked={autoTitleSettings.value.enabled}
+                onChange={(checked) => {
+                  autoTitleSettings.value = { ...autoTitleSettings.value, enabled: checked };
+                }}
+              />
+            </SettingRow>
+
+            {autoTitleSettings.value.enabled && (
+              <>
+                <SettingRow
+                  labelKey="settings.autoTitle.agent"
+                  descriptionKey="settings.autoTitle.agentDescription"
+                >
+                  <Dropdown
+                    value={autoTitleSettings.value.agentId || defaultAgentId.value}
+                    onChange={(value) => {
+                      autoTitleSettings.value = {
+                        ...autoTitleSettings.value,
+                        agentId: value === defaultAgentId.value ? null : value,
+                      };
+                    }}
+                    options={agents.value.map((agent) => ({
+                      value: agent.id,
+                      label: `${getAgentEmoji(agent)} ${getAgentDisplayName(agent)}`,
+                    }))}
+                    size="sm"
+                  />
+                </SettingRow>
+
+                <SettingRow
+                  labelKey="settings.autoTitle.model"
+                  descriptionKey="settings.autoTitle.modelDescription"
+                >
+                  <Dropdown
+                    value={autoTitleSettings.value.model || "_default"}
+                    onChange={(value) => {
+                      autoTitleSettings.value = {
+                        ...autoTitleSettings.value,
+                        model: value === "_default" ? null : value,
+                      };
+                    }}
+                    options={[
+                      { value: "_default", label: t("settings.newChat.agentDefault") },
+                      ...models.value.map((model) => ({
+                        value: model.id,
+                        label: model.displayName || model.id,
+                      })),
+                    ]}
+                    size="sm"
+                  />
+                </SettingRow>
+
+                <div class="p-3 rounded-lg bg-[var(--color-bg-tertiary)] text-xs text-[var(--color-text-muted)]">
+                  ⚠️ {t("settings.autoTitle.costWarning")}
+                </div>
+              </>
+            )}
+
+            {!autoTitleSettings.value.enabled && (
+              <div class="text-sm text-[var(--color-text-muted)]">
+                ℹ️ {t("settings.autoTitle.disabledHint")}
+              </div>
+            )}
           </div>
         </SettingsSection>
 
