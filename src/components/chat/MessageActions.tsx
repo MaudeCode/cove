@@ -12,6 +12,13 @@ import { t } from "@/lib/i18n";
 import { stripMarkdown } from "@/lib/utils";
 
 // ============================================
+// Constants
+// ============================================
+
+/** How long to show "Copied!" feedback (ms) */
+const COPIED_FEEDBACK_MS = 2000;
+
+// ============================================
 // Types
 // ============================================
 
@@ -87,7 +94,7 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
   // Reset copied state after delay
   useEffect(() => {
     if (!copied) return;
-    const timer = setTimeout(() => setCopied(null), 2000);
+    const timer = setTimeout(() => setCopied(null), COPIED_FEEDBACK_MS);
     return () => clearTimeout(timer);
   }, [copied]);
 
