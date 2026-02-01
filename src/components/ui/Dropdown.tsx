@@ -202,8 +202,8 @@ export function Dropdown({
                 ${styles.option}
                 ${option.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                 ${option.value === value ? "text-[var(--color-accent)] font-medium" : "text-[var(--color-text-primary)]"}
-                ${focusedIndex === index && !option.disabled ? "bg-[var(--color-bg-hover)]" : ""}
-                ${!option.disabled ? "hover:bg-[var(--color-bg-hover)]" : ""}
+                ${focusedIndex === index && !option.disabled ? "bg-[var(--color-bg-tertiary)]" : ""}
+                ${!option.disabled ? "hover:bg-[var(--color-bg-tertiary)]" : ""}
               `}
             >
               {option.label}
