@@ -16,9 +16,11 @@ import {
   removeSessionAnimated,
   loadSessions,
 } from "@/signals/sessions";
+import { getStreamingRun } from "@/signals/chat";
 import { newChatSettings, isMultiChatMode } from "@/signals/settings";
 import { showNewChatModal } from "@/signals/ui";
 import { Button } from "@/components/ui/Button";
+import { Spinner } from "@/components/ui/Spinner";
 import { PlusIcon } from "@/components/ui/icons";
 import { SessionRenameModal } from "@/components/sessions/SessionRenameModal";
 import { SessionDeleteModal } from "@/components/sessions/SessionDeleteModal";
@@ -143,14 +145,23 @@ export function Sidebar() {
           <div class="flex-1 overflow-y-auto">
             {/* Chat link at top */}
             <div class="px-3 py-2">
-              <button
-                type="button"
-                onClick={() => route("/chat")}
-                class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 ease-out bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
-              >
-                <span class="w-5 h-5 flex-shrink-0">💬</span>
-                {t("nav.chat")}
-              </button>
+              {(() => {
+                const isStreaming = !!getStreamingRun("main");
+                return (
+                  <button
+                    type="button"
+                    onClick={() => route("/chat")}
+                    class={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 ease-out bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm ${isStreaming ? "ai-glow" : ""}`}
+                  >
+                    {isStreaming ? (
+                      <Spinner size="xs" class="flex-shrink-0 text-[var(--color-accent)]" />
+                    ) : (
+                      <span class="w-5 h-5 flex-shrink-0">💬</span>
+                    )}
+                    {t("nav.chat")}
+                  </button>
+                );
+              })()}
             </div>
 
             {/* All nav sections - expanded */}
