@@ -10,9 +10,9 @@ import type { Message } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
 import { MessageImages } from "./MessageImages";
 import { MessageActions } from "./MessageActions";
-import { BouncingDots } from "@/components/ui";
+import { BouncingDots } from "@/components/ui/BouncingDots";
 import { formatTimestamp, t } from "@/lib/i18n";
-import { retryMessage } from "@/lib/chat";
+import { retryMessage } from "@/lib/chat/send";
 
 interface UserMessageProps {
   message: Message;

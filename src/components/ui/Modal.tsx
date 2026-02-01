@@ -10,9 +10,9 @@ import { createPortal } from "preact/compat";
 import { useEffect, useRef, useCallback } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { IconButton } from "./IconButton";
-import { CloseIcon } from "./icons";
+import { XIcon } from "./icons";
 
-export type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
+type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
 
 export interface ModalProps {
   /** Whether modal is open */
@@ -133,7 +133,7 @@ export function Modal({
             )}
             {!hideCloseButton && (
               <IconButton
-                icon={<CloseIcon />}
+                icon={<XIcon />}
                 label={t("actions.close")}
                 variant="ghost"
                 size="sm"

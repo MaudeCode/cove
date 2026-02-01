@@ -16,7 +16,7 @@ import {
 } from "@/signals/sessions";
 import type { TimeGroup } from "@/lib/session-utils";
 import type { Session } from "@/types/sessions";
-import { SessionItem } from "@/components/sessions";
+import { SessionItem } from "@/components/sessions/SessionItem";
 import { currentPath } from "./Sidebar";
 
 interface SessionListProps {

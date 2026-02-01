@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Logger utility
  *
@@ -68,7 +69,7 @@ function sendToFile(level: LogLevel, namespace: string, message: string, data?: 
 /**
  * Create a namespaced logger
  */
-export function createLogger(namespace: string) {
+function createLogger(namespace: string) {
   return {
     debug: (message: string, ...args: unknown[]) => {
       if (shouldLog("debug")) {
@@ -104,7 +105,7 @@ export function createLogger(namespace: string) {
 /**
  * Clear the debug log file (dev mode only)
  */
-export function clearDebugLog(): void {
+function clearDebugLog(): void {
   if (!DEV_MODE) return;
   fetch("/__cove_debug", { method: "DELETE" }).catch(() => {});
 }

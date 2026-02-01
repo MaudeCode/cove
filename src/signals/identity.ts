@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Identity Signals
  *
@@ -18,7 +19,7 @@ export interface AssistantIdentity {
   agentId: string | null;
 }
 
-export interface UserIdentity {
+interface UserIdentity {
   name: string;
   avatar: string | null;
 }
@@ -38,14 +39,14 @@ const DEFAULT_USER_NAME = "You";
 /** Assistant identity */
 export const assistantName = signal<string>(DEFAULT_ASSISTANT_NAME);
 export const assistantAvatar = signal<string | null>(DEFAULT_ASSISTANT_AVATAR);
-export const assistantAgentId = signal<string | null>(null);
+const assistantAgentId = signal<string | null>(null);
 
 /** User identity */
 export const userName = signal<string>(DEFAULT_USER_NAME);
 export const userAvatar = signal<string | null>(null);
 
 /** Whether identity is loading */
-export const isLoadingIdentity = signal<boolean>(false);
+const isLoadingIdentity = signal<boolean>(false);
 
 // ============================================
 // Actions
@@ -85,18 +86,7 @@ export async function loadAssistantIdentity(sessionKey?: string): Promise<void> 
 /**
  * Set user identity (from settings or login)
  */
-export function setUserIdentity(name: string, avatar?: string | null): void {
+function setUserIdentity(name: string, avatar?: string | null): void {
   userName.value = name || DEFAULT_USER_NAME;
   userAvatar.value = avatar ?? null;
-}
-
-/**
- * Reset identity to defaults
- */
-export function resetIdentity(): void {
-  assistantName.value = DEFAULT_ASSISTANT_NAME;
-  assistantAvatar.value = DEFAULT_ASSISTANT_AVATAR;
-  assistantAgentId.value = null;
-  userName.value = DEFAULT_USER_NAME;
-  userAvatar.value = null;
 }

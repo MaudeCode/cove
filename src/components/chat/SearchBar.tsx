@@ -18,7 +18,9 @@ import {
   hasDateFilter,
   clearDateFilter,
 } from "@/signals/chat";
-import { IconButton, DatePicker, SearchIcon, CloseIcon } from "@/components/ui";
+import { IconButton } from "@/components/ui/IconButton";
+import { DatePicker } from "@/components/ui/DatePicker";
+import { SearchIcon, XIcon } from "@/components/ui/icons";
 import { HeartbeatIndicator } from "./HeartbeatIndicator";
 import { hasContent } from "@/lib/utils";
 import { t } from "@/lib/i18n";
@@ -86,7 +88,7 @@ export function SearchBar() {
       >
         {/* Close button - on left so it's easy to close if opened accidentally */}
         <IconButton
-          icon={<CloseIcon />}
+          icon={<XIcon />}
           label={t("actions.close")}
           onClick={closeSearch}
           variant="ghost"

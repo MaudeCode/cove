@@ -5,7 +5,7 @@
  */
 
 import { t } from "@/lib/i18n";
-import { Card } from "@/components/ui";
+import { Card } from "@/components/ui/Card";
 import type { RouteProps } from "@/types/routes";
 
 interface PlaceholderViewProps {
@@ -41,10 +41,6 @@ export function PlaceholderView({ titleKey, icon, descriptionKey }: PlaceholderV
 // ============================================
 
 // Note: RouteProps accepted but unused - required by preact-router
-
-export function OverviewView(_props: RouteProps) {
-  return <PlaceholderView titleKey="nav.overview" icon="📊" />;
-}
 
 export function ChannelsView(_props: RouteProps) {
   return <PlaceholderView titleKey="nav.channels" icon="🔗" />;

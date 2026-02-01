@@ -9,7 +9,8 @@ import { useSignal, useSignalEffect } from "@preact/signals";
 import { useEffect, useRef, useCallback } from "preact/hooks";
 import { createPortal } from "preact/compat";
 import { t } from "@/lib/i18n";
-import { Button, LinkButton } from "@/components/ui";
+import { Button } from "@/components/ui/Button";
+import { LinkButton } from "@/components/ui/LinkButton";
 import { ArrowRight, ArrowLeft, X } from "lucide-preact";
 
 export interface TourStep {
@@ -105,7 +106,7 @@ export function SpotlightTour({
 
   // Update target when step changes
   useSignalEffect(() => {
-    const _ = currentIndex.value; // Subscribe to changes
+    void currentIndex.value; // Subscribe to changes
     transitioning.value = true;
     // Don't clear position - keep old position during fade out
     updateTarget();

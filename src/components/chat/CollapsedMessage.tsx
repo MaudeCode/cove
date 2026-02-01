@@ -6,7 +6,7 @@
 
 import { useState } from "preact/hooks";
 import type { Message } from "@/types/messages";
-import { ChevronDownIcon } from "@/components/ui";
+import { ChevronDownIcon } from "@/components/ui/icons";
 import { t } from "@/lib/i18n";
 
 type CollapsedType = "compaction" | "cron";

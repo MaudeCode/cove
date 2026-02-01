@@ -14,7 +14,9 @@ import {
   showCronSessions,
   toggleCronSessions,
 } from "@/signals/sessions";
-import { Toggle, Chip, FilterIcon, SearchIcon, XIcon } from "@/components/ui";
+import { Toggle } from "@/components/ui/Toggle";
+import { Chip } from "@/components/ui/Chip";
+import { FilterIcon, SearchIcon, XIcon } from "@/components/ui/icons";
 
 export function SessionFilters() {
   const [showFilters, setShowFilters] = useState(false);

@@ -7,11 +7,12 @@
 
 import { useState, useRef, useCallback } from "preact/hooks";
 import { Heart } from "lucide-preact";
-import { IconButton, Badge } from "@/components/ui";
+import { IconButton } from "@/components/ui/IconButton";
+import { Badge } from "@/components/ui/Badge";
 import { heartbeatMessages, heartbeatCount } from "@/signals/chat";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { isHeartbeatResponse } from "@/lib/message-detection";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 export function HeartbeatIndicator() {
   const count = heartbeatCount.value;

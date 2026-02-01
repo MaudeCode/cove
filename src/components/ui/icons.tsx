@@ -10,7 +10,6 @@ import {
   Plus,
   Menu,
   Settings,
-  LogOut,
   ChevronDown,
   ArrowDown,
   ExternalLink,
@@ -22,7 +21,6 @@ import {
   Filter,
   Pin,
   Search,
-  Clock,
 } from "lucide-preact";
 
 type IconProps = {
@@ -33,7 +31,7 @@ type IconProps = {
 // Action Icons
 // ============================================
 
-export function CloseIcon({ class: className }: IconProps) {
+export function XIcon({ class: className }: IconProps) {
   return <X class={className || "w-5 h-5"} aria-hidden="true" />;
 }
 
@@ -47,10 +45,6 @@ export function MenuIcon({ class: className }: IconProps) {
 
 export function SettingsIcon({ class: className }: IconProps) {
   return <Settings class={className || "w-5 h-5"} aria-hidden="true" />;
-}
-
-export function LogoutIcon({ class: className }: IconProps) {
-  return <LogOut class={className || "w-5 h-5"} aria-hidden="true" />;
 }
 
 // ============================================
@@ -109,10 +103,3 @@ export function PinIcon({ class: className }: IconProps) {
 export function SearchIcon({ class: className }: IconProps) {
   return <Search class={className || "w-5 h-5"} aria-hidden="true" />;
 }
-
-export function ClockIcon({ class: className }: IconProps) {
-  return <Clock class={className || "w-5 h-5"} aria-hidden="true" />;
-}
-
-// Alias for CloseIcon
-export const XIcon = CloseIcon;

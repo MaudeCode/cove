@@ -30,10 +30,10 @@ export const models = signal<ModelChoice[]>([]);
 export const defaultModel = signal<string | null>(null);
 
 /** Whether we're loading models */
-export const isLoadingModels = signal<boolean>(false);
+const isLoadingModels = signal<boolean>(false);
 
 /** Error from loading models */
-export const modelsError = signal<string | null>(null);
+const modelsError = signal<string | null>(null);
 
 // ============================================
 // Derived State
@@ -53,9 +53,6 @@ export const modelsByProvider = computed(() => {
 
   return grouped;
 });
-
-/** List of providers */
-export const providers = computed(() => Array.from(modelsByProvider.value.keys()).sort());
 
 // ============================================
 // Actions
@@ -104,7 +101,7 @@ export async function loadModels(): Promise<void> {
 /**
  * Find a model by ID
  */
-export function findModel(modelId: string): ModelChoice | undefined {
+function findModel(modelId: string): ModelChoice | undefined {
   return models.value.find((m) => m.id === modelId);
 }
 

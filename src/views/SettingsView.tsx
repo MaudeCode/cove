@@ -6,8 +6,10 @@
 
 import type { ComponentChildren } from "preact";
 import { t } from "@/lib/i18n";
-import { Button, Card, Dropdown } from "@/components/ui";
-import { ThemeSettings } from "@/components/settings";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { gatewayVersion, gatewayUrl, isConnected } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
 import {

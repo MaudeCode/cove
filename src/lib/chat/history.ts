@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Chat History
  *
@@ -155,7 +156,7 @@ export async function loadHistory(
 /**
  * Reload history for current session.
  */
-export async function reloadHistory(sessionKey: string): Promise<void> {
+async function reloadHistory(sessionKey: string): Promise<void> {
   clearMessages();
   await loadHistory(sessionKey);
 }

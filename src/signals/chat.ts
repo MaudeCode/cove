@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Chat Signals
  *
@@ -176,8 +177,8 @@ export const activeRuns = signal<Map<string, ChatRun>>(new Map());
 
 /** Direct signals for streaming state (more reliable than computed with Maps) */
 export const isStreaming = signal<boolean>(false);
-export const streamingContent = signal<string>("");
-export const streamingToolCalls = signal<ToolCall[]>([]);
+const streamingContent = signal<string>("");
+const streamingToolCalls = signal<ToolCall[]>([]);
 
 /** Get the current streaming run for a session (if any) */
 export function getStreamingRun(sessionKey: string): ChatRun | null {
@@ -299,7 +300,7 @@ export function addMessage(message: Message): void {
 }
 
 /** Update an existing message by ID */
-export function updateMessage(id: string, updates: Partial<Message>): void {
+function updateMessage(id: string, updates: Partial<Message>): void {
   messages.value = messages.value.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg));
 }
 
@@ -319,7 +320,7 @@ export function markMessageFailed(messageId: string, error: string): void {
 }
 
 /** Mark a message as queued (waiting for current stream to finish) */
-export function markMessageQueued(messageId: string): void {
+function markMessageQueued(messageId: string): void {
   setMessageStatus(messageId, "queued", undefined);
 }
 
@@ -464,6 +465,6 @@ export function dequeueMessage(messageId: string): void {
 }
 
 /** Clear the message queue */
-export function clearQueue(): void {
+function clearQueue(): void {
   messageQueue.value = [];
 }

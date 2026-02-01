@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Chat Send
  *
@@ -135,7 +136,7 @@ export async function sendMessage(
  * Resend a message (shared logic for retry and queue processing).
  * Adds message to chat if not already there, then sends.
  */
-export async function resendMessage(message: Message): Promise<void> {
+async function resendMessage(message: Message): Promise<void> {
   if (!message.sessionKey) {
     log.chat.warn("Cannot resend message - missing sessionKey:", message.id);
     return;
@@ -231,6 +232,6 @@ export async function abortChat(sessionKey: string): Promise<void> {
 /**
  * Abort a specific run.
  */
-export async function abortRun(sessionKey: string, runId: string): Promise<void> {
+async function abortRun(sessionKey: string, runId: string): Promise<void> {
   await send("chat.abort", { sessionKey, runId });
 }

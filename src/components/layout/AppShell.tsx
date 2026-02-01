@@ -13,7 +13,7 @@ import {
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
 } from "@/signals/ui";
-import { ResizeHandle } from "@/components/ui";
+import { ResizeHandle } from "@/components/ui/ResizeHandle";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
 

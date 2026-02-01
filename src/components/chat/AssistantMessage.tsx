@@ -11,7 +11,7 @@ import { MessageContent } from "./MessageContent";
 import { MessageImages } from "./MessageImages";
 import { MessageActions } from "./MessageActions";
 import { ToolCall as ToolCallComponent } from "./ToolCall";
-import { BouncingDots } from "@/components/ui";
+import { BouncingDots } from "@/components/ui/BouncingDots";
 import { formatTimestamp, t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { parseMediaFromContent, mediaUrlsToImages } from "@/lib/media-parse";

@@ -17,7 +17,7 @@ import { log } from "@/lib/logger";
 export type LocaleStrings = typeof en;
 
 // Supported locales
-export const supportedLocales = [
+const supportedLocales = [
   { code: "en", name: "English", nativeName: "English" },
   // Future locales:
   // { code: 'es', name: 'Spanish', nativeName: 'Español' },
@@ -27,12 +27,14 @@ export const supportedLocales = [
   // { code: 'ar', name: 'Arabic', nativeName: 'العربية', rtl: true },
 ] as const;
 
-export type SupportedLocale = (typeof supportedLocales)[number]["code"];
+type SupportedLocale = (typeof supportedLocales)[number]["code"];
 
 // Cache for loaded locales
 const localeCache: Record<string, LocaleStrings> = {
   en,
 };
+
+/* eslint-disable no-unused-vars -- i18n utilities for future use */
 
 /**
  * Check if a locale is supported
@@ -111,3 +113,5 @@ export function getAvailableLocales() {
     nativeName: l.nativeName,
   }));
 }
+
+/* eslint-enable no-unused-vars */

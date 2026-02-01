@@ -7,7 +7,7 @@
 
 import { messageQueue, dequeueMessage } from "@/signals/chat";
 import { t } from "@/lib/i18n";
-import { XIcon } from "@/components/ui";
+import { XIcon } from "@/components/ui/icons";
 
 export function QueuedMessages() {
   const queue = messageQueue.value;

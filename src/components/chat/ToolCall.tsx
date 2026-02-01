@@ -8,7 +8,8 @@
 import type { ComponentChildren } from "preact";
 import { useState } from "preact/hooks";
 import type { ToolCall as ToolCallType } from "@/types/messages";
-import { ChevronDownIcon, Spinner } from "@/components/ui";
+import { ChevronDownIcon } from "@/components/ui/icons";
+import { Spinner } from "@/components/ui/Spinner";
 
 interface ToolCallProps {
   toolCall: ToolCallType;

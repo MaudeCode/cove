@@ -9,10 +9,10 @@ import { forwardRef } from "preact/compat";
 import { Spinner } from "./Spinner";
 import { Tooltip, type TooltipPlacement } from "./Tooltip";
 
-export type IconButtonSize = "sm" | "md" | "lg";
-export type IconButtonVariant = "default" | "ghost" | "danger";
+type IconButtonSize = "sm" | "md" | "lg";
+type IconButtonVariant = "default" | "ghost" | "danger";
 
-export interface IconButtonProps extends Omit<JSX.HTMLAttributes<HTMLButtonElement>, "size"> {
+interface IconButtonProps extends Omit<JSX.HTMLAttributes<HTMLButtonElement>, "size"> {
   /** Icon to display */
   icon: ComponentChildren;
   /** Accessible label (required for a11y) */

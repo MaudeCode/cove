@@ -8,22 +8,20 @@ import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
-import { initChat } from "@/lib/chat";
+import { initChat } from "@/lib/chat/init";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
 import { getAuth, saveAuth } from "@/lib/storage";
-import {
-  Input,
-  PasswordInput,
-  Dropdown,
-  Button,
-  Toggle,
-  Card,
-  FormField,
-  CoveLogo,
-} from "@/components/ui";
+import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { Button } from "@/components/ui/Button";
+import { Toggle } from "@/components/ui/Toggle";
+import { Card } from "@/components/ui/Card";
+import { FormField } from "@/components/ui/FormField";
+import { CoveLogo } from "@/components/ui/CoveLogo";
 
 export function LoginView() {
   const url = useSignal("");

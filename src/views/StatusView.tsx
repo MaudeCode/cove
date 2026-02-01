@@ -8,7 +8,8 @@
 
 import { t } from "@/lib/i18n";
 import { isConnected, gatewayVersion } from "@/lib/gateway";
-import { Card, Badge } from "@/components/ui";
+import { Card } from "@/components/ui/Card";
+import { Badge } from "@/components/ui/Badge";
 import type { RouteProps } from "@/types/routes";
 
 export function StatusView(_props: RouteProps) {

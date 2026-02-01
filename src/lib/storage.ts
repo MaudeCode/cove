@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Typed localStorage Wrapper
  *
@@ -8,40 +9,10 @@
  * - Quota error handling
  */
 
-// ============================================
-// Schema Definition
-// ============================================
+import type { StoredSettings, StoredAuth, StorageSchema } from "@/types/settings";
 
-/**
- * User settings stored in localStorage
- */
-export interface StoredSettings {
-  theme: string;
-  locale: string;
-  timeFormat: "relative" | "local";
-  fontSize: "sm" | "md" | "lg";
-}
-
-/**
- * Auth credentials stored in localStorage
- */
-export interface StoredAuth {
-  url: string;
-  authMode: "token" | "password";
-  credential?: string;
-  rememberMe: boolean;
-}
-
-/**
- * Complete storage schema
- */
-export interface StorageSchema {
-  settings: StoredSettings;
-  auth: StoredAuth;
-  recentSessions: string[];
-  schemaVersion: number;
-  hasCompletedOnboarding: boolean;
-}
+// Re-export types for consumers
+export type { StoredAuth } from "@/types/settings";
 
 /**
  * Current schema version - increment when schema changes
@@ -72,6 +43,7 @@ const defaults: StorageSchema = {
   recentSessions: [],
   schemaVersion: CURRENT_SCHEMA_VERSION,
   hasCompletedOnboarding: false,
+  pendingTour: false,
 };
 
 // ============================================
@@ -81,7 +53,7 @@ const defaults: StorageSchema = {
 /**
  * Get a value from storage
  */
-export function get<K extends keyof StorageSchema>(key: K): StorageSchema[K] | null {
+function get<K extends keyof StorageSchema>(key: K): StorageSchema[K] | null {
   try {
     const raw = localStorage.getItem(PREFIX + key);
     if (raw === null) return null;
@@ -97,7 +69,7 @@ export function get<K extends keyof StorageSchema>(key: K): StorageSchema[K] | n
 /**
  * Get a value from storage with a default fallback
  */
-export function getWithDefault<K extends keyof StorageSchema>(
+function getWithDefault<K extends keyof StorageSchema>(
   key: K,
   defaultValue: StorageSchema[K],
 ): StorageSchema[K] {
@@ -110,7 +82,7 @@ export function getWithDefault<K extends keyof StorageSchema>(
  *
  * @throws StorageQuotaError if quota is exceeded
  */
-export function set<K extends keyof StorageSchema>(key: K, value: StorageSchema[K]): void {
+function set<K extends keyof StorageSchema>(key: K, value: StorageSchema[K]): void {
   try {
     const serialized = JSON.stringify(value);
     localStorage.setItem(PREFIX + key, serialized);
@@ -125,14 +97,14 @@ export function set<K extends keyof StorageSchema>(key: K, value: StorageSchema[
 /**
  * Remove a value from storage
  */
-export function remove(key: keyof StorageSchema): void {
+function remove(key: keyof StorageSchema): void {
   localStorage.removeItem(PREFIX + key);
 }
 
 /**
  * Clear all Cove storage
  */
-export function clear(): void {
+function clear(): void {
   const keysToRemove: string[] = [];
 
   for (let i = 0; i < localStorage.length; i++) {
@@ -167,7 +139,7 @@ const migrations: Record<number, Migration> = {
 /**
  * Run migrations if needed
  */
-export function runMigrations(): void {
+function runMigrations(): void {
   const storedVersion = get("schemaVersion") ?? 0;
 
   if (storedVersion >= CURRENT_SCHEMA_VERSION) {
@@ -207,14 +179,14 @@ export function runMigrations(): void {
 /**
  * Get settings with defaults
  */
-export function getSettings(): StoredSettings {
+function getSettings(): StoredSettings {
   return getWithDefault("settings", defaults.settings);
 }
 
 /**
  * Update settings (partial update)
  */
-export function updateSettings(updates: Partial<StoredSettings>): void {
+function updateSettings(updates: Partial<StoredSettings>): void {
   const current = getSettings();
   set("settings", { ...current, ...updates });
 }
@@ -243,14 +215,14 @@ export function clearAuth(): void {
 /**
  * Get recent sessions
  */
-export function getRecentSessions(): string[] {
+function getRecentSessions(): string[] {
   return getWithDefault("recentSessions", []);
 }
 
 /**
  * Add a session to recent list (max 20, most recent first)
  */
-export function addRecentSession(sessionKey: string): void {
+function addRecentSession(sessionKey: string): void {
   const recent = getRecentSessions();
   const filtered = recent.filter((key) => key !== sessionKey);
   const updated = [sessionKey, ...filtered].slice(0, 20);
@@ -282,7 +254,7 @@ export function setPendingTour(show: boolean): void {
  * Check and clear pending tour flag
  */
 export function consumePendingTour(): boolean {
-  const pending = get<boolean>("pendingTour") ?? false;
+  const pending = get("pendingTour") ?? false;
   if (pending) {
     remove("pendingTour");
   }
@@ -296,7 +268,7 @@ export function consumePendingTour(): boolean {
 /**
  * Custom error for quota exceeded
  */
-export class StorageQuotaError extends Error {
+class StorageQuotaError extends Error {
   constructor(message: string) {
     super(message);
     this.name = "StorageQuotaError";
@@ -322,7 +294,7 @@ function isQuotaError(err: unknown): boolean {
 /**
  * Check available storage space (approximate)
  */
-export async function checkStorageQuota(): Promise<{ used: number; available: number } | null> {
+async function checkStorageQuota(): Promise<{ used: number; available: number } | null> {
   if ("storage" in navigator && "estimate" in navigator.storage) {
     try {
       const estimate = await navigator.storage.estimate();
