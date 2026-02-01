@@ -331,11 +331,16 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
       };
 
       ws.onclose = (_event) => {
-        const wasConnected = connectionState.value === "connected";
+        const state = connectionState.value;
+        const wasConnected = state === "connected";
+        const wasReconnecting = reconnectAttempt.value > 0;
         stopHeartbeat();
         clearPendingRequests(new Error("Connection closed"));
 
-        if (wasConnected && currentConfig?.autoReconnect !== false) {
+        // Schedule reconnect if:
+        // 1. We were connected and autoReconnect is enabled, OR
+        // 2. We were already in a reconnect attempt (keep trying)
+        if ((wasConnected || wasReconnecting) && currentConfig?.autoReconnect !== false) {
           scheduleReconnect();
         } else {
           connectionState.value = "disconnected";
