@@ -564,28 +564,15 @@ function JobRow({ job }: { job: CronJob }) {
 function JobEditForm() {
   return (
     <div class="space-y-5">
-      {/* Basic Info */}
-      <div class="flex items-end gap-4">
-        <div class="flex-1">
-          <FormField label={t("cron.form.name")}>
-            <Input
-              value={editName.value}
-              onInput={(e) => (editName.value = (e.target as HTMLInputElement).value)}
-              placeholder={t("cron.form.namePlaceholder")}
-              fullWidth
-            />
-          </FormField>
-        </div>
-        <div class="flex items-center gap-2 pb-1">
-          <Toggle
-            checked={editEnabled.value}
-            onChange={(checked) => (editEnabled.value = checked)}
-          />
-          <span class="text-sm text-[var(--color-text-secondary)]">
-            {editEnabled.value ? t("cron.enabled") : t("cron.disabled")}
-          </span>
-        </div>
-      </div>
+      {/* Name */}
+      <FormField label={t("cron.form.name")}>
+        <Input
+          value={editName.value}
+          onInput={(e) => (editName.value = (e.target as HTMLInputElement).value)}
+          placeholder={t("cron.form.namePlaceholder")}
+          fullWidth
+        />
+      </FormField>
 
       <FormField label={t("cron.form.description")} hint={t("cron.form.descriptionHint")}>
         <Input
@@ -786,20 +773,31 @@ function JobModal() {
                 </Button>
               ))}
           </div>
-          {/* Save / Create */}
-          <div class="flex items-center gap-2">
-            <Button variant="secondary" onClick={closeModal}>
-              {t("actions.cancel")}
-            </Button>
-            <Button onClick={saveOrCreateJob} disabled={isSaving.value}>
-              {isSaving.value ? (
-                <Spinner size="sm" />
-              ) : isEdit ? (
-                t("actions.save")
-              ) : (
-                t("actions.create")
-              )}
-            </Button>
+          {/* Enabled toggle + Save/Create */}
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              <Toggle
+                checked={editEnabled.value}
+                onChange={(checked) => (editEnabled.value = checked)}
+              />
+              <span class="text-sm text-[var(--color-text-secondary)]">
+                {editEnabled.value ? t("cron.enabled") : t("cron.disabled")}
+              </span>
+            </div>
+            <div class="flex items-center gap-2">
+              <Button variant="secondary" onClick={closeModal}>
+                {t("actions.cancel")}
+              </Button>
+              <Button onClick={saveOrCreateJob} disabled={isSaving.value}>
+                {isSaving.value ? (
+                  <Spinner size="sm" />
+                ) : isEdit ? (
+                  t("actions.save")
+                ) : (
+                  t("actions.create")
+                )}
+              </Button>
+            </div>
           </div>
         </div>
       }
