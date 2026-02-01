@@ -34,8 +34,8 @@ export function UsageBadge() {
 
   const level = getUsageLevel(primary.usedPercent);
 
-  // Build tooltip content
-  const tooltipContent = `${usage.displayName}${usage.plan ? ` (${usage.plan})` : ""}: ${Math.round(primary.usedPercent)}% ${primary.label}`;
+  // Simple tooltip - just explain what it is
+  const tooltipContent = usage.displayName;
 
   return (
     <div ref={containerRef} class="relative">
