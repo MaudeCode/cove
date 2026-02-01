@@ -52,3 +52,39 @@ export function capitalize(s: string): string {
 export function hasContent(s?: string | null): s is string {
   return typeof s === "string" && s.trim().length > 0;
 }
+
+/**
+ * Strip markdown formatting from text, returning plain text.
+ * Useful for copying "formatted" content without markdown syntax.
+ */
+export function stripMarkdown(markdown: string): string {
+  return (
+    markdown
+      // Bold/italic
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/\*(.+?)\*/g, "$1")
+      .replace(/__(.+?)__/g, "$1")
+      .replace(/_(.+?)_/g, "$1")
+      // Strikethrough
+      .replace(/~~(.+?)~~/g, "$1")
+      // Inline code
+      .replace(/`(.+?)`/g, "$1")
+      // Headers
+      .replace(/^#{1,6}\s+/gm, "")
+      // Bullet lists → bullet character
+      .replace(/^\s*[-*+]\s+/gm, "• ")
+      // Numbered lists → remove numbers
+      .replace(/^\s*\d+\.\s+/gm, "")
+      // Links → just the text
+      .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+      // Images → remove entirely
+      .replace(/!\[.*?\]\(.+?\)/g, "")
+      // Blockquotes
+      .replace(/^>\s+/gm, "")
+      // Code blocks → just the code
+      .replace(/```[\s\S]*?```/g, (match) => {
+        return match.replace(/```\w*\n?/, "").replace(/```$/, "");
+      })
+      .trim()
+  );
+}
