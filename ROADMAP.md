@@ -856,14 +856,17 @@ export const navigation: NavSection[] = [
 - [ ] Auth hints for connection failures
 - [ ] Secure context warnings (HTTP vs HTTPS)
 
-### 3.2 Channels View
-- [ ] Grid of channel cards (WhatsApp, Telegram, Discord, Signal, Slack, GoogleChat, iMessage, Nostr)
-- [ ] Per-channel status (connected, error, disabled)
-- [ ] Per-channel config section (expandable)
-- [ ] Channel health summary
-- [ ] Account count per channel
-- [ ] Enable/disable toggles
-- [ ] Channel-specific actions (QR login for WhatsApp, etc.)
+### 3.2 Channels View ✅
+- [x] Table of all channels with status badges (connected, configured, disabled, error)
+- [x] Expandable rows for per-account details
+- [x] Account status bits (enabled, configured, linked, running, connected)
+- [x] Health probe button (channels.status with probe=true)
+- [x] Logout action with confirmation modal
+- [x] Stat cards (total, connected, configured, errors)
+- [x] Last activity timestamps
+- [x] Links to docs for each channel
+- [ ] Enable/disable toggles (deferred to Config Editor)
+- [ ] Channel-specific actions like QR login (deferred)
 
 ### 3.3 Instances View ✅
 - [x] List connected clients/services (presence beacons)
