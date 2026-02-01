@@ -287,6 +287,8 @@
       "theme": "Theme",
       "themeDescription": "Choose your color scheme",
       "themeSystem": "System",
+      "useSystemTheme": "Follow system appearance",
+      "useSystemThemeDescription": "Automatically switch between light and dark themes",
       "lightTheme": "Light Theme",
       "darkTheme": "Dark Theme",
       "lightThemes": "Light",
