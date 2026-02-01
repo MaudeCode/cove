@@ -43,7 +43,12 @@
     "hint3": "Ensure your credentials are valid",
     "hint4": "Try refreshing if using HTTPS with self-signed certs",
     "tryAgain": "Try Again",
-    "showFeatureTour": "Show feature tour"
+    "showFeatureTour": "Show feature tour",
+    "modeTitle": "How would you like to use Cove?",
+    "modeSingle": "Single chat",
+    "modeSingleDesc": "One focused conversation",
+    "modeMulti": "Multi-chat",
+    "modeMultiDesc": "Multiple conversations"
   },
 
   "tour": {
