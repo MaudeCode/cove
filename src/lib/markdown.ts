@@ -1,10 +1,10 @@
 /**
  * Markdown Renderer
  *
- * Configured markdown-it instance with syntax highlighting.
+ * Configured marked instance with Prism syntax highlighting.
  */
 
-import MarkdownIt from "markdown-it";
+import { Marked } from "marked";
 import Prism from "prismjs";
 
 // Import common languages
@@ -49,6 +49,17 @@ function resolveLanguage(lang: string): string {
 }
 
 /**
+ * Escape HTML special characters
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/**
  * Highlight code with Prism
  */
 function highlightCode(code: string, lang: string): string {
@@ -67,65 +78,55 @@ function highlightCode(code: string, lang: string): string {
 }
 
 /**
- * Escape HTML special characters
+ * Create configured marked instance
  */
-function escapeHtml(str: string): string {
-  return str
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
-}
-
-/**
- * Create configured markdown-it instance
- */
-function createMarkdownRenderer(): MarkdownIt {
-  const md = new MarkdownIt({
-    html: false, // Disable HTML for security
-    linkify: true, // Auto-link URLs
-    typographer: true, // Smart quotes, etc.
+function createMarkdownRenderer(): Marked {
+  const marked = new Marked({
+    gfm: true, // GitHub Flavored Markdown
     breaks: true, // Convert \n to <br>
-    highlight: (code, lang) => {
-      const highlighted = highlightCode(code, lang);
-      const langClass = lang ? ` language-${resolveLanguage(lang)}` : "";
-      return `<pre class="code-block${langClass}"><code>${highlighted}</code></pre>`;
+  });
+
+  // Custom renderer for code blocks and links
+  marked.use({
+    renderer: {
+      code(token) {
+        const lang = token.lang || "";
+        const code = token.text;
+        const highlighted = highlightCode(code, lang);
+        const langClass = lang ? ` language-${resolveLanguage(lang)}` : "";
+        return `<pre class="code-block${langClass}"><code>${highlighted}</code></pre>`;
+      },
+      link(token) {
+        const href = token.href;
+        const title = token.title ? ` title="${escapeHtml(token.title)}"` : "";
+        const text = token.text;
+
+        // External links open in new tab
+        if (href.startsWith("http://") || href.startsWith("https://")) {
+          return `<a href="${escapeHtml(href)}"${title} target="_blank" rel="noopener noreferrer">${text}</a>`;
+        }
+
+        return `<a href="${escapeHtml(href)}"${title}>${text}</a>`;
+      },
     },
   });
 
-  // Open links in new tab
-  const defaultRender =
-    md.renderer.rules.link_open ||
-    ((tokens, idx, options, _env, self) => self.renderToken(tokens, idx, options));
-
-  md.renderer.rules.link_open = (tokens, idx, options, env, self) => {
-    const href = tokens[idx].attrGet("href");
-
-    // External links open in new tab
-    if (href && (href.startsWith("http://") || href.startsWith("https://"))) {
-      tokens[idx].attrSet("target", "_blank");
-      tokens[idx].attrSet("rel", "noopener noreferrer");
-    }
-
-    return defaultRender(tokens, idx, options, env, self);
-  };
-
-  return md;
+  return marked;
 }
 
 // Singleton instance
-const md = createMarkdownRenderer();
+const marked = createMarkdownRenderer();
 
 /**
  * Render markdown to HTML
  */
 export function renderMarkdown(content: string): string {
-  return md.render(content);
+  return marked.parse(content) as string;
 }
 
 /**
  * Render inline markdown (no block elements)
  */
 export function renderInlineMarkdown(content: string): string {
-  return md.renderInline(content);
+  return marked.parseInline(content) as string;
 }
