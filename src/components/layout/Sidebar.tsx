@@ -16,7 +16,7 @@ import {
   removeSessionAnimated,
   loadSessions,
 } from "@/signals/sessions";
-import { getStreamingRun } from "@/signals/chat";
+import { activeRuns } from "@/signals/chat";
 import { newChatSettings, isMultiChatMode } from "@/signals/settings";
 import { showNewChatModal } from "@/signals/ui";
 import { Button } from "@/components/ui/Button";
@@ -140,34 +140,7 @@ export function Sidebar() {
           <NavSections />
         </>
       ) : (
-        <>
-          {/* Single-chat mode: Chat link + expanded nav sections */}
-          <div class="flex-1 overflow-y-auto">
-            {/* Chat link at top */}
-            <div class="px-3 py-2">
-              {(() => {
-                const isStreaming = !!getStreamingRun("main");
-                return (
-                  <button
-                    type="button"
-                    onClick={() => route("/chat")}
-                    class={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 ease-out bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm ${isStreaming ? "ai-glow" : ""}`}
-                  >
-                    {isStreaming ? (
-                      <Spinner size="xs" class="flex-shrink-0 text-[var(--color-accent)]" />
-                    ) : (
-                      <span class="w-5 h-5 flex-shrink-0">💬</span>
-                    )}
-                    {t("nav.chat")}
-                  </button>
-                );
-              })()}
-            </div>
-
-            {/* All nav sections - expanded */}
-            <NavSections expanded />
-          </div>
-        </>
+        <SingleChatSidebar />
       )}
 
       {/* Modals (only needed in multi-chat mode, but harmless to keep) */}
@@ -186,6 +159,45 @@ export function Sidebar() {
         onClose={() => (showNewChatModal.value = false)}
         onCreate={createNewChat}
       />
+    </div>
+  );
+}
+
+/**
+ * Single-chat mode sidebar content
+ * Separate component to properly subscribe to activeRuns signal changes
+ */
+function SingleChatSidebar() {
+  // Check if main session is streaming by accessing activeRuns.value directly
+  // This ensures the component re-renders when activeRuns changes
+  let isMainStreaming = false;
+  for (const run of activeRuns.value.values()) {
+    if (run.sessionKey === "main" && (run.status === "pending" || run.status === "streaming")) {
+      isMainStreaming = true;
+      break;
+    }
+  }
+
+  return (
+    <div class="flex-1 overflow-y-auto">
+      {/* Chat link at top */}
+      <div class="px-3 py-2">
+        <button
+          type="button"
+          onClick={() => route("/chat")}
+          class={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 ease-out bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm ${isMainStreaming ? "ai-glow" : ""}`}
+        >
+          {isMainStreaming ? (
+            <Spinner size="xs" class="flex-shrink-0 text-[var(--color-accent)]" />
+          ) : (
+            <span class="w-5 h-5 flex-shrink-0">💬</span>
+          )}
+          {t("nav.chat")}
+        </button>
+      </div>
+
+      {/* All nav sections - expanded */}
+      <NavSections expanded />
     </div>
   );
 }
