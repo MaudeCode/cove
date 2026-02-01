@@ -9,7 +9,7 @@ import { capitalize } from "@/lib/utils";
 import type { Session } from "@/types/sessions";
 
 /** Known channel types that appear in session keys */
-export const CHANNEL_KEY_PATTERNS = [
+const CHANNEL_KEY_PATTERNS = [
   ":discord:",
   ":telegram:",
   ":signal:",
@@ -77,7 +77,7 @@ export function getAgentId(sessionKey: string): string | null {
  * e.g. "agent:main:main" → "main"
  *      "agent:main:cron:uuid" → "cron"
  */
-export function getSessionKind(sessionKey: string): string | null {
+function getSessionKind(sessionKey: string): string | null {
   const parts = sessionKey.split(":");
   // Format: agent:<agentId>:<kind>[:uuid]
   if (parts.length >= 3 && parts[0] === "agent") {
@@ -109,7 +109,7 @@ export type TimeGroup = "pinned" | "today" | "yesterday" | "thisWeek" | "older";
 /**
  * Get the time group for a session based on its last activity
  */
-export function getTimeGroup(session: Session): TimeGroup {
+function getTimeGroup(session: Session): TimeGroup {
   // Main session is always pinned
   if (isMainSession(session.key)) {
     return "pinned";

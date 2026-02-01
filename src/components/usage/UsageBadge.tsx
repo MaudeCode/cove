@@ -9,8 +9,8 @@
 import { useState, useRef } from "preact/hooks";
 import { hasAnthropicUsage, anthropicUsage, primaryUsageWindow } from "@/signals/usage";
 import { getUsageLevel } from "@/types/usage";
-import { useClickOutside } from "@/hooks";
-import { Tooltip } from "@/components/ui";
+import { useClickOutside } from "@/hooks/useClickOutside";
+import { Tooltip } from "@/components/ui/Tooltip";
 import type { UsageWindow } from "@/types/usage";
 
 export function UsageBadge() {

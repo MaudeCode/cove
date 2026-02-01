@@ -127,37 +127,3 @@ function ErrorFallback({ error, errorInfo, onRetry }: ErrorFallbackProps) {
     </div>
   );
 }
-
-/**
- * Inline error component for use within views
- */
-export interface InlineErrorProps {
-  /** Error message */
-  message: string;
-  /** Called when retry is clicked */
-  onRetry?: () => void;
-  /** Additional class names */
-  class?: string;
-}
-
-export function InlineError({ message, onRetry, class: className }: InlineErrorProps) {
-  return (
-    <div
-      class={`
-        flex flex-col items-center justify-center gap-3 p-6
-        bg-[var(--color-error)]/5 border border-[var(--color-error)]/20
-        rounded-lg text-center
-        ${className || ""}
-      `}
-      role="alert"
-    >
-      <span class="text-2xl">❌</span>
-      <p class="text-sm text-[var(--color-error)]">{message}</p>
-      {onRetry && (
-        <Button onClick={onRetry} variant="secondary" size="sm">
-          {t("actions.retry")}
-        </Button>
-      )}
-    </div>
-  );
-}

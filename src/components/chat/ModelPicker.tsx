@@ -16,8 +16,8 @@ import { models, modelsByProvider, getModelDisplayName, defaultModel } from "@/s
 import { send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import { t } from "@/lib/i18n";
-import { useClickOutside } from "@/hooks";
-import { ChevronDownIcon } from "@/components/ui";
+import { useClickOutside } from "@/hooks/useClickOutside";
+import { ChevronDownIcon } from "@/components/ui/icons";
 
 const FAVORITES_KEY = "cove:model-favorites";
 

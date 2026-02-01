@@ -11,31 +11,34 @@ import { initTheme } from "@/lib/theme";
 import { initI18n } from "@/lib/i18n";
 import { initStorage, getAuth, hasCompletedOnboarding, consumePendingTour } from "@/lib/storage";
 import { isConnected, connect } from "@/lib/gateway";
-import { initChat } from "@/lib/chat";
+import { initChat } from "@/lib/chat/init";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
 
-import { AppShell, currentPath } from "@/components/layout";
-import { ToastContainer, TooltipProvider, ErrorBoundary, toast } from "@/components/ui";
+import { AppShell } from "@/components/layout/AppShell";
+import { currentPath } from "@/components/layout/Sidebar";
+import { ToastContainer, toast } from "@/components/ui/Toast";
+import { TooltipProvider } from "@/components/ui/Tooltip";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { ChatView } from "@/views/ChatView";
+import { LoginView } from "@/views/LoginView";
+import { StatusView as OverviewView } from "@/views/StatusView";
+import { CronView } from "@/views/CronView";
+import { ConfigView } from "@/views/ConfigView";
+import { SettingsView } from "@/views/SettingsView";
 import {
-  ChatView,
-  LoginView,
-  OverviewView,
   ChannelsView,
   InstancesView,
   SessionsView,
-  CronView,
   SkillsView,
   NodesView,
-  ConfigView,
   DebugView,
   LogsView,
-  SettingsView,
-} from "@/views";
-import { WelcomeWizard } from "@/components/onboarding";
-import { SpotlightTour } from "@/components/tour";
+} from "@/views/PlaceholderView";
+import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
+import { SpotlightTour } from "@/components/tour/SpotlightTour";
 import { ONBOARDING_TOUR_STEPS } from "@/lib/tour-steps";
 
 // Initialize storage synchronously so we can check saved auth immediately

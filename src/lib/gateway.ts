@@ -32,7 +32,7 @@ const HEARTBEAT_INTERVAL_MS = 30000;
 // State Signals
 // ============================================
 
-export type ConnectionState =
+type ConnectionState =
   | "disconnected"
   | "connecting"
   | "authenticating"
@@ -46,7 +46,7 @@ export const connectionState = signal<ConnectionState>("disconnected");
 export const isConnected = computed(() => connectionState.value === "connected");
 
 /** Whether this is the initial page load (before first connection attempt) */
-export const isInitialLoad = signal(true);
+const isInitialLoad = signal(true);
 
 /** Last error message */
 export const lastError = signal<string | null>(null);
@@ -58,7 +58,7 @@ export const gatewayVersion = signal<string | null>(null);
 export const gatewayUrl = signal<string | null>(null);
 
 /** Current connection ID */
-export const connectionId = signal<string | null>(null);
+const connectionId = signal<string | null>(null);
 
 /**
  * Main session key from gateway (e.g., "agent:main:main")
@@ -70,7 +70,7 @@ export const connectionId = signal<string | null>(null);
 export const mainSessionKey = signal<string | null>(null);
 
 /** Gateway capabilities */
-export const capabilities = signal<string[]>([]);
+const capabilities = signal<string[]>([]);
 
 /** Reconnect attempt count */
 export const reconnectAttempt = signal<number>(0);
@@ -506,7 +506,7 @@ function clearPendingRequests(error: Error): void {
 /**
  * Subscribe to gateway events
  */
-export function subscribe(handler: EventHandler): () => void {
+function subscribe(handler: EventHandler): () => void {
   eventHandlers.add(handler);
   return () => eventHandlers.delete(handler);
 }

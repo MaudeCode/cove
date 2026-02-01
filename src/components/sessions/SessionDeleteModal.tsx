@@ -7,7 +7,8 @@
 import { useState } from "preact/hooks";
 import type { Session } from "@/types/sessions";
 import { t } from "@/lib/i18n";
-import { Modal, Button } from "@/components/ui";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
 import { getSessionLabel } from "./SessionItem";
 
 interface SessionDeleteModalProps {

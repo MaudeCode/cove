@@ -7,7 +7,7 @@
 
 import { t } from "@/lib/i18n";
 
-export type SpinnerSize = "xs" | "sm" | "md" | "lg";
+type SpinnerSize = "xs" | "sm" | "md" | "lg";
 
 export interface SpinnerProps {
   /** Spinner size */

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Media Parsing
  *
@@ -97,6 +98,6 @@ export function mediaUrlsToImages(urls: string[]): MessageImage[] {
 /**
  * Check if content has any MEDIA: lines
  */
-export function hasMediaLines(content: string): boolean {
+function hasMediaLines(content: string): boolean {
   return MEDIA_LINE_RE.test(content);
 }

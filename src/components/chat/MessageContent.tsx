@@ -6,7 +6,7 @@
 
 import { useRef, useEffect } from "preact/hooks";
 import { renderMarkdown } from "@/lib/markdown";
-import { BouncingDots } from "@/components/ui";
+import { BouncingDots } from "@/components/ui/BouncingDots";
 import { t } from "@/lib/i18n";
 import { searchQuery } from "@/signals/chat";
 

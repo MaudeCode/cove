@@ -5,7 +5,7 @@
  */
 
 import { useState, useRef } from "preact/hooks";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside } from "@/hooks/useClickOutside";
 import { ChevronDownIcon } from "./icons";
 
 interface DatePickerProps {

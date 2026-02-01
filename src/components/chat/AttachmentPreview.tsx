@@ -7,7 +7,8 @@
 
 import { X, FileText, Image as ImageIcon } from "lucide-preact";
 import type { Attachment } from "@/types/attachments";
-import { Spinner, Tooltip } from "@/components/ui";
+import { Spinner } from "@/components/ui/Spinner";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { t } from "@/lib/i18n";
 
 interface AttachmentPreviewProps {

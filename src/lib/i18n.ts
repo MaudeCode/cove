@@ -21,13 +21,13 @@ import { log } from "./logger";
 const STORAGE_KEY = "cove:locale";
 
 /** Current locale code */
-export const locale = signal<string>(loadLocale());
+const locale = signal<string>(loadLocale());
 
 /** Current locale strings */
-export const strings = signal<LocaleStrings>(getLocaleStrings(locale.value));
+const strings = signal<LocaleStrings>(getLocaleStrings(locale.value));
 
 /** Whether current locale is RTL */
-export const isRTL = computed(() => {
+const isRTL = computed(() => {
   const rtlLocales = ["ar", "he", "fa", "ur"];
   return rtlLocales.includes(locale.value.split("-")[0]);
 });
@@ -68,6 +68,8 @@ function saveLocale(loc: string): void {
     // Ignore
   }
 }
+
+/* eslint-disable no-unused-vars -- i18n utilities for future use */
 
 /**
  * Set the current locale
@@ -201,7 +203,7 @@ export function formatDateTime(
  * formatRelativeTime(pastDate)    // "2 hours ago"
  * formatRelativeTime(futureDate)  // "in 5 minutes"
  */
-export function formatRelativeTime(date: Date | number): string {
+function formatRelativeTime(date: Date | number): string {
   const d = typeof date === "number" ? new Date(date) : date;
   const now = Date.now();
   const diffMs = d.getTime() - now;
@@ -289,7 +291,7 @@ export function formatTimestampCompact(date: Date | number): string {
  * formatRelativeTimeCompact(pastDate)  // "6h"
  * formatRelativeTimeCompact(olderDate) // "2d"
  */
-export function formatRelativeTimeCompact(date: Date | number): string {
+function formatRelativeTimeCompact(date: Date | number): string {
   const d = typeof date === "number" ? new Date(date) : date;
   const now = Date.now();
   const diffMs = Math.abs(d.getTime() - now);
@@ -368,3 +370,5 @@ export function formatDuration(ms: number): string {
     return `${seconds}s`;
   }
 }
+
+/* eslint-enable no-unused-vars */

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * UI Signals
  *
@@ -8,7 +9,7 @@
 
 import { signal, effect } from "@preact/signals";
 
-export interface Toast {
+interface Toast {
   id: string;
   message: string;
   type: "success" | "error" | "warning" | "info";
@@ -20,7 +21,7 @@ export interface Toast {
 // ============================================
 
 /** Default sidebar width in pixels */
-export const SIDEBAR_DEFAULT_WIDTH = 256;
+const SIDEBAR_DEFAULT_WIDTH = 256;
 export const SIDEBAR_MIN_WIDTH = 200;
 export const SIDEBAR_MAX_WIDTH = 480;
 
@@ -58,12 +59,4 @@ effect(() => {
   }
 });
 
-// ============================================
-// Modals & Toasts
-// ============================================
-
-/** Currently open modal (null if none) */
-export const activeModal = signal<string | null>(null);
-
-/** Toast notification queue */
-export const toasts = signal<Toast[]>([]);
+// Note: Toast handling moved to @/components/ui/Toast.tsx

@@ -7,7 +7,7 @@
 import { useSignal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
-import { ChevronDownIcon, ExternalLinkIcon } from "@/components/ui";
+import { ChevronDownIcon, ExternalLinkIcon } from "@/components/ui/icons";
 import { navigation, type NavItem, type NavSection as NavSectionType } from "@/lib/navigation";
 import { currentPath } from "./Sidebar";
 
@@ -68,7 +68,7 @@ interface CollapsibleNavSectionProps {
   section: NavSectionType;
 }
 
-export function CollapsibleNavSection({ section }: CollapsibleNavSectionProps) {
+function CollapsibleNavSection({ section }: CollapsibleNavSectionProps) {
   const isOpen = useSignal(false);
   const visibleItems = section.items;
 

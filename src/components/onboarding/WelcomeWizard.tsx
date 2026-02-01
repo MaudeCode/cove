@@ -9,27 +9,25 @@ import { useSignal, useComputed, useSignalEffect } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError, disconnect, probeGateway } from "@/lib/gateway";
-import { initChat } from "@/lib/chat";
+import { initChat } from "@/lib/chat/init";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
 import { saveAuth, completeOnboarding, setPendingTour } from "@/lib/storage";
-import {
-  Button,
-  Input,
-  PasswordInput,
-  Dropdown,
-  Toggle,
-  Card,
-  FormField,
-  CoveLogo,
-  Spinner,
-  LinkButton,
-  HintBox,
-  StatusIcon,
-  Tooltip,
-} from "@/components/ui";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { PasswordInput } from "@/components/ui/PasswordInput";
+import { Dropdown } from "@/components/ui/Dropdown";
+import { Toggle } from "@/components/ui/Toggle";
+import { Card } from "@/components/ui/Card";
+import { FormField } from "@/components/ui/FormField";
+import { CoveLogo } from "@/components/ui/CoveLogo";
+import { Spinner } from "@/components/ui/Spinner";
+import { LinkButton } from "@/components/ui/LinkButton";
+import { HintBox } from "@/components/ui/HintBox";
+import { StatusIcon } from "@/components/ui/StatusIcon";
+import { Tooltip } from "@/components/ui/Tooltip";
 import { ArrowRight, ArrowLeft, Zap, Shield, Globe, Check, AlertCircle } from "lucide-preact";
 import { WizardNav } from "./WizardNav";
 import { WizardProgress } from "./WizardProgress";
@@ -417,7 +415,7 @@ function UrlStep({
         </Tooltip>
       );
     }
-    return null;
+    return undefined;
   };
 
   return (

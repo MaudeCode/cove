@@ -8,7 +8,8 @@
 import { useEffect, useRef } from "preact/hooks";
 import { route } from "preact-router";
 import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
-import { sendMessage, abortChat, loadHistory, processMessageQueue } from "@/lib/chat";
+import { sendMessage, abortChat, processMessageQueue } from "@/lib/chat/send";
+import { loadHistory } from "@/lib/chat/history";
 import {
   filteredMessages,
   searchQuery,
@@ -29,7 +30,10 @@ import {
   updateSession,
 } from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
-import { MessageList, ChatInput, ConnectionBanner, CompactionBanner } from "@/components/chat";
+import { MessageList } from "@/components/chat/MessageList";
+import { ChatInput } from "@/components/chat/ChatInput";
+import { ConnectionBanner } from "@/components/chat/ConnectionBanner";
+import { CompactionBanner } from "@/components/chat/CompactionBanner";
 
 interface ChatViewProps {
   /** Route path (from preact-router) */

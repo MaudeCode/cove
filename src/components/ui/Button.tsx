@@ -8,13 +8,10 @@ import type { ComponentChildren, JSX } from "preact";
 import { forwardRef } from "preact/compat";
 import { Spinner } from "./Spinner";
 
-export type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-export type ButtonSize = "sm" | "md" | "lg";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonSize = "sm" | "md" | "lg";
 
-export interface ButtonProps extends Omit<
-  JSX.HTMLAttributes<HTMLButtonElement>,
-  "size" | "loading"
-> {
+interface ButtonProps extends Omit<JSX.HTMLAttributes<HTMLButtonElement>, "size" | "loading"> {
   /** HTML button type */
   type?: "button" | "submit" | "reset";
   /** Button variant */

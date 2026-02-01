@@ -53,15 +53,6 @@ export interface ChatHistoryResult {
   thinkingLevel?: string;
 }
 
-/** Chat send params */
-export interface ChatSendParams {
-  sessionKey: string;
-  message: string;
-  thinking?: string;
-  idempotencyKey: string;
-  timeoutMs?: number;
-}
-
 /** Chat send response (immediate ack) */
 export interface ChatSendResult {
   runId: string;
@@ -220,13 +211,6 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
     toolCalls,
     images,
   };
-}
-
-/**
- * Normalize raw message content to string (legacy, for backwards compat)
- */
-export function normalizeMessageContent(content: string | ContentBlock[]): string {
-  return parseMessageContent(content).text;
 }
 
 /**

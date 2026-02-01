@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Toast Component
  *
@@ -9,22 +10,22 @@ import { signal } from "@preact/signals";
 import { Check, X, AlertTriangle, Info } from "lucide-preact";
 import { t } from "@/lib/i18n";
 import { IconButton } from "./IconButton";
-import { CloseIcon } from "./icons";
+import { XIcon } from "./icons";
 
 // ============================================
 // Types
 // ============================================
 
-export type ToastType = "success" | "error" | "warning" | "info";
+type ToastType = "success" | "error" | "warning" | "info";
 
-export interface ToastData {
+interface ToastData {
   id: string;
   type: ToastType;
   message: string;
   duration?: number;
 }
 
-export interface ToastProps extends ToastData {
+interface ToastProps extends ToastData {
   onDismiss: (id: string) => void;
 }
 
@@ -33,14 +34,14 @@ export interface ToastProps extends ToastData {
 // ============================================
 
 /** Global toast queue */
-export const toasts = signal<ToastData[]>([]);
+const toasts = signal<ToastData[]>([]);
 
 let toastId = 0;
 
 /**
  * Show a toast notification
  */
-export function showToast(message: string, type: ToastType = "info", duration = 5000): string {
+function showToast(message: string, type: ToastType = "info", duration = 5000): string {
   const id = `toast-${++toastId}`;
 
   toasts.value = [...toasts.value, { id, type, message, duration }].slice(-5); // Max 5 toasts
@@ -51,14 +52,14 @@ export function showToast(message: string, type: ToastType = "info", duration = 
 /**
  * Dismiss a toast by ID
  */
-export function dismissToast(id: string): void {
+function dismissToast(id: string): void {
   toasts.value = toasts.value.filter((t) => t.id !== id);
 }
 
 /**
  * Clear all toasts
  */
-export function clearToasts(): void {
+function clearToasts(): void {
   toasts.value = [];
 }
 
@@ -97,7 +98,7 @@ const typeStyles: Record<ToastType, { bg: string; icon: string; border: string }
   },
 };
 
-export function Toast({ id, type, message, duration = 5000, onDismiss }: ToastProps) {
+function Toast({ id, type, message, duration = 5000, onDismiss }: ToastProps) {
   const styles = typeStyles[type];
 
   // Auto-dismiss
@@ -133,7 +134,7 @@ export function Toast({ id, type, message, duration = 5000, onDismiss }: ToastPr
 
       {/* Dismiss */}
       <IconButton
-        icon={<CloseIcon class="w-4 h-4" />}
+        icon={<XIcon class="w-4 h-4" />}
         label={t("actions.close")}
         variant="ghost"
         size="sm"
@@ -147,7 +148,7 @@ export function Toast({ id, type, message, duration = 5000, onDismiss }: ToastPr
 // Toast Container
 // ============================================
 
-export type ToastPosition =
+type ToastPosition =
   | "top-right"
   | "top-left"
   | "bottom-right"

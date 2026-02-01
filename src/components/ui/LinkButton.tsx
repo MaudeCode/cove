@@ -5,11 +5,12 @@
  * Use for secondary actions like "Skip", "Cancel", "Learn more".
  */
 
-import type { ComponentChildren, JSX } from "preact";
+import type { ComponentChildren } from "preact";
+import type { JSX } from "preact/jsx-runtime";
 
 type LinkButtonSize = "sm" | "md" | "lg";
 
-interface LinkButtonProps extends Omit<JSX.HTMLAttributes<HTMLButtonElement>, "size"> {
+export interface LinkButtonProps extends Omit<JSX.IntrinsicElements["button"], "size"> {
   /** Button contents */
   children: ComponentChildren;
   /** Size variant */

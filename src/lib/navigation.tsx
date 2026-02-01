@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Navigation Configuration
  *
@@ -190,23 +191,23 @@ export const navigation: NavSection[] = [
 // ============================================
 
 /** All valid view IDs (derived from config) */
-export type ViewId = (typeof navigation)[number]["items"][number]["id"];
+type ViewId = (typeof navigation)[number]["items"][number]["id"];
 
 /** Get all internal (non-external) view IDs */
-export const internalViewIds = navigation
+const internalViewIds = navigation
   .flatMap((section) => section.items)
   .filter((item) => !item.external)
   .map((item) => item.id);
 
 /** Get a flat list of all nav items */
-export const allNavItems = navigation.flatMap((section) => section.items);
+const allNavItems = navigation.flatMap((section) => section.items);
 
 /** Find a nav item by ID */
-export function getNavItem(id: string): NavItem | undefined {
+function getNavItem(id: string): NavItem | undefined {
   return allNavItems.find((item) => item.id === id);
 }
 
 /** Check if a view ID is valid */
-export function isValidView(id: string): id is ViewId {
+function isValidView(id: string): id is ViewId {
   return allNavItems.some((item) => item.id === id && !item.external);
 }

@@ -4,6 +4,8 @@
  * Common helper functions used throughout the app.
  */
 
+/* eslint-disable no-unused-vars -- Utilities for future use */
+
 /**
  * Combines class names, filtering out falsy values
  */
@@ -38,6 +40,8 @@ export function debounce<T extends (...args: unknown[]) => void>(
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
+
+/* eslint-enable no-unused-vars */
 
 /**
  * Capitalize the first letter of a string
