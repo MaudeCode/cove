@@ -256,6 +256,21 @@ export function setNewChatSettings(settings: NewChatSettings): void {
 }
 
 // ============================================
+// App Mode
+// ============================================
+
+/** App interface mode */
+export type AppMode = "single" | "multi";
+
+export function getAppMode(): AppMode {
+  return getRaw<AppMode>("app-mode") ?? "single";
+}
+
+export function setAppMode(mode: AppMode): void {
+  setRaw("app-mode", mode);
+}
+
+// ============================================
 // Migration
 // ============================================
 

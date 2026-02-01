@@ -4,12 +4,13 @@
  * Reactive user preferences that persist to localStorage via storage.ts.
  */
 
-import { signal, effect } from "@preact/signals";
+import { signal, effect, computed } from "@preact/signals";
 import {
   type TimeFormat,
   type FontSize,
   type FontFamily,
   type NewChatSettings,
+  type AppMode,
   getTimeFormat,
   setTimeFormat,
   getFontSize,
@@ -18,10 +19,12 @@ import {
   setFontFamily,
   getNewChatSettings,
   setNewChatSettings,
+  getAppMode,
+  setAppMode,
 } from "@/lib/storage";
 
 // Re-export types for consumers
-export type { TimeFormat, FontSize, FontFamily, NewChatSettings } from "@/lib/storage";
+export type { TimeFormat, FontSize, FontFamily, NewChatSettings, AppMode } from "@/lib/storage";
 
 // ============================================
 // Signals
@@ -39,6 +42,19 @@ export const fontFamily = signal<FontFamily>(getFontFamily());
 /** New chat creation settings */
 export const newChatSettings = signal<NewChatSettings>(getNewChatSettings());
 
+/** App interface mode (single-chat vs multi-chat) */
+export const appMode = signal<AppMode>(getAppMode());
+
+// ============================================
+// Computed
+// ============================================
+
+/** Whether multi-chat mode is active */
+export const isMultiChatMode = computed(() => appMode.value === "multi");
+
+/** Whether single-chat mode is active */
+export const isSingleChatMode = computed(() => appMode.value === "single");
+
 // ============================================
 // Persistence Effects
 // ============================================
@@ -47,6 +63,7 @@ effect(() => setTimeFormat(timeFormat.value));
 effect(() => setFontSize(fontSize.value));
 effect(() => setFontFamily(fontFamily.value));
 effect(() => setNewChatSettings(newChatSettings.value));
+effect(() => setAppMode(appMode.value));
 
 // ============================================
 // DOM Application Effects
@@ -104,4 +121,5 @@ export function resetToDefaults(): void {
     useDefaults: true,
     defaultAgentId: "main",
   };
+  appMode.value = "single";
 }
