@@ -284,6 +284,7 @@
     "filterIsolated": "Isolated",
     "filterChannel": "Channel",
     "showCron": "Show cron sessions",
+    "showUtility": "Show utility sessions",
     "tokens": "{count} tokens",
     "model": "Model: {model}",
     "defaultModel": "Default"
