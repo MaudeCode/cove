@@ -18,6 +18,9 @@ import { QueuedMessages } from "./QueuedMessages";
 import { AttachmentPreview } from "./AttachmentPreview";
 import type { AttachmentPayload } from "@/types/attachments";
 
+/** Max height for textarea before it becomes scrollable (accounts for bottom action bar) */
+const TEXTAREA_MAX_HEIGHT = 160;
+
 interface ChatInputProps {
   onSend: (message: string, attachments?: AttachmentPayload[]) => void;
   onAbort?: () => void;
@@ -65,7 +68,7 @@ export function ChatInput({
     if (!textarea) return;
 
     textarea.style.height = "auto";
-    const newHeight = Math.min(textarea.scrollHeight, 200);
+    const newHeight = Math.min(textarea.scrollHeight, TEXTAREA_MAX_HEIGHT);
     textarea.style.height = `${newHeight}px`;
   }, []);
 
@@ -265,7 +268,7 @@ export function ChatInput({
               disabled:opacity-50 disabled:cursor-not-allowed
               ${hasAttachments ? "pt-2" : "pt-3"}
             `}
-            style={{ minHeight: "60px", maxHeight: "200px", outline: "none" }}
+            style={{ minHeight: "60px", maxHeight: `${TEXTAREA_MAX_HEIGHT}px`, outline: "none" }}
           />
 
           {/* Hidden file input */}
@@ -278,8 +281,8 @@ export function ChatInput({
             class="hidden"
           />
 
-          {/* Bottom bar with actions */}
-          <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+          {/* Bottom bar with actions - has bg to prevent text showing through */}
+          <div class="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-1 flex items-center justify-between bg-[var(--color-bg-surface)] rounded-b-xl">
             {/* Left side: Model picker + Attach button */}
             <div class="flex items-center gap-1">
               {sessionKey && (
