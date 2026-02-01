@@ -517,6 +517,8 @@
       "sessionTarget": "Session Target",
       "sessionTargetHint": "Main injects into the main session. Isolated runs in a separate session.",
       "payload": "Payload",
+      "payloadHintMain": "Text injected as a system event into the main session.",
+      "payloadHintIsolated": "Runs as an agent turn in an isolated session.",
       "systemEventPlaceholder": "Text to inject as system event",
       "agentMessagePlaceholder": "Message to send to the agent",
       "modelPlaceholder": "Model override (optional)"
