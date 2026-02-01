@@ -16,7 +16,7 @@ import {
   removeSessionAnimated,
   loadSessions,
 } from "@/signals/sessions";
-import { newChatSettings } from "@/signals/settings";
+import { newChatSettings, isMultiChatMode } from "@/signals/settings";
 import { showNewChatModal } from "@/signals/ui";
 import { Button } from "@/components/ui/Button";
 import { PlusIcon } from "@/components/ui/icons";
@@ -112,29 +112,44 @@ export function Sidebar() {
 
   return (
     <div class="h-full flex flex-col">
-      {/* New Chat button */}
-      <div class="p-3">
-        <Button
-          variant="primary"
-          disabled={!isConnected.value}
-          onClick={handleNewChat}
-          fullWidth
-          icon={<PlusIcon />}
-        >
-          {t("actions.newChat")}
-        </Button>
-      </div>
+      {/* Multi-chat mode: New Chat button + Sessions list */}
+      {isMultiChatMode.value ? (
+        <>
+          {/* New Chat button */}
+          <div class="p-3">
+            <Button
+              variant="primary"
+              disabled={!isConnected.value}
+              onClick={handleNewChat}
+              fullWidth
+              icon={<PlusIcon />}
+            >
+              {t("actions.newChat")}
+            </Button>
+          </div>
 
-      {/* Sessions section - scrollable */}
-      <div class="flex-1 overflow-y-auto px-3 pb-3" data-tour="sessions">
-        <SessionFilters />
-        <SessionList onRename={setRenameSession} onDelete={setDeleteSession} />
-      </div>
+          {/* Sessions section - scrollable */}
+          <div class="flex-1 overflow-y-auto px-3 pb-3" data-tour="sessions">
+            <SessionFilters />
+            <SessionList onRename={setRenameSession} onDelete={setDeleteSession} />
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Single-chat mode: Simple header */}
+          <div class="p-3">
+            <h2 class="text-sm font-semibold text-[var(--color-text-primary)]">{t("nav.chat")}</h2>
+          </div>
+
+          {/* Spacer to push nav to bottom */}
+          <div class="flex-1" />
+        </>
+      )}
 
       {/* Navigation sections - pinned to bottom */}
       <NavSections />
 
-      {/* Modals */}
+      {/* Modals (only needed in multi-chat mode, but harmless to keep) */}
       <SessionRenameModal
         session={renameSession}
         onClose={() => setRenameSession(null)}

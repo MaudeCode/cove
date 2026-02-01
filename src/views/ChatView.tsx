@@ -30,6 +30,7 @@ import {
   updateSession,
 } from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
+import { isSingleChatMode } from "@/signals/settings";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ConnectionBanner } from "@/components/chat/ConnectionBanner";
@@ -53,6 +54,18 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     // Decode URL-encoded session key (e.g., "agent%3Amain%3Amain" -> "agent:main:main")
     const decodedKey = sessionKey ? decodeURIComponent(sessionKey) : null;
 
+    // In single-chat mode, always use main session
+    if (isSingleChatMode.value && mainSessionKey.value) {
+      if (activeSessionKey.value !== mainSessionKey.value) {
+        setActiveSession(mainSessionKey.value);
+      }
+      // Redirect URL to main if it's pointing elsewhere
+      if (decodedKey && decodedKey !== mainSessionKey.value) {
+        route(`/chat/${encodeURIComponent(mainSessionKey.value)}`, true);
+      }
+      return;
+    }
+
     // If on /chat without a session key and we know the main session, redirect
     if (!decodedKey && mainSessionKey.value) {
       route(`/chat/${encodeURIComponent(mainSessionKey.value)}`, true);
@@ -64,7 +77,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     if (targetSession !== activeSessionKey.value) {
       setActiveSession(targetSession);
     }
-  }, [sessionKey, mainSessionKey.value]);
+  }, [sessionKey, mainSessionKey.value, isSingleChatMode.value]);
 
   // Load history when session changes
   // Note: We track activeSessionKey.value directly because Preact signals
