@@ -114,12 +114,23 @@ function handleLifecycleEnd(evt: AgentEvent): void {
       setTimeout(() => processNextQueuedMessage(existingRun.sessionKey), 100);
 
       // For empty runs (heartbeat/no-reply), refresh history to pick up the prompt message
-      // that was injected by the gateway but not broadcast to webchat
+      // that was injected by the gateway but not broadcast to webchat.
+      // Add a small delay to ensure the gateway has committed the messages.
       if (wasEmpty) {
-        log.chat.debug("Refreshing history after empty run (heartbeat/no-reply)");
-        loadHistory(existingRun.sessionKey).catch((err) => {
-          log.chat.warn("Failed to refresh history after heartbeat:", err);
-        });
+        const sessionKeyForRefresh = existingRun.sessionKey;
+        setTimeout(async () => {
+          log.chat.info("Refreshing history after heartbeat for session:", sessionKeyForRefresh);
+          try {
+            await loadHistory(sessionKeyForRefresh);
+            const { messages, heartbeatCount } = await import("@/signals/chat");
+            log.chat.info("History refreshed", {
+              messageCount: messages.value.length,
+              heartbeatCount: heartbeatCount.value,
+            });
+          } catch (err) {
+            log.chat.error("Failed to refresh history after heartbeat:", err);
+          }
+        }, 500);
       }
     }
   }
