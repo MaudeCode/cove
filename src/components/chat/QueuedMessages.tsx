@@ -10,7 +10,14 @@ import { messageQueue, dequeueMessage, updateQueuedMessage } from "@/signals/cha
 import { t } from "@/lib/i18n";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { XIcon, EditIcon, ChevronDownIcon, ImageIcon, ImagePlusIcon } from "@/components/ui/icons";
+import {
+  XIcon,
+  EditIcon,
+  ChevronDownIcon,
+  ImageIcon,
+  FileIcon,
+  PaperclipIcon,
+} from "@/components/ui/icons";
 import type { Message, MessageImage } from "@/types/messages";
 
 /** Character threshold for collapsing long messages */
@@ -70,24 +77,28 @@ export function QueuedMessages() {
     setEditImages((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleAddImages = async (files: FileList | null) => {
+  const handleAddFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    const newImages: MessageImage[] = [];
+    const newAttachments: MessageImage[] = [];
 
     for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) continue;
-
       try {
         const dataUrl = await fileToDataUrl(file);
-        newImages.push({ url: dataUrl });
+        const isImage = file.type.startsWith("image/");
+        newAttachments.push({
+          url: dataUrl,
+          alt: file.name,
+          type: isImage ? "image" : "file",
+          mimeType: file.type,
+        });
       } catch {
         // Skip failed files
       }
     }
 
-    if (newImages.length > 0) {
-      setEditImages((prev) => [...prev, ...newImages]);
+    if (newAttachments.length > 0) {
+      setEditImages((prev) => [...prev, ...newAttachments]);
     }
 
     // Reset file input
@@ -106,7 +117,10 @@ export function QueuedMessages() {
           {queue.map((message) => {
             const isLong = message.content.length > COLLAPSE_THRESHOLD;
             const isExpanded = expandedIds.has(message.id);
-            const hasImages = message.images && message.images.length > 0;
+            const attachments = message.images ?? [];
+            const imageCount = attachments.filter((a) => a.type !== "file").length;
+            const fileCount = attachments.filter((a) => a.type === "file").length;
+            const hasAttachments = attachments.length > 0;
             const displayContent =
               isLong && !isExpanded
                 ? `${message.content.slice(0, COLLAPSE_THRESHOLD)}…`
@@ -123,14 +137,21 @@ export function QueuedMessages() {
                     <p class="text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap break-words">
                       {displayContent}
                     </p>
-                    {/* Image indicator */}
-                    {hasImages && (
-                      <div class="mt-1 flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
-                        <ImageIcon class="w-3 h-3" />
-                        <span>
-                          {message.images!.length}{" "}
-                          {message.images!.length === 1 ? "image" : "images"}
-                        </span>
+                    {/* Attachment indicator */}
+                    {hasAttachments && (
+                      <div class="mt-1 flex items-center gap-2 text-xs text-[var(--color-text-muted)]">
+                        {imageCount > 0 && (
+                          <span class="flex items-center gap-1">
+                            <ImageIcon class="w-3 h-3" />
+                            {imageCount}
+                          </span>
+                        )}
+                        {fileCount > 0 && (
+                          <span class="flex items-center gap-1">
+                            <FileIcon class="w-3 h-3" />
+                            {fileCount}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>
@@ -208,41 +229,52 @@ export function QueuedMessages() {
             placeholder={t("chat.placeholder")}
           />
 
-          {/* Images section */}
+          {/* Attachments section */}
           <div>
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium text-[var(--color-text-secondary)]">
-                {t("chat.attachedImages")}
+                {t("chat.attachments")}
               </span>
               <Button
                 variant="ghost"
                 size="sm"
-                icon={<ImagePlusIcon class="w-4 h-4" />}
+                icon={<PaperclipIcon class="w-4 h-4" />}
                 onClick={() => fileInputRef.current?.click()}
               >
-                {t("chat.addImage")}
+                {t("chat.addFile")}
               </Button>
               <input
                 ref={fileInputRef}
                 type="file"
-                accept="image/*"
                 multiple
                 class="hidden"
-                onChange={(e) => handleAddImages((e.target as HTMLInputElement).files)}
+                onChange={(e) => handleAddFiles((e.target as HTMLInputElement).files)}
               />
             </div>
 
-            {/* Image previews */}
+            {/* Attachment previews */}
             {editImages.length > 0 ? (
               <div class="flex flex-wrap gap-2">
-                {editImages.map((img, index) => (
+                {editImages.map((att, index) => (
                   <div key={index} class="relative group">
-                    <img
-                      src={img.url}
-                      alt={img.alt || `Image ${index + 1}`}
-                      class="rounded-lg object-cover border border-[var(--color-border)]"
-                      style={{ width: MAX_PREVIEW_SIZE, height: MAX_PREVIEW_SIZE }}
-                    />
+                    {att.type === "file" ? (
+                      <div
+                        class="flex flex-col items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] p-2"
+                        style={{ width: MAX_PREVIEW_SIZE, height: MAX_PREVIEW_SIZE }}
+                      >
+                        <FileIcon class="w-8 h-8 text-[var(--color-text-muted)] mb-1" />
+                        <span class="text-xs text-[var(--color-text-muted)] truncate max-w-full px-1">
+                          {att.alt || "File"}
+                        </span>
+                      </div>
+                    ) : (
+                      <img
+                        src={att.url}
+                        alt={att.alt || `Image ${index + 1}`}
+                        class="rounded-lg object-cover border border-[var(--color-border)]"
+                        style={{ width: MAX_PREVIEW_SIZE, height: MAX_PREVIEW_SIZE }}
+                      />
+                    )}
                     <button
                       type="button"
                       onClick={() => handleRemoveImage(index)}
@@ -256,7 +288,7 @@ export function QueuedMessages() {
                 ))}
               </div>
             ) : (
-              <p class="text-sm text-[var(--color-text-muted)]">{t("chat.noImagesAttached")}</p>
+              <p class="text-sm text-[var(--color-text-muted)]">{t("chat.noAttachments")}</p>
             )}
           </div>
         </div>
