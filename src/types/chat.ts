@@ -4,7 +4,7 @@
  * Types for chat messages and streaming.
  */
 
-import type { Message, ToolCall } from "./messages";
+import type { Message, ToolCall, MessageImage } from "./messages";
 
 /** Content block in a message */
 export interface ContentBlock {
@@ -16,6 +16,15 @@ export interface ContentBlock {
   arguments?: unknown; // OpenClaw history uses "arguments" instead of "input"
   content?: unknown;
   thinking?: string;
+  // Image fields
+  source?: {
+    type: "base64";
+    media_type: string;
+    data: string;
+  };
+  // Alternative image format (data URL)
+  data?: string;
+  mimeType?: string;
 }
 
 /** Raw message from gateway (before normalization) */
@@ -119,19 +128,21 @@ export interface ChatRun {
 export interface ParsedContent {
   text: string;
   toolCalls: ToolCall[];
+  images: MessageImage[];
 }
 
 /**
- * Parse raw message content into text and tool calls
+ * Parse raw message content into text, tool calls, and images
  * Also calculates insertedAtContentLength for proper interleaved rendering
  */
 export function parseMessageContent(content: string | ContentBlock[]): ParsedContent {
   if (typeof content === "string") {
-    return { text: content, toolCalls: [] };
+    return { text: content, toolCalls: [], images: [] };
   }
 
   const textParts: string[] = [];
   const toolCalls: ToolCall[] = [];
+  const images: MessageImage[] = [];
   let currentTextLength = 0;
 
   for (const block of content) {
@@ -140,6 +151,23 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
         if (block.text) {
           textParts.push(block.text);
           currentTextLength += block.text.length;
+        }
+        break;
+
+      case "image":
+        // Handle different image formats
+        if (block.source?.type === "base64" && block.source.data) {
+          // Anthropic format: { type: "base64", media_type: "image/png", data: "..." }
+          images.push({
+            url: `data:${block.source.media_type};base64,${block.source.data}`,
+            alt: "Image",
+          });
+        } else if (block.data) {
+          // Alternative format: { data: "base64...", mimeType: "image/png" }
+          const url = block.data.startsWith("data:")
+            ? block.data
+            : `data:${block.mimeType || "image/png"};base64,${block.data}`;
+          images.push({ url, alt: "Image" });
         }
         break;
 
@@ -190,6 +218,7 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
   return {
     text: textParts.join("\n"),
     toolCalls,
+    images,
   };
 }
 
@@ -212,6 +241,7 @@ export function normalizeMessage(raw: RawMessage, id: string): Message {
     id,
     role,
     content: parsed.text,
+    images: parsed.images.length > 0 ? parsed.images : undefined,
     toolCalls: parsed.toolCalls.length > 0 ? parsed.toolCalls : undefined,
     timestamp: raw.timestamp ?? Date.now(),
     isStreaming: false,
