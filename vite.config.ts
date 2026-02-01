@@ -2,7 +2,11 @@ import { defineConfig, type Plugin } from 'vite'
 import preact from '@preact/preset-vite'
 import tailwindcss from '@tailwindcss/vite'
 import { resolve } from 'path'
-import { appendFileSync, writeFileSync } from 'fs'
+import { appendFileSync, writeFileSync, readFileSync } from 'fs'
+
+// Read version from package.json
+const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
+const appVersion = pkg.version || '0.0.0'
 
 /**
  * Debug logging plugin - accepts POSTs to /__cove_debug and writes to debug.log
@@ -52,6 +56,9 @@ function debugLogPlugin(): Plugin {
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [preact(), tailwindcss(), debugLogPlugin()],
+  define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
+  },
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),

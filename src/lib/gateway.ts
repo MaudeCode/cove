@@ -54,6 +54,9 @@ export const lastError = signal<string | null>(null);
 /** Gateway version (from hello response) */
 export const gatewayVersion = signal<string | null>(null);
 
+/** Gateway URL (from connect config) */
+export const gatewayUrl = signal<string | null>(null);
+
 /** Current connection ID */
 export const connectionId = signal<string | null>(null);
 
@@ -132,6 +135,7 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
   isInitialLoad.value = false;
   lastError.value = null;
   reconnectAttempt.value = 0;
+  gatewayUrl.value = config.url;
 
   return new Promise((resolve, reject) => {
     try {
@@ -268,6 +272,7 @@ export function disconnect(): void {
 
   connectionState.value = "disconnected";
   gatewayVersion.value = null;
+  gatewayUrl.value = null;
   connectionId.value = null;
   mainSessionKey.value = null;
   capabilities.value = [];
@@ -488,6 +493,9 @@ export const gateway = {
 
   /** Gateway version */
   version: gatewayVersion,
+
+  /** Gateway URL */
+  url: gatewayUrl,
 
   /** Connection ID */
   connectionId,
