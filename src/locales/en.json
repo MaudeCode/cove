@@ -565,7 +565,8 @@
       "mode": "Mode",
       "platform": "Platform",
       "lastSeen": "Last Seen",
-      "idle": "Idle"
+      "idle": "Idle",
+      "access": "Access"
     }
   },
 

@@ -147,6 +147,26 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
       <td class="py-3 px-4 whitespace-nowrap text-sm text-[var(--color-text-muted)]">
         {formatIdleTime(presence.lastInputSeconds)}
       </td>
+
+      {/* Roles/Scopes */}
+      <td class="py-3 px-4">
+        {presence.roles?.length || presence.scopes?.length ? (
+          <div class="flex flex-wrap gap-1">
+            {presence.roles?.map((role) => (
+              <Badge key={role} variant="default" size="sm">
+                {role}
+              </Badge>
+            ))}
+            {presence.scopes?.map((scope) => (
+              <Badge key={scope} variant="default" size="sm">
+                {scope}
+              </Badge>
+            ))}
+          </div>
+        ) : (
+          <span class="text-[var(--color-text-muted)]">—</span>
+        )}
+      </td>
     </tr>
   );
 }
@@ -222,6 +242,7 @@ export function InstancesView(_props: RouteProps) {
                     <th class="py-3 px-4 font-medium w-40">{t("instances.columns.platform")}</th>
                     <th class="py-3 px-4 font-medium w-28">{t("instances.columns.lastSeen")}</th>
                     <th class="py-3 px-4 font-medium w-20">{t("instances.columns.idle")}</th>
+                    <th class="py-3 px-4 font-medium">{t("instances.columns.access")}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--color-border)]">
