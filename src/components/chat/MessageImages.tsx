@@ -14,6 +14,13 @@ interface MessageImagesProps {
   images: MessageImage[];
 }
 
+/** Shared styles for lightbox control buttons */
+const LIGHTBOX_BUTTON_CLASS = `
+  p-2 rounded-full cursor-pointer
+  bg-white/10 text-white hover:bg-white/20
+  transition-colors
+`;
+
 /**
  * Downloads an image by fetching as blob and triggering download.
  */
@@ -126,11 +133,7 @@ export function MessageImages({ images }: MessageImagesProps) {
               type="button"
               onClick={(e) => handleDownload(e, images[expandedIndex].url, expandedIndex)}
               aria-label={t("actions.download")}
-              class="
-                p-2 rounded-full cursor-pointer
-                bg-white/10 text-white hover:bg-white/20
-                transition-colors
-              "
+              class={LIGHTBOX_BUTTON_CLASS}
             >
               <Download class="w-6 h-6" />
             </button>
@@ -138,11 +141,7 @@ export function MessageImages({ images }: MessageImagesProps) {
               type="button"
               onClick={() => setExpandedIndex(null)}
               aria-label={t("actions.close")}
-              class="
-                p-2 rounded-full cursor-pointer
-                bg-white/10 text-white hover:bg-white/20
-                transition-colors
-              "
+              class={LIGHTBOX_BUTTON_CLASS}
             >
               <X class="w-6 h-6" />
             </button>
@@ -158,11 +157,7 @@ export function MessageImages({ images }: MessageImagesProps) {
                   setExpandedIndex((expandedIndex - 1 + images.length) % images.length);
                 }}
                 aria-label={t("actions.back")}
-                class="
-                  absolute left-4 p-3 rounded-full cursor-pointer
-                  bg-white/10 text-white hover:bg-white/20
-                  transition-colors text-2xl
-                "
+                class={`${LIGHTBOX_BUTTON_CLASS} absolute left-4 p-3 text-2xl`}
               >
                 ‹
               </button>
@@ -173,11 +168,7 @@ export function MessageImages({ images }: MessageImagesProps) {
                   setExpandedIndex((expandedIndex + 1) % images.length);
                 }}
                 aria-label={t("actions.next")}
-                class="
-                  absolute right-4 p-3 rounded-full cursor-pointer
-                  bg-white/10 text-white hover:bg-white/20
-                  transition-colors text-2xl
-                "
+                class={`${LIGHTBOX_BUTTON_CLASS} absolute right-4 p-3 text-2xl`}
               >
                 ›
               </button>

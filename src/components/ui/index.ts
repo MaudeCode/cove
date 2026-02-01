@@ -45,6 +45,9 @@ export { Chip, type ChipProps, type ChipSize } from "./Chip";
 // Skeleton components removed - not currently used
 export { BouncingDots, type BouncingDotsProps } from "./BouncingDots";
 
+// Branding
+export { CoveLogo } from "./CoveLogo";
+
 // Overlays
 export { Modal, type ModalProps, type ModalSize } from "./Modal";
 export { Tooltip, TooltipProvider, type TooltipProps, type TooltipPlacement } from "./Tooltip";
