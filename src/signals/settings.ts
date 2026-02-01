@@ -34,7 +34,7 @@ const STORAGE_KEYS = {
 const DEFAULTS = {
   timeFormat: "relative" as TimeFormat,
   fontSize: "md" as FontSize,
-  fontFamily: "system" as FontFamily,
+  fontFamily: "geist" as FontFamily,
 };
 
 // ============================================
