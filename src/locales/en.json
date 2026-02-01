@@ -41,7 +41,8 @@
     "viewAll": "View All",
     "showMore": "Show More",
     "showLess": "Show Less",
-    "remove": "Remove"
+    "remove": "Remove",
+    "download": "Download"
   },
 
   "auth": {
