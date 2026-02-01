@@ -20,6 +20,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Modal } from "@/components/ui/Modal";
 import { Toggle } from "@/components/ui/Toggle";
 import { Input } from "@/components/ui/Input";
+import { Dropdown } from "@/components/ui/Dropdown";
 import {
   RefreshCw,
   Search,
@@ -569,18 +570,20 @@ export function SkillsView(_props: RouteProps) {
                     : t("skills.count", { count: s.total })}
                 </span>
               </div>
-              <select
-                class="px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-sm"
+              <Dropdown
                 value={sourceFilter.value}
-                onChange={(e) => {
-                  sourceFilter.value = (e.target as HTMLSelectElement).value as SkillSource | "all";
+                onChange={(v) => {
+                  sourceFilter.value = v as SkillSource | "all";
                 }}
-              >
-                <option value="all">{t("skills.filters.allSources")}</option>
-                <option value="bundled">{t("skills.source.bundled")}</option>
-                <option value="managed">{t("skills.source.managed")}</option>
-                <option value="workspace">{t("skills.source.workspace")}</option>
-              </select>
+                options={[
+                  { value: "all", label: t("skills.filters.allSources") },
+                  { value: "bundled", label: t("skills.source.bundled") },
+                  { value: "managed", label: t("skills.source.managed") },
+                  { value: "workspace", label: t("skills.source.workspace") },
+                ]}
+                size="sm"
+                aria-label={t("skills.filters.allSources")}
+              />
             </div>
 
             {/* Skills list */}
