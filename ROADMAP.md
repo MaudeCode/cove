@@ -812,15 +812,15 @@ export const navigation: NavSection[] = [
 - [x] Font family (System, Geist, Inter, JetBrains Mono, OpenDyslexic)
 
 **Preferences Section:**
-- [ ] Time display (relative vs absolute)
-- [ ] Date format preference
+- [x] Time display (relative vs absolute)
+- ~~Date format preference~~ — deferred, low value
 
 **Notifications Section:**
 - ~~Enable/disable browser notifications~~ — moved to Phase 4
 - ~~Sound toggle~~ — moved to Phase 4
 
 **Help Section:**
-- [ ] Keyboard shortcuts reference
+- [x] Keyboard shortcuts reference
 - [x] Links (docs, GitHub, Discord) — moved to sidebar Resources
 
 **About Section:**
@@ -829,7 +829,7 @@ export const navigation: NavSection[] = [
 - [x] OpenClaw links
 
 **Actions:**
-- [ ] Reset to defaults button
+- [x] Reset to defaults button
 
 ### 2.5 Onboarding
 
