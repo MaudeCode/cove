@@ -30,22 +30,17 @@ import type { AttachmentPayload } from "@/types/attachments";
 let idempotencyCounter = 0;
 
 /**
- * Convert attachment payloads to message images for local display.
+ * Convert attachment payloads to message attachments for local display.
  */
 function attachmentsToImages(attachments?: AttachmentPayload[]): MessageImage[] | undefined {
   if (!attachments || attachments.length === 0) return undefined;
 
-  const images: MessageImage[] = [];
-  for (const att of attachments) {
-    if (att.type === "image") {
-      images.push({
-        url: att.content, // content is already a data URL
-        alt: att.fileName,
-      });
-    }
-  }
-
-  return images.length > 0 ? images : undefined;
+  return attachments.map((att) => ({
+    url: att.content, // content is already a data URL
+    alt: att.fileName,
+    type: att.type,
+    mimeType: att.mimeType,
+  }));
 }
 
 function generateIdempotencyKey(): string {

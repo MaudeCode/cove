@@ -10,12 +10,16 @@
 /** Message send status */
 export type MessageStatus = "queued" | "sending" | "sent" | "failed";
 
-/** Image in a message */
+/** Attachment in a message (image or file) */
 export interface MessageImage {
   /** Data URL (data:image/...;base64,...) or URL */
   url: string;
-  /** Alt text */
+  /** Alt text or filename */
   alt?: string;
+  /** Attachment type (defaults to "image" for backwards compatibility) */
+  type?: "image" | "file";
+  /** MIME type */
+  mimeType?: string;
 }
 
 export interface Message {

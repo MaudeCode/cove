@@ -23,7 +23,8 @@ import {
   Search,
   Check,
   Image,
-  ImagePlus,
+  File,
+  Paperclip,
 } from "lucide-preact";
 
 type IconProps = {
@@ -115,6 +116,10 @@ export function ImageIcon({ class: className }: IconProps) {
   return <Image class={className || "w-5 h-5"} aria-hidden="true" />;
 }
 
-export function ImagePlusIcon({ class: className }: IconProps) {
-  return <ImagePlus class={className || "w-5 h-5"} aria-hidden="true" />;
+export function FileIcon({ class: className }: IconProps) {
+  return <File class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+export function PaperclipIcon({ class: className }: IconProps) {
+  return <Paperclip class={className || "w-5 h-5"} aria-hidden="true" />;
 }
