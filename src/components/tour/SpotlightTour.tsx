@@ -40,13 +40,18 @@ interface TooltipPosition {
   arrowPosition: "top" | "bottom" | "left" | "right";
 }
 
+const FADE_DURATION_MS = 150;
+
 export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: SpotlightTourProps) {
   const currentIndex = useSignal(0);
+  const displayedIndex = useSignal(0); // Lags behind currentIndex for content display
   const targetRect = useSignal<DOMRect | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipPosition = useSignal<TooltipPosition | null>(null);
   const transitioning = useSignal(false);
 
+  // Use displayedIndex for content so it doesn't change until after fade
+  const displayedStep = steps[displayedIndex.value];
   const currentStep = steps[currentIndex.value];
   const isFirst = currentIndex.value === 0;
   const isLast = currentIndex.value === steps.length - 1;
@@ -54,6 +59,10 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
   // Find and highlight target element
   const updateTarget = useCallback(async () => {
     if (!currentStep) return;
+
+    // Wait for fade out to complete before updating content
+    await new Promise((r) => setTimeout(r, FADE_DURATION_MS));
+    displayedIndex.value = currentIndex.peek();
 
     // Run beforeShow if defined
     if (currentStep.beforeShow) {
@@ -284,12 +293,12 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
 
         {/* Step counter */}
         <div class="text-xs text-[var(--color-text-muted)] mb-2">
-          {currentIndex.value + 1} / {steps.length}
+          {displayedIndex.value + 1} / {steps.length}
         </div>
 
         {/* Content */}
-        <h3 class="font-semibold text-[var(--color-text-primary)] mb-1">{currentStep?.title}</h3>
-        <p class="text-sm text-[var(--color-text-secondary)] mb-4">{currentStep?.content}</p>
+        <h3 class="font-semibold text-[var(--color-text-primary)] mb-1">{displayedStep?.title}</h3>
+        <p class="text-sm text-[var(--color-text-secondary)] mb-4">{displayedStep?.content}</p>
 
         {/* Navigation */}
         <div class="flex items-center justify-between gap-2">
