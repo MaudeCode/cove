@@ -14,7 +14,7 @@ import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
 import { getAuth, saveAuth } from "@/lib/storage";
-import { Input, Select, Button, Toggle, Card, FormField } from "@/components/ui";
+import { Input, Select, Button, Toggle, Card, FormField, CoveLogo } from "@/components/ui";
 
 export function LoginView() {
   const url = useSignal("");
@@ -125,11 +125,7 @@ export function LoginView() {
       <div class="w-full max-w-sm">
         {/* Logo */}
         <div class="text-center mb-8">
-          <img
-            src="/cove-icon.png"
-            alt="Cove"
-            class="w-24 h-24 mx-auto mb-3 rounded-2xl shadow-lg"
-          />
+          <CoveLogo size="xl" class="mx-auto mb-3" />
           <h1 class="text-2xl font-bold">{t("app.name")}</h1>
           <p class="text-[var(--color-text-muted)] mt-1">{t("app.tagline")}</p>
         </div>
