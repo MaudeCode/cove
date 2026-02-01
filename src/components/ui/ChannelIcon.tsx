@@ -21,9 +21,30 @@ import { Globe } from "lucide-preact";
 const appleMessagesPath =
   "M12 2C6.477 2 2 5.813 2 10.5c0 2.34 1.06 4.463 2.777 6.003L3.5 21l5.025-2.512c1.078.327 2.24.512 3.475.512 5.523 0 10-3.813 10-8.5S17.523 2 12 2z";
 
-// Slack logo (from Bootstrap Icons, scaled to 24x24 viewBox)
-const slackPath =
-  "M5.042 15.165c0 1.389-1.134 2.521-2.521 2.521S0 16.554 0 15.165c0-1.388 1.134-2.522 2.521-2.522h2.521v2.522zm1.27 0c0-1.388 1.134-2.521 2.521-2.521s2.521 1.133 2.521 2.521v6.315c0 1.388-1.134 2.52-2.521 2.52a2.527 2.527 0 0 1-2.521-2.52v-6.315zM8.833 5.042c-1.389 0-2.521-1.134-2.521-2.521S7.444 0 8.833 0s2.521 1.134 2.521 2.521v2.521H8.833zm0 1.271c1.388 0 2.521 1.134 2.521 2.521s-1.133 2.521-2.521 2.521H2.521A2.527 2.527 0 0 1 0 8.834c0-1.388 1.134-2.521 2.521-2.521h6.312zm10.125 2.521c0-1.389 1.133-2.521 2.521-2.521S24 7.445 24 8.834s-1.134 2.521-2.521 2.521h-2.521V8.834zm-1.27 0c0 1.388-1.133 2.521-2.521 2.521a2.527 2.527 0 0 1-2.521-2.521V2.521C12.646 1.134 13.78 0 15.167 0c1.389 0 2.521 1.134 2.521 2.521v6.313zm-2.521 10.124c1.389 0 2.521 1.134 2.521 2.521S16.556 24 15.167 24s-2.521-1.134-2.521-2.521v-2.521h2.521zm0-1.27c-1.388 0-2.521-1.133-2.521-2.521 0-1.388 1.133-2.521 2.521-2.521h6.313C22.866 12.646 24 13.78 24 15.167c0 1.389-1.134 2.521-2.521 2.521h-6.313z";
+// Slack multicolor logo (official brand colors)
+// Each color has 2 shapes: outer pill + connector
+const slackPaths = [
+  // Blue (#36C5F0) - top-left area
+  {
+    path: "M5.042 15.165a2.528 2.528 0 0 1-2.52 2.523A2.528 2.528 0 0 1 0 15.165a2.527 2.527 0 0 1 2.522-2.52h2.52v2.52zm1.271 0a2.527 2.527 0 0 1 2.521-2.52 2.527 2.527 0 0 1 2.521 2.52v6.313A2.528 2.528 0 0 1 8.834 24a2.528 2.528 0 0 1-2.521-2.522v-6.313z",
+    color: "#E01E5A",
+  },
+  // Green (#2EB67D) - top-right area
+  {
+    path: "M8.834 5.042a2.528 2.528 0 0 1-2.521-2.52A2.528 2.528 0 0 1 8.834 0a2.528 2.528 0 0 1 2.521 2.522v2.52H8.834zm0 1.271a2.528 2.528 0 0 1 2.521 2.521 2.528 2.528 0 0 1-2.521 2.521H2.522A2.528 2.528 0 0 1 0 8.834a2.528 2.528 0 0 1 2.522-2.521h6.312z",
+    color: "#36C5F0",
+  },
+  // Yellow (#ECB22E) - bottom-right area
+  {
+    path: "M18.956 8.834a2.528 2.528 0 0 1 2.522-2.521A2.528 2.528 0 0 1 24 8.834a2.528 2.528 0 0 1-2.522 2.521h-2.522V8.834zm-1.27 0a2.528 2.528 0 0 1-2.522 2.521 2.528 2.528 0 0 1-2.521-2.521V2.522A2.528 2.528 0 0 1 15.164 0a2.528 2.528 0 0 1 2.522 2.522v6.312z",
+    color: "#2EB67D",
+  },
+  // Red (#E01E5A) - bottom-left area
+  {
+    path: "M15.164 18.956a2.528 2.528 0 0 1 2.522 2.522A2.528 2.528 0 0 1 15.164 24a2.528 2.528 0 0 1-2.521-2.522v-2.522h2.521zm0-1.27a2.528 2.528 0 0 1-2.521-2.522 2.528 2.528 0 0 1 2.521-2.521h6.314A2.528 2.528 0 0 1 24 15.164a2.528 2.528 0 0 1-2.522 2.522h-6.314z",
+    color: "#ECB22E",
+  },
+];
 
 // Nostr logo (simplified relay/broadcast symbol)
 const nostrPath =
@@ -40,13 +61,12 @@ const channelIcons: Record<string, ChannelIconData> = {
   discord: { path: siDiscord.path, hex: siDiscord.hex, title: siDiscord.title },
   signal: { path: siSignal.path, hex: siSignal.hex, title: siSignal.title },
   whatsapp: { path: siWhatsapp.path, hex: siWhatsapp.hex, title: siWhatsapp.title },
-  slack: { path: slackPath, hex: "4A154B", title: "Slack" },
   googlechat: { path: siGooglechat.path, hex: siGooglechat.hex, title: siGooglechat.title },
   matrix: { path: siMatrix.path, hex: siMatrix.hex, title: siMatrix.title },
   mastodon: { path: siMastodon.path, hex: siMastodon.hex, title: siMastodon.title },
   imessage: { path: appleMessagesPath, hex: "34C759", title: "iMessage" },
   nostr: { path: nostrPath, hex: "8B5CF6", title: "Nostr" },
-  // Webchat uses a generic globe icon (handled separately)
+  // Slack and Webchat handled separately (multicolor / globe)
 };
 
 interface ChannelIconProps {
@@ -63,18 +83,41 @@ export function ChannelIcon({
   colored = true,
 }: ChannelIconProps) {
   const id = channelId.toLowerCase();
+
+  // Slack: multicolor logo
+  if (id === "slack") {
+    return (
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        class={className}
+        aria-label="Slack"
+      >
+        <title>Slack</title>
+        {slackPaths.map((p, i) => (
+          <path key={i} fill={colored ? p.color : "currentColor"} d={p.path} />
+        ))}
+      </svg>
+    );
+  }
+
+  // Webchat: globe icon
+  if (id === "webchat") {
+    return (
+      <Globe
+        class={className}
+        style={{ width: size, height: size, color: colored ? "#6366f1" : "currentColor" }}
+      />
+    );
+  }
+
   const icon = channelIcons[id];
 
   // Fallback to globe icon for unknown channels
   if (!icon) {
-    if (id === "webchat") {
-      return (
-        <Globe
-          class={className}
-          style={{ width: size, height: size, color: colored ? "#6366f1" : "currentColor" }}
-        />
-      );
-    }
     return <Globe class={className} style={{ width: size, height: size }} />;
   }
 
