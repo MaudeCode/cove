@@ -33,17 +33,3 @@ export interface AgentsListResponse {
   scope: string;
   agents: Agent[];
 }
-
-/**
- * Get display name for an agent (identity name > name > id)
- */
-export function getAgentDisplayName(agent: Agent): string {
-  return agent.identity?.name || agent.name || agent.id;
-}
-
-/**
- * Get emoji for an agent (falls back to generic icon)
- */
-export function getAgentEmoji(agent: Agent): string {
-  return agent.identity?.emoji || "🤖";
-}
