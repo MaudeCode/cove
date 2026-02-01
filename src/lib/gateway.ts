@@ -137,11 +137,21 @@ export interface ProbeResult {
  * Probe a gateway URL to check if it's a valid OpenClaw gateway.
  * Opens a WebSocket, waits for connect.challenge event, then closes.
  * Does not authenticate.
+ *
+ * @param url - WebSocket URL to probe
+ * @param signal - Optional AbortSignal to cancel the probe
  */
-export function probeGateway(url: string): Promise<ProbeResult> {
+export function probeGateway(url: string, signal?: AbortSignal): Promise<ProbeResult> {
   return new Promise((resolve) => {
+    // Check if already aborted
+    if (signal?.aborted) {
+      resolve({ ok: false, error: "Aborted" });
+      return;
+    }
+
     let probeWs: WebSocket | null = null;
     let timeoutId: ReturnType<typeof setTimeout> | null = null;
+    let resolved = false;
 
     const cleanup = () => {
       if (timeoutId) {
@@ -159,14 +169,23 @@ export function probeGateway(url: string): Promise<ProbeResult> {
     };
 
     const fail = (error: string) => {
+      if (resolved) return;
+      resolved = true;
       cleanup();
       resolve({ ok: false, error });
     };
 
     const succeed = (version?: string) => {
+      if (resolved) return;
+      resolved = true;
       cleanup();
       resolve({ ok: true, version });
     };
+
+    // Handle abort signal
+    signal?.addEventListener("abort", () => {
+      fail("Aborted");
+    });
 
     // Timeout handler
     timeoutId = setTimeout(() => {

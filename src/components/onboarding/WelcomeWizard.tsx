@@ -72,36 +72,44 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
 
     // Reset states when URL changes
     probeSuccess.value = false;
+    probing.value = false;
 
     // Only probe if URL format is valid
     if (!canProceedFromUrl.value) {
       return;
     }
 
+    // Create abort controller for this probe attempt
+    const abortController = new AbortController();
+
     // Debounce: wait 600ms after typing stops
     const timeoutId = setTimeout(async () => {
-      // Don't probe if already probing or URL changed
-      if (probing.peek() || url.peek() !== currentUrl) return;
+      // Don't probe if aborted or URL changed
+      if (abortController.signal.aborted || url.peek() !== currentUrl) return;
 
       probing.value = true;
       urlError.value = null;
 
-      const result = await probeGateway(currentUrl);
+      const result = await probeGateway(currentUrl, abortController.signal);
 
-      // Only update if URL hasn't changed during probe
-      if (url.peek() === currentUrl) {
+      // Only update if not aborted and URL hasn't changed
+      if (!abortController.signal.aborted && url.peek() === currentUrl) {
         probing.value = false;
         if (result.ok) {
           probeSuccess.value = true;
           urlError.value = null;
-        } else {
+        } else if (result.error !== "Aborted") {
           probeSuccess.value = false;
           urlError.value = result.error || t("onboarding.probeError");
         }
       }
     }, 600);
 
-    return () => clearTimeout(timeoutId);
+    // Cleanup: abort probe and clear timeout when URL changes
+    return () => {
+      clearTimeout(timeoutId);
+      abortController.abort();
+    };
   });
 
   const validateUrl = () => {
