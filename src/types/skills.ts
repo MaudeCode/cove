@@ -4,7 +4,8 @@
  * Types for the skills.status gateway method response.
  */
 
-export type SkillSource = "bundled" | "managed" | "workspace";
+/** Known skill sources, but API may return other values */
+export type SkillSource = "bundled" | "managed" | "workspace" | string;
 
 export interface SkillConfigCheck {
   path: string;

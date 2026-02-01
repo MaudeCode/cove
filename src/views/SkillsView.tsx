@@ -211,6 +211,8 @@ function getSourceBadge(source: SkillSource) {
       return { icon: FolderCog, label: t("skills.source.managed") };
     case "workspace":
       return { icon: Folder, label: t("skills.source.workspace") };
+    default:
+      return { icon: Puzzle, label: source || "Unknown" };
   }
 }
 
