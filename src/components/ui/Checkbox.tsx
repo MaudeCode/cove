@@ -2,6 +2,7 @@
  * Checkbox Component
  *
  * Traditional checkbox with optional label and description.
+ * Uses a native input wrapped in a label for accessibility.
  */
 
 import { CheckIcon } from "./icons";
@@ -29,40 +30,32 @@ export function Checkbox({
   disabled = false,
   class: className = "",
 }: CheckboxProps) {
-  const handleClick = () => {
-    if (!disabled) {
-      onChange(!checked);
-    }
-  };
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === " " || e.key === "Enter") {
-      e.preventDefault();
-      handleClick();
-    }
-  };
-
   return (
-    <div
+    <label
       class={`flex items-start gap-3 ${disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"} ${className}`}
-      onClick={handleClick}
-      onKeyDown={handleKeyDown}
-      role="checkbox"
-      aria-checked={checked}
-      aria-disabled={disabled}
-      tabIndex={disabled ? -1 : 0}
     >
-      {/* Checkbox box */}
+      {/* Native checkbox (visually hidden but accessible) */}
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange((e.target as HTMLInputElement).checked)}
+        disabled={disabled}
+        class="sr-only peer"
+      />
+
+      {/* Custom visual checkbox */}
       <div
         class={`
           flex-shrink-0 w-5 h-5 rounded border-2 transition-colors
           flex items-center justify-center
+          peer-focus-visible:ring-2 peer-focus-visible:ring-[var(--color-accent)] peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-[var(--color-bg-primary)]
           ${
             checked
               ? "bg-[var(--color-accent)] border-[var(--color-accent)]"
               : "bg-[var(--color-bg-primary)] border-[var(--color-border)] hover:border-[var(--color-accent)]"
           }
         `}
+        aria-hidden="true"
       >
         {checked && <CheckIcon class="w-3 h-3 text-white" />}
       </div>
@@ -78,6 +71,6 @@ export function Checkbox({
           )}
         </div>
       )}
-    </div>
+    </label>
   );
 }
