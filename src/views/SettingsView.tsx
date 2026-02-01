@@ -6,8 +6,16 @@
 
 import type { ComponentChildren } from "preact";
 import { t } from "@/lib/i18n";
-import { Card, ThemePicker } from "@/components/ui";
+import { Card, Select, ThemePicker } from "@/components/ui";
 import { gatewayVersion, gatewayUrl } from "@/lib/gateway";
+import {
+  fontSize,
+  fontFamily,
+  FONT_SIZE_OPTIONS,
+  FONT_FAMILY_OPTIONS,
+  type FontSize,
+  type FontFamily,
+} from "@/signals/settings";
 import { APP_VERSION, EXTERNAL_URLS } from "@/lib/constants";
 
 // ============================================
@@ -89,13 +97,6 @@ function ExternalLink({ href, emoji, labelKey }: ExternalLinkProps) {
   );
 }
 
-/** Coming soon placeholder text */
-function ComingSoon() {
-  return (
-    <span class="text-xs text-[var(--color-text-muted)] italic">{t("settings.comingSoon")}</span>
-  );
-}
-
 // ============================================
 // Main Component
 // ============================================
@@ -128,17 +129,35 @@ export function SettingsView(_props: SettingsViewProps) {
             <SettingRow
               labelKey="settings.appearance.fontSize"
               descriptionKey="settings.appearance.fontSizeDescription"
-              disabled
             >
-              <ComingSoon />
+              <Select
+                value={fontSize.value}
+                onChange={(e) => {
+                  fontSize.value = (e.target as HTMLSelectElement).value as FontSize;
+                }}
+                options={FONT_SIZE_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: t(opt.labelKey),
+                }))}
+                class="w-28"
+              />
             </SettingRow>
 
             <SettingRow
               labelKey="settings.appearance.fontFamily"
               descriptionKey="settings.appearance.fontFamilyDescription"
-              disabled
             >
-              <ComingSoon />
+              <Select
+                value={fontFamily.value}
+                onChange={(e) => {
+                  fontFamily.value = (e.target as HTMLSelectElement).value as FontFamily;
+                }}
+                options={FONT_FAMILY_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: t(opt.labelKey),
+                }))}
+                class="w-36"
+              />
             </SettingRow>
           </div>
         </SettingsSection>

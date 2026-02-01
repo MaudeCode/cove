@@ -803,13 +803,13 @@ export const navigation: NavSection[] = [
 
 **Navigation:**
 - [x] Add Settings to nav config (settings section)
-- [ ] Cog icon in TopBar navigates to Settings view
-- [ ] Settings view with sectioned layout
+- [x] Cog icon in TopBar navigates to Settings view
+- [x] Settings view with sectioned layout
 
 **Appearance Section:**
-- [ ] Theme picker (already have ThemePicker component)
-- [ ] Font size (sm, md, lg) with live preview
-- [ ] Font family (Geist, Inter, System, JetBrains Mono, OpenDyslexic)
+- [x] Theme picker (ThemePicker component)
+- [x] Font size (sm, md, lg) with live preview
+- [x] Font family (System, Geist, Inter, JetBrains Mono, OpenDyslexic)
 
 **Preferences Section:**
 - [ ] Time display (relative vs absolute)
@@ -824,9 +824,9 @@ export const navigation: NavSection[] = [
 - [ ] Links (docs, GitHub, Discord)
 
 **About Section:**
-- [ ] Cove version
-- [ ] Gateway info (version, URL)
-- [ ] OpenClaw links
+- [x] Cove version
+- [x] Gateway info (version, URL)
+- [x] OpenClaw links
 
 **Actions:**
 - [ ] Reset to defaults button

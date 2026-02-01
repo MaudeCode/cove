@@ -227,7 +227,12 @@
       "fontSizeMd": "Medium",
       "fontSizeLg": "Large",
       "fontFamily": "Font Family",
-      "fontFamilyDescription": "Choose your preferred typeface"
+      "fontFamilyDescription": "Choose your preferred typeface",
+      "fontSystem": "System",
+      "fontGeist": "Geist",
+      "fontInter": "Inter",
+      "fontMono": "JetBrains Mono",
+      "fontDyslexic": "OpenDyslexic"
     },
     "language": {
       "title": "Language & Region",
