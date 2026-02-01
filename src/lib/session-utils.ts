@@ -8,6 +8,15 @@ import { mainSessionKey } from "@/lib/gateway";
 import { capitalize } from "@/lib/utils";
 import type { Session } from "@/types/sessions";
 
+/**
+ * Format version string with 'v' prefix only if it starts with a digit.
+ * @example formatVersion("1.2.3") → "v1.2.3"
+ * @example formatVersion("dev") → "dev"
+ */
+export function formatVersion(version: string): string {
+  return /^\d/.test(version) ? `v${version}` : version;
+}
+
 /** Known channel types that appear in session keys */
 const CHANNEL_KEY_PATTERNS = [
   ":discord:",

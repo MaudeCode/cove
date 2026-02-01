@@ -12,6 +12,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { Toggle } from "@/components/ui/Toggle";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { gatewayVersion, gatewayUrl, isConnected } from "@/lib/gateway";
+import { formatVersion } from "@/lib/session-utils";
 import { logout } from "@/lib/logout";
 import {
   fontSize,
@@ -232,11 +233,7 @@ export function SettingsView(_props: SettingsViewProps) {
             {gatewayVersion.value && (
               <InfoRow
                 label={t("settings.about.gateway")}
-                value={
-                  /^\d/.test(gatewayVersion.value)
-                    ? `v${gatewayVersion.value}`
-                    : gatewayVersion.value
-                }
+                value={formatVersion(gatewayVersion.value)}
               />
             )}
             {gatewayUrl.value && (
