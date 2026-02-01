@@ -262,7 +262,7 @@ function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
           onClick={onSkip}
           class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
         >
-          {t("onboarding.skip")}
+          {t("onboarding.skipToLogin")}
         </button>
       </div>
     </div>
