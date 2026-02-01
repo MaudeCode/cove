@@ -470,7 +470,7 @@ function SessionRow({ session }: { session: Session }) {
 
       {/* Actions */}
       <td class="py-3 px-4">
-        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div class="flex items-center gap-1">
           <IconButton
             icon={<MessageSquare class="w-4 h-4" />}
             label={t("sessions.admin.openInChat")}
