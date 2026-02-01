@@ -300,25 +300,55 @@
     "defaultModel": "Default",
     "admin": {
       "title": "Sessions",
-      "description": "Active session keys and per-session overrides.",
-      "activeWithin": "Active within (minutes)",
-      "minutes": "minutes",
-      "limit": "Limit",
-      "includeGlobal": "Include global",
-      "includeUnknown": "Include unknown",
-      "key": "Key",
+      "description": "Manage active sessions, configure overrides, and monitor usage.",
       "label": "Label",
-      "labelPlaceholder": "(optional)",
-      "kind": "Kind",
-      "updated": "Updated",
+      "labelPlaceholder": "Give this session a memorable name",
+      "labelHelp": "A friendly name to help identify this session in lists.",
       "tokens": "Tokens",
+      "contextUsed": "Context Used",
+      "lastActive": "Last Active",
       "thinking": "Thinking",
       "verbose": "Verbose",
       "reasoning": "Reasoning",
-      "actions": "Actions",
-      "empty": "No sessions found",
+      "sessionDetails": "Session Details",
+      "openInChat": "Open in Chat",
+      "configure": "Configure",
+      "confirmDelete": "Delete this session?",
+      "emptyTitle": "No Sessions",
+      "emptyDescription": "Sessions will appear here once you start chatting.",
+      "noResults": "No Matching Sessions",
+      "noResultsDescription": "Try adjusting your search or filters.",
+      "clearFilters": "Clear Filters",
+      "searchPlaceholder": "Search sessions...",
       "count": "{count} session",
-      "count_plural": "{count} sessions"
+      "count_plural": "{count} sessions",
+      "filteredCount": "Showing {filtered} of {total} sessions",
+      "stats": {
+        "total": "Total"
+      },
+      "kinds": {
+        "main": "Main",
+        "channel": "Channel",
+        "cron": "Cron",
+        "isolated": "Isolated"
+      },
+      "levels": {
+        "inherit": "Inherit",
+        "off": "Off",
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High"
+      },
+      "filters": {
+        "all": "All Types"
+      },
+      "columns": {
+        "session": "Session",
+        "kind": "Type",
+        "model": "Model",
+        "lastActive": "Last Active",
+        "tokens": "Tokens"
+      }
     }
   },
 
