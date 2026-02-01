@@ -24,3 +24,20 @@ export const TEXT_BLOCK_SEPARATOR = "\n\n";
 
 /** Animation duration for session deletion (ms) */
 export const SESSION_DELETE_ANIMATION_MS = 300;
+
+// ============================================
+// App Info
+// ============================================
+
+/** App version (from package.json via Vite) */
+export const APP_VERSION = __APP_VERSION__;
+
+// ============================================
+// External URLs
+// ============================================
+
+export const EXTERNAL_URLS = {
+  docs: "https://docs.openclaw.ai",
+  github: "https://github.com/openclaw/openclaw",
+  discord: "https://discord.com/invite/clawd",
+} as const;

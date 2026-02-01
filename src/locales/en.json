@@ -241,11 +241,18 @@
       "sound": "Sound"
     },
     "about": {
-      "title": "About"
+      "title": "About",
+      "cove": "Cove",
+      "gateway": "Gateway",
+      "gatewayUrl": "Gateway URL"
     },
     "links": {
-      "title": "Links"
-    }
+      "title": "Links",
+      "docs": "Documentation",
+      "github": "GitHub",
+      "discord": "Discord Community"
+    },
+    "comingSoon": "Coming soon"
   },
 
   "cron": {
