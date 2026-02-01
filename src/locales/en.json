@@ -218,6 +218,7 @@
     "thinking": "Thinking...",
     "queuedMessages": "Queued ({count})",
     "queuedMessages_plural": "Queued ({count})",
+    "editQueuedMessage": "Edit Queued Message",
     "streaming": "Generating response...",
     "copyCode": "Copy code",
     "viewRaw": "View raw",
