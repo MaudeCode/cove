@@ -257,9 +257,8 @@ export function ChatInput({
             placeholder={placeholder || t("chat.placeholder")}
             rows={1}
             class={`
-              w-full px-4 pb-12 text-sm resize-none
-              bg-transparent border-none
-              focus:outline-none focus-visible:outline-none
+              w-full px-4 pb-12 text-sm rounded-xl resize-none
+              bg-transparent border-none outline-none
               placeholder:text-[var(--color-text-muted)]
               disabled:opacity-50 disabled:cursor-not-allowed
               ${hasAttachments ? "pt-2" : "pt-3"}
