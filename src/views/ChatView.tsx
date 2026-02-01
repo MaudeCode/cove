@@ -108,13 +108,25 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     });
   }, [activeSessionKey.value]);
 
-  // Process queued messages on reconnect
+  // Handle reconnection: process queued messages and refresh history
   useEffect(() => {
     const connected = isConnected.value;
+    const wasConnected = wasConnectedRef.current;
 
     // Detect reconnection (was disconnected, now connected)
-    if (connected && !wasConnectedRef.current && hasQueuedMessages.value) {
-      processMessageQueue();
+    if (connected && !wasConnected) {
+      // Process any queued messages
+      if (hasQueuedMessages.value) {
+        processMessageQueue();
+      }
+
+      // Refresh history to ensure we have the latest messages
+      const currentSession = effectiveSessionKey.value;
+      if (currentSession) {
+        loadHistory(currentSession).catch(() => {
+          // Error will be shown via historyError signal
+        });
+      }
     }
 
     wasConnectedRef.current = connected;
