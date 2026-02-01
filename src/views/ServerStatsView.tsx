@@ -206,10 +206,10 @@ function UsageSummaryCard() {
             </p>
           </div>
         </div>
-        {totals.costUsd > 0 && (
+        {totals.totalCost > 0 && (
           <div class="text-right">
             <div class="text-2xl font-bold text-[var(--color-success)]">
-              {formatCost(totals.costUsd)}
+              {formatCost(totals.totalCost)}
             </div>
             <div class="text-xs text-[var(--color-text-muted)]">{t("stats.usage.totalCost")}</div>
           </div>
@@ -219,11 +219,11 @@ function UsageSummaryCard() {
       <div class="grid grid-cols-3 gap-4">
         <div>
           <div class="text-sm text-[var(--color-text-muted)]">{t("stats.usage.input")}</div>
-          <div class="font-medium">{formatTokenCount(totals.inputTokens)}</div>
+          <div class="font-medium">{formatTokenCount(totals.input)}</div>
         </div>
         <div>
           <div class="text-sm text-[var(--color-text-muted)]">{t("stats.usage.output")}</div>
-          <div class="font-medium">{formatTokenCount(totals.outputTokens)}</div>
+          <div class="font-medium">{formatTokenCount(totals.output)}</div>
         </div>
         <div>
           <div class="text-sm text-[var(--color-text-muted)]">{t("stats.usage.total")}</div>
@@ -231,19 +231,19 @@ function UsageSummaryCard() {
         </div>
       </div>
 
-      {(totals.cacheReadTokens > 0 || totals.cacheWriteTokens > 0) && (
+      {(totals.cacheRead > 0 || totals.cacheWrite > 0) && (
         <div class="mt-4 pt-4 border-t border-[var(--color-border)]">
           <div class="text-sm text-[var(--color-text-muted)] mb-2">{t("stats.usage.cache")}</div>
           <div class="grid grid-cols-2 gap-4">
             <div>
               <div class="text-xs text-[var(--color-text-muted)]">{t("stats.usage.cacheRead")}</div>
-              <div class="font-medium">{formatTokenCount(totals.cacheReadTokens)}</div>
+              <div class="font-medium">{formatTokenCount(totals.cacheRead)}</div>
             </div>
             <div>
               <div class="text-xs text-[var(--color-text-muted)]">
                 {t("stats.usage.cacheWrite")}
               </div>
-              <div class="font-medium">{formatTokenCount(totals.cacheWriteTokens)}</div>
+              <div class="font-medium">{formatTokenCount(totals.cacheWrite)}</div>
             </div>
           </div>
         </div>

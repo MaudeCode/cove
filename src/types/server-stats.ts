@@ -9,12 +9,13 @@
 // ============================================
 
 export interface UsageTotals {
-  inputTokens: number;
-  outputTokens: number;
+  input: number;
+  output: number;
   totalTokens: number;
-  cacheReadTokens: number;
-  cacheWriteTokens: number;
-  costUsd: number;
+  cacheRead: number;
+  cacheWrite: number;
+  totalCost: number;
+  missingCostEntries?: number;
 }
 
 export interface DailyUsage extends UsageTotals {
@@ -96,7 +97,10 @@ export function formatUptime(ms: number): string {
   return `${seconds}s`;
 }
 
-export function formatTokenCount(count: number): string {
+export function formatTokenCount(count: number | undefined | null): string {
+  if (count == null || !Number.isFinite(count)) {
+    return "0";
+  }
   if (count >= 1_000_000) {
     return `${(count / 1_000_000).toFixed(1)}M`;
   }
@@ -106,7 +110,10 @@ export function formatTokenCount(count: number): string {
   return count.toString();
 }
 
-export function formatCost(usd: number): string {
+export function formatCost(usd: number | undefined | null): string {
+  if (usd == null || !Number.isFinite(usd)) {
+    return "$0.00";
+  }
   if (usd >= 1) {
     return `$${usd.toFixed(2)}`;
   }
