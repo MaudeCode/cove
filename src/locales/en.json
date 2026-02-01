@@ -259,7 +259,7 @@
     "cronJobCompleted": "Cron job completed",
     "dateFrom": "From",
     "dateTo": "To",
-    "attachFile": "Attach file",
+    "attachImage": "Attach image",
     "dropFiles": "Drop files here",
     "imageViewer": "Image viewer",
     "copyMarkdown": "Copy markdown"

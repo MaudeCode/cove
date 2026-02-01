@@ -7,7 +7,7 @@
 
 import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-import { Paperclip } from "lucide-preact";
+import { Image } from "lucide-preact";
 import { t } from "@/lib/i18n";
 import { hasContent } from "@/lib/utils";
 import { SendIcon, StopIcon } from "@/components/ui/icons";
@@ -273,7 +273,7 @@ export function ChatInput({
             ref={fileInputRef}
             type="file"
             multiple
-            accept="image/*,.pdf,.txt,.md,.json,.csv"
+            accept="image/*"
             onChange={handleFileChange}
             class="hidden"
           />
@@ -292,13 +292,13 @@ export function ChatInput({
                 </div>
               )}
 
-              {/* Attach button */}
-              <Tooltip content={t("chat.attachFile")} placement="top">
+              {/* Attach image button */}
+              <Tooltip content={t("chat.attachImage")} placement="top">
                 <button
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={disabled}
-                  aria-label={t("chat.attachFile")}
+                  aria-label={t("chat.attachImage")}
                   class="
                     p-1.5 rounded-lg cursor-pointer
                     text-[var(--color-text-muted)]
@@ -308,7 +308,7 @@ export function ChatInput({
                     transition-colors
                   "
                 >
-                  <Paperclip class="w-4 h-4" />
+                  <Image class="w-4 h-4" aria-hidden="true" />
                 </button>
               </Tooltip>
             </div>
