@@ -615,6 +615,59 @@
     }
   },
 
+  "skills": {
+    "title": "Skills",
+    "description": "Browse and manage assistant skills.",
+    "emptyTitle": "No Skills",
+    "emptyDescription": "No skills are available in this workspace.",
+    "noResults": "No Matching Skills",
+    "noResultsDescription": "Try adjusting your search or filters.",
+    "clearFilters": "Clear Filters",
+    "count": "{count} skill",
+    "count_plural": "{count} skills",
+    "filteredCount": "Showing {filtered} of {total} skills",
+    "searchPlaceholder": "Search skills...",
+    "enable": "Enable",
+    "disable": "Disable",
+    "enabledSuccess": "Enabled {name}",
+    "disabledSuccess": "Disabled {name}",
+    "installDeps": "Install Dependencies",
+    "installTitle": "Install Dependencies for {name}",
+    "installDescription": "Choose an installation method to install the required dependencies.",
+    "installSuccess": "Successfully installed dependencies for {name}",
+    "installFailed": "Failed to install dependencies",
+    "providesBins": "Provides",
+    "skillKey": "Skill Key",
+    "location": "Location",
+    "homepage": "Homepage",
+    "alwaysActive": "Always active",
+    "missingRequirements": "Missing requirements",
+    "blockedByAllowlist": "Blocked by allowlist",
+    "primaryEnv": "Primary env var",
+    "workspaceDir": "Workspace",
+    "managedDir": "Managed skills",
+    "stats": {
+      "total": "Total",
+      "eligible": "Eligible",
+      "disabled": "Disabled",
+      "missingReqs": "Missing Reqs"
+    },
+    "status": {
+      "eligible": "Eligible",
+      "disabled": "Disabled",
+      "missingReqs": "Missing Reqs",
+      "blocked": "Blocked"
+    },
+    "source": {
+      "bundled": "Bundled",
+      "managed": "Managed",
+      "workspace": "Workspace"
+    },
+    "filters": {
+      "allSources": "All Sources"
+    }
+  },
+
   "stats": {
     "title": "Server Stats",
     "description": "Gateway metrics and usage statistics",
