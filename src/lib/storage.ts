@@ -256,30 +256,6 @@ export function setNewChatSettings(settings: NewChatSettings): void {
 }
 
 // ============================================
-// Auto-Title Settings
-// ============================================
-
-export interface AutoTitleSettings {
-  /** Use LLM to generate chat titles */
-  enabled: boolean;
-  /** Agent to use for title generation (null = main) */
-  agentId: string | null;
-}
-
-const DEFAULT_AUTO_TITLE_SETTINGS: AutoTitleSettings = {
-  enabled: false,
-  agentId: null,
-};
-
-export function getAutoTitleSettings(): AutoTitleSettings {
-  return getRaw<AutoTitleSettings>("auto-title-settings") ?? DEFAULT_AUTO_TITLE_SETTINGS;
-}
-
-export function setAutoTitleSettings(settings: AutoTitleSettings): void {
-  setRaw("auto-title-settings", settings);
-}
-
-// ============================================
 // Migration
 // ============================================
 

@@ -360,15 +360,6 @@
       "defaultAgent": "Default Agent",
       "defaultAgentDescription": "Which agent to use for new chats"
     },
-    "autoTitle": {
-      "title": "Chat Titles",
-      "enabled": "Auto-generate titles",
-      "enabledDescription": "Use AI to create descriptive chat titles",
-      "agent": "Agent for titles",
-      "agentDescription": "Which agent to use for generating titles",
-      "costWarning": "Each title generation uses tokens from the selected agent.",
-      "disabledHint": "When disabled, titles use the first 50 characters of your message."
-    },
     "account": {
       "title": "Account",
       "logoutDescription": "Disconnect from the gateway"
