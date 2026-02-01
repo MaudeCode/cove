@@ -66,10 +66,11 @@ function NavItemComponent({ item }: NavItemComponentProps) {
 
 interface CollapsibleNavSectionProps {
   section: NavSectionType;
+  defaultOpen?: boolean;
 }
 
-function CollapsibleNavSection({ section }: CollapsibleNavSectionProps) {
-  const isOpen = useSignal(false);
+function CollapsibleNavSection({ section, defaultOpen = false }: CollapsibleNavSectionProps) {
+  const isOpen = useSignal(defaultOpen);
   const visibleItems = section.items;
 
   if (visibleItems.length === 0) return null;
@@ -100,14 +101,25 @@ function CollapsibleNavSection({ section }: CollapsibleNavSectionProps) {
   );
 }
 
+interface NavSectionsProps {
+  /** Whether sections should be expanded by default */
+  expanded?: boolean;
+}
+
 /**
  * Navigation sections container
  */
-export function NavSections() {
+export function NavSections({ expanded = false }: NavSectionsProps) {
   return (
-    <div class="border-t border-[var(--color-border)] max-h-[50%] overflow-y-auto">
+    <div
+      class={
+        expanded
+          ? "border-t border-[var(--color-border)]"
+          : "border-t border-[var(--color-border)] max-h-[50%] overflow-y-auto"
+      }
+    >
       {navigation.map((section) => (
-        <CollapsibleNavSection key={section.titleKey} section={section} />
+        <CollapsibleNavSection key={section.titleKey} section={section} defaultOpen={expanded} />
       ))}
     </div>
   );

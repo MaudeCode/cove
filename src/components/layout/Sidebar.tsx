@@ -133,21 +133,31 @@ export function Sidebar() {
             <SessionFilters />
             <SessionList onRename={setRenameSession} onDelete={setDeleteSession} />
           </div>
+
+          {/* Navigation sections - pinned to bottom */}
+          <NavSections />
         </>
       ) : (
         <>
-          {/* Single-chat mode: Simple header */}
-          <div class="p-3">
-            <h2 class="text-sm font-semibold text-[var(--color-text-primary)]">{t("nav.chat")}</h2>
-          </div>
+          {/* Single-chat mode: Chat link + expanded nav sections */}
+          <div class="flex-1 overflow-y-auto">
+            {/* Chat link at top */}
+            <div class="px-3 py-2">
+              <button
+                type="button"
+                onClick={() => route("/chat")}
+                class="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 ease-out bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
+              >
+                <span class="w-5 h-5 flex-shrink-0">💬</span>
+                {t("nav.chat")}
+              </button>
+            </div>
 
-          {/* Spacer to push nav to bottom */}
-          <div class="flex-1" />
+            {/* All nav sections - expanded */}
+            <NavSections expanded />
+          </div>
         </>
       )}
-
-      {/* Navigation sections - pinned to bottom */}
-      <NavSections />
 
       {/* Modals (only needed in multi-chat mode, but harmless to keep) */}
       <SessionRenameModal
