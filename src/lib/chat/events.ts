@@ -21,6 +21,7 @@ import type { ChatEvent, AgentEvent } from "@/types/chat";
 import { parseMessageContent, mergeToolCalls } from "@/types/chat";
 import { isHeartbeatResponse, isNoReplyContent } from "@/lib/message-detection";
 import { processNextQueuedMessage } from "./send";
+import { loadHistory } from "./history";
 
 let chatEventUnsubscribe: (() => void) | null = null;
 
@@ -91,6 +92,8 @@ function handleLifecycleEnd(evt: AgentEvent): void {
   if (existingRun && (existingRun.status === "pending" || existingRun.status === "streaming")) {
     log.chat.debug("Completing run via lifecycle end:", runId, "phase:", evt.data?.phase);
 
+    const wasEmpty = !existingRun.content;
+
     // If the run has content, create a message from it
     if (existingRun.content) {
       const finalMessage = {
@@ -109,6 +112,15 @@ function handleLifecycleEnd(evt: AgentEvent): void {
     // Process next queued message
     if (existingRun.sessionKey) {
       setTimeout(() => processNextQueuedMessage(existingRun.sessionKey), 100);
+
+      // For empty runs (heartbeat/no-reply), refresh history to pick up the prompt message
+      // that was injected by the gateway but not broadcast to webchat
+      if (wasEmpty) {
+        log.chat.debug("Refreshing history after empty run (heartbeat/no-reply)");
+        loadHistory(existingRun.sessionKey).catch((err) => {
+          log.chat.warn("Failed to refresh history after heartbeat:", err);
+        });
+      }
     }
   }
 }
