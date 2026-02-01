@@ -393,11 +393,6 @@ const SESSION_TARGET_OPTIONS = [
   { value: "isolated", label: t("cron.sessionTarget.isolated") },
 ];
 
-const PAYLOAD_KIND_OPTIONS = [
-  { value: "systemEvent", label: t("cron.payloadKind.systemEvent") },
-  { value: "agentTurn", label: t("cron.payloadKind.agentTurn") },
-];
-
 function StatCard({
   icon: Icon,
   label,
@@ -622,48 +617,52 @@ function JobEditForm({ isCreate: _isCreate = false }: { isCreate?: boolean }) {
         </div>
       </FormField>
 
-      {/* Session Target */}
+      {/* Session Target - auto-sets payload kind */}
       <FormField label={t("cron.form.sessionTarget")} hint={t("cron.form.sessionTargetHint")}>
         <Dropdown
           value={editSessionTarget.value}
-          onChange={(val) => (editSessionTarget.value = val as "main" | "isolated")}
+          onChange={(val) => {
+            const target = val as "main" | "isolated";
+            editSessionTarget.value = target;
+            // Enforce: main→systemEvent, isolated→agentTurn
+            editPayloadKind.value = target === "main" ? "systemEvent" : "agentTurn";
+          }}
           options={SESSION_TARGET_OPTIONS}
         />
       </FormField>
 
       {/* Payload */}
-      <FormField label={t("cron.form.payload")}>
-        <div class="space-y-3">
-          <Dropdown
-            value={editPayloadKind.value}
-            onChange={(val) => (editPayloadKind.value = val as "systemEvent" | "agentTurn")}
-            options={PAYLOAD_KIND_OPTIONS}
+      <FormField
+        label={t("cron.form.payload")}
+        hint={
+          editSessionTarget.value === "main"
+            ? t("cron.form.payloadHintMain")
+            : t("cron.form.payloadHintIsolated")
+        }
+      >
+        {editSessionTarget.value === "main" ? (
+          <Input
+            value={editPayloadText.value}
+            onInput={(e) => (editPayloadText.value = (e.target as HTMLInputElement).value)}
+            placeholder={t("cron.form.systemEventPlaceholder")}
+            fullWidth
           />
-          {editPayloadKind.value === "systemEvent" && (
+        ) : (
+          <div class="space-y-3">
             <Input
-              value={editPayloadText.value}
-              onInput={(e) => (editPayloadText.value = (e.target as HTMLInputElement).value)}
-              placeholder={t("cron.form.systemEventPlaceholder")}
+              value={editPayloadMessage.value}
+              onInput={(e) => (editPayloadMessage.value = (e.target as HTMLInputElement).value)}
+              placeholder={t("cron.form.agentMessagePlaceholder")}
               fullWidth
             />
-          )}
-          {editPayloadKind.value === "agentTurn" && (
-            <div class="space-y-3">
-              <Input
-                value={editPayloadMessage.value}
-                onInput={(e) => (editPayloadMessage.value = (e.target as HTMLInputElement).value)}
-                placeholder={t("cron.form.agentMessagePlaceholder")}
-                fullWidth
-              />
-              <Input
-                value={editPayloadModel.value}
-                onInput={(e) => (editPayloadModel.value = (e.target as HTMLInputElement).value)}
-                placeholder={t("cron.form.modelPlaceholder")}
-                fullWidth
-              />
-            </div>
-          )}
-        </div>
+            <Input
+              value={editPayloadModel.value}
+              onInput={(e) => (editPayloadModel.value = (e.target as HTMLInputElement).value)}
+              placeholder={t("cron.form.modelPlaceholder")}
+              fullWidth
+            />
+          </div>
+        )}
       </FormField>
     </div>
   );
