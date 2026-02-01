@@ -24,15 +24,10 @@ import {
   MessageSquare,
   CheckCircle2,
   AlertCircle,
-  XCircle,
-  ChevronDown,
-  ChevronRight,
   Clock,
   LogOut,
   Activity,
   Zap,
-  Link2,
-  Settings2,
   ExternalLink,
 } from "lucide-preact";
 import type {
@@ -52,7 +47,6 @@ const channels = signal<ChannelDisplayData[]>([]);
 const isLoading = signal<boolean>(false);
 const isProbing = signal<boolean>(false);
 const error = signal<string | null>(null);
-const expandedChannels = signal<Set<string>>(new Set());
 
 // Logout modal state
 const logoutModal = signal<{
@@ -69,55 +63,16 @@ const isLoggingOut = signal<boolean>(false);
 function getStatusBadge(status: ChannelStatus) {
   switch (status) {
     case "connected":
-      return {
-        variant: "success" as const,
-        label: t("channels.status.connected"),
-        icon: CheckCircle2,
-      };
+      return { variant: "success" as const, label: t("channels.status.connected") };
     case "configured":
-      return {
-        variant: "warning" as const,
-        label: t("channels.status.configured"),
-        icon: Settings2,
-      };
+      return { variant: "warning" as const, label: t("channels.status.configured") };
     case "not-configured":
-      return {
-        variant: "default" as const,
-        label: t("channels.status.notConfigured"),
-        icon: Link2,
-      };
+      return { variant: "default" as const, label: t("channels.status.notConfigured") };
     case "disabled":
-      return { variant: "default" as const, label: t("channels.status.disabled"), icon: XCircle };
+      return { variant: "default" as const, label: t("channels.status.disabled") };
     case "error":
-      return { variant: "error" as const, label: t("channels.status.error"), icon: AlertCircle };
+      return { variant: "error" as const, label: t("channels.status.error") };
   }
-}
-
-function getAccountStatusBits(account: ChannelAccountSnapshot): string[] {
-  const bits: string[] = [];
-
-  if (account.enabled === false) bits.push(t("channels.account.disabled"));
-  else if (account.enabled === true) bits.push(t("channels.account.enabled"));
-
-  if (account.configured === true) bits.push(t("channels.account.configured"));
-  if (account.linked === true) bits.push(t("channels.account.linked"));
-  if (account.running === true) bits.push(t("channels.account.running"));
-  if (account.connected === true) bits.push(t("channels.account.connected"));
-  else if (account.connected === false && account.running)
-    bits.push(t("channels.account.disconnected"));
-
-  return bits;
-}
-
-function formatActivity(inbound?: number | null, outbound?: number | null): string {
-  const parts: string[] = [];
-  if (inbound) {
-    parts.push(`↓ ${formatTimestamp(inbound, { relative: true })}`);
-  }
-  if (outbound) {
-    parts.push(`↑ ${formatTimestamp(outbound, { relative: true })}`);
-  }
-  return parts.length > 0 ? parts.join(" · ") : "—";
 }
 
 // ============================================
@@ -157,23 +112,12 @@ async function handleLogout(): Promise<void> {
     });
     toast.success(t("channels.logoutSuccess", { channel: logoutModal.value.label }));
     logoutModal.value = null;
-    // Refresh to show updated status
     loadChannels();
   } catch (err) {
     toast.error(getErrorMessage(err));
   } finally {
     isLoggingOut.value = false;
   }
-}
-
-function toggleExpanded(channelId: string) {
-  const next = new Set(expandedChannels.value);
-  if (next.has(channelId)) {
-    next.delete(channelId);
-  } else {
-    next.add(channelId);
-  }
-  expandedChannels.value = next;
 }
 
 // ============================================
@@ -194,7 +138,7 @@ const stats = computed(() => {
 // Components
 // ============================================
 
-function AccountDetails({
+function AccountRow({
   account,
   channelId,
   channelLabel,
@@ -203,187 +147,105 @@ function AccountDetails({
   channelId: string;
   channelLabel: string;
 }) {
-  const statusBits = getAccountStatusBits(account);
-  const hasProbe = account.probe !== undefined;
-  const probeOk = hasProbe && account.probe?.ok === true;
-  const probeFailed = hasProbe && account.probe?.ok === false;
+  const isConnected = account.connected === true;
+  const hasError = Boolean(account.lastError);
   const botUsername = account.bot?.username;
 
   return (
-    <div class="px-4 py-3 bg-[var(--color-bg-secondary)] border-t border-[var(--color-border)]">
-      <div class="flex items-start justify-between gap-4">
-        <div class="flex-1 min-w-0">
-          {/* Account ID / Name */}
-          <div class="flex items-center gap-2 mb-2">
-            <span class="font-medium">{account.name || account.accountId}</span>
-            {account.accountId !== "default" && account.name && (
-              <span class="text-xs text-[var(--color-text-muted)]">({account.accountId})</span>
-            )}
+    <div class="flex items-center justify-between py-2 px-3 bg-[var(--color-bg-secondary)] rounded-lg">
+      <div class="flex items-center gap-3 min-w-0">
+        {/* Status dot */}
+        <div
+          class={`w-2 h-2 rounded-full flex-shrink-0 ${
+            hasError
+              ? "bg-[var(--color-error)]"
+              : isConnected
+                ? "bg-[var(--color-success)]"
+                : "bg-[var(--color-text-muted)]"
+          }`}
+        />
+
+        {/* Account info */}
+        <div class="min-w-0">
+          <div class="flex items-center gap-2">
+            <span class="font-medium truncate">{account.name || account.accountId}</span>
             {botUsername && (
-              <Badge variant="default" size="sm">
+              <span class="text-xs text-[var(--color-text-muted)]">
                 @{botUsername.replace(/^@/, "")}
-              </Badge>
+              </span>
             )}
           </div>
-
-          {/* Status bits */}
-          <div class="flex flex-wrap gap-1.5 mb-2">
-            {statusBits.map((bit) => (
-              <Badge key={bit} variant="default" size="sm">
-                {bit}
-              </Badge>
-            ))}
-            {hasProbe && (
-              <Badge variant={probeOk ? "success" : probeFailed ? "error" : "default"} size="sm">
-                {probeOk
-                  ? t("channels.probeOk")
-                  : probeFailed
-                    ? t("channels.probeFailed")
-                    : t("channels.probing")}
-              </Badge>
-            )}
-          </div>
-
-          {/* Activity */}
-          <div class="flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
-            <div class="flex items-center gap-1">
-              <Clock class="w-3 h-3" />
-              <span>{formatActivity(account.lastInboundAt, account.lastOutboundAt)}</span>
-            </div>
-            {account.mode && <span>mode: {account.mode}</span>}
-            {account.dmPolicy && <span>dm: {account.dmPolicy}</span>}
-          </div>
-
-          {/* Error */}
-          {account.lastError && (
-            <div class="mt-2 text-xs text-[var(--color-error)] bg-[var(--color-error)]/10 px-2 py-1 rounded">
-              {account.lastError}
-            </div>
+          {hasError && (
+            <div class="text-xs text-[var(--color-error)] truncate">{account.lastError}</div>
           )}
-
-          {/* Token/config sources */}
-          {(account.tokenSource || account.botTokenSource || account.baseUrl) && (
-            <div class="mt-2 text-xs text-[var(--color-text-muted)]">
-              {account.tokenSource && <span class="mr-3">token: {account.tokenSource}</span>}
-              {account.botTokenSource && <span class="mr-3">bot: {account.botTokenSource}</span>}
-              {account.baseUrl && <span>url: {account.baseUrl}</span>}
-            </div>
-          )}
-        </div>
-
-        {/* Actions */}
-        <div class="flex items-center gap-2">
-          <IconButton
-            icon={<LogOut class="w-4 h-4" />}
-            label={t("channels.logout")}
-            onClick={() => {
-              logoutModal.value = {
-                channel: channelId,
-                accountId: account.accountId,
-                label: `${channelLabel} (${account.name || account.accountId})`,
-              };
-            }}
-            variant="ghost"
-            size="sm"
-          />
         </div>
       </div>
+
+      {/* Logout button */}
+      <IconButton
+        icon={<LogOut class="w-3.5 h-3.5" />}
+        label={t("channels.logout")}
+        onClick={() => {
+          logoutModal.value = {
+            channel: channelId,
+            accountId: account.accountId,
+            label: `${channelLabel} (${account.name || account.accountId})`,
+          };
+        }}
+        variant="ghost"
+        size="sm"
+      />
     </div>
   );
 }
 
 function ChannelCard({ channel }: { channel: ChannelDisplayData }) {
-  const isExpanded = expandedChannels.value.has(channel.id);
   const statusInfo = getStatusBadge(channel.status);
-  const StatusIcon = statusInfo.icon;
-  const accountCount = channel.accounts.length;
-  const hasAccounts = accountCount > 0;
 
   // Find last activity across all accounts
   const lastActivity = channel.accounts.reduce((latest, acc) => {
     const inbound = acc.lastInboundAt ?? 0;
     const outbound = acc.lastOutboundAt ?? 0;
-    const max = Math.max(inbound, outbound);
-    return max > latest ? max : latest;
+    return Math.max(latest, inbound, outbound);
   }, 0);
 
   return (
-    <Card padding="none" class="overflow-hidden">
-      {/* Card Header - clickable to expand */}
-      <div
-        class={`p-4 ${hasAccounts ? "cursor-pointer hover:bg-[var(--color-bg-hover)]" : ""} transition-colors`}
-        onClick={hasAccounts ? () => toggleExpanded(channel.id) : undefined}
-        onKeyDown={
-          hasAccounts
-            ? (e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  toggleExpanded(channel.id);
-                }
-              }
-            : undefined
-        }
-        tabIndex={hasAccounts ? 0 : undefined}
-        role={hasAccounts ? "button" : undefined}
-        aria-expanded={hasAccounts ? isExpanded : undefined}
-      >
-        {/* Top row: Icon, Name, Status */}
-        <div class="flex items-start gap-3">
-          <ChannelIcon channelId={channel.id} size={32} />
-          <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2">
-              <span class="font-semibold text-lg">{channel.label}</span>
-              <Badge variant={statusInfo.variant} size="sm">
-                <StatusIcon class="w-3 h-3 mr-1" />
-                {statusInfo.label}
-              </Badge>
-            </div>
-            {channel.detailLabel !== channel.label && (
-              <div class="text-sm text-[var(--color-text-muted)]">{channel.detailLabel}</div>
-            )}
+    <Card padding="md">
+      {/* Header: Icon + Name + Status */}
+      <div class="flex items-start gap-3 mb-4">
+        <ChannelIcon channelId={channel.id} size={40} />
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="font-semibold text-lg">{channel.label}</h3>
+            <Badge variant={statusInfo.variant} size="sm">
+              {statusInfo.label}
+            </Badge>
           </div>
-          {hasAccounts && (
-            <div class="flex-shrink-0">
-              {isExpanded ? (
-                <ChevronDown class="w-5 h-5 text-[var(--color-text-muted)]" />
-              ) : (
-                <ChevronRight class="w-5 h-5 text-[var(--color-text-muted)]" />
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Stats row */}
-        <div class="flex items-center gap-4 mt-3 text-sm text-[var(--color-text-muted)]">
-          {accountCount > 0 && (
-            <span>
-              {accountCount} {accountCount === 1 ? t("channels.account") : t("channels.accounts")}
-            </span>
-          )}
-          {lastActivity > 0 && (
-            <span class="flex items-center gap-1">
-              <Clock class="w-3.5 h-3.5" />
-              {formatTimestamp(lastActivity, { relative: true })}
-            </span>
-          )}
-          <a
-            href={`https://docs.openclaw.ai/channels/${channel.id}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            class="ml-auto flex items-center gap-1 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {t("channels.docs")}
-            <ExternalLink class="w-3.5 h-3.5" />
-          </a>
+          <div class="flex items-center gap-3 mt-1 text-sm text-[var(--color-text-muted)]">
+            {lastActivity > 0 && (
+              <span class="flex items-center gap-1">
+                <Clock class="w-3.5 h-3.5" />
+                {formatTimestamp(lastActivity, { relative: true })}
+              </span>
+            )}
+            <a
+              href={`https://docs.openclaw.ai/channels/${channel.id}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="flex items-center gap-1 hover:text-[var(--color-accent)] transition-colors"
+            >
+              {t("channels.docs")}
+              <ExternalLink class="w-3 h-3" />
+            </a>
+          </div>
         </div>
       </div>
 
-      {/* Expanded account details */}
-      {isExpanded && hasAccounts && (
-        <div class="border-t border-[var(--color-border)]">
+      {/* Accounts */}
+      {channel.accounts.length > 0 && (
+        <div class="space-y-2">
           {channel.accounts.map((account) => (
-            <AccountDetails
+            <AccountRow
               key={account.accountId}
               account={account}
               channelId={channel.id}
@@ -447,7 +309,7 @@ export function ChannelsView(_props: RouteProps) {
 
   return (
     <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-5xl mx-auto space-y-6">
+      <div class="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div class="flex items-start justify-between gap-4">
           <div class="flex-1">
@@ -517,7 +379,7 @@ export function ChannelsView(_props: RouteProps) {
 
         {/* Channel Cards */}
         {isConnected.value && !isLoading.value && channels.value.length > 0 && (
-          <div class="grid gap-4 md:grid-cols-2">
+          <div class="grid gap-4 sm:grid-cols-2">
             {channels.value.map((channel) => (
               <ChannelCard key={channel.id} channel={channel} />
             ))}
