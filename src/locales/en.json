@@ -297,7 +297,29 @@
     "showCron": "Show cron sessions",
     "tokens": "{count} tokens",
     "model": "Model: {model}",
-    "defaultModel": "Default"
+    "defaultModel": "Default",
+    "admin": {
+      "title": "Sessions",
+      "description": "Active session keys and per-session overrides.",
+      "activeWithin": "Active within (minutes)",
+      "minutes": "minutes",
+      "limit": "Limit",
+      "includeGlobal": "Include global",
+      "includeUnknown": "Include unknown",
+      "key": "Key",
+      "label": "Label",
+      "labelPlaceholder": "(optional)",
+      "kind": "Kind",
+      "updated": "Updated",
+      "tokens": "Tokens",
+      "thinking": "Thinking",
+      "verbose": "Verbose",
+      "reasoning": "Reasoning",
+      "actions": "Actions",
+      "empty": "No sessions found",
+      "count": "{count} session",
+      "count_plural": "{count} sessions"
+    }
   },
 
   "models": {
