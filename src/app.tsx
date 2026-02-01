@@ -20,6 +20,7 @@ import { loadAgents } from "@/signals/agents";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { currentPath } from "@/components/layout/Sidebar";
+import { previousRoute } from "@/signals/ui";
 import { ToastContainer, toast } from "@/components/ui/Toast";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
@@ -131,6 +132,11 @@ export function App() {
  * Handle route changes - sync to signal for sidebar active state
  */
 function handleRouteChange(e: { url: string }) {
+  // Track previous route for "back" navigation (e.g., settings toggle)
+  // Only update if navigating TO settings from a non-settings page
+  if (e.url === "/settings" && currentPath.value !== "/settings") {
+    previousRoute.value = currentPath.value;
+  }
   currentPath.value = e.url;
 }
 

@@ -4,10 +4,10 @@
  * Header with logo, connection status, theme toggle, and settings.
  */
 
-import { route } from "preact-router";
+import { route, getCurrentUrl } from "preact-router";
 import { t } from "@/lib/i18n";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
-import { sidebarOpen } from "@/signals/ui";
+import { sidebarOpen, previousRoute } from "@/signals/ui";
 import { IconButton } from "@/components/ui/IconButton";
 import { CoveLogo } from "@/components/ui/CoveLogo";
 import { XIcon, MenuIcon, SettingsIcon } from "@/components/ui/icons";
@@ -60,12 +60,15 @@ export function TopBar() {
           {/* Usage badge - only shows when Anthropic OAuth is active */}
           <UsageBadge />
 
-          {/* Settings button */}
+          {/* Settings button - toggles to/from settings */}
           <div data-tour="settings">
             <IconButton
               icon={<SettingsIcon />}
               label={t("nav.settings")}
-              onClick={() => route("/settings")}
+              onClick={() => {
+                const isOnSettings = getCurrentUrl() === "/settings";
+                route(isOnSettings ? previousRoute.value : "/settings");
+              }}
               variant="ghost"
               size="md"
             />
