@@ -8,6 +8,8 @@
 import { useState, useRef } from "preact/hooks";
 import { messageQueue, dequeueMessage, updateQueuedMessage } from "@/signals/chat";
 import { t } from "@/lib/i18n";
+import { compressImage } from "@/hooks/useAttachments";
+import { isSupportedImage } from "@/types/attachments";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { XIcon, EditIcon, ChevronDownIcon, ImageIcon, PlusIcon } from "@/components/ui/icons";
@@ -76,11 +78,12 @@ export function QueuedMessages() {
     const newImages: MessageImage[] = [];
 
     for (const file of Array.from(files)) {
-      if (!file.type.startsWith("image/")) continue;
+      if (!isSupportedImage(file.type)) continue;
 
       try {
-        const dataUrl = await fileToDataUrl(file);
-        newImages.push({ url: dataUrl, alt: file.name });
+        // Use same compression as main chat input for consistency
+        const { content } = await compressImage(file);
+        newImages.push({ url: content, alt: file.name });
       } catch {
         // Skip failed files
       }
@@ -127,10 +130,7 @@ export function QueuedMessages() {
                     {hasImages && (
                       <div class="mt-1 flex items-center gap-1 text-xs text-[var(--color-text-muted)]">
                         <ImageIcon class="w-3 h-3" />
-                        <span>
-                          {message.images!.length}{" "}
-                          {message.images!.length === 1 ? "image" : "images"}
-                        </span>
+                        <span>{t("chat.imageCount", { count: message.images!.length })}</span>
                       </div>
                     )}
                   </div>
@@ -263,14 +263,4 @@ export function QueuedMessages() {
       </Modal>
     </>
   );
-}
-
-/** Convert a File to a data URL */
-async function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(new Error("Failed to read file"));
-    reader.readAsDataURL(file);
-  });
 }
