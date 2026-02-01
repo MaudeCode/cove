@@ -5,9 +5,11 @@
  * Supports images from content blocks or MEDIA: lines.
  */
 
+import { useSignal } from "@preact/signals";
 import type { Message, ToolCall } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
 import { MessageImages } from "./MessageImages";
+import { MessageActions } from "./MessageActions";
 import { ToolCall as ToolCallComponent } from "./ToolCall";
 import { BouncingDots } from "@/components/ui";
 import { formatRelativeTime, t } from "@/lib/i18n";
@@ -117,6 +119,8 @@ export function AssistantMessage({
   assistantAvatar,
   isStreaming = false,
 }: AssistantMessageProps) {
+  const isHovered = useSignal(false);
+
   // Parse MEDIA: lines from content
   const parsedMedia = parseMediaFromContent(message.content);
   const mediaImages = mediaUrlsToImages(parsedMedia.mediaUrls);
@@ -140,8 +144,12 @@ export function AssistantMessage({
   });
 
   return (
-    <div class="group">
-      {/* Header: Avatar + Name + Timestamp */}
+    <div
+      class="group"
+      onMouseEnter={() => (isHovered.value = true)}
+      onMouseLeave={() => (isHovered.value = false)}
+    >
+      {/* Header: Avatar + Name + Timestamp + Actions */}
       <div class="flex items-center gap-2 mb-1.5">
         {/* Avatar */}
         <div class="w-6 h-6 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] flex items-center justify-center text-sm">
@@ -156,6 +164,14 @@ export function AssistantMessage({
           <span class="text-xs text-[var(--color-text-muted)]">
             {formatRelativeTime(new Date(message.timestamp))}
           </span>
+        )}
+
+        {/* Spacer */}
+        <div class="flex-1" />
+
+        {/* Actions menu */}
+        {!isStreaming && message.content && (
+          <MessageActions content={message.content} visible={isHovered.value} />
         )}
       </div>
 
