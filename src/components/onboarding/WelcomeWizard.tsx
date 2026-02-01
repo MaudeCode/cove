@@ -28,7 +28,7 @@ import {
   HintBox,
   StatusIcon,
 } from "@/components/ui";
-import { ArrowRight, ArrowLeft, Zap, Shield, Globe } from "lucide-preact";
+import { ArrowRight, ArrowLeft, Zap, Shield, Globe, Check, AlertCircle } from "lucide-preact";
 import { WizardNav } from "./WizardNav";
 import { WizardProgress } from "./WizardProgress";
 
@@ -385,9 +385,24 @@ function UrlStep({
   onSkip,
 }: UrlStepProps) {
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter" && canProceed && !probing) {
+    if (e.key === "Enter" && probeSuccess) {
       onNext();
     }
+  };
+
+  // Determine the status indicator for the input
+  const getStatusIndicator = () => {
+    if (probing) {
+      return <Spinner size="sm" />;
+    }
+    if (probeSuccess) {
+      return <Check class="w-4 h-4 text-[var(--color-success)]" />;
+    }
+    if (error && canProceed) {
+      // Only show error icon if URL format is valid but probe failed
+      return <AlertCircle class="w-4 h-4 text-[var(--color-error)]" />;
+    }
+    return null;
   };
 
   return (
@@ -404,18 +419,10 @@ function UrlStep({
           onKeyDown={handleKeyDown}
           placeholder={t("auth.gatewayUrlPlaceholder")}
           error={error || undefined}
-          disabled={probing}
+          rightElement={getStatusIndicator()}
           fullWidth
         />
       </FormField>
-
-      {/* Probe success feedback */}
-      {probeSuccess && (
-        <div class="flex items-center gap-2 mt-3 text-sm text-[var(--color-success)]">
-          <StatusIcon variant="success" size="sm" />
-          <span>{t("onboarding.gatewayFound")}</span>
-        </div>
-      )}
 
       <HintBox
         title={t("onboarding.troubleshootTitle")}
@@ -427,13 +434,7 @@ function UrlStep({
         class="mt-4"
       />
 
-      <WizardNav
-        onBack={onBack}
-        onNext={onNext}
-        nextDisabled={!canProceed || probing}
-        nextLoading={probing}
-        nextLabel={probing ? t("onboarding.verifying") : undefined}
-      />
+      <WizardNav onBack={onBack} onNext={onNext} nextDisabled={!probeSuccess} />
 
       <div class="text-center mt-4">
         <LinkButton onClick={onSkip} disabled={probing}>
