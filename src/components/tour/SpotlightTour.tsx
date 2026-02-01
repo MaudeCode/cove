@@ -45,6 +45,7 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
   const targetRect = useSignal<DOMRect | null>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const tooltipPosition = useSignal<TooltipPosition | null>(null);
+  const transitioning = useSignal(false);
 
   const currentStep = steps[currentIndex.value];
   const isFirst = currentIndex.value === 0;
@@ -76,11 +77,16 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
       // Target not found, skip to next step or complete
       targetRect.value = null;
     }
+
+    // End transition after position updates
+    transitioning.value = false;
   }, [currentStep]);
 
   // Update target when step changes
   useSignalEffect(() => {
     const _ = currentIndex.value; // Subscribe to changes
+    transitioning.value = true;
+    tooltipPosition.value = null; // Clear position during transition
     updateTarget();
   });
 
@@ -253,11 +259,11 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
       {/* Tooltip - z-10 to be above click blocker */}
       <div
         ref={tooltipRef}
-        class="absolute z-10 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl shadow-lg p-4 max-w-sm"
+        class="absolute z-10 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl shadow-lg p-4 max-w-sm transition-opacity duration-150"
         style={{
           top: pos?.top ?? 0,
           left: pos?.left ?? 0,
-          opacity: pos ? 1 : 0,
+          opacity: pos && !transitioning.value ? 1 : 0,
         }}
       >
         {/* Arrow */}
