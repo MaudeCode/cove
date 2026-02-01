@@ -417,8 +417,8 @@ function SessionRow({ session }: { session: Session }) {
                 />
               </div>
             ) : (
-              <div class="flex items-center gap-2 group/label">
-                <div class="font-medium truncate max-w-[180px]" title={displayName}>
+              <div class="flex items-center justify-between gap-2 group/label">
+                <div class="font-medium truncate" title={displayName}>
                   {displayName}
                 </div>
                 <IconButton
@@ -427,7 +427,7 @@ function SessionRow({ session }: { session: Session }) {
                   size="sm"
                   variant="ghost"
                   onClick={(e) => startInlineEdit(session, e)}
-                  class="opacity-0 group-hover/label:opacity-100 !p-1"
+                  class="opacity-0 group-hover/label:opacity-100 !p-1 flex-shrink-0"
                 />
               </div>
             )}
