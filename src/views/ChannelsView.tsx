@@ -35,7 +35,7 @@ import type {
   ChannelAccountSnapshot,
   ChannelStatus,
 } from "@/types/channels";
-import { transformChannelsResponse } from "@/types/channels";
+import { transformChannelsResponse, getChannelLastActivity } from "@/types/channels";
 import type { RouteProps } from "@/types/routes";
 
 // ============================================
@@ -125,18 +125,11 @@ async function handleLogout(): Promise<void> {
 
 const stats = computed(() => {
   const list = channels.value;
-  // Count channels with activity in the last 24 hours
   const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
-  const activeCount = list.filter((c) =>
-    c.accounts.some((a) => {
-      const lastActivity = Math.max(a.lastInboundAt ?? 0, a.lastOutboundAt ?? 0);
-      return lastActivity > oneDayAgo;
-    }),
-  ).length;
 
   return {
     total: list.length,
-    active: activeCount,
+    active: list.filter((c) => getChannelLastActivity(c) > oneDayAgo).length,
     errors: list.filter((c) => c.status === "error").length,
   };
 });
@@ -208,13 +201,7 @@ function AccountRow({
 
 function ChannelCard({ channel }: { channel: ChannelDisplayData }) {
   const statusInfo = getStatusBadge(channel.status);
-
-  // Find last activity across all accounts
-  const lastActivity = channel.accounts.reduce((latest, acc) => {
-    const inbound = acc.lastInboundAt ?? 0;
-    const outbound = acc.lastOutboundAt ?? 0;
-    return Math.max(latest, inbound, outbound);
-  }, 0);
+  const lastActivity = getChannelLastActivity(channel);
 
   return (
     <Card padding="md">
