@@ -8,7 +8,7 @@
 
 import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { t, formatRelativeTime } from "@/lib/i18n";
+import { t, formatTimestamp } from "@/lib/i18n";
 import { send } from "@/lib/gateway";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -197,7 +197,7 @@ function SessionRow({ session }: { session: Session }) {
 
       {/* Updated */}
       <td class="py-3 px-2 text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-        {session.updatedAt ? formatRelativeTime(new Date(session.updatedAt)) : "—"}
+        {session.updatedAt ? formatTimestamp(session.updatedAt) : "—"}
       </td>
 
       {/* Tokens */}
