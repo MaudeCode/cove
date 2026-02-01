@@ -292,7 +292,7 @@ function AccountDetails({
   );
 }
 
-function ChannelRow({ channel }: { channel: ChannelDisplayData }) {
+function ChannelCard({ channel }: { channel: ChannelDisplayData }) {
   const isExpanded = expandedChannels.value.has(channel.id);
   const statusInfo = getStatusBadge(channel.status);
   const StatusIcon = statusInfo.icon;
@@ -308,9 +308,10 @@ function ChannelRow({ channel }: { channel: ChannelDisplayData }) {
   }, 0);
 
   return (
-    <>
-      <tr
-        class={`hover:bg-[var(--color-bg-hover)] transition-colors ${hasAccounts ? "cursor-pointer" : ""}`}
+    <Card padding="none" class="overflow-hidden">
+      {/* Card Header - clickable to expand */}
+      <div
+        class={`p-4 ${hasAccounts ? "cursor-pointer hover:bg-[var(--color-bg-hover)]" : ""} transition-colors`}
         onClick={hasAccounts ? () => toggleExpanded(channel.id) : undefined}
         onKeyDown={
           hasAccounts
@@ -326,82 +327,72 @@ function ChannelRow({ channel }: { channel: ChannelDisplayData }) {
         role={hasAccounts ? "button" : undefined}
         aria-expanded={hasAccounts ? isExpanded : undefined}
       >
-        {/* Channel */}
-        <td class="py-3 px-4">
-          <div class="flex items-center gap-3">
-            {hasAccounts && (
-              <div class="w-4 flex-shrink-0">
-                {isExpanded ? (
-                  <ChevronDown class="w-4 h-4 text-[var(--color-text-muted)]" />
-                ) : (
-                  <ChevronRight class="w-4 h-4 text-[var(--color-text-muted)]" />
-                )}
-              </div>
+        {/* Top row: Icon, Name, Status */}
+        <div class="flex items-start gap-3">
+          <ChannelIcon channelId={channel.id} size={32} />
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center gap-2">
+              <span class="font-semibold text-lg">{channel.label}</span>
+              <Badge variant={statusInfo.variant} size="sm">
+                <StatusIcon class="w-3 h-3 mr-1" />
+                {statusInfo.label}
+              </Badge>
+            </div>
+            {channel.detailLabel !== channel.label && (
+              <div class="text-sm text-[var(--color-text-muted)]">{channel.detailLabel}</div>
             )}
-            {!hasAccounts && <div class="w-4" />}
-            <ChannelIcon channelId={channel.id} size={24} />
-            <div class="min-w-0">
-              <div class="font-medium">{channel.label}</div>
-              {channel.detailLabel !== channel.label && (
-                <div class="text-xs text-[var(--color-text-muted)]">{channel.detailLabel}</div>
+          </div>
+          {hasAccounts && (
+            <div class="flex-shrink-0">
+              {isExpanded ? (
+                <ChevronDown class="w-5 h-5 text-[var(--color-text-muted)]" />
+              ) : (
+                <ChevronRight class="w-5 h-5 text-[var(--color-text-muted)]" />
               )}
             </div>
-          </div>
-        </td>
-
-        {/* Accounts */}
-        <td class="py-3 px-4 text-center">
-          {accountCount > 0 ? (
-            <span class="text-sm font-medium">{accountCount}</span>
-          ) : (
-            <span class="text-sm text-[var(--color-text-muted)]">—</span>
           )}
-        </td>
+        </div>
 
-        {/* Status */}
-        <td class="py-3 px-4">
-          <Badge variant={statusInfo.variant} size="sm">
-            <StatusIcon class="w-3 h-3 mr-1" />
-            {statusInfo.label}
-          </Badge>
-        </td>
-
-        {/* Last Activity */}
-        <td class="py-3 px-4 whitespace-nowrap text-sm text-[var(--color-text-muted)]">
-          {lastActivity > 0 ? formatTimestamp(lastActivity, { relative: true }) : "—"}
-        </td>
-
-        {/* Actions */}
-        <td class="py-3 px-4">
-          <div class="flex items-center justify-end gap-2">
-            <a
-              href={`https://docs.openclaw.ai/channels/${channel.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
-              onClick={(e) => e.stopPropagation()}
-              aria-label={t("channels.viewDocs")}
-            >
-              <ExternalLink class="w-4 h-4" />
-            </a>
-          </div>
-        </td>
-      </tr>
+        {/* Stats row */}
+        <div class="flex items-center gap-4 mt-3 text-sm text-[var(--color-text-muted)]">
+          {accountCount > 0 && (
+            <span>
+              {accountCount} {accountCount === 1 ? t("channels.account") : t("channels.accounts")}
+            </span>
+          )}
+          {lastActivity > 0 && (
+            <span class="flex items-center gap-1">
+              <Clock class="w-3.5 h-3.5" />
+              {formatTimestamp(lastActivity, { relative: true })}
+            </span>
+          )}
+          <a
+            href={`https://docs.openclaw.ai/channels/${channel.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            class="ml-auto flex items-center gap-1 text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {t("channels.docs")}
+            <ExternalLink class="w-3.5 h-3.5" />
+          </a>
+        </div>
+      </div>
 
       {/* Expanded account details */}
-      {isExpanded &&
-        channel.accounts.map((account) => (
-          <tr key={`${channel.id}-${account.accountId}`}>
-            <td colSpan={5} class="p-0">
-              <AccountDetails
-                account={account}
-                channelId={channel.id}
-                channelLabel={channel.label}
-              />
-            </td>
-          </tr>
-        ))}
-    </>
+      {isExpanded && hasAccounts && (
+        <div class="border-t border-[var(--color-border)]">
+          {channel.accounts.map((account) => (
+            <AccountDetails
+              key={account.accountId}
+              account={account}
+              channelId={channel.id}
+              channelLabel={channel.label}
+            />
+          ))}
+        </div>
+      )}
+    </Card>
   );
 }
 
@@ -524,30 +515,13 @@ export function ChannelsView(_props: RouteProps) {
           </div>
         )}
 
-        {/* Channels Table */}
+        {/* Channel Cards */}
         {isConnected.value && !isLoading.value && channels.value.length > 0 && (
-          <Card padding="none" class="overflow-hidden">
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                    <th class="py-3 px-4 font-medium">{t("channels.columns.channel")}</th>
-                    <th class="py-3 px-4 font-medium w-24 text-center">
-                      {t("channels.columns.accounts")}
-                    </th>
-                    <th class="py-3 px-4 font-medium w-36">{t("channels.columns.status")}</th>
-                    <th class="py-3 px-4 font-medium w-32">{t("channels.columns.lastActivity")}</th>
-                    <th class="py-3 px-4 font-medium w-16"></th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--color-border)]">
-                  {channels.value.map((channel) => (
-                    <ChannelRow key={channel.id} channel={channel} />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
+          <div class="grid gap-4 md:grid-cols-2">
+            {channels.value.map((channel) => (
+              <ChannelCard key={channel.id} channel={channel} />
+            ))}
+          </div>
         )}
 
         {/* Empty state */}
