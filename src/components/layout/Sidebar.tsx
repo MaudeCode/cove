@@ -9,7 +9,7 @@ import { signal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
-import { send, isConnected } from "@/lib/gateway";
+import { send, isConnected, mainSessionKey } from "@/lib/gateway";
 import {
   activeSessionKey,
   updateSession,
@@ -170,11 +170,14 @@ export function Sidebar() {
 function SingleChatSidebar() {
   // Check if main session is streaming by accessing activeRuns.value directly
   // This ensures the component re-renders when activeRuns changes
+  const mainKey = mainSessionKey.value;
   let isMainStreaming = false;
-  for (const run of activeRuns.value.values()) {
-    if (run.sessionKey === "main" && (run.status === "pending" || run.status === "streaming")) {
-      isMainStreaming = true;
-      break;
+  if (mainKey) {
+    for (const run of activeRuns.value.values()) {
+      if (run.sessionKey === mainKey && (run.status === "pending" || run.status === "streaming")) {
+        isMainStreaming = true;
+        break;
+      }
     }
   }
 
