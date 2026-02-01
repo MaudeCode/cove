@@ -91,12 +91,9 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
     setIsOpen(false);
   };
 
-  // Don't render if not visible and not open
-  if (!visible && !isOpen) return null;
-
   return (
     <div class="relative">
-      {/* Trigger button */}
+      {/* Trigger button - always rendered, visibility controlled by opacity */}
       <button
         ref={buttonRef}
         onClick={() => setIsOpen(!isOpen)}
@@ -108,8 +105,8 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
           text-[var(--color-text-muted)]
           hover:text-[var(--color-text-secondary)]
           hover:bg-[var(--color-bg-hover)]
-          transition-colors cursor-pointer
-          ${isOpen ? "bg-[var(--color-bg-hover)]" : ""}
+          transition-all cursor-pointer
+          ${isOpen ? "opacity-100 bg-[var(--color-bg-hover)]" : visible ? "opacity-100" : "opacity-0"}
         `}
       >
         <MoreVertical class="w-4 h-4" />
