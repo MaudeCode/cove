@@ -146,14 +146,12 @@ const filteredSessions = computed(() => {
 });
 
 const sessionCounts = computed(() => {
-  const sessions = adminSessions.value;
-  return {
-    total: sessions.length,
-    main: sessions.filter((s) => getSessionDisplayKind(s) === "main").length,
-    channel: sessions.filter((s) => getSessionDisplayKind(s) === "channel").length,
-    cron: sessions.filter((s) => getSessionDisplayKind(s) === "cron").length,
-    isolated: sessions.filter((s) => getSessionDisplayKind(s) === "isolated").length,
-  };
+  const counts = { total: 0, main: 0, channel: 0, cron: 0, isolated: 0 };
+  for (const session of adminSessions.value) {
+    counts.total++;
+    counts[getSessionDisplayKind(session)]++;
+  }
+  return counts;
 });
 
 // ============================================
