@@ -47,7 +47,7 @@
     "modeTitle": "How would you like to use Cove?",
     "modeSingle": "Single chat",
     "modeSingleDesc": "One focused conversation",
-    "modeMulti": "Multi-chat",
+    "modeMulti": "Multi-chat (Beta)",
     "modeMultiDesc": "Multiple conversations"
   },
 
@@ -359,7 +359,7 @@
     },
     "appMode": {
       "title": "Interface",
-      "multiChat": "Multi-chat mode",
+      "multiChat": "Multi-chat mode (Beta)",
       "multiChatDescription": "Show session sidebar with multiple conversations"
     },
     "newChat": {
