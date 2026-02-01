@@ -18,7 +18,7 @@ import {
   gatewayStateDir,
   connectedAt,
 } from "@/lib/gateway";
-import { getErrorMessage } from "@/lib/session-utils";
+import { getErrorMessage, formatVersion } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -40,8 +40,6 @@ import {
 import type { CostUsageSummary, HealthSummary } from "@/types/server-stats";
 import { formatUptime, formatTokenCount, formatCost } from "@/types/server-stats";
 
-/** Format version with 'v' prefix only if it starts with a digit */
-const formatVersion = (version: string): string => (/^\d/.test(version) ? `v${version}` : version);
 import type { RouteProps } from "@/types/routes";
 
 // ============================================
