@@ -17,6 +17,7 @@ import { loadModels } from "@/signals/models";
 import { saveAuth, completeOnboarding } from "@/lib/storage";
 import { Button, Input, Select, Toggle, Card, FormField, CoveLogo, Spinner } from "@/components/ui";
 import { CheckCircle, XCircle, ArrowRight, ArrowLeft, Zap, Shield, Globe } from "lucide-preact";
+import { WizardNav } from "./WizardNav";
 
 type WizardStep = "welcome" | "url" | "auth" | "connect";
 
@@ -334,20 +335,7 @@ function UrlStep({ url, onUrlChange, error, canProceed, onNext, onBack, onSkip }
         </ul>
       </div>
 
-      <div class="flex gap-3 mt-6">
-        <Button variant="ghost" onClick={onBack} icon={<ArrowLeft class="w-4 h-4" />}>
-          {t("actions.back")}
-        </Button>
-        <Button
-          variant="primary"
-          onClick={onNext}
-          disabled={!canProceed}
-          class="flex-1"
-          iconRight={<ArrowRight class="w-4 h-4" />}
-        >
-          {t("actions.continue")}
-        </Button>
-      </div>
+      <WizardNav onBack={onBack} onNext={onNext} nextDisabled={!canProceed} />
 
       <div class="text-center mt-4">
         <button
@@ -438,19 +426,7 @@ function AuthStep({
         />
       </div>
 
-      <div class="flex gap-3 mt-6">
-        <Button variant="ghost" onClick={onBack} icon={<ArrowLeft class="w-4 h-4" />}>
-          {t("actions.back")}
-        </Button>
-        <Button
-          variant="primary"
-          onClick={onNext}
-          class="flex-1"
-          iconRight={<ArrowRight class="w-4 h-4" />}
-        >
-          {t("actions.connect")}
-        </Button>
-      </div>
+      <WizardNav onBack={onBack} onNext={onNext} nextLabel={t("actions.connect")} />
     </Card>
   );
 }
