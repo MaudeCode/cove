@@ -102,7 +102,7 @@ interface SettingsViewProps {
 export function SettingsView(_props: SettingsViewProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-2xl mx-auto space-y-6">
+      <div class="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <div>
           <h1 class="text-2xl font-bold text-[var(--color-text-primary)]">{t("nav.settings")}</h1>

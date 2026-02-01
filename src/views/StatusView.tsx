@@ -314,7 +314,7 @@ export function StatusView(_props: RouteProps) {
 
   return (
     <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-4xl mx-auto space-y-6">
+      <div class="max-w-5xl mx-auto space-y-6">
         {/* Security Warnings */}
         {!isSecureContext.value && (
           <div class="flex items-start gap-3 p-4 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
