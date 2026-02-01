@@ -5,9 +5,15 @@
  * Appears on hover in the top-right corner of messages.
  */
 
-import { useState, useRef, useEffect } from "preact/hooks";
+import { useState, useRef, useEffect, useCallback } from "preact/hooks";
+import type { ComponentChildren } from "preact";
 import { MoreVertical, Copy, FileText, Check } from "lucide-preact";
 import { t } from "@/lib/i18n";
+import { stripMarkdown } from "@/lib/utils";
+
+// ============================================
+// Types
+// ============================================
 
 interface MessageActionsProps {
   /** Raw markdown content */
@@ -16,9 +22,44 @@ interface MessageActionsProps {
   visible?: boolean;
 }
 
+type CopyType = "formatted" | "raw";
+
+// ============================================
+// Sub-components
+// ============================================
+
+interface MenuItemProps {
+  icon: ComponentChildren;
+  label: string;
+  onClick: () => void;
+}
+
+function MenuItem({ icon, label, onClick }: MenuItemProps) {
+  return (
+    <button
+      role="menuitem"
+      onClick={onClick}
+      class="
+        w-full px-3 py-2 text-left text-sm
+        flex items-center gap-2
+        text-[var(--color-text-primary)]
+        hover:bg-[var(--color-bg-hover)]
+        transition-colors cursor-pointer
+      "
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+// ============================================
+// Main Component
+// ============================================
+
 export function MessageActions({ content, visible = false }: MessageActionsProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [copied, setCopied] = useState<"formatted" | "raw" | null>(null);
+  const [copied, setCopied] = useState<CopyType | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -27,12 +68,14 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
     if (!isOpen) return;
 
     const handleClickOutside = (e: MouseEvent) => {
-      if (
+      const target = e.target as Node;
+      const clickedOutside =
         menuRef.current &&
-        !menuRef.current.contains(e.target as Node) &&
+        !menuRef.current.contains(target) &&
         buttonRef.current &&
-        !buttonRef.current.contains(e.target as Node)
-      ) {
+        !buttonRef.current.contains(target);
+
+      if (clickedOutside) {
         setIsOpen(false);
       }
     };
@@ -43,52 +86,39 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
 
   // Reset copied state after delay
   useEffect(() => {
-    if (copied) {
-      const timer = setTimeout(() => setCopied(null), 2000);
-      return () => clearTimeout(timer);
-    }
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(null), 2000);
+    return () => clearTimeout(timer);
   }, [copied]);
 
   /**
-   * Copy formatted text (rendered, no markdown)
+   * Copy content and show feedback
    */
-  const copyFormatted = async () => {
-    // Create a temporary element to render markdown as HTML, then extract text
-    const temp = document.createElement("div");
-    temp.innerHTML = content;
-    // For plain text, just use the content directly since MessageContent renders it
-    // The actual rendered text is what the user sees
-    const text = content
-      // Remove markdown formatting for "formatted" copy
-      .replace(/\*\*(.+?)\*\*/g, "$1") // bold
-      .replace(/\*(.+?)\*/g, "$1") // italic
-      .replace(/__(.+?)__/g, "$1") // bold
-      .replace(/_(.+?)_/g, "$1") // italic
-      .replace(/~~(.+?)~~/g, "$1") // strikethrough
-      .replace(/`(.+?)`/g, "$1") // inline code
-      .replace(/^#{1,6}\s+/gm, "") // headers
-      .replace(/^\s*[-*+]\s+/gm, "• ") // bullet lists
-      .replace(/^\s*\d+\.\s+/gm, "") // numbered lists
-      .replace(/\[(.+?)\]\(.+?\)/g, "$1") // links
-      .replace(/!\[.*?\]\(.+?\)/g, "") // images
-      .replace(/^>\s+/gm, "") // blockquotes
-      .replace(/```[\s\S]*?```/g, (match) => {
-        // Extract code from code blocks
-        return match.replace(/```\w*\n?/, "").replace(/```$/, "");
-      });
+  const copyToClipboard = useCallback(
+    async (type: CopyType) => {
+      const text = type === "formatted" ? stripMarkdown(content) : content;
+      await navigator.clipboard.writeText(text);
+      setCopied(type);
+      setIsOpen(false);
+    },
+    [content],
+  );
 
-    await navigator.clipboard.writeText(text.trim());
-    setCopied("formatted");
-    setIsOpen(false);
+  /**
+   * Get icon for menu item (checkmark if just copied)
+   */
+  const getIcon = (type: CopyType, DefaultIcon: typeof Copy) => {
+    if (copied === type) {
+      return <Check class="w-4 h-4 text-[var(--color-success)]" />;
+    }
+    return <DefaultIcon class="w-4 h-4 text-[var(--color-text-muted)]" />;
   };
 
   /**
-   * Copy raw markdown
+   * Get label for menu item (shows "Copied!" feedback)
    */
-  const copyRaw = async () => {
-    await navigator.clipboard.writeText(content);
-    setCopied("raw");
-    setIsOpen(false);
+  const getLabel = (type: CopyType, defaultLabel: string) => {
+    return copied === type ? t("actions.copied") : defaultLabel;
   };
 
   return (
@@ -106,7 +136,8 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
           hover:text-[var(--color-text-secondary)]
           hover:bg-[var(--color-bg-hover)]
           transition-all cursor-pointer
-          ${isOpen ? "opacity-100 bg-[var(--color-bg-hover)]" : visible ? "opacity-100" : "opacity-0"}
+          ${isOpen || visible ? "opacity-100" : "opacity-0"}
+          ${isOpen ? "bg-[var(--color-bg-hover)]" : ""}
         `}
       >
         <MoreVertical class="w-4 h-4" />
@@ -125,43 +156,16 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
             rounded-lg shadow-lg
           "
         >
-          <button
-            role="menuitem"
-            onClick={copyFormatted}
-            class="
-              w-full px-3 py-2 text-left text-sm
-              flex items-center gap-2
-              text-[var(--color-text-primary)]
-              hover:bg-[var(--color-bg-hover)]
-              transition-colors cursor-pointer
-            "
-          >
-            {copied === "formatted" ? (
-              <Check class="w-4 h-4 text-[var(--color-success)]" />
-            ) : (
-              <Copy class="w-4 h-4 text-[var(--color-text-muted)]" />
-            )}
-            {copied === "formatted" ? t("actions.copied") : t("actions.copy")}
-          </button>
-
-          <button
-            role="menuitem"
-            onClick={copyRaw}
-            class="
-              w-full px-3 py-2 text-left text-sm
-              flex items-center gap-2
-              text-[var(--color-text-primary)]
-              hover:bg-[var(--color-bg-hover)]
-              transition-colors cursor-pointer
-            "
-          >
-            {copied === "raw" ? (
-              <Check class="w-4 h-4 text-[var(--color-success)]" />
-            ) : (
-              <FileText class="w-4 h-4 text-[var(--color-text-muted)]" />
-            )}
-            {copied === "raw" ? t("actions.copied") : t("chat.copyMarkdown")}
-          </button>
+          <MenuItem
+            icon={getIcon("formatted", Copy)}
+            label={getLabel("formatted", t("actions.copy"))}
+            onClick={() => copyToClipboard("formatted")}
+          />
+          <MenuItem
+            icon={getIcon("raw", FileText)}
+            label={getLabel("raw", t("chat.copyMarkdown"))}
+            onClick={() => copyToClipboard("raw")}
+          />
         </div>
       )}
     </div>
