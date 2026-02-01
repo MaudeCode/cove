@@ -10,6 +10,14 @@
 /** Message send status */
 export type MessageStatus = "queued" | "sending" | "sent" | "failed";
 
+/** Image in a message */
+export interface MessageImage {
+  /** Data URL (data:image/...;base64,...) or URL */
+  url: string;
+  /** Alt text */
+  alt?: string;
+}
+
 export interface Message {
   /** Unique message ID */
   id: string;
@@ -19,6 +27,9 @@ export interface Message {
 
   /** Message content (markdown) */
   content: string;
+
+  /** Images attached to this message */
+  images?: MessageImage[];
 
   /** Tool calls made in this message (assistant only) */
   toolCalls?: ToolCall[];

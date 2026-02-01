@@ -164,7 +164,8 @@
     "dateFrom": "From",
     "dateTo": "To",
     "attachFile": "Attach file",
-    "dropFiles": "Drop files here"
+    "dropFiles": "Drop files here",
+    "imageViewer": "Image viewer"
   },
 
   "sessions": {
