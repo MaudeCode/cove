@@ -66,16 +66,20 @@ export function TopBar() {
           <UsageBadge />
 
           {/* Theme selector */}
-          <ThemePicker />
+          <div data-tour="theme-picker">
+            <ThemePicker />
+          </div>
 
           {/* Settings button */}
-          <IconButton
-            icon={<SettingsIcon />}
-            label={t("nav.settings")}
-            onClick={() => route("/settings")}
-            variant="ghost"
-            size="md"
-          />
+          <div data-tour="settings">
+            <IconButton
+              icon={<SettingsIcon />}
+              label={t("nav.settings")}
+              onClick={() => route("/settings")}
+              variant="ghost"
+              size="md"
+            />
+          </div>
         </div>
       </div>
     </header>
