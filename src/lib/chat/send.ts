@@ -19,11 +19,30 @@ import {
   markMessageSent,
   isStreaming,
 } from "@/signals/chat";
-import type { Message } from "@/types/messages";
+import type { Message, MessageImage } from "@/types/messages";
 import type { ChatSendResult } from "@/types/chat";
 import type { AttachmentPayload } from "@/types/attachments";
 
 let idempotencyCounter = 0;
+
+/**
+ * Convert attachment payloads to message images for local display.
+ */
+function attachmentsToImages(attachments?: AttachmentPayload[]): MessageImage[] | undefined {
+  if (!attachments || attachments.length === 0) return undefined;
+
+  const images: MessageImage[] = [];
+  for (const att of attachments) {
+    if (att.type === "image") {
+      images.push({
+        url: att.content, // content is already a data URL
+        alt: att.fileName,
+      });
+    }
+  }
+
+  return images.length > 0 ? images : undefined;
+}
 
 function generateIdempotencyKey(): string {
   return `cove_${Date.now()}_${++idempotencyCounter}`;
@@ -50,6 +69,7 @@ export async function sendMessage(
     id: messageId,
     role: "user",
     content: message,
+    images: attachmentsToImages(options?.attachments),
     timestamp: Date.now(),
     isStreaming: false,
     status: "sending",
