@@ -15,9 +15,22 @@ import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
 import { saveAuth, completeOnboarding } from "@/lib/storage";
-import { Button, Input, Select, Toggle, Card, FormField, CoveLogo, Spinner } from "@/components/ui";
-import { CheckCircle, XCircle, ArrowRight, ArrowLeft, Zap, Shield, Globe } from "lucide-preact";
+import {
+  Button,
+  Input,
+  Select,
+  Toggle,
+  Card,
+  FormField,
+  CoveLogo,
+  Spinner,
+  LinkButton,
+  HintBox,
+  StatusIcon,
+} from "@/components/ui";
+import { ArrowRight, ArrowLeft, Zap, Shield, Globe } from "lucide-preact";
 import { WizardNav } from "./WizardNav";
+import { WizardProgress } from "./WizardProgress";
 
 type WizardStep = "welcome" | "url" | "auth" | "connect";
 
@@ -155,19 +168,11 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   return (
     <div class="flex-1 flex items-center justify-center p-8">
       <div class="w-full max-w-md">
-        {/* Progress indicator */}
-        <div class="flex justify-center gap-2 mb-8">
-          {(["welcome", "url", "auth", "connect"] as WizardStep[]).map((s, i) => (
-            <div
-              key={s}
-              class={`h-1.5 rounded-full transition-all duration-300 ${
-                i <= ["welcome", "url", "auth", "connect"].indexOf(step.value)
-                  ? "w-8 bg-[var(--color-accent)]"
-                  : "w-4 bg-[var(--color-border)]"
-              }`}
-            />
-          ))}
-        </div>
+        <WizardProgress
+          steps={["welcome", "url", "auth", "connect"] as const}
+          current={step.value}
+          class="mb-8"
+        />
 
         {/* Step content */}
         {step.value === "welcome" && <WelcomeStep onNext={goNext} onSkip={handleSkip} />}
@@ -258,13 +263,7 @@ function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
         >
           {t("onboarding.getStarted")}
         </Button>
-        <button
-          type="button"
-          onClick={onSkip}
-          class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-        >
-          {t("onboarding.skipToLogin")}
-        </button>
+        <LinkButton onClick={onSkip}>{t("onboarding.skipToLogin")}</LinkButton>
       </div>
     </div>
   );
@@ -325,26 +324,20 @@ function UrlStep({ url, onUrlChange, error, canProceed, onNext, onBack, onSkip }
         />
       </FormField>
 
-      {/* Troubleshooting hint */}
-      <div class="mt-4 p-3 rounded-lg bg-[var(--color-bg-secondary)] text-xs text-[var(--color-text-muted)]">
-        <p class="font-medium mb-1">{t("onboarding.troubleshootTitle")}</p>
-        <ul class="list-disc list-inside space-y-0.5">
-          <li>{t("onboarding.troubleshoot1")}</li>
-          <li>{t("onboarding.troubleshoot2")}</li>
-          <li>{t("onboarding.troubleshoot3")}</li>
-        </ul>
-      </div>
+      <HintBox
+        title={t("onboarding.troubleshootTitle")}
+        items={[
+          t("onboarding.troubleshoot1"),
+          t("onboarding.troubleshoot2"),
+          t("onboarding.troubleshoot3"),
+        ]}
+        class="mt-4"
+      />
 
       <WizardNav onBack={onBack} onNext={onNext} nextDisabled={!canProceed} />
 
       <div class="text-center mt-4">
-        <button
-          type="button"
-          onClick={onSkip}
-          class="text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
-        >
-          {t("onboarding.skipToLogin")}
-        </button>
+        <LinkButton onClick={onSkip}>{t("onboarding.skipToLogin")}</LinkButton>
       </div>
     </Card>
   );
@@ -452,9 +445,7 @@ function ConnectStep({ connecting, connected, error, onRetry, onComplete }: Conn
 
       {!connecting && connected && (
         <>
-          <div class="w-16 h-16 rounded-full bg-[var(--color-success)]/10 text-[var(--color-success)] flex items-center justify-center mx-auto mb-4">
-            <CheckCircle class="w-8 h-8" />
-          </div>
+          <StatusIcon variant="success" class="mx-auto mb-4" />
           <h2 class="text-lg font-semibold mb-2">{t("onboarding.success")}</h2>
           <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.successDesc")}</p>
           <Button
@@ -470,22 +461,20 @@ function ConnectStep({ connecting, connected, error, onRetry, onComplete }: Conn
 
       {!connecting && !connected && error && (
         <>
-          <div class="w-16 h-16 rounded-full bg-[var(--color-error)]/10 text-[var(--color-error)] flex items-center justify-center mx-auto mb-4">
-            <XCircle class="w-8 h-8" />
-          </div>
+          <StatusIcon variant="error" class="mx-auto mb-4" />
           <h2 class="text-lg font-semibold mb-2">{t("onboarding.failed")}</h2>
           <p class="text-sm text-[var(--color-error)] mb-4">{error}</p>
 
-          {/* Troubleshooting */}
-          <div class="text-left p-3 rounded-lg bg-[var(--color-bg-secondary)] text-xs text-[var(--color-text-muted)] mb-6">
-            <p class="font-medium mb-1">{t("onboarding.failedHints")}</p>
-            <ul class="list-disc list-inside space-y-0.5">
-              <li>{t("onboarding.hint1")}</li>
-              <li>{t("onboarding.hint2")}</li>
-              <li>{t("onboarding.hint3")}</li>
-              <li>{t("onboarding.hint4")}</li>
-            </ul>
-          </div>
+          <HintBox
+            title={t("onboarding.failedHints")}
+            items={[
+              t("onboarding.hint1"),
+              t("onboarding.hint2"),
+              t("onboarding.hint3"),
+              t("onboarding.hint4"),
+            ]}
+            class="text-left mb-6"
+          />
 
           <Button
             variant="primary"

@@ -12,6 +12,7 @@ export {
   type IconButtonSize,
   type IconButtonVariant,
 } from "./IconButton";
+export { LinkButton } from "./LinkButton";
 
 // Form controls
 export { Input, type InputProps, type InputSize } from "./Input";
@@ -44,6 +45,8 @@ export { Badge, type BadgeProps, type BadgeVariant, type BadgeSize } from "./Bad
 export { Chip, type ChipProps, type ChipSize } from "./Chip";
 // Skeleton components removed - not currently used
 export { BouncingDots, type BouncingDotsProps } from "./BouncingDots";
+export { StatusIcon } from "./StatusIcon";
+export { HintBox } from "./HintBox";
 
 // Branding
 export { CoveLogo } from "./CoveLogo";
