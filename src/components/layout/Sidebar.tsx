@@ -10,7 +10,12 @@ import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { send, isConnected } from "@/lib/gateway";
-import { activeSessionKey, updateSession, removeSessionAnimated } from "@/signals/sessions";
+import {
+  activeSessionKey,
+  updateSession,
+  removeSessionAnimated,
+  loadSessions,
+} from "@/signals/sessions";
 import { newChatSettings } from "@/signals/settings";
 import { showNewChatModal } from "@/signals/ui";
 import { Button } from "@/components/ui/Button";
@@ -94,6 +99,9 @@ export function Sidebar() {
         key: sessionKey,
         label: t("newChatModal.title"),
       });
+
+      // Refresh session list so new chat appears in sidebar
+      await loadSessions();
 
       // Navigate to new chat
       route(`/chat/${encodeURIComponent(sessionKey)}`);
