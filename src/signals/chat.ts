@@ -428,6 +428,19 @@ export function abortRun(runId: string): void {
   scheduleRunCleanup(runId, RUN_ABORT_CLEANUP_DELAY_MS);
 }
 
+/** Clear all active runs (used on reconnect when gateway state is lost) */
+export function clearActiveRuns(): void {
+  // Cancel any pending cleanup timers
+  for (const timer of runCleanupTimers.values()) {
+    clearTimeout(timer);
+  }
+  runCleanupTimers.clear();
+
+  // Clear all runs
+  activeRuns.value = new Map();
+  syncStreamingSignals();
+}
+
 // ============================================
 // Queue Actions
 // ============================================
