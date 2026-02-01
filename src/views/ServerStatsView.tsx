@@ -39,6 +39,9 @@ import {
 } from "lucide-preact";
 import type { CostUsageSummary, HealthSummary } from "@/types/server-stats";
 import { formatUptime, formatTokenCount, formatCost } from "@/types/server-stats";
+
+/** Format version with 'v' prefix only if it starts with a digit */
+const formatVersion = (version: string): string => (/^\d/.test(version) ? `v${version}` : version);
 import type { RouteProps } from "@/types/routes";
 
 // ============================================
@@ -126,9 +129,9 @@ function GatewayInfoCard() {
             {gatewayHost.value || t("stats.gateway.unknown")}
           </p>
         </div>
-        {gatewayVersion.value && gatewayVersion.value !== "dev" && (
+        {gatewayVersion.value && (
           <Badge variant="default" size="sm" class="ml-auto">
-            v{gatewayVersion.value}
+            {formatVersion(gatewayVersion.value)}
           </Badge>
         )}
       </div>
