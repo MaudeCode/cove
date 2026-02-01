@@ -180,7 +180,7 @@ export function Dropdown({
               : { left: `${triggerRef.current.getBoundingClientRect().left}px` }),
           }}
           class={`
-            z-[100]
+            z-[100] w-auto
             rounded-lg border border-[var(--color-border)]
             bg-[var(--color-bg-surface)] shadow-lg
             overflow-hidden
@@ -197,7 +197,7 @@ export function Dropdown({
               onClick={() => !option.disabled && selectOption(option.value)}
               onMouseEnter={() => setFocusedIndex(index)}
               class={`
-                w-full text-left transition-colors
+                w-full text-left whitespace-nowrap transition-colors
                 ${styles.option}
                 ${option.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                 ${option.value === value ? "text-[var(--color-accent)] font-medium" : "text-[var(--color-text-primary)]"}
