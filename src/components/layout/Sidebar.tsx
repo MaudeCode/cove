@@ -92,7 +92,7 @@ export function Sidebar() {
       // Create session with initial label
       await send("sessions.patch", {
         key: sessionKey,
-        label: t("newChatModal.title") + " — " + new Date().toLocaleTimeString(),
+        label: t("newChatModal.title"),
       });
 
       // Navigate to new chat
