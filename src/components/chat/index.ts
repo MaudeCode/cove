@@ -17,3 +17,4 @@ export { CollapsedMessage } from "./CollapsedMessage";
 export { CompactionBanner } from "./CompactionBanner";
 export { HeartbeatIndicator } from "./HeartbeatIndicator";
 export { AttachmentPreview } from "./AttachmentPreview";
+export { MessageImages } from "./MessageImages";

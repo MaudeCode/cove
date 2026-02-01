@@ -7,6 +7,7 @@
 import { Clock, AlertCircle, RefreshCw } from "lucide-preact";
 import type { Message } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
+import { MessageImages } from "./MessageImages";
 import { BouncingDots } from "@/components/ui";
 import { formatRelativeTime, t } from "@/lib/i18n";
 import { retryMessage } from "@/lib/chat";
@@ -77,9 +78,15 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
           }
         `}
       >
-        <div class="text-[var(--color-text-primary)]">
-          <MessageContent content={message.content} />
-        </div>
+        {/* Images */}
+        {message.images && message.images.length > 0 && <MessageImages images={message.images} />}
+
+        {/* Text content */}
+        {message.content && (
+          <div class={`text-[var(--color-text-primary)] ${message.images?.length ? "mt-2" : ""}`}>
+            <MessageContent content={message.content} />
+          </div>
+        )}
 
         {/* Retry button for failed messages */}
         {isFailed && (
