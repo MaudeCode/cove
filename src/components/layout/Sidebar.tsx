@@ -11,10 +11,13 @@ import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { send, isConnected } from "@/lib/gateway";
 import { activeSessionKey, updateSession, removeSessionAnimated } from "@/signals/sessions";
+import { newChatSettings } from "@/signals/settings";
+import { showNewChatModal } from "@/signals/ui";
 import { Button } from "@/components/ui/Button";
 import { PlusIcon } from "@/components/ui/icons";
 import { SessionRenameModal } from "@/components/sessions/SessionRenameModal";
 import { SessionDeleteModal } from "@/components/sessions/SessionDeleteModal";
+import { NewChatModal } from "@/components/chat/NewChatModal";
 import { SessionFilters } from "./SessionFilters";
 import { SessionList } from "./SessionList";
 import { NavSections } from "./NavSection";
@@ -65,6 +68,40 @@ export function Sidebar() {
     }
   };
 
+  /**
+   * Handle new chat button click
+   */
+  const handleNewChat = () => {
+    if (newChatSettings.value.useDefaults) {
+      // Create immediately with defaults
+      createNewChat(newChatSettings.value.defaultAgentId);
+    } else {
+      // Show modal for agent selection
+      showNewChatModal.value = true;
+    }
+  };
+
+  /**
+   * Create a new chat session
+   */
+  const createNewChat = async (agentId: string) => {
+    const uuid = crypto.randomUUID();
+    const sessionKey = `agent:${agentId}:chat:${uuid}`;
+
+    try {
+      // Create session with initial label
+      await send("sessions.patch", {
+        key: sessionKey,
+        label: t("newChatModal.title") + " — " + new Date().toLocaleTimeString(),
+      });
+
+      // Navigate to new chat
+      route(`/chat/${encodeURIComponent(sessionKey)}`);
+    } catch (err) {
+      log.ui.error("Failed to create new chat:", err);
+    }
+  };
+
   return (
     <div class="h-full flex flex-col">
       {/* New Chat button */}
@@ -72,7 +109,7 @@ export function Sidebar() {
         <Button
           variant="primary"
           disabled={!isConnected.value}
-          onClick={() => route("/chat")}
+          onClick={handleNewChat}
           fullWidth
           icon={<PlusIcon />}
         >
@@ -99,6 +136,11 @@ export function Sidebar() {
         session={deleteSession}
         onClose={() => setDeleteSession(null)}
         onDelete={handleDelete}
+      />
+      <NewChatModal
+        open={showNewChatModal.value}
+        onClose={() => (showNewChatModal.value = false)}
+        onCreate={createNewChat}
       />
     </div>
   );

@@ -197,6 +197,15 @@
     }
   },
 
+  "newChatModal": {
+    "title": "New Chat",
+    "agent": "Agent",
+    "agentDescription": "Choose which assistant to chat with",
+    "rememberChoice": "Remember this choice",
+    "rememberChoiceDescription": "Skip this dialog next time and use these defaults",
+    "create": "Create Chat"
+  },
+
   "chat": {
     "placeholder": "Message (Enter to send, Shift+Enter for new line)",
     "placeholderDisabled": "Connect to gateway to start chatting",

@@ -27,3 +27,10 @@ export const sidebarResizing = signal<boolean>(false);
 effect(() => {
   setSidebarWidth(sidebarWidth.value);
 });
+
+// ============================================
+// Modals
+// ============================================
+
+/** Whether the new chat modal is open */
+export const showNewChatModal = signal<boolean>(false);
