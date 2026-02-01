@@ -399,8 +399,12 @@ function UrlStep({
       return <Check class="w-4 h-4 text-[var(--color-success)]" />;
     }
     if (error && canProceed) {
-      // Only show error icon if URL format is valid but probe failed
-      return <AlertCircle class="w-4 h-4 text-[var(--color-error)]" />;
+      // Show error icon with tooltip - URL format valid but probe failed
+      return (
+        <span title={error} class="cursor-help">
+          <AlertCircle class="w-4 h-4 text-[var(--color-error)]" />
+        </span>
+      );
     }
     return null;
   };
@@ -410,7 +414,7 @@ function UrlStep({
       <h2 class="text-lg font-semibold mb-2">{t("onboarding.urlTitle")}</h2>
       <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.urlSubtitle")}</p>
 
-      <FormField label={t("auth.gatewayUrl")} htmlFor="gateway-url" error={error || undefined}>
+      <FormField label={t("auth.gatewayUrl")} htmlFor="gateway-url">
         <Input
           id="gateway-url"
           type="text"
@@ -418,7 +422,6 @@ function UrlStep({
           onInput={(e) => onUrlChange((e.target as HTMLInputElement).value)}
           onKeyDown={handleKeyDown}
           placeholder={t("auth.gatewayUrlPlaceholder")}
-          error={error || undefined}
           rightElement={getStatusIndicator()}
           fullWidth
         />
