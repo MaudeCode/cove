@@ -249,9 +249,13 @@ function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
       </div>
 
       <div class="space-y-3">
-        <Button variant="primary" onClick={onNext} fullWidth>
+        <Button
+          variant="primary"
+          onClick={onNext}
+          fullWidth
+          iconRight={<ArrowRight class="w-4 h-4" />}
+        >
           {t("onboarding.getStarted")}
-          <ArrowRight class="w-4 h-4 ml-2" />
         </Button>
         <button
           type="button"
