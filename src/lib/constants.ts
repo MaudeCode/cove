@@ -19,9 +19,6 @@ export const RUN_ERROR_CLEANUP_DELAY_MS = 5_000;
 /** Cleanup delay after run aborts (ms) */
 export const RUN_ABORT_CLEANUP_DELAY_MS = 1_000;
 
-/** Timeout for stale runs (ms) - runs stuck in pending without activity */
-export const STALE_RUN_TIMEOUT_MS = 10_000;
-
 /** Separator for appended text blocks */
 export const TEXT_BLOCK_SEPARATOR = "\n\n";
 
