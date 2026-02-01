@@ -12,7 +12,7 @@
  */
 
 import { signal, computed } from "@preact/signals";
-import type { Message, MessageStatus, ToolCall } from "@/types/messages";
+import type { Message, MessageImage, MessageStatus, ToolCall } from "@/types/messages";
 import type { ChatRun } from "@/types/chat";
 import {
   RUN_CLEANUP_DELAY_MS,
@@ -442,9 +442,13 @@ export function dequeueMessage(messageId: string): void {
   messageQueue.value = messageQueue.value.filter((m) => m.id !== messageId);
 }
 
-/** Update a queued message's content */
-export function updateQueuedMessage(messageId: string, newContent: string): void {
+/** Update a queued message's content and/or images */
+export function updateQueuedMessage(
+  messageId: string,
+  newContent: string,
+  newImages?: MessageImage[],
+): void {
   messageQueue.value = messageQueue.value.map((m) =>
-    m.id === messageId ? { ...m, content: newContent } : m,
+    m.id === messageId ? { ...m, content: newContent, images: newImages } : m,
   );
 }
