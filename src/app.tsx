@@ -16,6 +16,7 @@ import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
+import { loadAgents } from "@/signals/agents";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { currentPath } from "@/components/layout/Sidebar";
@@ -177,6 +178,9 @@ async function tryAutoConnect() {
 
     // Load sessions list for sidebar
     await loadSessions();
+
+    // Load available agents
+    await loadAgents();
 
     // Load assistant identity
     await loadAssistantIdentity();

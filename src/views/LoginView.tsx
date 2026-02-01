@@ -10,6 +10,7 @@ import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
 import { initChat } from "@/lib/chat/init";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
+import { loadAgents } from "@/signals/agents";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
@@ -83,6 +84,9 @@ export function LoginView() {
 
       // Load sessions list for sidebar
       await loadSessions();
+
+      // Load available agents
+      await loadAgents();
 
       // Load assistant identity
       await loadAssistantIdentity();
