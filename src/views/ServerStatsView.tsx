@@ -5,7 +5,7 @@
  * Route: /stats
  */
 
-import { signal, computed } from "@preact/signals";
+import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import {
@@ -13,10 +13,9 @@ import {
   isConnected,
   gatewayVersion,
   gatewayHost,
-  gatewayUptimeMs,
+  gatewayUptime,
   gatewayConfigPath,
   gatewayStateDir,
-  connectedAt,
 } from "@/lib/gateway";
 import { getErrorMessage, formatVersion } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
@@ -52,7 +51,6 @@ const isLoading = signal<boolean>(false);
 const isLoadingUsage = signal<boolean>(false);
 const error = signal<string | null>(null);
 const usageDays = signal<number>(30);
-const uptimeTick = signal<number>(0);
 
 // ============================================
 // Actions
@@ -92,28 +90,11 @@ async function loadAll(): Promise<void> {
 }
 
 // ============================================
-// Computed Values
-// ============================================
-
-const currentUptime = computed(() => {
-  // Subscribe to tick for periodic updates
-  void uptimeTick.value;
-
-  const startUptime = gatewayUptimeMs.value;
-  const connected = connectedAt.value;
-  if (startUptime == null || connected == null) return null;
-
-  // Calculate current uptime based on initial uptime + time since connection
-  const elapsed = Date.now() - connected;
-  return startUptime + elapsed;
-});
-
-// ============================================
 // Components
 // ============================================
 
 function GatewayInfoCard() {
-  const uptime = currentUptime.value;
+  const uptime = gatewayUptime.value;
 
   return (
     <Card padding="md">
@@ -360,15 +341,6 @@ export function ServerStatsView(_props: RouteProps) {
       loadAll();
     }
   }, [isConnected.value]);
-
-  // Refresh uptime display periodically
-  useEffect(() => {
-    const interval = setInterval(() => {
-      uptimeTick.value += 1;
-    }, 60_000); // Update every minute
-
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <div class="flex-1 overflow-y-auto p-6">
