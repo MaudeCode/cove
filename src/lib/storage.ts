@@ -271,6 +271,24 @@ export function completeOnboarding(): void {
   set("hasCompletedOnboarding", true);
 }
 
+/**
+ * Set pending tour flag (to show tour after onboarding)
+ */
+export function setPendingTour(show: boolean): void {
+  set("pendingTour", show);
+}
+
+/**
+ * Check and clear pending tour flag
+ */
+export function consumePendingTour(): boolean {
+  const pending = get<boolean>("pendingTour") ?? false;
+  if (pending) {
+    remove("pendingTour");
+  }
+  return pending;
+}
+
 // ============================================
 // Error Handling
 // ============================================

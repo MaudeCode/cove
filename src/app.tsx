@@ -9,7 +9,7 @@ import { signal } from "@preact/signals";
 import Router from "preact-router";
 import { initTheme } from "@/lib/theme";
 import { initI18n } from "@/lib/i18n";
-import { initStorage, getAuth, hasCompletedOnboarding } from "@/lib/storage";
+import { initStorage, getAuth, hasCompletedOnboarding, consumePendingTour } from "@/lib/storage";
 import { isConnected, connect } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
@@ -35,6 +35,8 @@ import {
   SettingsView,
 } from "@/views";
 import { WelcomeWizard } from "@/components/onboarding";
+import { SpotlightTour } from "@/components/tour";
+import { ONBOARDING_TOUR_STEPS } from "@/lib/tour-steps";
 
 // Initialize storage synchronously so we can check saved auth immediately
 initStorage();
@@ -44,6 +46,7 @@ const savedAuth = getAuth();
 const hasSavedAuth = signal(!!(savedAuth?.url && savedAuth.rememberMe));
 const authChecked = signal(false);
 const showOnboarding = signal(!hasCompletedOnboarding() && !savedAuth?.url);
+const showTour = signal(false);
 
 export function App() {
   // Initialize remaining systems on mount
@@ -63,10 +66,21 @@ export function App() {
 
   const handleOnboardingComplete = () => {
     showOnboarding.value = false;
+    // Check if user opted for the tour
+    if (consumePendingTour()) {
+      // Small delay to let the main UI render first
+      setTimeout(() => {
+        showTour.value = true;
+      }, 500);
+    }
   };
 
   const handleOnboardingSkip = () => {
     showOnboarding.value = false;
+  };
+
+  const handleTourComplete = () => {
+    showTour.value = false;
   };
 
   // Determine which view to show
@@ -90,6 +104,11 @@ export function App() {
         <AppShell>{content}</AppShell>
       </ErrorBoundary>
       <ToastContainer position="top-right" />
+
+      {/* Spotlight tour overlay */}
+      {showTour.value && (
+        <SpotlightTour steps={ONBOARDING_TOUR_STEPS} onComplete={handleTourComplete} />
+      )}
     </TooltipProvider>
   );
 }

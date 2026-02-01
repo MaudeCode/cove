@@ -79,7 +79,7 @@ export function Sidebar() {
       </div>
 
       {/* Sessions section - scrollable */}
-      <div class="flex-1 overflow-y-auto px-3 pb-3">
+      <div class="flex-1 overflow-y-auto px-3 pb-3" data-tour="sessions">
         <SessionFilters />
         <SessionList onRename={setRenameSession} onDelete={setDeleteSession} />
       </div>

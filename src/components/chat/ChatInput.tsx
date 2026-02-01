@@ -216,6 +216,7 @@ export function ChatInput({
         {/* Unified input container */}
         <div
           ref={containerRef}
+          data-tour="chat-input"
           onDragEnter={handleDragEnter}
           onDragLeave={handleDragLeave}
           onDragOver={handleDragOver}
@@ -281,11 +282,13 @@ export function ChatInput({
             {/* Left side: Model picker + Attach button */}
             <div class="flex items-center gap-1">
               {sessionKey && (
-                <ModelPicker
-                  sessionKey={sessionKey}
-                  currentModel={currentModel}
-                  onModelChange={onModelChange}
-                />
+                <div data-tour="model-picker">
+                  <ModelPicker
+                    sessionKey={sessionKey}
+                    currentModel={currentModel}
+                    onModelChange={onModelChange}
+                  />
+                </div>
               )}
 
               {/* Attach button */}

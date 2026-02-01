@@ -14,7 +14,7 @@ import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
-import { saveAuth, completeOnboarding } from "@/lib/storage";
+import { saveAuth, completeOnboarding, setPendingTour } from "@/lib/storage";
 import {
   Button,
   Input,
@@ -33,9 +33,8 @@ import {
 import { ArrowRight, ArrowLeft, Zap, Shield, Globe, Check, AlertCircle } from "lucide-preact";
 import { WizardNav } from "./WizardNav";
 import { WizardProgress } from "./WizardProgress";
-import { FeatureTour } from "./FeatureTour";
 
-type WizardStep = "welcome" | "url" | "auth" | "connect" | "tour";
+type WizardStep = "welcome" | "url" | "auth" | "connect";
 
 interface WelcomeWizardProps {
   onComplete: () => void;
@@ -241,13 +240,11 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   return (
     <div class="flex-1 flex items-center justify-center p-8">
       <div class="w-full max-w-md">
-        {step.value !== "tour" && (
-          <WizardProgress
-            steps={["welcome", "url", "auth", "connect"] as const}
-            current={step.value === "tour" ? "connect" : step.value}
-            class="mb-8"
-          />
-        )}
+        <WizardProgress
+          steps={["welcome", "url", "auth", "connect"] as const}
+          current={step.value}
+          class="mb-8"
+        />
 
         {/* Step content */}
         {step.value === "welcome" && <WelcomeStep onNext={goNext} onSkip={handleSkip} />}
@@ -292,16 +289,11 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
             onShowTourChange={(v) => (showTour.value = v)}
             onRetry={handleRetry}
             onContinue={() => {
-              if (showTour.value) {
-                step.value = "tour";
-              } else {
-                onComplete();
-              }
+              setPendingTour(showTour.value);
+              onComplete();
             }}
           />
         )}
-
-        {step.value === "tour" && <FeatureTour onComplete={onComplete} onSkip={onComplete} />}
       </div>
     </div>
   );
