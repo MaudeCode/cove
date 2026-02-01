@@ -816,12 +816,12 @@ export const navigation: NavSection[] = [
 - [ ] Date format preference
 
 **Notifications Section:**
-- [ ] Enable/disable browser notifications
-- [ ] Sound toggle
+- ~~Enable/disable browser notifications~~ — moved to Phase 4
+- ~~Sound toggle~~ — moved to Phase 4
 
 **Help Section:**
 - [ ] Keyboard shortcuts reference
-- [ ] Links (docs, GitHub, Discord)
+- [x] Links (docs, GitHub, Discord) — moved to sidebar Resources
 
 **About Section:**
 - [x] Cove version
@@ -1026,6 +1026,17 @@ export const navigation: NavSection[] = [
 - [ ] Keyboard shortcuts (global navigation)
 - [ ] Customizable layout
 - [ ] Notifications (desktop/browser)
+- [ ] Sound toggle for notifications
+
+### 4.13 Command Palette
+- [ ] Cmd/Ctrl+K to open command palette
+- [ ] Fuzzy search across commands
+- [ ] Navigation commands (go to view, switch session)
+- [ ] Action commands (new chat, logout, toggle theme)
+- [ ] Search sessions/messages
+- [ ] Quick settings toggles
+- [ ] Keyboard navigation (arrow keys, enter to select)
+- [ ] Recent commands history
 
 ### 4.11 PWA Support
 - [ ] manifest.json (app name, icons, theme colors, display mode)
