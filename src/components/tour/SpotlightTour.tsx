@@ -250,10 +250,10 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
         />
       )}
 
-      {/* Tooltip */}
+      {/* Tooltip - z-10 to be above click blocker */}
       <div
         ref={tooltipRef}
-        class="absolute bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl shadow-lg p-4 max-w-sm"
+        class="absolute z-10 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl shadow-lg p-4 max-w-sm"
         style={{
           top: pos?.top ?? 0,
           left: pos?.left ?? 0,
