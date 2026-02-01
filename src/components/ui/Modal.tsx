@@ -155,7 +155,7 @@ export function Modal({
 
         {/* Footer */}
         {footer && (
-          <div class="px-6 py-4 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
+          <div class="px-6 py-4 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] rounded-b-xl">
             {footer}
           </div>
         )}
