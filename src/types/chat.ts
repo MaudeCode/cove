@@ -84,7 +84,7 @@ export interface AgentEvent {
   seq: number;
   ts: number;
   data?: {
-    phase?: "start" | "update" | "result" | "end";
+    phase?: "start" | "update" | "result" | "end" | "error";
     name?: string;
     toolCallId?: string;
     args?: unknown;
