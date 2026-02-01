@@ -14,10 +14,29 @@ import { t, formatTimestamp } from "@/lib/i18n";
 import { isHeartbeatResponse } from "@/lib/message-detection";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
+const SEEN_COUNT_KEY = "cove:heartbeat-seen-count";
+
+function loadSeenCount(): number {
+  try {
+    const stored = localStorage.getItem(SEEN_COUNT_KEY);
+    return stored ? parseInt(stored, 10) || 0 : 0;
+  } catch {
+    return 0;
+  }
+}
+
+function saveSeenCount(count: number): void {
+  try {
+    localStorage.setItem(SEEN_COUNT_KEY, String(count));
+  } catch {
+    // Ignore storage errors
+  }
+}
+
 export function HeartbeatIndicator() {
   const count = heartbeatCount.value;
   const [isOpen, setIsOpen] = useState(false);
-  const [seenCount, setSeenCount] = useState(0);
+  const [seenCount, setSeenCount] = useState(loadSeenCount);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
 
@@ -28,6 +47,7 @@ export function HeartbeatIndicator() {
   // Mark as seen when dropdown closes
   const handleClose = useCallback(() => {
     setSeenCount(exchangeCount);
+    saveSeenCount(exchangeCount);
     setIsOpen(false);
   }, [exchangeCount]);
 
