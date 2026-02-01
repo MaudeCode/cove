@@ -104,7 +104,7 @@ export function ThemePicker() {
           </div>
 
           {/* Theme grid - scrollable */}
-          <div class="max-h-[280px] overflow-y-auto">
+          <div class="max-h-[340px] overflow-y-auto">
             {/* Light themes */}
             <div class="p-3 border-b border-[var(--color-border)]">
               <div class="text-xs font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-2">
