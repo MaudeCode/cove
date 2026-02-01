@@ -17,6 +17,7 @@ import {
   isLoadingHistory,
   historyError,
   clearMessages,
+  clearActiveRuns,
   hasQueuedMessages,
   messageQueue,
   getCachedSessionKey,
@@ -108,13 +109,16 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     });
   }, [activeSessionKey.value]);
 
-  // Handle reconnection: process queued messages
+  // Handle reconnection: clear stale state and process queued messages
   useEffect(() => {
     const connected = isConnected.value;
     const wasConnected = wasConnectedRef.current;
 
     // Detect reconnection (was disconnected, now connected)
     if (connected && !wasConnected) {
+      // Clear any active runs - they're gone after gateway restart
+      clearActiveRuns();
+
       // Process any queued messages
       if (hasQueuedMessages.value) {
         processMessageQueue();
