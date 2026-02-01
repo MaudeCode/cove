@@ -21,6 +21,7 @@ import {
   Filter,
   Pin,
   Search,
+  Check,
 } from "lucide-preact";
 
 type IconProps = {
@@ -102,4 +103,8 @@ export function PinIcon({ class: className }: IconProps) {
 
 export function SearchIcon({ class: className }: IconProps) {
   return <Search class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+export function CheckIcon({ class: className }: IconProps) {
+  return <Check class={className || "w-5 h-5"} aria-hidden="true" />;
 }
