@@ -10,7 +10,7 @@ import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
-import { showToast } from "@/components/ui/Toast";
+import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -179,18 +179,12 @@ async function handleLogout(): Promise<void> {
       channel: logoutModal.value.channel,
       accountId: logoutModal.value.accountId,
     });
-    showToast({
-      type: "success",
-      message: t("channels.logoutSuccess", { channel: logoutModal.value.label }),
-    });
+    toast.success(t("channels.logoutSuccess", { channel: logoutModal.value.label }));
     logoutModal.value = null;
     // Refresh to show updated status
     loadChannels();
   } catch (err) {
-    showToast({
-      type: "error",
-      message: getErrorMessage(err),
-    });
+    toast.error(getErrorMessage(err));
   } finally {
     isLoggingOut.value = false;
   }
