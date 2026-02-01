@@ -9,7 +9,6 @@ import {
   siDiscord,
   siSignal,
   siWhatsapp,
-  siSlack,
   siGooglechat,
   siMatrix,
   siMastodon,
@@ -32,8 +31,8 @@ const channelIcons: Record<string, ChannelIconData> = {
   discord: { path: siDiscord.path, hex: siDiscord.hex, title: siDiscord.title },
   signal: { path: siSignal.path, hex: siSignal.hex, title: siSignal.title },
   whatsapp: { path: siWhatsapp.path, hex: siWhatsapp.hex, title: siWhatsapp.title },
-  slack: { path: siSlack.path, hex: siSlack.hex, title: siSlack.title },
   googlechat: { path: siGooglechat.path, hex: siGooglechat.hex, title: siGooglechat.title },
+  // Slack not in simple-icons, falls back to Globe
   matrix: { path: siMatrix.path, hex: siMatrix.hex, title: siMatrix.title },
   mastodon: { path: siMastodon.path, hex: siMastodon.hex, title: siMastodon.title },
   imessage: { path: appleMessagesPath, hex: "34C759", title: "iMessage" },
