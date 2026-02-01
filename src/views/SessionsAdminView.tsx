@@ -22,6 +22,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Modal } from "@/components/ui/Modal";
 import { IconButton } from "@/components/ui/IconButton";
 import { FormField } from "@/components/ui/FormField";
+import { StatCard } from "@/components/ui/StatCard";
 import {
   RefreshCw,
   Search,
@@ -312,49 +313,6 @@ function KindIconWrapper({ kind, size = "sm" }: { kind: SessionKind; size?: "sm"
     <div class={`${padding} rounded-lg flex-shrink-0 ${bgClass}`}>
       <KindIcon kind={kind} size={size} />
     </div>
-  );
-}
-
-function StatCard({
-  kind,
-  label,
-  value,
-  active,
-  onClick,
-}: {
-  kind: SessionKind | "all";
-  label: string;
-  value: number;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  const Icon = kind === "all" ? MessageSquare : getKindStyle(kind as SessionKind).icon;
-
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      class={`
-        flex items-center gap-3 p-4 rounded-xl text-left transition-all
-        ${
-          active
-            ? "bg-[var(--color-accent)]/10 border-2 border-[var(--color-accent)]"
-            : "bg-[var(--color-bg-secondary)] border-2 border-transparent hover:bg-[var(--color-bg-tertiary)]"
-        }
-      `}
-    >
-      <div
-        class={`p-2 rounded-lg ${active ? "bg-[var(--color-accent)]/20" : "bg-[var(--color-bg-tertiary)]"}`}
-      >
-        <Icon
-          class={`w-5 h-5 ${active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
-        />
-      </div>
-      <div>
-        <div class="text-2xl font-bold">{value}</div>
-        <div class="text-sm text-[var(--color-text-muted)]">{label}</div>
-      </div>
-    </button>
   );
 }
 
@@ -689,35 +647,35 @@ export function SessionsAdminView(_props: RouteProps) {
         {isConnected.value && !isLoading.value && (
           <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
             <StatCard
-              kind="all"
+              icon={MessageSquare}
               label={t("sessions.admin.stats.total")}
               value={counts.total}
               active={kindFilter.value === "all"}
               onClick={() => (kindFilter.value = "all")}
             />
             <StatCard
-              kind="main"
+              icon={getKindStyle("main").icon}
               label={t("sessions.admin.kinds.main")}
               value={counts.main}
               active={kindFilter.value === "main"}
               onClick={() => (kindFilter.value = "main")}
             />
             <StatCard
-              kind="channel"
+              icon={getKindStyle("channel").icon}
               label={t("sessions.admin.kinds.channel")}
               value={counts.channel}
               active={kindFilter.value === "channel"}
               onClick={() => (kindFilter.value = "channel")}
             />
             <StatCard
-              kind="cron"
+              icon={getKindStyle("cron").icon}
               label={t("sessions.admin.kinds.cron")}
               value={counts.cron}
               active={kindFilter.value === "cron"}
               onClick={() => (kindFilter.value = "cron")}
             />
             <StatCard
-              kind="isolated"
+              icon={getKindStyle("isolated").icon}
               label={t("sessions.admin.kinds.isolated")}
               value={counts.isolated}
               active={kindFilter.value === "isolated"}
