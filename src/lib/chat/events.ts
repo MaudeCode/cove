@@ -62,6 +62,9 @@ export function unsubscribeFromChatEvents(): void {
   }
 }
 
+/** Timeout for empty pending runs (handles heartbeats and other suppressed responses) */
+const EMPTY_PENDING_TIMEOUT_MS = 5000;
+
 /**
  * Handle lifecycle start event - ensures run exists even before text deltas.
  */
@@ -72,6 +75,17 @@ function handleLifecycleStart(evt: AgentEvent): void {
   if (!existingRun && sessionKey) {
     log.chat.debug("Creating run on-the-fly for lifecycle start:", runId, "session:", sessionKey);
     startRun(runId, sessionKey);
+
+    // Set a timeout to clean up runs that never receive any content.
+    // This handles cases where the gateway suppresses responses (HEARTBEAT_OK, NO_REPLY)
+    // and never sends a final event.
+    setTimeout(() => {
+      const run = activeRuns.value.get(runId);
+      if (run && run.status === "pending" && run.content === "") {
+        log.chat.debug("Cleaning up empty pending run (likely suppressed response):", runId);
+        completeRun(runId);
+      }
+    }, EMPTY_PENDING_TIMEOUT_MS);
   }
 }
 
