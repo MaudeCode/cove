@@ -11,7 +11,7 @@ import { MessageContent } from "./MessageContent";
 import { MessageImages } from "./MessageImages";
 import { MessageActions } from "./MessageActions";
 import { BouncingDots } from "@/components/ui";
-import { formatRelativeTime, t } from "@/lib/i18n";
+import { formatTimestamp, t } from "@/lib/i18n";
 import { retryMessage } from "@/lib/chat";
 
 interface UserMessageProps {
@@ -67,7 +67,7 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
               {t("connection.messageFailedStatus")}
             </span>
           ) : (
-            formatRelativeTime(new Date(message.timestamp))
+            formatTimestamp(message.timestamp)
           )}
         </span>
 

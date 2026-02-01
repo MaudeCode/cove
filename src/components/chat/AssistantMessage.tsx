@@ -12,7 +12,7 @@ import { MessageImages } from "./MessageImages";
 import { MessageActions } from "./MessageActions";
 import { ToolCall as ToolCallComponent } from "./ToolCall";
 import { BouncingDots } from "@/components/ui";
-import { formatRelativeTime, t } from "@/lib/i18n";
+import { formatTimestamp, t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { parseMediaFromContent, mediaUrlsToImages } from "@/lib/media-parse";
 
@@ -162,7 +162,7 @@ export function AssistantMessage({
         {/* Timestamp (hide while streaming) */}
         {!isStreaming && message.timestamp && (
           <span class="text-xs text-[var(--color-text-muted)]">
-            {formatRelativeTime(new Date(message.timestamp))}
+            {formatTimestamp(message.timestamp)}
           </span>
         )}
 
