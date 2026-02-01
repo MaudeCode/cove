@@ -145,14 +145,23 @@ function formatRelativeTime(date: Date | number): string {
   }
 }
 
+interface FormatTimestampOptions {
+  /** Force relative time regardless of user setting */
+  relative?: boolean;
+}
+
 /**
  * Format a timestamp based on user preference (relative or absolute).
  * Use this for UI timestamps that should respect the setting.
  *
  * @example
- * formatTimestamp(date)  // "2 hours ago" or "3:45 PM" depending on setting
+ * formatTimestamp(date)                    // respects user setting
+ * formatTimestamp(date, { relative: true }) // always relative
  */
-export function formatTimestamp(date: Date | number): string {
+export function formatTimestamp(date: Date | number, options?: FormatTimestampOptions): string {
+  if (options?.relative) {
+    return formatRelativeTime(date);
+  }
   if (timeFormat.value === "local") {
     return formatTime(date, "short");
   }
