@@ -169,15 +169,15 @@ export function ThemeSettings() {
           </div>
         </div>
       ) : (
-        /* Manual mode: show all themes */
-        <div class="space-y-6">
+        /* Manual mode: show all themes in same 2-column layout */
+        <div class="grid grid-cols-2 gap-6">
           {/* Light themes */}
           <div>
             <SectionHeader
               icon={<Sun class="w-4 h-4" />}
               titleKey="settings.appearance.lightThemes"
             />
-            <div class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
+            <div class="grid grid-cols-5 gap-2">
               {lightThemes.map((theme) => (
                 <ThemeSwatch
                   key={theme.id}
@@ -195,7 +195,7 @@ export function ThemeSettings() {
               icon={<Moon class="w-4 h-4" />}
               titleKey="settings.appearance.darkThemes"
             />
-            <div class="grid grid-cols-6 sm:grid-cols-8 md:grid-cols-10 gap-2">
+            <div class="grid grid-cols-5 gap-2">
               {darkThemes.map((theme) => (
                 <ThemeSwatch
                   key={theme.id}
