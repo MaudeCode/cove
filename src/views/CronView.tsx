@@ -76,11 +76,15 @@ const editScheduleExpr = signal<string>("");
 const editScheduleTz = signal<string>("");
 const editScheduleEveryMs = signal<string>("");
 const editScheduleAtMs = signal<string>("");
+const editWakeMode = signal<"next-heartbeat" | "now">("next-heartbeat");
 const editSessionTarget = signal<"main" | "isolated">("main");
 const editPayloadKind = signal<"systemEvent" | "agentTurn">("systemEvent");
 const editPayloadText = signal<string>("");
 const editPayloadMessage = signal<string>("");
 const editPayloadModel = signal<string>("");
+
+// Form validation
+const formErrors = signal<Record<string, string>>({});
 
 // ============================================
 // Constants
@@ -262,6 +266,7 @@ function populateEditForm(job: CronJob) {
   } else if (job.schedule.kind === "at") {
     editScheduleAtMs.value = String(job.schedule.atMs);
   }
+  editWakeMode.value = job.wakeMode;
   editSessionTarget.value = job.sessionTarget;
   editPayloadKind.value = job.payload.kind;
   if (job.payload.kind === "systemEvent") {
@@ -270,6 +275,7 @@ function populateEditForm(job: CronJob) {
     editPayloadMessage.value = job.payload.message;
     editPayloadModel.value = job.payload.model ?? "";
   }
+  formErrors.value = {};
 }
 
 function resetEditForm() {
@@ -281,11 +287,64 @@ function resetEditForm() {
   editScheduleTz.value = "";
   editScheduleEveryMs.value = "";
   editScheduleAtMs.value = "";
+  editWakeMode.value = "next-heartbeat";
   editSessionTarget.value = "main";
   editPayloadKind.value = "systemEvent";
   editPayloadText.value = "";
   editPayloadMessage.value = "";
   editPayloadModel.value = "";
+  formErrors.value = {};
+}
+
+/** Basic cron expression validation (5 or 6 fields) */
+function isValidCronExpr(expr: string): boolean {
+  const parts = expr.trim().split(/\s+/);
+  if (parts.length < 5 || parts.length > 6) return false;
+  // Basic pattern check - each field should be valid cron syntax
+  const fieldPattern = /^(\*|(\d+(-\d+)?(,\d+(-\d+)?)*)(\/\d+)?|\*\/\d+)$/;
+  return parts.every((p) => fieldPattern.test(p));
+}
+
+function validateForm(): boolean {
+  const errors: Record<string, string> = {};
+
+  // Name required
+  if (!editName.value.trim()) {
+    errors.name = t("cron.validation.nameRequired");
+  }
+
+  // Schedule validation
+  if (editScheduleKind.value === "cron") {
+    if (!editScheduleExpr.value.trim()) {
+      errors.schedule = t("cron.validation.cronRequired");
+    } else if (!isValidCronExpr(editScheduleExpr.value)) {
+      errors.schedule = t("cron.validation.cronInvalid");
+    }
+  } else if (editScheduleKind.value === "every") {
+    const ms = parseInt(editScheduleEveryMs.value, 10);
+    if (!ms || ms < 1000) {
+      errors.schedule = t("cron.validation.intervalMin");
+    }
+  } else if (editScheduleKind.value === "at") {
+    const ms = parseInt(editScheduleAtMs.value, 10);
+    if (!ms || ms < Date.now()) {
+      errors.schedule = t("cron.validation.atFuture");
+    }
+  }
+
+  // Payload validation
+  if (editSessionTarget.value === "main") {
+    if (!editPayloadText.value.trim()) {
+      errors.payload = t("cron.validation.payloadRequired");
+    }
+  } else {
+    if (!editPayloadMessage.value.trim()) {
+      errors.payload = t("cron.validation.payloadRequired");
+    }
+  }
+
+  formErrors.value = errors;
+  return Object.keys(errors).length === 0;
 }
 
 function closeModal() {
@@ -328,6 +387,8 @@ function buildPayload(): CronPayload {
 }
 
 async function saveOrCreateJob(): Promise<void> {
+  if (!validateForm()) return;
+
   isSaving.value = true;
   try {
     if (modalMode.value === "edit" && selectedJob.value) {
@@ -338,18 +399,19 @@ async function saveOrCreateJob(): Promise<void> {
         enabled: editEnabled.value,
         schedule: buildSchedule(),
         sessionTarget: editSessionTarget.value,
+        wakeMode: editWakeMode.value,
         payload: buildPayload(),
       };
       await send("cron.update", { jobId: selectedJob.value.id, patch });
     } else {
       // Create new job
       const job = {
-        name: editName.value || "New Job",
+        name: editName.value,
         description: editDescription.value || undefined,
         enabled: editEnabled.value,
         schedule: buildSchedule(),
         sessionTarget: editSessionTarget.value,
-        wakeMode: "next-heartbeat" as const,
+        wakeMode: editWakeMode.value,
         payload: buildPayload(),
       };
       await send("cron.add", { job });
@@ -413,6 +475,11 @@ const SCHEDULE_KIND_OPTIONS = [
 const SESSION_TARGET_OPTIONS = [
   { value: "main", label: t("cron.sessionTarget.main") },
   { value: "isolated", label: t("cron.sessionTarget.isolated") },
+];
+
+const WAKE_MODE_OPTIONS = [
+  { value: "next-heartbeat", label: t("cron.wakeMode.nextHeartbeat") },
+  { value: "now", label: t("cron.wakeMode.now") },
 ];
 
 function StatCard({
@@ -562,14 +629,17 @@ function JobRow({ job }: { job: CronJob }) {
 }
 
 function JobEditForm() {
+  const errors = formErrors.value;
+
   return (
     <div class="space-y-5">
       {/* Name */}
-      <FormField label={t("cron.form.name")}>
+      <FormField label={t("cron.form.name")} error={errors.name}>
         <Input
           value={editName.value}
           onInput={(e) => (editName.value = (e.target as HTMLInputElement).value)}
           placeholder={t("cron.form.namePlaceholder")}
+          error={!!errors.name}
           fullWidth
         />
       </FormField>
@@ -584,7 +654,7 @@ function JobEditForm() {
       </FormField>
 
       {/* Schedule */}
-      <FormField label={t("cron.form.schedule")}>
+      <FormField label={t("cron.form.schedule")} error={errors.schedule}>
         <div class="space-y-3">
           <Dropdown
             value={editScheduleKind.value}
@@ -673,23 +743,33 @@ function JobEditForm() {
         </div>
       </FormField>
 
-      {/* Session Target - auto-sets payload kind */}
-      <FormField label={t("cron.form.sessionTarget")} hint={t("cron.form.sessionTargetHint")}>
-        <Dropdown
-          value={editSessionTarget.value}
-          onChange={(val) => {
-            const target = val as "main" | "isolated";
-            editSessionTarget.value = target;
-            // Enforce: main→systemEvent, isolated→agentTurn
-            editPayloadKind.value = target === "main" ? "systemEvent" : "agentTurn";
-          }}
-          options={SESSION_TARGET_OPTIONS}
-        />
-      </FormField>
+      {/* Session Target & Wake Mode */}
+      <div class="grid grid-cols-2 gap-4">
+        <FormField label={t("cron.form.sessionTarget")} hint={t("cron.form.sessionTargetHint")}>
+          <Dropdown
+            value={editSessionTarget.value}
+            onChange={(val) => {
+              const target = val as "main" | "isolated";
+              editSessionTarget.value = target;
+              // Enforce: main→systemEvent, isolated→agentTurn
+              editPayloadKind.value = target === "main" ? "systemEvent" : "agentTurn";
+            }}
+            options={SESSION_TARGET_OPTIONS}
+          />
+        </FormField>
+        <FormField label={t("cron.form.wakeMode")} hint={t("cron.form.wakeModeHint")}>
+          <Dropdown
+            value={editWakeMode.value}
+            onChange={(val) => (editWakeMode.value = val as "next-heartbeat" | "now")}
+            options={WAKE_MODE_OPTIONS}
+          />
+        </FormField>
+      </div>
 
       {/* Payload */}
       <FormField
         label={t("cron.form.payload")}
+        error={errors.payload}
         hint={
           editSessionTarget.value === "main"
             ? t("cron.form.payloadHintMain")
@@ -701,6 +781,7 @@ function JobEditForm() {
             value={editPayloadText.value}
             onInput={(e) => (editPayloadText.value = (e.target as HTMLTextAreaElement).value)}
             placeholder={t("cron.form.systemEventPlaceholder")}
+            error={!!errors.payload}
             rows={3}
             fullWidth
           />
@@ -710,6 +791,7 @@ function JobEditForm() {
               value={editPayloadMessage.value}
               onInput={(e) => (editPayloadMessage.value = (e.target as HTMLTextAreaElement).value)}
               placeholder={t("cron.form.agentMessagePlaceholder")}
+              error={!!errors.payload}
               rows={3}
               fullWidth
             />

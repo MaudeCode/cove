@@ -500,6 +500,10 @@
       "main": "Main Session",
       "isolated": "Isolated Session"
     },
+    "wakeMode": {
+      "nextHeartbeat": "Next Heartbeat",
+      "now": "Immediate"
+    },
     "payloadKind": {
       "systemEvent": "System Event",
       "agentTurn": "Agent Turn"
@@ -517,12 +521,22 @@
       "timestampPlaceholder": "Unix timestamp in milliseconds",
       "sessionTarget": "Session Target",
       "sessionTargetHint": "Main injects into the main session. Isolated runs in a separate session.",
+      "wakeMode": "Wake Mode",
+      "wakeModeHint": "When the job triggers after scheduling.",
       "payload": "Payload",
       "payloadHintMain": "Text injected as a system event into the main session.",
       "payloadHintIsolated": "Runs as an agent turn in an isolated session.",
       "systemEventPlaceholder": "Text to inject as system event",
       "agentMessagePlaceholder": "Message to send to the agent",
       "modelPlaceholder": "Model override (optional)"
+    },
+    "validation": {
+      "nameRequired": "Name is required",
+      "cronRequired": "Cron expression is required",
+      "cronInvalid": "Invalid cron expression",
+      "intervalMin": "Interval must be at least 1 second",
+      "atFuture": "Time must be in the future",
+      "payloadRequired": "Payload text is required"
     }
   },
 
