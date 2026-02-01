@@ -16,3 +16,4 @@ export { SearchBar } from "./SearchBar";
 export { CollapsedMessage } from "./CollapsedMessage";
 export { CompactionBanner } from "./CompactionBanner";
 export { HeartbeatIndicator } from "./HeartbeatIndicator";
+export { AttachmentPreview } from "./AttachmentPreview";

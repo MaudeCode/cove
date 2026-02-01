@@ -2,19 +2,23 @@
  * ChatInput
  *
  * Unified message input container with embedded action buttons.
- * Supports queuing messages while streaming.
+ * Supports file attachments, image paste, and message queuing.
  */
 
 import { useRef, useEffect, useCallback } from "preact/hooks";
 import { useSignal } from "@preact/signals";
+import { Paperclip } from "lucide-preact";
 import { t } from "@/lib/i18n";
 import { hasContent } from "@/lib/utils";
-import { SendIcon, StopIcon } from "@/components/ui";
+import { SendIcon, StopIcon, Tooltip } from "@/components/ui";
+import { useAttachments } from "@/hooks";
 import { ModelPicker } from "./ModelPicker";
 import { QueuedMessages } from "./QueuedMessages";
+import { AttachmentPreview } from "./AttachmentPreview";
+import type { AttachmentPayload } from "@/types/attachments";
 
 interface ChatInputProps {
-  onSend: (message: string) => void;
+  onSend: (message: string, attachments?: AttachmentPayload[]) => void;
   onAbort?: () => void;
   disabled?: boolean;
   isStreaming?: boolean;
@@ -35,7 +39,21 @@ export function ChatInput({
   onModelChange,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const value = useSignal("");
+  const isDragging = useSignal(false);
+
+  const {
+    attachments,
+    addFiles,
+    removeAttachment,
+    clearAttachments,
+    getPayloads,
+    handlePaste,
+    error: attachmentError,
+    clearError,
+  } = useAttachments();
 
   /**
    * Auto-resize textarea based on content
@@ -61,19 +79,23 @@ export function ChatInput({
   );
 
   /**
-   * Send message (queues if streaming)
+   * Send message with attachments
    */
   const handleSend = useCallback(() => {
     const message = value.value.trim();
-    if (!message || disabled) return;
+    const payloads = getPayloads();
 
-    onSend(message);
+    // Need either message or attachments
+    if ((!message && payloads.length === 0) || disabled) return;
+
+    onSend(message, payloads.length > 0 ? payloads : undefined);
     value.value = "";
+    clearAttachments();
 
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [onSend, disabled]);
+  }, [onSend, disabled, getPayloads, clearAttachments]);
 
   /**
    * Handle keyboard shortcuts
@@ -95,14 +117,87 @@ export function ChatInput({
   );
 
   /**
+   * Handle paste (for images)
+   */
+  const onPaste = useCallback(
+    async (e: ClipboardEvent) => {
+      await handlePaste(e);
+    },
+    [handlePaste],
+  );
+
+  /**
+   * Handle file input change
+   */
+  const handleFileChange = useCallback(
+    (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      if (input.files && input.files.length > 0) {
+        addFiles(input.files);
+        input.value = ""; // Reset so same file can be selected again
+      }
+    },
+    [addFiles],
+  );
+
+  /**
+   * Handle drag events
+   */
+  const handleDragEnter = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    isDragging.value = true;
+  }, []);
+
+  const handleDragLeave = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Only set to false if leaving the container (not entering a child)
+    if (e.relatedTarget && containerRef.current?.contains(e.relatedTarget as Node)) {
+      return;
+    }
+    isDragging.value = false;
+  }, []);
+
+  const handleDragOver = useCallback((e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  }, []);
+
+  const handleDrop = useCallback(
+    async (e: DragEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      isDragging.value = false;
+
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        await addFiles(files);
+      }
+    },
+    [addFiles],
+  );
+
+  /**
    * Focus textarea on mount
    */
   useEffect(() => {
     textareaRef.current?.focus();
   }, []);
 
-  const canSend = hasContent(value.value) && !disabled;
+  /**
+   * Clear error after a delay
+   */
+  useEffect(() => {
+    if (attachmentError) {
+      const timer = setTimeout(clearError, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [attachmentError, clearError]);
+
   const hasText = hasContent(value.value);
+  const hasAttachments = attachments.length > 0;
+  const canSend = (hasText || hasAttachments) && !disabled;
 
   return (
     <div class="pb-3 pt-2">
@@ -110,79 +205,147 @@ export function ChatInput({
         {/* Queued messages display */}
         <QueuedMessages />
 
+        {/* Error message */}
+        {attachmentError && (
+          <div class="mb-2 px-3 py-2 text-sm text-[var(--color-error)] bg-[var(--color-error)]/10 rounded-lg">
+            {attachmentError}
+          </div>
+        )}
+
         {/* Unified input container */}
         <div
-          class="relative bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl
-            shadow-soft-sm focus-within:shadow-soft focus-within:border-[var(--color-accent)]/50
-            transition-all duration-200"
+          ref={containerRef}
+          onDragEnter={handleDragEnter}
+          onDragLeave={handleDragLeave}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+          class={`
+            relative bg-[var(--color-bg-surface)] border rounded-xl
+            shadow-soft-sm focus-within:shadow-soft
+            transition-all duration-200
+            ${isDragging.value ? "border-[var(--color-accent)] bg-[var(--color-accent)]/5" : "border-[var(--color-border)] focus-within:border-[var(--color-accent)]/50"}
+          `}
         >
+          {/* Drag overlay */}
+          {isDragging.value && (
+            <div class="absolute inset-0 flex items-center justify-center bg-[var(--color-accent)]/10 rounded-xl z-10 pointer-events-none">
+              <span class="text-sm font-medium text-[var(--color-accent)]">
+                {t("chat.dropFiles")}
+              </span>
+            </div>
+          )}
+
+          {/* Attachment previews */}
+          {hasAttachments && (
+            <div class="pt-3">
+              <AttachmentPreview attachments={attachments} onRemove={removeAttachment} />
+            </div>
+          )}
+
           {/* Textarea */}
           <textarea
             ref={textareaRef}
             value={value.value}
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onPaste={onPaste}
             disabled={disabled}
             placeholder={placeholder || t("chat.placeholder")}
             rows={1}
-            class="w-full px-4 pt-3 pb-12 text-sm rounded-xl resize-none
+            class={`
+              w-full px-4 pb-12 text-sm rounded-xl resize-none
               bg-transparent border-none
               focus:outline-none
               placeholder:text-[var(--color-text-muted)]
-              disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled:opacity-50 disabled:cursor-not-allowed
+              ${hasAttachments ? "pt-2" : "pt-3"}
+            `}
             style={{ minHeight: "60px", maxHeight: "200px" }}
           />
 
-          {/* Model picker - bottom left */}
-          {sessionKey && (
-            <div class="absolute bottom-2 left-2">
-              <ModelPicker
-                sessionKey={sessionKey}
-                currentModel={currentModel}
-                onModelChange={onModelChange}
-              />
-            </div>
-          )}
+          {/* Hidden file input */}
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept="image/*,.pdf,.txt,.md,.json,.csv"
+            onChange={handleFileChange}
+            class="hidden"
+          />
 
-          {/* Action buttons - bottom right, inside container */}
-          <div class="absolute bottom-2 right-2 flex items-center gap-1.5">
-            {/* Stop button - only during streaming */}
-            {isStreaming && (
+          {/* Bottom bar with actions */}
+          <div class="absolute bottom-2 left-2 right-2 flex items-center justify-between">
+            {/* Left side: Model picker + Attach button */}
+            <div class="flex items-center gap-1">
+              {sessionKey && (
+                <ModelPicker
+                  sessionKey={sessionKey}
+                  currentModel={currentModel}
+                  onModelChange={onModelChange}
+                />
+              )}
+
+              {/* Attach button */}
+              <Tooltip content={t("chat.attachFile")} placement="top">
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={disabled}
+                  aria-label={t("chat.attachFile")}
+                  class="
+                    p-1.5 rounded-lg cursor-pointer
+                    text-[var(--color-text-muted)]
+                    hover:text-[var(--color-text-secondary)]
+                    hover:bg-[var(--color-bg-hover)]
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-colors
+                  "
+                >
+                  <Paperclip class="w-4 h-4" />
+                </button>
+              </Tooltip>
+            </div>
+
+            {/* Right side: Stop + Send buttons */}
+            <div class="flex items-center gap-1.5">
+              {/* Stop button - only during streaming */}
+              {isStreaming && (
+                <button
+                  type="button"
+                  onClick={onAbort}
+                  aria-label={t("actions.stop")}
+                  class="px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer
+                    bg-[var(--color-error)]/10 text-[var(--color-error)]
+                    hover:bg-[var(--color-error)]/20
+                    active:scale-95 transition-all duration-150"
+                >
+                  <StopIcon class="w-4 h-4" />
+                  <span class="text-xs font-medium">{t("actions.stop")}</span>
+                </button>
+              )}
+
+              {/* Send button */}
               <button
                 type="button"
-                onClick={onAbort}
-                aria-label={t("actions.stop")}
-                title={t("actions.stop")}
-                class="px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5
-                  bg-[var(--color-error)]/10 text-[var(--color-error)]
-                  hover:bg-[var(--color-error)]/20
-                  active:scale-95 transition-all duration-150"
+                onClick={handleSend}
+                disabled={!canSend}
+                aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
+                class={`px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5
+                  transition-all duration-150 active:scale-95
+                  ${
+                    canSend
+                      ? "bg-[var(--color-accent)] text-white hover:opacity-90 cursor-pointer"
+                      : "bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] cursor-not-allowed"
+                  }`}
               >
-                <StopIcon class="w-4 h-4" />
-                <span class="text-xs font-medium">Stop</span>
+                <SendIcon class="w-4 h-4" />
+                {(hasText || hasAttachments || isStreaming) && (
+                  <span class="text-xs font-medium">
+                    {isStreaming ? t("actions.queue") : t("actions.send")}
+                  </span>
+                )}
               </button>
-            )}
-
-            {/* Send button */}
-            <button
-              type="button"
-              onClick={handleSend}
-              disabled={!canSend}
-              aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
-              title={isStreaming ? "Queue message" : t("actions.send")}
-              class={`px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5
-                transition-all duration-150 active:scale-95
-                ${
-                  canSend
-                    ? "bg-[var(--color-accent)] text-white hover:opacity-90"
-                    : "bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)] cursor-not-allowed"
-                }`}
-            >
-              <SendIcon class="w-4 h-4" />
-              {(hasText || isStreaming) && (
-                <span class="text-xs font-medium">{isStreaming ? "Queue" : "Send"}</span>
-              )}
-            </button>
+            </div>
           </div>
         </div>
       </div>

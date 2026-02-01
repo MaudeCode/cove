@@ -103,12 +103,15 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     wasConnectedRef.current = connected;
   }, [connectionState.value]);
 
-  const handleSend = async (message: string) => {
+  const handleSend = async (
+    message: string,
+    attachments?: import("@/types/attachments").AttachmentPayload[],
+  ) => {
     const sessionKey = effectiveSessionKey.value;
     if (!sessionKey) return;
 
     try {
-      await sendMessage(sessionKey, message);
+      await sendMessage(sessionKey, message, { attachments });
     } catch {
       // Error is handled by sendMessage (marks message as failed)
     }
