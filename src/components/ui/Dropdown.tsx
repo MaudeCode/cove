@@ -173,6 +173,7 @@ export function Dropdown({
           style={{
             position: "fixed",
             top: `${triggerRef.current.getBoundingClientRect().bottom + 4}px`,
+            width: "max-content",
             ...(align === "right"
               ? {
                   right: `${window.innerWidth - triggerRef.current.getBoundingClientRect().right}px`,
@@ -180,7 +181,7 @@ export function Dropdown({
               : { left: `${triggerRef.current.getBoundingClientRect().left}px` }),
           }}
           class={`
-            z-[100] w-auto
+            z-[100]
             rounded-lg border border-[var(--color-border)]
             bg-[var(--color-bg-surface)] shadow-lg
             overflow-hidden
