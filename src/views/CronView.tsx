@@ -57,16 +57,15 @@ const error = signal<string | null>(null);
 const searchQuery = signal<string>("");
 const statusFilter = signal<"all" | "enabled" | "disabled">("all");
 
-// Selected job for detail/edit
+// Modal state
+type ModalMode = "create" | "edit" | null;
+const modalMode = signal<ModalMode>(null);
 const selectedJob = signal<CronJob | null>(null);
 const selectedJobRuns = signal<CronRunLogEntry[]>([]);
 const isLoadingRuns = signal<boolean>(false);
-
-// Modal states
 const isDeleting = signal<boolean>(false);
 const isSaving = signal<boolean>(false);
 const isRunning = signal<boolean>(false);
-const showCreateModal = signal<boolean>(false);
 
 // Edit form state
 const editName = signal<string>("");
@@ -237,10 +236,17 @@ async function loadJobRuns(jobId: string): Promise<void> {
   }
 }
 
-function openJobDetail(job: CronJob) {
-  selectedJob.value = job;
-  populateEditForm(job);
-  loadJobRuns(job.id);
+function openJobModal(mode: "create" | "edit", job?: CronJob) {
+  if (mode === "edit" && job) {
+    selectedJob.value = job;
+    populateEditForm(job);
+    loadJobRuns(job.id);
+  } else {
+    selectedJob.value = null;
+    resetEditForm();
+    selectedJobRuns.value = [];
+  }
+  modalMode.value = mode;
 }
 
 function populateEditForm(job: CronJob) {
@@ -282,20 +288,11 @@ function resetEditForm() {
   editPayloadModel.value = "";
 }
 
-function closeJobDetail() {
+function closeModal() {
+  modalMode.value = null;
   selectedJob.value = null;
   selectedJobRuns.value = [];
   isDeleting.value = false;
-}
-
-function openCreateModal() {
-  resetEditForm();
-  showCreateModal.value = true;
-}
-
-function closeCreateModal() {
-  showCreateModal.value = false;
-  resetEditForm();
 }
 
 function buildSchedule(): CronSchedule {
@@ -330,45 +327,35 @@ function buildPayload(): CronPayload {
   };
 }
 
-async function saveJob(): Promise<void> {
-  const job = selectedJob.value;
-  if (!job) return;
-
+async function saveOrCreateJob(): Promise<void> {
   isSaving.value = true;
   try {
-    const patch = {
-      name: editName.value,
-      description: editDescription.value || undefined,
-      enabled: editEnabled.value,
-      schedule: buildSchedule(),
-      sessionTarget: editSessionTarget.value,
-      payload: buildPayload(),
-    };
-    await send("cron.update", { jobId: job.id, patch });
+    if (modalMode.value === "edit" && selectedJob.value) {
+      // Update existing job
+      const patch = {
+        name: editName.value,
+        description: editDescription.value || undefined,
+        enabled: editEnabled.value,
+        schedule: buildSchedule(),
+        sessionTarget: editSessionTarget.value,
+        payload: buildPayload(),
+      };
+      await send("cron.update", { jobId: selectedJob.value.id, patch });
+    } else {
+      // Create new job
+      const job = {
+        name: editName.value || "New Job",
+        description: editDescription.value || undefined,
+        enabled: editEnabled.value,
+        schedule: buildSchedule(),
+        sessionTarget: editSessionTarget.value,
+        wakeMode: "next-heartbeat" as const,
+        payload: buildPayload(),
+      };
+      await send("cron.add", { job });
+    }
     await loadCronJobs();
-    closeJobDetail();
-  } catch (err) {
-    error.value = getErrorMessage(err);
-  } finally {
-    isSaving.value = false;
-  }
-}
-
-async function createJob(): Promise<void> {
-  isSaving.value = true;
-  try {
-    const job = {
-      name: editName.value || "New Job",
-      description: editDescription.value || undefined,
-      enabled: editEnabled.value,
-      schedule: buildSchedule(),
-      sessionTarget: editSessionTarget.value,
-      wakeMode: "next-heartbeat" as const,
-      payload: buildPayload(),
-    };
-    await send("cron.add", { job });
-    await loadCronJobs();
-    closeCreateModal();
+    closeModal();
   } catch (err) {
     error.value = getErrorMessage(err);
   } finally {
@@ -383,7 +370,7 @@ async function deleteJob(): Promise<void> {
   try {
     await send("cron.remove", { jobId: job.id });
     cronJobs.value = cronJobs.value.filter((j) => j.id !== job.id);
-    closeJobDetail();
+    closeModal();
   } catch (err) {
     error.value = getErrorMessage(err);
   }
@@ -475,11 +462,11 @@ function JobRow({ job }: { job: CronJob }) {
   return (
     <tr
       class="group hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors"
-      onClick={() => openJobDetail(job)}
+      onClick={() => openJobModal("edit", job)}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
           e.preventDefault();
-          openJobDetail(job);
+          openJobModal("edit", job);
         }
       }}
       tabIndex={0}
@@ -574,7 +561,7 @@ function JobRow({ job }: { job: CronJob }) {
   );
 }
 
-function JobEditForm({ isCreate: _isCreate = false }: { isCreate?: boolean }) {
+function JobEditForm() {
   return (
     <div class="space-y-5">
       {/* Basic Info */}
@@ -750,182 +737,179 @@ function JobEditForm({ isCreate: _isCreate = false }: { isCreate?: boolean }) {
   );
 }
 
-function JobDetailModal() {
-  const job = selectedJob.value;
-  if (!job) return null;
+function JobModal() {
+  const mode = modalMode.value;
+  if (!mode) return null;
 
-  const status = getStatusBadge(job);
+  const isEdit = mode === "edit";
+  const job = selectedJob.value;
+  const status = job ? getStatusBadge(job) : null;
 
   return (
     <Modal
-      open={!!job}
-      onClose={closeJobDetail}
-      title={job.name}
+      open={!!mode}
+      onClose={closeModal}
+      title={isEdit && job ? job.name : t("cron.createJob")}
       size="xl"
       footer={
         <div class="flex items-center justify-between">
+          {/* Delete (edit mode only) */}
           <div>
-            {isDeleting.value ? (
-              <div class="flex items-center gap-2">
-                <span class="text-sm text-[var(--color-error)]">{t("cron.confirmDelete")}</span>
-                <Button size="sm" variant="ghost" onClick={() => (isDeleting.value = false)}>
-                  {t("actions.cancel")}
-                </Button>
+            {isEdit &&
+              job &&
+              (isDeleting.value ? (
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-[var(--color-error)]">{t("cron.confirmDelete")}</span>
+                  <Button size="sm" variant="ghost" onClick={() => (isDeleting.value = false)}>
+                    {t("actions.cancel")}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="danger"
+                    icon={<Trash2 class="w-4 h-4" />}
+                    onClick={deleteJob}
+                  >
+                    {t("actions.delete")}
+                  </Button>
+                </div>
+              ) : (
                 <Button
                   size="sm"
-                  variant="danger"
+                  variant="ghost"
                   icon={<Trash2 class="w-4 h-4" />}
-                  onClick={deleteJob}
+                  onClick={() => (isDeleting.value = true)}
+                  class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
                 >
                   {t("actions.delete")}
                 </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="ghost"
-                icon={<Trash2 class="w-4 h-4" />}
-                onClick={() => (isDeleting.value = true)}
-                class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-              >
-                {t("actions.delete")}
-              </Button>
-            )}
+              ))}
           </div>
+          {/* Save / Create */}
           <div class="flex items-center gap-2">
-            <Button variant="secondary" onClick={closeJobDetail}>
+            <Button variant="secondary" onClick={closeModal}>
               {t("actions.cancel")}
             </Button>
-            <Button onClick={saveJob} disabled={isSaving.value}>
-              {isSaving.value ? <Spinner size="sm" /> : t("actions.save")}
+            <Button onClick={saveOrCreateJob} disabled={isSaving.value}>
+              {isSaving.value ? (
+                <Spinner size="sm" />
+              ) : isEdit ? (
+                t("actions.save")
+              ) : (
+                t("actions.create")
+              )}
             </Button>
           </div>
         </div>
       }
     >
       <div class="space-y-6">
-        {/* Status Summary */}
-        <div class="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-          <div
-            class={`p-3 rounded-xl ${job.enabled ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"}`}
-          >
-            <Clock
-              class={`w-6 h-6 ${job.enabled ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"}`}
-            />
-          </div>
-          <div class="flex-1">
-            <div class="flex items-center gap-2 mb-1">
-              <Badge variant={status.variant} size="sm">
-                {status.label}
-              </Badge>
-              <Badge variant={job.sessionTarget === "main" ? "success" : "default"} size="sm">
-                {job.sessionTarget}
-              </Badge>
+        {/* Status Summary (edit mode only) */}
+        {isEdit && job && status && (
+          <>
+            <div class="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+              <div
+                class={`p-3 rounded-xl ${job.enabled ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"}`}
+              >
+                <Clock
+                  class={`w-6 h-6 ${job.enabled ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"}`}
+                />
+              </div>
+              <div class="flex-1">
+                <div class="flex items-center gap-2 mb-1">
+                  <Badge variant={status.variant} size="sm">
+                    {status.label}
+                  </Badge>
+                  <Badge variant={job.sessionTarget === "main" ? "success" : "default"} size="sm">
+                    {job.sessionTarget}
+                  </Badge>
+                </div>
+                <div class="text-sm text-[var(--color-text-muted)]">
+                  {formatSchedule(job.schedule)}
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="secondary"
+                icon={<Play class="w-4 h-4" />}
+                onClick={() => runJobNow(job)}
+                disabled={isRunning.value}
+              >
+                {t("cron.runNow")}
+              </Button>
             </div>
-            <div class="text-sm text-[var(--color-text-muted)]">{formatSchedule(job.schedule)}</div>
-          </div>
-          <Button
-            size="sm"
-            variant="secondary"
-            icon={<Play class="w-4 h-4" />}
-            onClick={() => runJobNow(job)}
-            disabled={isRunning.value}
-          >
-            {t("cron.runNow")}
-          </Button>
-        </div>
 
-        {/* Stats */}
-        <div class="grid grid-cols-3 gap-4">
-          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-xl font-bold">{formatNextRun(job)}</div>
-            <div class="text-sm text-[var(--color-text-muted)]">{t("cron.nextRun")}</div>
-          </div>
-          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-xl font-bold">{formatLastRun(job)}</div>
-            <div class="text-sm text-[var(--color-text-muted)]">{t("cron.lastRun")}</div>
-          </div>
-          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-xl font-bold">
-              {job.state.lastDurationMs ? `${Math.round(job.state.lastDurationMs / 1000)}s` : "—"}
+            {/* Stats */}
+            <div class="grid grid-cols-3 gap-4">
+              <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+                <div class="text-xl font-bold">{formatNextRun(job)}</div>
+                <div class="text-sm text-[var(--color-text-muted)]">{t("cron.nextRun")}</div>
+              </div>
+              <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+                <div class="text-xl font-bold">{formatLastRun(job)}</div>
+                <div class="text-sm text-[var(--color-text-muted)]">{t("cron.lastRun")}</div>
+              </div>
+              <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+                <div class="text-xl font-bold">
+                  {job.state.lastDurationMs
+                    ? `${Math.round(job.state.lastDurationMs / 1000)}s`
+                    : "—"}
+                </div>
+                <div class="text-sm text-[var(--color-text-muted)]">{t("cron.lastDuration")}</div>
+              </div>
             </div>
-            <div class="text-sm text-[var(--color-text-muted)]">{t("cron.lastDuration")}</div>
-          </div>
-        </div>
+          </>
+        )}
 
         {/* Edit Form */}
         <JobEditForm />
 
-        {/* Recent Runs */}
-        <div>
-          <h4 class="text-sm font-medium mb-3">{t("cron.recentRuns")}</h4>
-          {isLoadingRuns.value ? (
-            <div class="flex justify-center py-4">
-              <Spinner size="sm" />
-            </div>
-          ) : selectedJobRuns.value.length === 0 ? (
-            <p class="text-sm text-[var(--color-text-muted)] text-center py-4">
-              {t("cron.noRuns")}
-            </p>
-          ) : (
-            <div class="space-y-2 max-h-48 overflow-y-auto">
-              {selectedJobRuns.value.map((run, i) => (
-                <div
-                  key={i}
-                  class="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-bg-secondary)] text-sm"
-                >
-                  {run.status === "ok" ? (
-                    <CheckCircle class="w-4 h-4 text-[var(--color-success)]" />
-                  ) : run.status === "error" ? (
-                    <XCircle class="w-4 h-4 text-[var(--color-error)]" />
-                  ) : (
-                    <AlertCircle class="w-4 h-4 text-[var(--color-warning)]" />
-                  )}
-                  <span class="flex-1">{formatTimestamp(run.runAtMs)}</span>
-                  {run.durationMs && (
-                    <span class="text-[var(--color-text-muted)]">
-                      {Math.round(run.durationMs / 1000)}s
-                    </span>
-                  )}
-                  {run.error && (
-                    <span
-                      class="text-[var(--color-error)] truncate max-w-[200px]"
-                      title={run.error}
-                    >
-                      {run.error}
-                    </span>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Recent Runs (edit mode only) */}
+        {isEdit && (
+          <div>
+            <h4 class="text-sm font-medium mb-3">{t("cron.recentRuns")}</h4>
+            {isLoadingRuns.value ? (
+              <div class="flex justify-center py-4">
+                <Spinner size="sm" />
+              </div>
+            ) : selectedJobRuns.value.length === 0 ? (
+              <p class="text-sm text-[var(--color-text-muted)] text-center py-4">
+                {t("cron.noRuns")}
+              </p>
+            ) : (
+              <div class="space-y-2 max-h-48 overflow-y-auto">
+                {selectedJobRuns.value.map((run, i) => (
+                  <div
+                    key={i}
+                    class="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-bg-secondary)] text-sm"
+                  >
+                    {run.status === "ok" ? (
+                      <CheckCircle class="w-4 h-4 text-[var(--color-success)]" />
+                    ) : run.status === "error" ? (
+                      <XCircle class="w-4 h-4 text-[var(--color-error)]" />
+                    ) : (
+                      <AlertCircle class="w-4 h-4 text-[var(--color-warning)]" />
+                    )}
+                    <span class="flex-1">{formatTimestamp(run.runAtMs)}</span>
+                    {run.durationMs && (
+                      <span class="text-[var(--color-text-muted)]">
+                        {Math.round(run.durationMs / 1000)}s
+                      </span>
+                    )}
+                    {run.error && (
+                      <span
+                        class="text-[var(--color-error)] truncate max-w-[200px]"
+                        title={run.error}
+                      >
+                        {run.error}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
-    </Modal>
-  );
-}
-
-function CreateJobModal() {
-  if (!showCreateModal.value) return null;
-
-  return (
-    <Modal
-      open={showCreateModal.value}
-      onClose={closeCreateModal}
-      title={t("cron.createJob")}
-      size="xl"
-      footer={
-        <div class="flex items-center justify-end gap-2">
-          <Button variant="secondary" onClick={closeCreateModal}>
-            {t("actions.cancel")}
-          </Button>
-          <Button onClick={createJob} disabled={isSaving.value}>
-            {isSaving.value ? <Spinner size="sm" /> : t("actions.create")}
-          </Button>
-        </div>
-      }
-    >
-      <JobEditForm isCreate />
     </Modal>
   );
 }
@@ -967,7 +951,7 @@ export function CronView(_props: RouteProps) {
             )}
             <Button
               icon={<Plus class="w-4 h-4" />}
-              onClick={openCreateModal}
+              onClick={() => openJobModal("create")}
               disabled={!isConnected.value}
             >
               {t("cron.createJob")}
@@ -1064,7 +1048,7 @@ export function CronView(_props: RouteProps) {
               <Clock class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
               <h3 class="text-lg font-medium mb-2">{t("cron.emptyTitle")}</h3>
               <p class="text-[var(--color-text-muted)] mb-4">{t("cron.emptyDescription")}</p>
-              <Button icon={<Plus class="w-4 h-4" />} onClick={openCreateModal}>
+              <Button icon={<Plus class="w-4 h-4" />} onClick={() => openJobModal("create")}>
                 {t("cron.createJob")}
               </Button>
             </div>
@@ -1109,8 +1093,7 @@ export function CronView(_props: RouteProps) {
       </div>
 
       {/* Modals */}
-      <JobDetailModal />
-      <CreateJobModal />
+      <JobModal />
     </div>
   );
 }
