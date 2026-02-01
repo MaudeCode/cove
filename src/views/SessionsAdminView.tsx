@@ -11,6 +11,7 @@ import { useEffect } from "preact/hooks";
 import { route } from "preact-router";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
+import { isMultiChatMode } from "@/signals/settings";
 import { getSessionDisplayKind, getErrorMessage, type SessionKind } from "@/lib/session-utils";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
@@ -456,16 +457,18 @@ function SessionRow({ session }: { session: Session }) {
       {/* Actions */}
       <td class="py-3 px-4">
         <div class="flex items-center gap-1">
-          <IconButton
-            icon={<MessageSquare class="w-4 h-4" />}
-            label={t("sessions.admin.openInChat")}
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              openInChat(session.key);
-            }}
-          />
+          {isMultiChatMode.value && (
+            <IconButton
+              icon={<MessageSquare class="w-4 h-4" />}
+              label={t("sessions.admin.openInChat")}
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                openInChat(session.key);
+              }}
+            />
+          )}
           <IconButton
             icon={<Trash2 class="w-4 h-4" />}
             label={t("actions.delete")}
@@ -633,18 +636,20 @@ function SessionDetailModal() {
           </div>
         </div>
 
-        {/* Open in Chat */}
-        <Button
-          variant="secondary"
-          fullWidth
-          icon={<MessageSquare class="w-4 h-4" />}
-          onClick={() => {
-            closeSessionDetail();
-            openInChat(session.key);
-          }}
-        >
-          {t("sessions.admin.openInChat")}
-        </Button>
+        {/* Open in Chat (multi-chat mode only) */}
+        {isMultiChatMode.value && (
+          <Button
+            variant="secondary"
+            fullWidth
+            icon={<MessageSquare class="w-4 h-4" />}
+            onClick={() => {
+              closeSessionDetail();
+              openInChat(session.key);
+            }}
+          >
+            {t("sessions.admin.openInChat")}
+          </Button>
+        )}
       </div>
     </Modal>
   );
