@@ -12,10 +12,14 @@ import { logout } from "@/lib/logout";
 import {
   fontSize,
   fontFamily,
+  timeFormat,
   FONT_SIZE_OPTIONS,
   FONT_FAMILY_OPTIONS,
+  TIME_FORMAT_OPTIONS,
+  resetToDefaults,
   type FontSize,
   type FontFamily,
+  type TimeFormat,
 } from "@/signals/settings";
 import { APP_VERSION } from "@/lib/constants";
 
@@ -74,6 +78,33 @@ function InfoRow({ label, value, truncate }: InfoRowProps) {
       <span class={`text-[var(--color-text-primary)] ${truncate ? "truncate max-w-[200px]" : ""}`}>
         {value}
       </span>
+    </div>
+  );
+}
+
+interface ShortcutRowProps {
+  keys: string[];
+  description: string;
+}
+
+/** A keyboard shortcut row */
+function ShortcutRow({ keys, description }: ShortcutRowProps) {
+  return (
+    <div class="flex items-center justify-between text-sm">
+      <span class="text-[var(--color-text-primary)]">{description}</span>
+      <div class="flex items-center gap-1">
+        {keys.map((key, i) => (
+          <>
+            {i > 0 && <span class="text-[var(--color-text-muted)]">+</span>}
+            <kbd
+              key={key}
+              class="px-2 py-0.5 text-xs rounded bg-[var(--color-bg-secondary)] border border-[var(--color-border)] font-mono"
+            >
+              {key}
+            </kbd>
+          </>
+        ))}
+      </div>
     </div>
   );
 }
@@ -143,6 +174,38 @@ export function SettingsView(_props: SettingsViewProps) {
           </div>
         </SettingsSection>
 
+        {/* Preferences Section */}
+        <SettingsSection titleKey="settings.preferences.title">
+          <div class="space-y-6">
+            <SettingRow
+              labelKey="settings.preferences.timeFormat"
+              descriptionKey="settings.preferences.timeFormatDescription"
+            >
+              <Dropdown
+                value={timeFormat.value}
+                onChange={(value) => {
+                  timeFormat.value = value as TimeFormat;
+                }}
+                options={TIME_FORMAT_OPTIONS.map((opt) => ({
+                  value: opt.value,
+                  label: t(opt.labelKey),
+                }))}
+                size="sm"
+              />
+            </SettingRow>
+          </div>
+        </SettingsSection>
+
+        {/* Keyboard Shortcuts Section */}
+        <SettingsSection titleKey="settings.shortcuts.title">
+          <div class="space-y-2">
+            <ShortcutRow keys={["Enter"]} description={t("settings.shortcuts.send")} />
+            <ShortcutRow keys={["Shift", "Enter"]} description={t("settings.shortcuts.newline")} />
+            <ShortcutRow keys={["⌘/Ctrl", "F"]} description={t("settings.shortcuts.search")} />
+            <ShortcutRow keys={["Esc"]} description={t("settings.shortcuts.closeSearch")} />
+          </div>
+        </SettingsSection>
+
         {/* About Section */}
         <SettingsSection titleKey="settings.about.title">
           <div class="space-y-3">
@@ -160,6 +223,18 @@ export function SettingsView(_props: SettingsViewProps) {
             {gatewayUrl.value && (
               <InfoRow label={t("settings.about.gatewayUrl")} value={gatewayUrl.value} truncate />
             )}
+          </div>
+        </SettingsSection>
+
+        {/* Reset to Defaults */}
+        <SettingsSection titleKey="settings.data.title">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-[var(--color-text-muted)]">
+              {t("settings.data.resetDefaultsDescription")}
+            </p>
+            <Button variant="secondary" onClick={() => resetToDefaults()}>
+              {t("settings.data.resetDefaults")}
+            </Button>
           </div>
         </SettingsSection>
 
