@@ -116,11 +116,9 @@ export function resetToDefaults(): void {
   newChatSettings.value = {
     useDefaults: true,
     defaultAgentId: "main",
-    defaultModel: null,
   };
   autoTitleSettings.value = {
     enabled: false,
     agentId: null,
-    model: null,
   };
 }
