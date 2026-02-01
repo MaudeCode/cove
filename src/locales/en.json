@@ -621,6 +621,8 @@
     "emptyTitle": "No Skills",
     "emptyDescription": "No skills are available in this workspace.",
     "noResults": "No Matching Skills",
+    "count": "{count} skill",
+    "count_plural": "{count} skills",
     "noResultsDescription": "Try adjusting your search or filters.",
     "clearFilters": "Clear Filters",
     "count": "{count} skill",
