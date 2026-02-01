@@ -87,6 +87,26 @@ async function loadInstances(): Promise<void> {
 // Components
 // ============================================
 
+function AccessBadges({ roles, scopes }: { roles?: string[]; scopes?: string[] }) {
+  const all = [...(roles ?? []), ...(scopes ?? [])];
+  if (all.length === 0) return <span class="text-[var(--color-text-muted)]">—</span>;
+
+  const MAX_SHOWN = 2;
+  const shown = all.slice(0, MAX_SHOWN);
+  const extra = all.length - shown.length;
+
+  return (
+    <div class="flex items-center gap-1" title={all.join(", ")}>
+      {shown.map((item) => (
+        <Badge key={item} variant="default" size="sm">
+          {item}
+        </Badge>
+      ))}
+      {extra > 0 && <span class="text-xs text-[var(--color-text-muted)]">+{extra}</span>}
+    </div>
+  );
+}
+
 function InstanceRow({ presence }: { presence: SystemPresence }) {
   const Icon = getDeviceIcon(presence);
   const isGateway = presence.mode === "gateway";
@@ -150,22 +170,7 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
 
       {/* Roles/Scopes */}
       <td class="py-3 px-4">
-        {presence.roles?.length || presence.scopes?.length ? (
-          <div class="flex flex-wrap gap-1">
-            {presence.roles?.map((role) => (
-              <Badge key={role} variant="default" size="sm">
-                {role}
-              </Badge>
-            ))}
-            {presence.scopes?.map((scope) => (
-              <Badge key={scope} variant="default" size="sm">
-                {scope}
-              </Badge>
-            ))}
-          </div>
-        ) : (
-          <span class="text-[var(--color-text-muted)]">—</span>
-        )}
+        <AccessBadges roles={presence.roles} scopes={presence.scopes} />
       </td>
     </tr>
   );
