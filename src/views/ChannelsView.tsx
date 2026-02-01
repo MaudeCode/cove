@@ -552,7 +552,7 @@ export function ChannelsView(_props: RouteProps) {
 
         {/* Channels Table */}
         {isConnected.value && !isLoading.value && channels.value.length > 0 && (
-          <Card padding="none">
+          <Card padding="none" class="overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full">
                 <thead>
