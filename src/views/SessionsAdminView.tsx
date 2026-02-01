@@ -619,6 +619,7 @@ function SessionDetailModal() {
               value={editLabel.value}
               onInput={(e) => (editLabel.value = (e.target as HTMLInputElement).value)}
               placeholder={t("sessions.admin.labelPlaceholder")}
+              fullWidth
             />
             <p class="text-xs text-[var(--color-text-muted)] mt-1.5">
               {t("sessions.admin.labelHelp")}

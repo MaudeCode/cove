@@ -161,14 +161,20 @@ export function Dropdown({
         />
       </button>
 
-      {/* Dropdown menu */}
-      {isOpen && (
+      {/* Dropdown menu - uses fixed positioning to escape overflow:hidden containers */}
+      {isOpen && triggerRef.current && (
         <div
           ref={menuRef}
           role="listbox"
           aria-label={ariaLabel}
+          style={{
+            position: "fixed",
+            top: `${triggerRef.current.getBoundingClientRect().bottom + 4}px`,
+            left: `${triggerRef.current.getBoundingClientRect().left}px`,
+            minWidth: `${triggerRef.current.offsetWidth}px`,
+          }}
           class={`
-            absolute top-full left-0 mt-1 z-50 min-w-full
+            z-[100]
             rounded-lg border border-[var(--color-border)]
             bg-[var(--color-bg-surface)] shadow-lg
             overflow-hidden
