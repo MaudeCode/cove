@@ -15,8 +15,6 @@ import {
   errorRun,
   abortRun as abortRunSignal,
   isCompacting,
-  startStaleRunCleanup,
-  stopStaleRunCleanup,
 } from "@/signals/chat";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatEvent, AgentEvent } from "@/types/chat";
@@ -35,9 +33,6 @@ export function subscribeToChatEvents(): () => void {
   }
 
   log.chat.info("Subscribing to chat events");
-
-  // Start stale run cleanup to handle edge cases (e.g., heartbeat responses)
-  startStaleRunCleanup();
 
   chatEventUnsubscribe = on("chat", (payload) => {
     handleChatEvent(payload as ChatEvent);
@@ -65,7 +60,6 @@ export function unsubscribeFromChatEvents(): void {
     chatEventUnsubscribe();
     chatEventUnsubscribe = null;
   }
-  stopStaleRunCleanup();
 }
 
 /**
