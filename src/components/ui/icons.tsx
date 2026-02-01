@@ -110,6 +110,10 @@ export function CheckIcon({ class: className }: IconProps) {
   return <Check class={className || "w-5 h-5"} aria-hidden="true" />;
 }
 
+// ============================================
+// Media & File Icons
+// ============================================
+
 export function ImageIcon({ class: className }: IconProps) {
   return <Image class={className || "w-5 h-5"} aria-hidden="true" />;
 }

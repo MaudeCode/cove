@@ -22,9 +22,10 @@ function generateAttachmentId(): string {
 }
 
 /**
- * Compress an image to fit within size limits
+ * Compress an image to fit within size limits.
+ * Exported for reuse in components that handle images outside the hook.
  */
-async function compressImage(file: File): Promise<{ content: string; size: number }> {
+export async function compressImage(file: File): Promise<{ content: string; size: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     const canvas = document.createElement("canvas");

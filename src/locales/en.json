@@ -222,6 +222,8 @@
     "images": "Images",
     "addImage": "Add Image",
     "noImages": "No images attached",
+    "imageCount": "{count} image",
+    "imageCount_plural": "{count} images",
     "streaming": "Generating response...",
     "copyCode": "Copy code",
     "viewRaw": "View raw",
