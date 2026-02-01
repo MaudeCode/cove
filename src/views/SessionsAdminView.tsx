@@ -9,7 +9,7 @@
 import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
-import { send } from "@/lib/gateway";
+import { send, isConnected } from "@/lib/gateway";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -288,9 +288,12 @@ function SessionCard({ session }: { session: Session }) {
 // ============================================
 
 export function SessionsAdminView(_props: RouteProps) {
+  // Load sessions when connected (or when connection is established)
   useEffect(() => {
-    loadAdminSessions();
-  }, []);
+    if (isConnected.value) {
+      loadAdminSessions();
+    }
+  }, [isConnected.value]);
 
   return (
     <div class="flex-1 overflow-y-auto p-6">
@@ -356,15 +359,15 @@ export function SessionsAdminView(_props: RouteProps) {
           </div>
         )}
 
-        {/* Loading */}
-        {isLoading.value && (
+        {/* Loading / Connecting */}
+        {(isLoading.value || !isConnected.value) && (
           <div class="flex justify-center py-12">
-            <Spinner size="lg" />
+            <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
           </div>
         )}
 
         {/* Session cards grid */}
-        {!isLoading.value && adminSessions.value.length > 0 && (
+        {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
           <>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {adminSessions.value.map((session) => (
@@ -378,14 +381,17 @@ export function SessionsAdminView(_props: RouteProps) {
         )}
 
         {/* Empty state */}
-        {!isLoading.value && adminSessions.value.length === 0 && !error.value && (
-          <Card>
-            <div class="p-12 text-center">
-              <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-              <p class="text-[var(--color-text-muted)]">{t("sessions.admin.empty")}</p>
-            </div>
-          </Card>
-        )}
+        {isConnected.value &&
+          !isLoading.value &&
+          adminSessions.value.length === 0 &&
+          !error.value && (
+            <Card>
+              <div class="p-12 text-center">
+                <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                <p class="text-[var(--color-text-muted)]">{t("sessions.admin.empty")}</p>
+              </div>
+            </Card>
+          )}
       </div>
     </div>
   );
