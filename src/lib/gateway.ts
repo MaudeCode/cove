@@ -378,7 +378,7 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
     client: {
       id: "webchat",
       displayName: "Cove",
-      version: "0.1.0",
+      version: __APP_VERSION__,
       platform: getBrowserPlatform(),
       mode: "webchat",
     },
