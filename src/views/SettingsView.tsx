@@ -6,8 +6,9 @@
 
 import type { ComponentChildren } from "preact";
 import { t } from "@/lib/i18n";
-import { Card, Dropdown, ThemePicker } from "@/components/ui";
-import { gatewayVersion, gatewayUrl } from "@/lib/gateway";
+import { Button, Card, Dropdown, ThemePicker } from "@/components/ui";
+import { gatewayVersion, gatewayUrl, isConnected } from "@/lib/gateway";
+import { logout } from "@/lib/logout";
 import {
   fontSize,
   fontFamily,
@@ -194,6 +195,22 @@ export function SettingsView(_props: SettingsViewProps) {
             />
           </div>
         </SettingsSection>
+
+        {/* Account Section */}
+        {isConnected.value && (
+          <SettingsSection titleKey="settings.account.title">
+            <div class="flex items-center justify-between">
+              <div>
+                <p class="text-sm text-[var(--color-text-primary)]">
+                  {t("settings.account.logoutDescription")}
+                </p>
+              </div>
+              <Button variant="secondary" onClick={() => logout()}>
+                {t("actions.logout")}
+              </Button>
+            </div>
+          </SettingsSection>
+        )}
       </div>
     </div>
   );
