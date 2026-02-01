@@ -849,12 +849,12 @@ export const navigation: NavSection[] = [
 
 ## Phase 3: Operations
 
-### 3.1 Overview Dashboard
-- [ ] Gateway connection panel (URL, token/password, connect/disconnect)
-- [ ] Gateway health (uptime, version, tick interval)
-- [ ] Quick stats (sessions count, cron next run, presence count)
-- [ ] Auth hints for connection failures
-- [ ] Secure context warnings (HTTP vs HTTPS)
+### 3.1 Overview Dashboard ✅
+- [x] Gateway connection panel (URL, token/password, connect/disconnect)
+- [x] Gateway health (uptime, version, tick interval)
+- [x] Quick stats (sessions count, cron next run, presence count)
+- [x] Auth hints for connection failures
+- [x] Secure context warnings (HTTP vs HTTPS)
 
 ### 3.2 Channels View ✅
 - [x] Table of all channels with status badges (connected, configured, disabled, error)
@@ -876,9 +876,12 @@ export const navigation: NavSection[] = [
 - [x] Stat cards (total, gateways, clients)
 - [x] Device icon detection (server, monitor, smartphone)
 
-### 3.4 Sessions View
-- [ ] List all sessions with filters (active minutes, limit)
-- [ ] Session metadata (model, channel, created, last active, tokens)
+### 3.4 Sessions Admin View ✅
+- [x] List all sessions with filters (active minutes, limit)
+- [x] Session metadata (model, channel, created, last active, tokens)
+- [x] Stat cards with filter shortcuts
+- [x] Search filter
+- [x] Session detail modal
 - [ ] Patch session (label, thinking level, verbose level, reasoning level)
 - [ ] Delete session
 - [ ] Include/exclude global sessions toggle
@@ -948,13 +951,16 @@ export const navigation: NavSection[] = [
 - [ ] Nav item linking to https://docs.openclaw.ai
 - [ ] Opens in new tab
 
-### 3.12 Server Stats
-- [ ] Gateway uptime history
-- [ ] Memory/CPU usage over time (if available from health API)
+### 3.12 Server Stats ✅
+- [x] Gateway info (host, version, config path, state dir)
+- [x] Gateway uptime (live counter)
+- [x] Token usage totals (input/output/cache)
+- [x] Cost tracking
+- [x] Daily usage chart (last 14 days)
+- [x] Period selector (7d/14d/30d/90d)
+- [x] Agent list with heartbeat status
+- [ ] Memory/CPU usage (requires gateway API addition)
 - [ ] Request rate / throughput
-- [ ] Message volume (messages sent/received per hour/day)
-- [ ] Token usage trends
-- [ ] Error rate / failed requests
 - [ ] Session activity heatmap
 - [ ] Cron job execution history
 - [ ] Channel message volume by channel type
