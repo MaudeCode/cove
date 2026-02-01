@@ -441,3 +441,10 @@ export function queueMessage(message: Message): void {
 export function dequeueMessage(messageId: string): void {
   messageQueue.value = messageQueue.value.filter((m) => m.id !== messageId);
 }
+
+/** Update a queued message's content */
+export function updateQueuedMessage(messageId: string, newContent: string): void {
+  messageQueue.value = messageQueue.value.map((m) =>
+    m.id === messageId ? { ...m, content: newContent } : m,
+  );
+}
