@@ -11,6 +11,7 @@ import { useEffect } from "preact/hooks";
 import { route } from "preact-router";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
+import { getSessionDisplayKind, getErrorMessage, type SessionKind } from "@/lib/session-utils";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -35,6 +36,32 @@ import {
 } from "lucide-preact";
 import type { Session } from "@/types/sessions";
 import type { RouteProps } from "@/types/routes";
+import type { ComponentType } from "preact";
+
+// ============================================
+// Kind Styling Config (single source of truth)
+// ============================================
+
+interface KindStyle {
+  icon: ComponentType<{ class?: string }>;
+  color: string; // CSS variable name without var()
+  badgeVariant: "default" | "success" | "warning" | "error" | "info";
+}
+
+const KIND_STYLES: Record<SessionKind, KindStyle> = {
+  main: { icon: Sparkles, color: "success", badgeVariant: "success" },
+  channel: { icon: Radio, color: "info", badgeVariant: "info" },
+  cron: { icon: Calendar, color: "warning", badgeVariant: "warning" },
+  isolated: { icon: Users, color: "text-muted", badgeVariant: "default" },
+};
+
+function getKindStyle(kind: SessionKind): KindStyle {
+  return KIND_STYLES[kind] ?? KIND_STYLES.isolated;
+}
+
+function getKindLabel(kind: SessionKind): string {
+  return t(`sessions.admin.kinds.${kind}`);
+}
 
 // ============================================
 // Local State
@@ -63,57 +90,8 @@ const editReasoning = signal<string>("inherit");
 // Helpers
 // ============================================
 
-function getSessionKind(session: Session): string {
-  if (session.key.includes(":cron:")) return "cron";
-  if (session.channel || session.kind === "channel") return "channel";
-  if (session.kind === "main" || session.key.includes(":main:main")) return "main";
-  return "isolated";
-}
-
-function getSessionKindLabel(kind: string): string {
-  switch (kind) {
-    case "main":
-      return t("sessions.admin.kinds.main");
-    case "channel":
-      return t("sessions.admin.kinds.channel");
-    case "cron":
-      return t("sessions.admin.kinds.cron");
-    case "isolated":
-      return t("sessions.admin.kinds.isolated");
-    default:
-      return kind;
-  }
-}
-
-function getSessionIcon(kind: string) {
-  switch (kind) {
-    case "main":
-      return Sparkles;
-    case "channel":
-      return Radio;
-    case "cron":
-      return Calendar;
-    default:
-      return MessageSquare;
-  }
-}
-
-function getKindBadgeVariant(kind: string): "default" | "success" | "warning" | "error" | "info" {
-  switch (kind) {
-    case "main":
-      return "success";
-    case "channel":
-      return "info";
-    case "cron":
-      return "warning";
-    default:
-      return "default";
-  }
-}
-
-function formatTokens(session: Session): string {
-  const used = session.totalTokens ?? 0;
-  return used.toLocaleString();
+function formatTokenCount(session: Session): string {
+  return (session.totalTokens ?? 0).toLocaleString();
 }
 
 function formatContextUsage(session: Session): string {
@@ -121,6 +99,10 @@ function formatContextUsage(session: Session): string {
   const total = session.contextTokens ?? 200000;
   if (total === 0) return "0%";
   return `${Math.round((used / total) * 100)}%`;
+}
+
+function getDisplayName(session: Session): string {
+  return session.label || session.displayName || session.key.split(":").pop() || session.key;
 }
 
 // ============================================
@@ -132,7 +114,7 @@ const filteredSessions = computed(() => {
 
   // Filter by kind
   if (kindFilter.value !== "all") {
-    result = result.filter((s) => getSessionKind(s) === kindFilter.value);
+    result = result.filter((s) => getSessionDisplayKind(s) === kindFilter.value);
   }
 
   // Filter by search
@@ -154,8 +136,8 @@ const filteredSessions = computed(() => {
 
   // Sort: main first, then by last active
   return [...result].sort((a, b) => {
-    const aIsMain = getSessionKind(a) === "main";
-    const bIsMain = getSessionKind(b) === "main";
+    const aIsMain = getSessionDisplayKind(a) === "main";
+    const bIsMain = getSessionDisplayKind(b) === "main";
     if (aIsMain && !bIsMain) return -1;
     if (bIsMain && !aIsMain) return 1;
     return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
@@ -166,10 +148,10 @@ const sessionCounts = computed(() => {
   const sessions = adminSessions.value;
   return {
     total: sessions.length,
-    main: sessions.filter((s) => getSessionKind(s) === "main").length,
-    channel: sessions.filter((s) => getSessionKind(s) === "channel").length,
-    cron: sessions.filter((s) => getSessionKind(s) === "cron").length,
-    isolated: sessions.filter((s) => getSessionKind(s) === "isolated").length,
+    main: sessions.filter((s) => getSessionDisplayKind(s) === "main").length,
+    channel: sessions.filter((s) => getSessionDisplayKind(s) === "channel").length,
+    cron: sessions.filter((s) => getSessionDisplayKind(s) === "cron").length,
+    isolated: sessions.filter((s) => getSessionDisplayKind(s) === "isolated").length,
   };
 });
 
@@ -182,12 +164,10 @@ async function loadAdminSessions(): Promise<void> {
   error.value = null;
 
   try {
-    const result = await send<{ sessions: Session[] }>("sessions.list", {
-      limit: 200,
-    });
+    const result = await send<{ sessions: Session[] }>("sessions.list", { limit: 200 });
     adminSessions.value = result.sessions ?? [];
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = getErrorMessage(err);
   } finally {
     isLoading.value = false;
   }
@@ -196,9 +176,9 @@ async function loadAdminSessions(): Promise<void> {
 function openSessionDetail(session: Session) {
   selectedSession.value = session;
   editLabel.value = session.label ?? "";
-  editThinking.value = ((session as Record<string, unknown>).thinking as string) ?? "inherit";
-  editVerbose.value = ((session as Record<string, unknown>).verbose as string) ?? "inherit";
-  editReasoning.value = ((session as Record<string, unknown>).reasoning as string) ?? "inherit";
+  editThinking.value = session.thinking ?? "inherit";
+  editVerbose.value = session.verbose ?? "inherit";
+  editReasoning.value = session.reasoning ?? "inherit";
 }
 
 function closeSessionDetail() {
@@ -213,25 +193,23 @@ async function saveSession(): Promise<void> {
   isSaving.value = true;
 
   try {
-    const updates: Record<string, unknown> = {};
+    const updates: Partial<Session> = {};
 
     if (editLabel.value !== (session.label ?? "")) {
       updates.label = editLabel.value || undefined;
     }
-    if (editThinking.value !== ((session as Record<string, unknown>).thinking ?? "inherit")) {
+    if (editThinking.value !== (session.thinking ?? "inherit")) {
       updates.thinking = editThinking.value;
     }
-    if (editVerbose.value !== ((session as Record<string, unknown>).verbose ?? "inherit")) {
+    if (editVerbose.value !== (session.verbose ?? "inherit")) {
       updates.verbose = editVerbose.value;
     }
-    if (editReasoning.value !== ((session as Record<string, unknown>).reasoning ?? "inherit")) {
+    if (editReasoning.value !== (session.reasoning ?? "inherit")) {
       updates.reasoning = editReasoning.value;
     }
 
     if (Object.keys(updates).length > 0) {
       await send("sessions.patch", { key: session.key, ...updates });
-
-      // Update local state
       adminSessions.value = adminSessions.value.map((s) =>
         s.key === session.key ? { ...s, ...updates } : s,
       );
@@ -239,7 +217,7 @@ async function saveSession(): Promise<void> {
 
     closeSessionDetail();
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = getErrorMessage(err);
   } finally {
     isSaving.value = false;
   }
@@ -254,7 +232,7 @@ async function deleteSession(): Promise<void> {
     adminSessions.value = adminSessions.value.filter((s) => s.key !== session.key);
     closeSessionDetail();
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = getErrorMessage(err);
   }
 }
 
@@ -286,7 +264,7 @@ async function saveInlineEdit() {
       s.key === sessionKey ? { ...s, label: newLabel || undefined } : s,
     );
   } catch (err) {
-    error.value = err instanceof Error ? err.message : String(err);
+    error.value = getErrorMessage(err);
   } finally {
     inlineEditKey.value = null;
   }
@@ -308,19 +286,50 @@ const LEVEL_OPTIONS = [
   { value: "high", label: t("sessions.admin.levels.high") },
 ];
 
+/** Icon with kind-appropriate coloring */
+function KindIcon({ kind, size = "sm" }: { kind: SessionKind; size?: "sm" | "md" }) {
+  const style = getKindStyle(kind);
+  const Icon = style.icon;
+  const sizeClass = size === "md" ? "w-6 h-6" : "w-4 h-4";
+  const colorClass =
+    style.color === "text-muted"
+      ? "text-[var(--color-text-muted)]"
+      : `text-[var(--color-${style.color})]`;
+
+  return <Icon class={`${sizeClass} ${colorClass}`} />;
+}
+
+/** Background wrapper for kind icon */
+function KindIconWrapper({ kind, size = "sm" }: { kind: SessionKind; size?: "sm" | "md" }) {
+  const style = getKindStyle(kind);
+  const padding = size === "md" ? "p-3" : "p-1.5";
+  const bgClass =
+    style.color === "text-muted"
+      ? "bg-[var(--color-bg-tertiary)]"
+      : `bg-[var(--color-${style.color})]/10`;
+
+  return (
+    <div class={`${padding} rounded-lg flex-shrink-0 ${bgClass}`}>
+      <KindIcon kind={kind} size={size} />
+    </div>
+  );
+}
+
 function StatCard({
-  icon: Icon,
+  kind,
   label,
   value,
   active,
   onClick,
 }: {
-  icon: typeof MessageSquare;
+  kind: SessionKind | "all";
   label: string;
   value: number;
   active?: boolean;
   onClick?: () => void;
 }) {
+  const Icon = kind === "all" ? MessageSquare : getKindStyle(kind as SessionKind).icon;
+
   return (
     <button
       type="button"
@@ -350,10 +359,8 @@ function StatCard({
 }
 
 function SessionRow({ session }: { session: Session }) {
-  const kind = getSessionKind(session);
-  const Icon = getSessionIcon(kind);
-  const displayName =
-    session.label || session.displayName || session.key.split(":").pop() || session.key;
+  const kind = getSessionDisplayKind(session);
+  const displayName = getDisplayName(session);
   const isEditing = inlineEditKey.value === session.key;
 
   return (
@@ -371,29 +378,7 @@ function SessionRow({ session }: { session: Session }) {
       {/* Name & Key */}
       <td class="py-3 px-4">
         <div class="flex items-center gap-3">
-          <div
-            class={`p-1.5 rounded-lg flex-shrink-0 ${
-              kind === "main"
-                ? "bg-[var(--color-success)]/10"
-                : kind === "channel"
-                  ? "bg-[var(--color-info)]/10"
-                  : kind === "cron"
-                    ? "bg-[var(--color-warning)]/10"
-                    : "bg-[var(--color-bg-tertiary)]"
-            }`}
-          >
-            <Icon
-              class={`w-4 h-4 ${
-                kind === "main"
-                  ? "text-[var(--color-success)]"
-                  : kind === "channel"
-                    ? "text-[var(--color-info)]"
-                    : kind === "cron"
-                      ? "text-[var(--color-warning)]"
-                      : "text-[var(--color-text-muted)]"
-              }`}
-            />
-          </div>
+          <KindIconWrapper kind={kind} />
           <div class="min-w-0 flex-1">
             {isEditing ? (
               <div
@@ -463,7 +448,7 @@ function SessionRow({ session }: { session: Session }) {
       <td class="py-3 px-4 whitespace-nowrap">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Hash class="w-3.5 h-3.5 flex-shrink-0" />
-          <span>{formatTokens(session)}</span>
+          <span>{formatTokenCount(session)}</span>
           <span class="text-xs opacity-60">({formatContextUsage(session)})</span>
         </div>
       </td>
@@ -503,7 +488,8 @@ function SessionDetailModal() {
   const session = selectedSession.value;
   if (!session) return null;
 
-  const kind = getSessionKind(session);
+  const kind = getSessionDisplayKind(session);
+  const style = getKindStyle(kind);
 
   return (
     <Modal
@@ -557,38 +543,11 @@ function SessionDetailModal() {
       <div class="space-y-6">
         {/* Session Info */}
         <div class="flex items-start gap-4 p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-          <div
-            class={`p-3 rounded-xl ${
-              kind === "main"
-                ? "bg-[var(--color-success)]/10"
-                : kind === "channel"
-                  ? "bg-[var(--color-info)]/10"
-                  : kind === "cron"
-                    ? "bg-[var(--color-warning)]/10"
-                    : "bg-[var(--color-bg-tertiary)]"
-            }`}
-          >
-            {(() => {
-              const Icon = getSessionIcon(kind);
-              return (
-                <Icon
-                  class={`w-6 h-6 ${
-                    kind === "main"
-                      ? "text-[var(--color-success)]"
-                      : kind === "channel"
-                        ? "text-[var(--color-info)]"
-                        : kind === "cron"
-                          ? "text-[var(--color-warning)]"
-                          : "text-[var(--color-text-muted)]"
-                  }`}
-                />
-              );
-            })()}
-          </div>
+          <KindIconWrapper kind={kind} size="md" />
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-2 mb-1">
-              <Badge variant={getKindBadgeVariant(kind)} size="sm">
-                {getSessionKindLabel(kind)}
+              <Badge variant={style.badgeVariant} size="sm">
+                {getKindLabel(kind)}
               </Badge>
               {session.channel && (
                 <Badge variant="default" size="sm">
@@ -603,7 +562,7 @@ function SessionDetailModal() {
         {/* Stats */}
         <div class="grid grid-cols-3 gap-4">
           <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-xl font-bold">{formatTokens(session)}</div>
+            <div class="text-xl font-bold">{formatTokenCount(session)}</div>
             <div class="text-sm text-[var(--color-text-muted)]">{t("sessions.admin.tokens")}</div>
           </div>
           <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
@@ -624,7 +583,6 @@ function SessionDetailModal() {
 
         {/* Edit Form */}
         <div class="space-y-5">
-          {/* Label - full width */}
           <div>
             <label class="block text-sm font-medium mb-2">{t("sessions.admin.label")}</label>
             <Input
@@ -638,7 +596,6 @@ function SessionDetailModal() {
             </p>
           </div>
 
-          {/* Level overrides */}
           <div>
             <label class="block text-sm font-medium mb-2">{t("sessions.admin.overrides")}</label>
             <div class="grid grid-cols-3 gap-4">
@@ -698,7 +655,6 @@ function SessionDetailModal() {
 // ============================================
 
 export function SessionsAdminView(_props: RouteProps) {
-  // Load sessions when connected
   useEffect(() => {
     if (isConnected.value) {
       loadAdminSessions();
@@ -717,7 +673,6 @@ export function SessionsAdminView(_props: RouteProps) {
             <p class="text-[var(--color-text-muted)] mt-1">{t("sessions.admin.description")}</p>
           </div>
           <div class="flex items-center gap-3">
-            {/* Search in header */}
             {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
               <div class="relative">
                 <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
@@ -744,35 +699,35 @@ export function SessionsAdminView(_props: RouteProps) {
         {isConnected.value && !isLoading.value && (
           <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
             <StatCard
-              icon={MessageSquare}
+              kind="all"
               label={t("sessions.admin.stats.total")}
               value={counts.total}
               active={kindFilter.value === "all"}
               onClick={() => (kindFilter.value = "all")}
             />
             <StatCard
-              icon={Sparkles}
+              kind="main"
               label={t("sessions.admin.kinds.main")}
               value={counts.main}
               active={kindFilter.value === "main"}
               onClick={() => (kindFilter.value = "main")}
             />
             <StatCard
-              icon={Radio}
+              kind="channel"
               label={t("sessions.admin.kinds.channel")}
               value={counts.channel}
               active={kindFilter.value === "channel"}
               onClick={() => (kindFilter.value = "channel")}
             />
             <StatCard
-              icon={Calendar}
+              kind="cron"
               label={t("sessions.admin.kinds.cron")}
               value={counts.cron}
               active={kindFilter.value === "cron"}
               onClick={() => (kindFilter.value = "cron")}
             />
             <StatCard
-              icon={Users}
+              kind="isolated"
               label={t("sessions.admin.kinds.isolated")}
               value={counts.isolated}
               active={kindFilter.value === "isolated"}
@@ -874,7 +829,6 @@ export function SessionsAdminView(_props: RouteProps) {
         )}
       </div>
 
-      {/* Detail Modal */}
       <SessionDetailModal />
     </div>
   );
