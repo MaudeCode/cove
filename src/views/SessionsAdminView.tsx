@@ -10,11 +10,24 @@ import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send } from "@/lib/gateway";
+import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Checkbox } from "@/components/ui/Checkbox";
+import { Badge } from "@/components/ui/Badge";
+import { Toggle } from "@/components/ui/Toggle";
 import { Spinner } from "@/components/ui/Spinner";
-import { RefreshCw } from "lucide-preact";
+import { Dropdown } from "@/components/ui/Dropdown";
+import {
+  RefreshCw,
+  Trash2,
+  MessageSquare,
+  Clock,
+  Cpu,
+  Hash,
+  Users,
+  Radio,
+  Calendar,
+} from "lucide-preact";
 import type { Session } from "@/types/sessions";
 import type { RouteProps } from "@/types/routes";
 
@@ -22,60 +35,49 @@ import type { RouteProps } from "@/types/routes";
 // Local State
 // ============================================
 
-/** Filter: active within N minutes (empty = no filter) */
 const activeMinutes = signal<string>("");
-
-/** Filter: limit number of results */
-const limit = signal<string>("120");
-
-/** Filter: include global sessions */
+const limit = signal<string>("100");
 const includeGlobal = signal<boolean>(true);
-
-/** Filter: include unknown sessions */
 const includeUnknown = signal<boolean>(false);
-
-/** Sessions list */
 const adminSessions = signal<Session[]>([]);
-
-/** Loading state */
 const isLoading = signal<boolean>(false);
-
-/** Error state */
 const error = signal<string | null>(null);
-
-/** Session being deleted (for confirmation) */
 const deletingKey = signal<string | null>(null);
 
 // ============================================
 // Helpers
 // ============================================
 
-/** Format token count as "used / total" */
 function formatTokens(session: Session): string {
   const used = session.totalTokens ?? 0;
   const total = session.contextTokens ?? 200000;
-  return `${used.toLocaleString()} / ${total.toLocaleString()}`;
+  const percent = total > 0 ? Math.round((used / total) * 100) : 0;
+  return `${used.toLocaleString()} / ${total.toLocaleString()} (${percent}%)`;
 }
 
-/** Get session kind display */
-function getKindDisplay(session: Session): string {
-  if (session.kind === "channel" || session.channel) return "channel";
-  if (session.kind === "group") return "group";
-  return "direct";
+function getSessionIcon(session: Session) {
+  if (session.key.includes(":cron:")) return Calendar;
+  if (session.channel === "discord" || session.key.includes("discord:")) return Users;
+  if (session.channel || session.kind === "channel") return Radio;
+  return MessageSquare;
 }
 
-/** Determine session key display style */
-function getKeyStyle(session: Session): string {
-  // Cron sessions in orange/warning
-  if (session.key.includes(":cron:")) {
-    return "text-[var(--color-warning)]";
-  }
-  // Channel sessions in accent
-  if (session.channel || session.key.includes("discord:") || session.key.includes("telegram:")) {
-    return "text-[var(--color-accent)]";
-  }
-  // Default
-  return "text-[var(--color-error)]";
+function getSessionBadgeVariant(
+  session: Session,
+): "default" | "success" | "warning" | "error" | "info" {
+  if (session.key.includes(":cron:")) return "warning";
+  if (session.channel || session.kind === "channel") return "info";
+  if (session.kind === "main") return "success";
+  return "default";
+}
+
+function getSessionKind(session: Session): string {
+  if (session.key.includes(":cron:")) return "Cron";
+  if (session.kind === "channel" || session.channel) return "Channel";
+  if (session.kind === "group") return "Group";
+  if (session.kind === "main") return "Main";
+  if (session.kind === "isolated") return "Isolated";
+  return "Direct";
 }
 
 // ============================================
@@ -88,15 +90,12 @@ async function loadAdminSessions(): Promise<void> {
 
   try {
     const params: Record<string, unknown> = {
-      limit: limit.value ? parseInt(limit.value, 10) : 120,
+      limit: limit.value ? parseInt(limit.value, 10) : 100,
     };
 
     if (activeMinutes.value) {
       params.activeMinutes = parseInt(activeMinutes.value, 10);
     }
-
-    // Note: includeGlobal and includeUnknown would need backend support
-    // For now we filter client-side or pass if API supports
 
     const result = await send<{ sessions: Session[] }>("sessions.list", params);
     adminSessions.value = result.sessions ?? [];
@@ -107,17 +106,9 @@ async function loadAdminSessions(): Promise<void> {
   }
 }
 
-async function patchSession(
-  sessionKey: string,
-  updates: { label?: string; thinking?: string; verbose?: string; reasoning?: string },
-): Promise<void> {
+async function patchSession(sessionKey: string, updates: Record<string, unknown>): Promise<void> {
   try {
-    await send("sessions.patch", {
-      key: sessionKey,
-      ...updates,
-    });
-
-    // Update local state
+    await send("sessions.patch", { key: sessionKey, ...updates });
     adminSessions.value = adminSessions.value.map((s) =>
       s.key === sessionKey ? { ...s, ...updates } : s,
     );
@@ -140,118 +131,155 @@ async function deleteSession(sessionKey: string): Promise<void> {
 // Components
 // ============================================
 
-/** Dropdown for level settings (thinking, verbose, reasoning) */
-function LevelDropdown({
-  value,
-  onChange,
-}: {
-  value: string | undefined;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <select
-      value={value ?? "inherit"}
-      onChange={(e) => onChange((e.target as HTMLSelectElement).value)}
-      class="px-2 py-1 text-xs rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] cursor-pointer"
-    >
-      <option value="inherit">inherit</option>
-      <option value="off">off</option>
-      <option value="low">low</option>
-      <option value="medium">medium</option>
-      <option value="high">high</option>
-    </select>
-  );
-}
+const LEVEL_OPTIONS = [
+  { value: "inherit", label: "Inherit" },
+  { value: "off", label: "Off" },
+  { value: "low", label: "Low" },
+  { value: "medium", label: "Medium" },
+  { value: "high", label: "High" },
+];
 
-/** Session row component */
-function SessionRow({ session }: { session: Session }) {
+function SessionCard({ session }: { session: Session }) {
+  const Icon = getSessionIcon(session);
   const isDeleting = deletingKey.value === session.key;
+  const displayName = session.label || session.displayName || session.key;
 
   return (
-    <tr class="border-b border-[var(--color-border)] hover:bg-[var(--color-bg-hover)]">
-      {/* Key */}
-      <td class="py-3 px-2">
-        <span class={`text-sm font-mono break-all ${getKeyStyle(session)}`}>
-          {session.displayName || session.label || session.key}
-        </span>
-      </td>
-
-      {/* Label (editable) */}
-      <td class="py-3 px-2">
-        <input
-          type="text"
-          value={session.label ?? ""}
-          placeholder={t("sessions.admin.labelPlaceholder")}
-          onBlur={(e) => {
-            const newLabel = (e.target as HTMLInputElement).value;
-            if (newLabel !== (session.label ?? "")) {
-              patchSession(session.key, { label: newLabel || undefined });
-            }
-          }}
-          class="w-full px-2 py-1 text-sm rounded border border-[var(--color-border)] bg-[var(--color-bg-secondary)] placeholder:text-[var(--color-text-muted)]"
-        />
-      </td>
-
-      {/* Kind */}
-      <td class="py-3 px-2 text-sm text-[var(--color-text-muted)]">{getKindDisplay(session)}</td>
-
-      {/* Updated */}
-      <td class="py-3 px-2 text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-        {session.updatedAt ? formatTimestamp(session.updatedAt) : "—"}
-      </td>
-
-      {/* Tokens */}
-      <td class="py-3 px-2 text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-        {formatTokens(session)}
-      </td>
-
-      {/* Thinking */}
-      <td class="py-3 px-2">
-        <LevelDropdown
-          value={(session as Record<string, unknown>).thinking as string | undefined}
-          onChange={(val) => patchSession(session.key, { thinking: val })}
-        />
-      </td>
-
-      {/* Verbose */}
-      <td class="py-3 px-2">
-        <LevelDropdown
-          value={(session as Record<string, unknown>).verbose as string | undefined}
-          onChange={(val) => patchSession(session.key, { verbose: val })}
-        />
-      </td>
-
-      {/* Reasoning */}
-      <td class="py-3 px-2">
-        <LevelDropdown
-          value={(session as Record<string, unknown>).reasoning as string | undefined}
-          onChange={(val) => patchSession(session.key, { reasoning: val })}
-        />
-      </td>
-
-      {/* Actions */}
-      <td class="py-3 px-2">
-        {isDeleting ? (
-          <div class="flex items-center gap-2">
-            <Button size="sm" variant="danger" onClick={() => deleteSession(session.key)}>
-              {t("actions.confirm")}
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => (deletingKey.value = null)}>
-              {t("actions.cancel")}
-            </Button>
+    <Card class="overflow-hidden">
+      <div class="p-4">
+        {/* Header */}
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <div
+              class={`p-2 rounded-lg flex-shrink-0 ${
+                session.key.includes(":cron:")
+                  ? "bg-[var(--color-warning)]/10"
+                  : session.channel
+                    ? "bg-[var(--color-info)]/10"
+                    : "bg-[var(--color-accent)]/10"
+              }`}
+            >
+              <Icon
+                class={`w-5 h-5 ${
+                  session.key.includes(":cron:")
+                    ? "text-[var(--color-warning)]"
+                    : session.channel
+                      ? "text-[var(--color-info)]"
+                      : "text-[var(--color-accent)]"
+                }`}
+              />
+            </div>
+            <div class="min-w-0">
+              <h3 class="font-medium truncate" title={displayName}>
+                {displayName}
+              </h3>
+              <p
+                class="text-xs text-[var(--color-text-muted)] font-mono truncate"
+                title={session.key}
+              >
+                {session.key}
+              </p>
+            </div>
           </div>
-        ) : (
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => (deletingKey.value = session.key)}
-            class="opacity-70 hover:opacity-100"
-          >
-            {t("actions.delete")}
-          </Button>
-        )}
-      </td>
-    </tr>
+          <Badge variant={getSessionBadgeVariant(session)} size="sm">
+            {getSessionKind(session)}
+          </Badge>
+        </div>
+
+        {/* Label input */}
+        <div class="mb-4">
+          <label class="text-xs text-[var(--color-text-muted)] mb-1 block">
+            {t("sessions.admin.label")}
+          </label>
+          <Input
+            value={session.label ?? ""}
+            placeholder={t("sessions.admin.labelPlaceholder")}
+            onBlur={(e) => {
+              const newLabel = (e.target as HTMLInputElement).value;
+              if (newLabel !== (session.label ?? "")) {
+                patchSession(session.key, { label: newLabel || undefined });
+              }
+            }}
+          />
+        </div>
+
+        {/* Stats row */}
+        <div class="flex flex-wrap gap-4 text-sm text-[var(--color-text-muted)] mb-4">
+          <div class="flex items-center gap-1.5">
+            <Clock class="w-4 h-4" />
+            <span>{session.updatedAt ? formatTimestamp(session.updatedAt) : "—"}</span>
+          </div>
+          <div class="flex items-center gap-1.5">
+            <Hash class="w-4 h-4" />
+            <span>{formatTokens(session)}</span>
+          </div>
+          {session.model && (
+            <div class="flex items-center gap-1.5">
+              <Cpu class="w-4 h-4" />
+              <span class="truncate max-w-[150px]">{session.model}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Level dropdowns */}
+        <div class="grid grid-cols-3 gap-3 mb-4">
+          <div>
+            <label class="text-xs text-[var(--color-text-muted)] mb-1 block">
+              {t("sessions.admin.thinking")}
+            </label>
+            <Dropdown
+              value={((session as Record<string, unknown>).thinking as string) ?? "inherit"}
+              onChange={(val) => patchSession(session.key, { thinking: val })}
+              options={LEVEL_OPTIONS}
+            />
+          </div>
+          <div>
+            <label class="text-xs text-[var(--color-text-muted)] mb-1 block">
+              {t("sessions.admin.verbose")}
+            </label>
+            <Dropdown
+              value={((session as Record<string, unknown>).verbose as string) ?? "inherit"}
+              onChange={(val) => patchSession(session.key, { verbose: val })}
+              options={LEVEL_OPTIONS}
+            />
+          </div>
+          <div>
+            <label class="text-xs text-[var(--color-text-muted)] mb-1 block">
+              {t("sessions.admin.reasoning")}
+            </label>
+            <Dropdown
+              value={((session as Record<string, unknown>).reasoning as string) ?? "inherit"}
+              onChange={(val) => patchSession(session.key, { reasoning: val })}
+              options={LEVEL_OPTIONS}
+            />
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div class="flex justify-end gap-2 pt-3 border-t border-[var(--color-border)]">
+          {isDeleting ? (
+            <>
+              <Button size="sm" variant="ghost" onClick={() => (deletingKey.value = null)}>
+                {t("actions.cancel")}
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => deleteSession(session.key)}>
+                {t("actions.confirm")}
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => (deletingKey.value = session.key)}
+              class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+            >
+              <Trash2 class="w-4 h-4 mr-1.5" />
+              {t("actions.delete")}
+            </Button>
+          )}
+        </div>
+      </div>
+    </Card>
   );
 }
 
@@ -260,7 +288,6 @@ function SessionRow({ session }: { session: Session }) {
 // ============================================
 
 export function SessionsAdminView(_props: RouteProps) {
-  // Load sessions on mount
   useEffect(() => {
     loadAdminSessions();
   }, []);
@@ -281,44 +308,46 @@ export function SessionsAdminView(_props: RouteProps) {
         </div>
 
         {/* Filters */}
-        <div class="flex flex-wrap items-end gap-4 p-4 rounded-xl bg-[var(--color-bg-secondary)]">
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-[var(--color-text-muted)]">
-              {t("sessions.admin.activeWithin")}
-            </label>
-            <Input
-              type="number"
-              value={activeMinutes.value}
-              onInput={(e) => (activeMinutes.value = (e.target as HTMLInputElement).value)}
-              placeholder={t("sessions.admin.minutes")}
-              class="w-32"
-            />
+        <Card>
+          <div class="p-4">
+            <div class="flex flex-wrap items-end gap-6">
+              <div class="flex-1 min-w-[150px] max-w-[200px]">
+                <label class="text-sm text-[var(--color-text-muted)] mb-1.5 block">
+                  {t("sessions.admin.activeWithin")}
+                </label>
+                <Input
+                  type="number"
+                  value={activeMinutes.value}
+                  onInput={(e) => (activeMinutes.value = (e.target as HTMLInputElement).value)}
+                  placeholder={t("sessions.admin.minutes")}
+                />
+              </div>
+
+              <div class="w-24">
+                <label class="text-sm text-[var(--color-text-muted)] mb-1.5 block">
+                  {t("sessions.admin.limit")}
+                </label>
+                <Input
+                  type="number"
+                  value={limit.value}
+                  onInput={(e) => (limit.value = (e.target as HTMLInputElement).value)}
+                />
+              </div>
+
+              <Toggle
+                checked={includeGlobal.value}
+                onChange={(checked) => (includeGlobal.value = checked)}
+                label={t("sessions.admin.includeGlobal")}
+              />
+
+              <Toggle
+                checked={includeUnknown.value}
+                onChange={(checked) => (includeUnknown.value = checked)}
+                label={t("sessions.admin.includeUnknown")}
+              />
+            </div>
           </div>
-
-          <div class="flex flex-col gap-1">
-            <label class="text-xs text-[var(--color-text-muted)]">
-              {t("sessions.admin.limit")}
-            </label>
-            <Input
-              type="number"
-              value={limit.value}
-              onInput={(e) => (limit.value = (e.target as HTMLInputElement).value)}
-              class="w-24"
-            />
-          </div>
-
-          <Checkbox
-            checked={includeGlobal.value}
-            onChange={(checked) => (includeGlobal.value = checked)}
-            label={t("sessions.admin.includeGlobal")}
-          />
-
-          <Checkbox
-            checked={includeUnknown.value}
-            onChange={(checked) => (includeUnknown.value = checked)}
-            label={t("sessions.admin.includeUnknown")}
-          />
-        </div>
+        </Card>
 
         {/* Error */}
         {error.value && (
@@ -329,49 +358,33 @@ export function SessionsAdminView(_props: RouteProps) {
 
         {/* Loading */}
         {isLoading.value && (
-          <div class="flex justify-center py-8">
+          <div class="flex justify-center py-12">
             <Spinner size="lg" />
           </div>
         )}
 
-        {/* Sessions table */}
+        {/* Session cards grid */}
         {!isLoading.value && adminSessions.value.length > 0 && (
-          <div class="overflow-x-auto rounded-xl border border-[var(--color-border)]">
-            <table class="w-full">
-              <thead class="bg-[var(--color-bg-secondary)]">
-                <tr class="text-left text-xs text-[var(--color-text-muted)] uppercase tracking-wider">
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.key")}</th>
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.label")}</th>
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.kind")}</th>
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.updated")}</th>
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.tokens")}</th>
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.thinking")}</th>
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.verbose")}</th>
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.reasoning")}</th>
-                  <th class="py-3 px-2 font-medium">{t("sessions.admin.actions")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {adminSessions.value.map((session) => (
-                  <SessionRow key={session.key} session={session} />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {adminSessions.value.map((session) => (
+                <SessionCard key={session.key} session={session} />
+              ))}
+            </div>
+            <p class="text-sm text-[var(--color-text-muted)] text-center">
+              {t("sessions.admin.count", { count: adminSessions.value.length })}
+            </p>
+          </>
         )}
 
         {/* Empty state */}
         {!isLoading.value && adminSessions.value.length === 0 && !error.value && (
-          <div class="text-center py-12 text-[var(--color-text-muted)]">
-            {t("sessions.admin.empty")}
-          </div>
-        )}
-
-        {/* Session count */}
-        {!isLoading.value && adminSessions.value.length > 0 && (
-          <p class="text-sm text-[var(--color-text-muted)]">
-            {t("sessions.admin.count", { count: adminSessions.value.length })}
-          </p>
+          <Card>
+            <div class="p-12 text-center">
+              <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+              <p class="text-[var(--color-text-muted)]">{t("sessions.admin.empty")}</p>
+            </div>
+          </Card>
         )}
       </div>
     </div>
