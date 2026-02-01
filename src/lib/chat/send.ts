@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Chat Send
  *
@@ -227,11 +226,4 @@ export async function processMessageQueue(): Promise<void> {
  */
 export async function abortChat(sessionKey: string): Promise<void> {
   await send("chat.abort", { sessionKey });
-}
-
-/**
- * Abort a specific run.
- */
-async function abortRun(sessionKey: string, runId: string): Promise<void> {
-  await send("chat.abort", { sessionKey, runId });
 }

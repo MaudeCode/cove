@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * UI Signals
  *
@@ -8,13 +7,6 @@
  */
 
 import { signal, effect } from "@preact/signals";
-
-interface Toast {
-  id: string;
-  message: string;
-  type: "success" | "error" | "warning" | "info";
-  duration?: number;
-}
 
 // ============================================
 // Sidebar
