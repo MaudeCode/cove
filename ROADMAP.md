@@ -831,19 +831,19 @@ export const navigation: NavSection[] = [
 **Actions:**
 - [x] Reset to defaults button
 
-### 2.5 Onboarding
+### 2.5 Onboarding ✅
 
-> First-time user experience. (Could defer to Phase 4 polish.)
+> First-time user experience.
 
-- [ ] First-run detection (no saved gateway URL)
-- [ ] Welcome modal with quick overview
-- [ ] Connection setup wizard
-  - [ ] Gateway URL input with validation
-  - [ ] Auth method selection (password vs token)
-  - [ ] Test connection before saving
-  - [ ] Error messages with troubleshooting hints
-- [ ] Skip option for returning users / manual setup
-- [ ] Connection troubleshooting guide (common errors, fixes)
+- [x] First-run detection (no saved gateway URL)
+- [x] Welcome modal with quick overview
+- [x] Connection setup wizard
+  - [x] Gateway URL input with validation
+  - [x] Auth method selection (password vs token)
+  - [x] Test connection before saving
+  - [x] Error messages with troubleshooting hints
+- [x] Skip option for returning users / manual setup
+- [x] Connection troubleshooting guide (common errors, fixes)
 
 ---
 
