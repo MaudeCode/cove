@@ -52,8 +52,7 @@
       "src/locales/index.ts"
     ],
     "ignore": [
-      "src/signals/agents.ts",
-      "src/types/agents.ts"
+      "src/signals/agents.ts"
     ]
   }
 }
