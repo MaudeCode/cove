@@ -5,7 +5,7 @@
  * Guides through gateway connection setup.
  */
 
-import { useSignal, useComputed } from "@preact/signals";
+import { useSignal, useComputed, useSignalEffect } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError, disconnect, probeGateway } from "@/lib/gateway";
@@ -61,6 +61,44 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
     } catch {
       return false;
     }
+  });
+
+  // Auto-probe gateway when URL is valid (debounced)
+  useSignalEffect(() => {
+    const currentUrl = url.value;
+
+    // Reset states when URL changes
+    probeSuccess.value = false;
+
+    // Only probe if URL format is valid
+    if (!canProceedFromUrl.value) {
+      return;
+    }
+
+    // Debounce: wait 600ms after typing stops
+    const timeoutId = setTimeout(async () => {
+      // Don't probe if already probing or URL changed
+      if (probing.peek() || url.peek() !== currentUrl) return;
+
+      probing.value = true;
+      urlError.value = null;
+
+      const result = await probeGateway(currentUrl);
+
+      // Only update if URL hasn't changed during probe
+      if (url.peek() === currentUrl) {
+        probing.value = false;
+        if (result.ok) {
+          probeSuccess.value = true;
+          urlError.value = null;
+        } else {
+          probeSuccess.value = false;
+          urlError.value = result.error || t("onboarding.probeError");
+        }
+      }
+    }, 600);
+
+    return () => clearTimeout(timeoutId);
   });
 
   const validateUrl = () => {
@@ -142,8 +180,16 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const handleProbeAndProceed = async () => {
     if (!validateUrl()) return;
 
+    // If already validated, proceed immediately
+    if (probeSuccess.value) {
+      step.value = "auth";
+      return;
+    }
+
+    // If currently probing, wait for it
+    if (probing.value) return;
+
     probing.value = true;
-    probeSuccess.value = false;
     urlError.value = null;
 
     const result = await probeGateway(url.value);
