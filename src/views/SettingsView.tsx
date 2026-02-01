@@ -17,7 +17,7 @@ import {
   type FontSize,
   type FontFamily,
 } from "@/signals/settings";
-import { APP_VERSION, EXTERNAL_URLS } from "@/lib/constants";
+import { APP_VERSION } from "@/lib/constants";
 
 // ============================================
 // Helper Components (view-local)
@@ -75,26 +75,6 @@ function InfoRow({ label, value, truncate }: InfoRowProps) {
         {value}
       </span>
     </div>
-  );
-}
-
-interface ExternalLinkProps {
-  href: string;
-  emoji: string;
-  labelKey: string;
-}
-
-/** An external link with icon */
-function ExternalLink({ href, emoji, labelKey }: ExternalLinkProps) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="block text-sm text-[var(--color-accent)] hover:underline"
-    >
-      {emoji} {t(labelKey)}
-    </a>
   );
 }
 
@@ -180,19 +160,6 @@ export function SettingsView(_props: SettingsViewProps) {
             {gatewayUrl.value && (
               <InfoRow label={t("settings.about.gatewayUrl")} value={gatewayUrl.value} truncate />
             )}
-          </div>
-        </SettingsSection>
-
-        {/* Links Section */}
-        <SettingsSection titleKey="settings.links.title">
-          <div class="space-y-2">
-            <ExternalLink href={EXTERNAL_URLS.docs} emoji="📚" labelKey="settings.links.docs" />
-            <ExternalLink href={EXTERNAL_URLS.github} emoji="🐙" labelKey="settings.links.github" />
-            <ExternalLink
-              href={EXTERNAL_URLS.discord}
-              emoji="💬"
-              labelKey="settings.links.discord"
-            />
           </div>
         </SettingsSection>
 

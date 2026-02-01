@@ -19,7 +19,10 @@ import {
   FileText,
   BookOpen,
   Palette,
+  Github,
+  MessageCircle,
 } from "lucide-preact";
+import { EXTERNAL_URLS } from "@/lib/constants";
 
 // ============================================
 // Types
@@ -62,6 +65,8 @@ const ConfigIcon = () => <Settings class={iconClass} aria-hidden="true" />;
 const DebugIcon = () => <SlidersHorizontal class={iconClass} aria-hidden="true" />;
 const LogsIcon = () => <FileText class={iconClass} aria-hidden="true" />;
 const DocsIcon = () => <BookOpen class={iconClass} aria-hidden="true" />;
+const GitHubIcon = () => <Github class={iconClass} aria-hidden="true" />;
+const DiscordIcon = () => <MessageCircle class={iconClass} aria-hidden="true" />;
 const SettingsIcon = () => <Palette class={iconClass} aria-hidden="true" />;
 
 // ============================================
@@ -156,7 +161,19 @@ export const navigation: NavSection[] = [
         id: "docs",
         labelKey: "nav.docs",
         icon: DocsIcon,
-        external: "https://docs.openclaw.ai",
+        external: EXTERNAL_URLS.docs,
+      },
+      {
+        id: "github",
+        labelKey: "nav.github",
+        icon: GitHubIcon,
+        external: EXTERNAL_URLS.github,
+      },
+      {
+        id: "discord",
+        labelKey: "nav.discord",
+        icon: DiscordIcon,
+        external: EXTERNAL_URLS.discord,
       },
     ],
   },
