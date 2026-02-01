@@ -19,6 +19,7 @@ import {
   markMessageSent,
   isStreaming,
 } from "@/signals/chat";
+import { autoRenameSession, isUserCreatedChat } from "./auto-rename";
 import type { Message, MessageImage } from "@/types/messages";
 import type { ChatSendResult } from "@/types/chat";
 import type { AttachmentPayload } from "@/types/attachments";
@@ -121,6 +122,19 @@ export async function sendMessage(
     }
 
     markMessageSent(messageId);
+
+    // Auto-rename on first message in user-created chats
+    if (!isRetry && isUserCreatedChat(sessionKey)) {
+      const userMessages = messages.value.filter(
+        (m) => m.role === "user" && m.sessionKey === sessionKey,
+      );
+      // If this is the only user message, it's the first one - rename the session
+      if (userMessages.length === 1) {
+        // Fire and forget - don't block on rename
+        autoRenameSession(sessionKey, message).catch(() => {});
+      }
+    }
+
     return idempotencyKey;
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
