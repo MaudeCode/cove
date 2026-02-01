@@ -6,11 +6,17 @@
  */
 
 import type { Message } from "@/types/messages";
-import { isCompactionSummary, isNoReply, isHeartbeatMessage } from "./message-detection";
+import {
+  isCompactionSummary,
+  isNoReply,
+  isHeartbeatMessage,
+  isCronSummary,
+} from "./message-detection";
 
 export type MessageGroup =
   | { type: "message"; message: Message }
-  | { type: "compaction"; messages: Message[] };
+  | { type: "compaction"; messages: Message[] }
+  | { type: "cron"; message: Message };
 
 /**
  * Group messages, filtering out heartbeats and marking compaction summaries.
@@ -31,6 +37,8 @@ export function groupMessages(messages: Message[]): MessageGroup[] {
 
     if (isCompactionSummary(msg)) {
       groups.push({ type: "compaction", messages: [msg] });
+    } else if (isCronSummary(msg)) {
+      groups.push({ type: "cron", message: msg });
     } else {
       groups.push({ type: "message", message: msg });
     }
