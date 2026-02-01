@@ -540,6 +540,54 @@
     }
   },
 
+  "channels": {
+    "title": "Channels",
+    "description": "Messaging platform integrations and status.",
+    "emptyTitle": "No Channels",
+    "emptyDescription": "No channel plugins are available.",
+    "learnMore": "Learn how to set up channels",
+    "count": "{count} channel",
+    "count_plural": "{count} channels",
+    "probe": "Health Check",
+    "probing": "Checking...",
+    "probeOk": "Healthy",
+    "probeFailed": "Unhealthy",
+    "logout": "Logout",
+    "logoutTitle": "Logout from Channel",
+    "logoutConfirm": "Are you sure you want to log out of {channel}?",
+    "logoutWarning": "You may need to re-authenticate (QR code, token, etc.) to reconnect.",
+    "logoutSuccess": "Logged out of {channel}",
+    "viewDocs": "View documentation",
+    "stats": {
+      "total": "Total",
+      "connected": "Connected",
+      "configured": "Configured",
+      "errors": "Errors"
+    },
+    "status": {
+      "connected": "Connected",
+      "configured": "Configured",
+      "notConfigured": "Not Configured",
+      "disabled": "Disabled",
+      "error": "Error"
+    },
+    "account": {
+      "enabled": "enabled",
+      "disabled": "disabled",
+      "configured": "configured",
+      "linked": "linked",
+      "running": "running",
+      "connected": "connected",
+      "disconnected": "disconnected"
+    },
+    "columns": {
+      "channel": "Channel",
+      "accounts": "Accounts",
+      "status": "Status",
+      "lastActivity": "Last Activity"
+    }
+  },
+
   "instances": {
     "title": "Instances",
     "description": "Connected clients and services.",

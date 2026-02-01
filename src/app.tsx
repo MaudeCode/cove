@@ -30,14 +30,8 @@ import { StatusView as OverviewView } from "@/views/StatusView";
 import { CronView } from "@/views/CronView";
 import { ConfigView } from "@/views/ConfigView";
 import { SettingsView } from "@/views/SettingsView";
-import {
-  ChannelsView,
-  SkillsView,
-  NodesView,
-  DebugView,
-  LogsView,
-  StatsView,
-} from "@/views/PlaceholderView";
+import { SkillsView, NodesView, DebugView, LogsView, StatsView } from "@/views/PlaceholderView";
+import { ChannelsView } from "@/views/ChannelsView";
 import { InstancesView } from "@/views/InstancesView";
 import { SessionsAdminView } from "@/views/SessionsAdminView";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
