@@ -551,7 +551,7 @@ export function SkillsView(_props: RouteProps) {
 
             {/* Filters */}
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div class="flex-1">
+              <div class="flex-1 flex items-center gap-3">
                 <Input
                   type="text"
                   placeholder={t("skills.searchPlaceholder")}
@@ -560,7 +560,14 @@ export function SkillsView(_props: RouteProps) {
                     searchQuery.value = (e.target as HTMLInputElement).value;
                   }}
                   leftElement={<Search class="w-4 h-4" />}
+                  class="flex-1"
                 />
+                {/* Results count - next to search box */}
+                <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
+                  {filtered.length !== s.total
+                    ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
+                    : t("skills.count", { count: s.total })}
+                </span>
               </div>
               <select
                 class="px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-sm"
@@ -574,12 +581,6 @@ export function SkillsView(_props: RouteProps) {
                 <option value="managed">{t("skills.source.managed")}</option>
                 <option value="workspace">{t("skills.source.workspace")}</option>
               </select>
-              {/* Results count - fixed width to prevent reflow */}
-              <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap min-w-[140px] text-right">
-                {filtered.length !== s.total
-                  ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
-                  : t("skills.count", { count: s.total })}
-              </span>
             </div>
 
             {/* Skills list */}
