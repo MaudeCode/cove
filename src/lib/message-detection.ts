@@ -20,6 +20,9 @@ const HEARTBEAT_RESPONSE = /^\s*heartbeat_ok\s*$/i;
  * Also catches truncated versions like "NO_" from streaming race conditions */
 const NO_REPLY_PATTERN = /^\s*no_(?:reply|repl|rep|re|r|_?)?\s*$/i;
 
+/** Cron summary prefix pattern (isolated cron jobs post summaries with this prefix) */
+const CRON_PREFIX_PATTERN = /^\s*\[cron\]/i;
+
 /**
  * Check if a message is a heartbeat prompt
  */
@@ -43,6 +46,22 @@ export function isHeartbeatResponse(message: Message): boolean {
 export function isNoReply(message: Message): boolean {
   if (message.role !== "assistant") return false;
   return NO_REPLY_PATTERN.test(message.content);
+}
+
+/**
+ * Check if raw content looks like a NO_REPLY signal.
+ * Used for filtering streaming content before it's wrapped as a Message.
+ */
+export function isNoReplyContent(content: string): boolean {
+  return NO_REPLY_PATTERN.test(content);
+}
+
+/**
+ * Check if a message is a cron job summary (posted from isolated cron to main)
+ */
+export function isCronSummary(message: Message): boolean {
+  if (message.role !== "assistant") return false;
+  return CRON_PREFIX_PATTERN.test(message.content);
 }
 
 /**
@@ -76,6 +95,7 @@ export type SpecialMessageType =
   | "heartbeat-response"
   | "compaction"
   | "no-reply"
+  | "cron-summary"
   | null;
 
 export function getSpecialMessageType(message: Message): SpecialMessageType {
@@ -83,5 +103,6 @@ export function getSpecialMessageType(message: Message): SpecialMessageType {
   if (isHeartbeatResponse(message)) return "heartbeat-response";
   if (isNoReply(message)) return "no-reply";
   if (isCompactionSummary(message)) return "compaction";
+  if (isCronSummary(message)) return "cron-summary";
   return null;
 }

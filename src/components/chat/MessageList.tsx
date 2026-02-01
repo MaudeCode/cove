@@ -15,6 +15,7 @@ import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { searchQuery, isSearchOpen, scrollToMessageId } from "@/signals/chat";
 import { groupMessages } from "@/lib/message-grouping";
+import { isNoReplyContent } from "@/lib/message-detection";
 
 /** Classes for active highlight (scroll-to effect) */
 const MESSAGE_HIGHLIGHT_ACTIVE = ["bg-[var(--color-bg-hover)]", "rounded-lg", "transition-colors"];
@@ -160,17 +161,19 @@ export function MessageList({
     scrollToMessageId.value = null;
   }, [scrollToMessageId.value]);
 
-  // Create streaming message placeholder
-  const streamingMessage: Message | null = isStreaming
-    ? {
-        id: "streaming",
-        role: "assistant",
-        content: streamingContent,
-        toolCalls: streamingToolCalls.length > 0 ? streamingToolCalls : undefined,
-        timestamp: Date.now(),
-        isStreaming: true,
-      }
-    : null;
+  // Create streaming message placeholder (hide if it's a NO_REPLY signal)
+  const isStreamingNoReply = isStreaming && isNoReplyContent(streamingContent);
+  const streamingMessage: Message | null =
+    isStreaming && !isStreamingNoReply
+      ? {
+          id: "streaming",
+          role: "assistant",
+          content: streamingContent,
+          toolCalls: streamingToolCalls.length > 0 ? streamingToolCalls : undefined,
+          timestamp: Date.now(),
+          isStreaming: true,
+        }
+      : null;
 
   // Group messages for display (filters heartbeats, collapses compaction summaries)
   const messageGroups = useMemo(() => groupMessages(messages), [messages]);
@@ -229,6 +232,12 @@ export function MessageList({
                     messages={group.messages}
                     type="compaction"
                   />
+                );
+              }
+
+              if (group.type === "cron") {
+                return (
+                  <CollapsedMessage key={`cron-${idx}`} messages={[group.message]} type="cron" />
                 );
               }
 

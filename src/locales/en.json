@@ -162,6 +162,7 @@
     "noHeartbeats": "No heartbeats yet",
     "compacting": "Compacting conversation...",
     "conversationCompacted": "Conversation compacted",
+    "cronJobCompleted": "Cron job completed",
     "dateFrom": "From",
     "dateTo": "To",
     "attachFile": "Attach file",
