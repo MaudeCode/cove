@@ -129,3 +129,18 @@ export const FONT_FAMILY_OPTIONS: { value: FontFamily; labelKey: string }[] = [
   { value: "mono", labelKey: "settings.appearance.fontMono" },
   { value: "dyslexic", labelKey: "settings.appearance.fontDyslexic" },
 ];
+
+export const TIME_FORMAT_OPTIONS: { value: TimeFormat; labelKey: string }[] = [
+  { value: "relative", labelKey: "settings.preferences.timeRelative" },
+  { value: "local", labelKey: "settings.preferences.timeAbsolute" },
+];
+
+// ============================================
+// Reset to Defaults
+// ============================================
+
+export function resetToDefaults(): void {
+  fontSize.value = DEFAULTS.fontSize;
+  fontFamily.value = DEFAULTS.fontFamily;
+  timeFormat.value = DEFAULTS.timeFormat;
+}
