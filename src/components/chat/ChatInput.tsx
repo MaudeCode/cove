@@ -226,7 +226,7 @@ export function ChatInput({
           onDragOver={handleDragOver}
           onDrop={handleDrop}
           class={`
-            relative bg-[var(--color-bg-surface)] border rounded-xl
+            relative flex flex-col bg-[var(--color-bg-surface)] border rounded-xl
             transition-all duration-200
             ${isDragging.value ? "border-[var(--color-accent)] bg-[var(--color-accent)]/5" : "border-[var(--color-border)] focus-within:border-[var(--color-accent)]"}
           `}
@@ -242,7 +242,7 @@ export function ChatInput({
 
           {/* Attachment previews + processing indicator */}
           {(hasAttachments || isProcessing) && (
-            <div class="pt-3">
+            <div class="pt-3 px-4">
               <AttachmentPreview
                 attachments={attachments}
                 onRemove={removeAttachment}
@@ -251,7 +251,7 @@ export function ChatInput({
             </div>
           )}
 
-          {/* Textarea */}
+          {/* Textarea - no bottom padding, action bar is separate */}
           <textarea
             ref={textareaRef}
             value={value.value}
@@ -262,13 +262,13 @@ export function ChatInput({
             placeholder={placeholder || t("chat.placeholder")}
             rows={1}
             class={`
-              w-full px-4 pb-12 text-sm rounded-xl resize-none
+              w-full px-4 pb-1 text-sm rounded-t-xl resize-none
               bg-transparent border-none
               placeholder:text-[var(--color-text-muted)]
               disabled:opacity-50 disabled:cursor-not-allowed
               ${hasAttachments ? "pt-2" : "pt-3"}
             `}
-            style={{ minHeight: "60px", maxHeight: `${TEXTAREA_MAX_HEIGHT}px`, outline: "none" }}
+            style={{ minHeight: "44px", maxHeight: `${TEXTAREA_MAX_HEIGHT}px`, outline: "none" }}
           />
 
           {/* Hidden file input */}
@@ -281,8 +281,8 @@ export function ChatInput({
             class="hidden"
           />
 
-          {/* Bottom bar with actions - has bg to prevent text showing through */}
-          <div class="absolute bottom-0 left-0 right-0 px-2 pb-2 pt-1 flex items-center justify-between bg-[var(--color-bg-surface)] rounded-b-xl">
+          {/* Bottom bar with actions - not absolute, natural flow */}
+          <div class="px-2 pb-2 pt-1 flex items-center justify-between">
             {/* Left side: Model picker + Attach button */}
             <div class="flex items-center gap-1">
               {sessionKey && (
