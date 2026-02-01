@@ -50,10 +50,6 @@ export function InstancesView(_props: RouteProps) {
   return <PlaceholderView titleKey="nav.instances" icon="📡" />;
 }
 
-export function SessionsView(_props: RouteProps) {
-  return <PlaceholderView titleKey="nav.sessions" icon="💬" />;
-}
-
 export function SkillsView(_props: RouteProps) {
   return <PlaceholderView titleKey="nav.skills" icon="⚡" />;
 }

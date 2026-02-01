@@ -33,13 +33,13 @@ import { SettingsView } from "@/views/SettingsView";
 import {
   ChannelsView,
   InstancesView,
-  SessionsView,
   SkillsView,
   NodesView,
   DebugView,
   LogsView,
   StatsView,
 } from "@/views/PlaceholderView";
+import { SessionsAdminView } from "@/views/SessionsAdminView";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { SpotlightTour } from "@/components/tour/SpotlightTour";
 import { getTourSteps } from "@/lib/tour-steps";
@@ -156,7 +156,7 @@ function MainRouter() {
       <StatsView path="/stats" />
       <ChannelsView path="/channels" />
       <InstancesView path="/instances" />
-      <SessionsView path="/sessions" />
+      <SessionsAdminView path="/sessions" />
       <CronView path="/cron" />
 
       {/* Agent */}
