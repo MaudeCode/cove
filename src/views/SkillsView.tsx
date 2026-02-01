@@ -256,6 +256,9 @@ function SkillDetails({ skill }: { skill: SkillStatusEntry }) {
 
   return (
     <div class="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]">
+      {/* Full description */}
+      <p class="text-sm text-[var(--color-text-secondary)] mb-4">{skill.description}</p>
+
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
         {/* Left column: Metadata */}
         <div class="space-y-2">
@@ -385,7 +388,9 @@ function SkillRow({ skill }: { skill: SkillStatusEntry }) {
               </span>
             )}
           </div>
-          <div class="text-sm text-[var(--color-text-muted)] truncate">{skill.description}</div>
+          <div class="text-sm text-[var(--color-text-muted)] truncate" title={skill.description}>
+            {skill.description}
+          </div>
         </div>
 
         <div class="hidden md:flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
