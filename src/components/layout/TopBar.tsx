@@ -11,6 +11,7 @@ import { sidebarOpen } from "@/signals/ui";
 import {
   IconButton,
   ThemePicker,
+  CoveLogo,
   CloseIcon,
   MenuIcon,
   SettingsIcon,
@@ -37,11 +38,7 @@ export function TopBar() {
 
           {/* Logo */}
           <a href="/" class="flex items-center gap-2.5 font-semibold text-lg group no-underline">
-            <img
-              src="/cove-icon.png"
-              alt="Cove"
-              class="w-8 h-8 rounded-lg group-hover:scale-110 transition-transform"
-            />
+            <CoveLogo size="md" animated />
             <span class="bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-warning)] bg-clip-text text-transparent">
               {t("app.name")}
             </span>

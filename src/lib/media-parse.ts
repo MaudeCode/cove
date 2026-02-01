@@ -7,8 +7,8 @@
 
 import type { MessageImage } from "@/types/messages";
 
-/** MEDIA: token regex - matches MEDIA: followed by a URL or path */
-const MEDIA_TOKEN_RE = /^MEDIA:\s*`?([^\n`]+)`?\s*$/gim;
+/** MEDIA: token regex - for quick check if content has any MEDIA: lines */
+const MEDIA_LINE_RE = /^MEDIA:/im;
 
 /** Check if a URL is a valid remote image URL */
 function isRemoteUrl(url: string): boolean {
@@ -71,12 +71,9 @@ export function parseMediaFromContent(content: string): ParsedMedia {
     // Check what type of URL/path it is
     if (isRemoteUrl(cleaned) || isDataUrl(cleaned)) {
       mediaUrls.push(cleaned);
-      // Don't keep MEDIA: lines for valid URLs
     } else {
-      // Local file path - collect for debugging but can't display
+      // Local file path - can't display in browser, collect for UI indicator
       localPaths.push(cleaned);
-      // Keep the line so user knows there's a file they can't see
-      // Actually, let's remove it but note it was there
     }
   }
 
@@ -101,5 +98,5 @@ export function mediaUrlsToImages(urls: string[]): MessageImage[] {
  * Check if content has any MEDIA: lines
  */
 export function hasMediaLines(content: string): boolean {
-  return MEDIA_TOKEN_RE.test(content);
+  return MEDIA_LINE_RE.test(content);
 }

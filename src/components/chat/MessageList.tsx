@@ -10,7 +10,7 @@ import type { Message, ToolCall } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
 import { CollapsedMessage } from "./CollapsedMessage";
 import { SearchBar } from "./SearchBar";
-import { IconButton, Spinner, ArrowDownIcon } from "@/components/ui";
+import { IconButton, Spinner, ArrowDownIcon, CoveLogo } from "@/components/ui";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { searchQuery, isSearchOpen, scrollToMessageId } from "@/signals/chat";
@@ -212,11 +212,7 @@ export function MessageList({
           {!isLoading && !error && messages.length === 0 && !isStreaming && (
             <div class="flex-1 flex items-center justify-center py-16">
               <div class="text-center">
-                <img
-                  src="/cove-icon.png"
-                  alt=""
-                  class="w-20 h-20 mx-auto mb-4 rounded-2xl opacity-80"
-                />
+                <CoveLogo size="lg" class="mx-auto mb-4 opacity-80" />
                 <h3 class="text-lg font-medium mb-1">{t("chat.emptyState.title")}</h3>
                 <p class="text-[var(--color-text-muted)]">{t("chat.emptyState.description")}</p>
               </div>
