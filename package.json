@@ -11,7 +11,7 @@
     "lint:fix": "oxlint src/ --fix",
     "format": "oxfmt --write src/",
     "format:check": "oxfmt --check src/",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc -b --noEmit",
     "knip": "knip",
     "check": "bun run lint && bun run format:check && bun run typecheck && pnpm knip",
     "prepare": "husky"

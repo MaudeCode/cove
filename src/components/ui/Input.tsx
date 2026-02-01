@@ -12,8 +12,8 @@ export type InputSize = "sm" | "md" | "lg";
 interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "size"> {
   /** Input size */
   size?: InputSize;
-  /** Error message */
-  error?: string;
+  /** Error state or message */
+  error?: string | boolean;
   /** Left icon/element */
   leftElement?: JSX.Element;
   /** Right icon/element */
@@ -84,7 +84,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && (
+        {typeof error === "string" && error && (
           <p id={`${props.id}-error`} class="mt-1 text-xs text-[var(--color-error)]" role="alert">
             {error}
           </p>
