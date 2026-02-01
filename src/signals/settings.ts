@@ -9,16 +9,28 @@ import {
   type TimeFormat,
   type FontSize,
   type FontFamily,
+  type NewChatSettings,
+  type AutoTitleSettings,
   getTimeFormat,
   setTimeFormat,
   getFontSize,
   setFontSize,
   getFontFamily,
   setFontFamily,
+  getNewChatSettings,
+  setNewChatSettings,
+  getAutoTitleSettings,
+  setAutoTitleSettings,
 } from "@/lib/storage";
 
 // Re-export types for consumers
-export type { TimeFormat, FontSize, FontFamily } from "@/lib/storage";
+export type {
+  TimeFormat,
+  FontSize,
+  FontFamily,
+  NewChatSettings,
+  AutoTitleSettings,
+} from "@/lib/storage";
 
 // ============================================
 // Signals
@@ -33,6 +45,12 @@ export const fontSize = signal<FontSize>(getFontSize());
 /** Font family preference */
 export const fontFamily = signal<FontFamily>(getFontFamily());
 
+/** New chat creation settings */
+export const newChatSettings = signal<NewChatSettings>(getNewChatSettings());
+
+/** Auto-title generation settings */
+export const autoTitleSettings = signal<AutoTitleSettings>(getAutoTitleSettings());
+
 // ============================================
 // Persistence Effects
 // ============================================
@@ -40,6 +58,8 @@ export const fontFamily = signal<FontFamily>(getFontFamily());
 effect(() => setTimeFormat(timeFormat.value));
 effect(() => setFontSize(fontSize.value));
 effect(() => setFontFamily(fontFamily.value));
+effect(() => setNewChatSettings(newChatSettings.value));
+effect(() => setAutoTitleSettings(autoTitleSettings.value));
 
 // ============================================
 // DOM Application Effects
@@ -93,4 +113,14 @@ export function resetToDefaults(): void {
   fontSize.value = "md";
   fontFamily.value = "geist";
   timeFormat.value = "relative";
+  newChatSettings.value = {
+    useDefaults: true,
+    defaultAgentId: "main",
+    defaultModel: null,
+  };
+  autoTitleSettings.value = {
+    enabled: false,
+    agentId: null,
+    model: null,
+  };
 }
