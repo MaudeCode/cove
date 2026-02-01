@@ -481,6 +481,18 @@ function SessionRow({ session }: { session: Session }) {
               openInChat(session.key);
             }}
           />
+          <IconButton
+            icon={<Trash2 class="w-4 h-4" />}
+            label={t("actions.delete")}
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              openSessionDetail(session);
+              isDeleting.value = true;
+            }}
+            class="text-[var(--color-text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+          />
         </div>
       </td>
     </tr>
