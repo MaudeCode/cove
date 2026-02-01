@@ -44,7 +44,7 @@ export function UsageBadge() {
         <button
           type="button"
           onClick={() => setExpanded(!expanded)}
-          class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[var(--color-bg-surface)] transition-colors"
+          class="flex items-center gap-2 px-2 py-1 rounded-md cursor-pointer hover:bg-[var(--color-bg-surface)] transition-colors"
           aria-expanded={expanded}
           aria-label={`Anthropic usage: ${Math.round(primary.usedPercent)}% ${primary.label}`}
         >
