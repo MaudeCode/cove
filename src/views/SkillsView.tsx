@@ -589,6 +589,7 @@ export function SkillsView(_props: RouteProps) {
                 }}
                 options={SOURCE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
                 size="sm"
+                align="right"
                 aria-label={t("skills.filters.allSources")}
               />
             </div>
