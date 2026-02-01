@@ -271,6 +271,18 @@ export function setAppMode(mode: AppMode): void {
 }
 
 // ============================================
+// Heartbeat
+// ============================================
+
+export function getHeartbeatSeenCount(): number {
+  return getRaw<number>("heartbeat-seen-count") ?? 0;
+}
+
+export function setHeartbeatSeenCount(count: number): void {
+  setRaw("heartbeat-seen-count", count);
+}
+
+// ============================================
 // Migration
 // ============================================
 
