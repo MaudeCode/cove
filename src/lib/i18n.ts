@@ -37,7 +37,16 @@ export const isRTL = computed(() => {
 function loadLocale(): string {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return stored;
+    if (stored) {
+      // Fix: previous bug saved JSON-stringified values like '"en"'
+      // Strip quotes if present
+      const cleaned = stored.replace(/^"|"$/g, "");
+      if (cleaned && cleaned !== stored) {
+        // Fix the stored value
+        localStorage.setItem(STORAGE_KEY, cleaned);
+      }
+      return cleaned || "en";
+    }
   } catch {
     // Ignore
   }
