@@ -47,7 +47,7 @@ export { BouncingDots, type BouncingDotsProps } from "./BouncingDots";
 
 // Overlays
 export { Modal, type ModalProps, type ModalSize } from "./Modal";
-export { Tooltip, type TooltipProps, type TooltipPlacement } from "./Tooltip";
+export { Tooltip, TooltipProvider, type TooltipProps, type TooltipPlacement } from "./Tooltip";
 export {
   Toast,
   ToastContainer,

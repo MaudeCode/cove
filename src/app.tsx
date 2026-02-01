@@ -18,7 +18,7 @@ import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
 
 import { AppShell, currentPath } from "@/components/layout";
-import { ToastContainer, ErrorBoundary, toast } from "@/components/ui";
+import { ToastContainer, TooltipProvider, ErrorBoundary, toast } from "@/components/ui";
 import {
   ChatView,
   LoginView,
@@ -59,7 +59,7 @@ export function App() {
   const showLoginContent = authChecked.value ? !isConnected.value : !hasSavedAuth.value;
 
   return (
-    <>
+    <TooltipProvider>
       <ErrorBoundary
         onError={(error) => {
           toast.error(`Error: ${error.message}`);
@@ -69,7 +69,7 @@ export function App() {
         <AppShell>{showLoginContent ? <LoginView /> : <MainRouter />}</AppShell>
       </ErrorBoundary>
       <ToastContainer position="top-right" />
-    </>
+    </TooltipProvider>
   );
 }
 
