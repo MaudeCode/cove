@@ -30,8 +30,7 @@ import {
   Clock,
   Hash,
   Trash2,
-  Settings2,
-  ExternalLink,
+  Pencil,
   Sparkles,
 } from "lucide-preact";
 import type { Session } from "@/types/sessions";
@@ -49,6 +48,10 @@ const kindFilter = signal<string>("all");
 const selectedSession = signal<Session | null>(null);
 const isDeleting = signal<boolean>(false);
 const isSaving = signal<boolean>(false);
+
+// Inline edit state
+const inlineEditKey = signal<string | null>(null);
+const inlineEditValue = signal<string>("");
 
 // Edit form state
 const editLabel = signal<string>("");
@@ -259,6 +262,40 @@ function openInChat(sessionKey: string) {
   route(`/chat/${encodeURIComponent(sessionKey)}`);
 }
 
+// Inline label editing
+function startInlineEdit(session: Session, e: Event) {
+  e.stopPropagation();
+  inlineEditKey.value = session.key;
+  inlineEditValue.value = session.label ?? "";
+}
+
+async function saveInlineEdit() {
+  const sessionKey = inlineEditKey.value;
+  if (!sessionKey) return;
+
+  const newLabel = inlineEditValue.value.trim();
+  const session = adminSessions.value.find((s) => s.key === sessionKey);
+  if (!session || newLabel === (session.label ?? "")) {
+    inlineEditKey.value = null;
+    return;
+  }
+
+  try {
+    await send("sessions.patch", { key: sessionKey, label: newLabel || undefined });
+    adminSessions.value = adminSessions.value.map((s) =>
+      s.key === sessionKey ? { ...s, label: newLabel || undefined } : s,
+    );
+  } catch (err) {
+    error.value = err instanceof Error ? err.message : String(err);
+  } finally {
+    inlineEditKey.value = null;
+  }
+}
+
+function cancelInlineEdit() {
+  inlineEditKey.value = null;
+}
+
 // ============================================
 // Components
 // ============================================
@@ -269,14 +306,6 @@ const LEVEL_OPTIONS = [
   { value: "low", label: t("sessions.admin.levels.low") },
   { value: "medium", label: t("sessions.admin.levels.medium") },
   { value: "high", label: t("sessions.admin.levels.high") },
-];
-
-const KIND_FILTER_OPTIONS = [
-  { value: "all", label: t("sessions.admin.filters.all") },
-  { value: "main", label: t("sessions.admin.kinds.main") },
-  { value: "channel", label: t("sessions.admin.kinds.channel") },
-  { value: "cron", label: t("sessions.admin.kinds.cron") },
-  { value: "isolated", label: t("sessions.admin.kinds.isolated") },
 ];
 
 function StatCard({
@@ -325,24 +354,25 @@ function SessionRow({ session }: { session: Session }) {
   const Icon = getSessionIcon(kind);
   const displayName =
     session.label || session.displayName || session.key.split(":").pop() || session.key;
+  const isEditing = inlineEditKey.value === session.key;
 
   return (
     <tr
       class="group hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors"
-      onClick={() => openSessionDetail(session)}
+      onClick={() => !isEditing && openSessionDetail(session)}
       onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+        if ((e.key === "Enter" || e.key === " ") && !isEditing) {
           e.preventDefault();
           openSessionDetail(session);
         }
       }}
-      tabIndex={0}
+      tabIndex={isEditing ? -1 : 0}
     >
       {/* Name & Key */}
       <td class="py-3 px-4">
         <div class="flex items-center gap-3">
           <div
-            class={`p-1.5 rounded-lg ${
+            class={`p-1.5 rounded-lg flex-shrink-0 ${
               kind === "main"
                 ? "bg-[var(--color-success)]/10"
                 : kind === "channel"
@@ -364,10 +394,43 @@ function SessionRow({ session }: { session: Session }) {
               }`}
             />
           </div>
-          <div class="min-w-0">
-            <div class="font-medium truncate max-w-[200px]" title={displayName}>
-              {displayName}
-            </div>
+          <div class="min-w-0 flex-1">
+            {isEditing ? (
+              <div
+                class="flex items-center gap-2"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
+                <Input
+                  type="text"
+                  value={inlineEditValue.value}
+                  onInput={(e) => (inlineEditValue.value = (e.target as HTMLInputElement).value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveInlineEdit();
+                    if (e.key === "Escape") cancelInlineEdit();
+                  }}
+                  onBlur={saveInlineEdit}
+                  placeholder={t("sessions.admin.labelPlaceholder")}
+                  class="h-8 text-sm"
+                  // eslint-disable-next-line jsx-a11y/no-autofocus
+                  autoFocus
+                />
+              </div>
+            ) : (
+              <div class="flex items-center gap-2 group/label">
+                <div class="font-medium truncate max-w-[180px]" title={displayName}>
+                  {displayName}
+                </div>
+                <IconButton
+                  icon={<Pencil class="w-3 h-3" />}
+                  label={t("sessions.admin.editLabel")}
+                  size="sm"
+                  variant="ghost"
+                  onClick={(e) => startInlineEdit(session, e)}
+                  class="opacity-0 group-hover/label:opacity-100 !p-1"
+                />
+              </div>
+            )}
             <div
               class="text-xs text-[var(--color-text-muted)] font-mono truncate max-w-[200px]"
               title={session.key}
@@ -388,7 +451,7 @@ function SessionRow({ session }: { session: Session }) {
       {/* Model */}
       <td class="py-3 px-4">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
-          <Cpu class="w-3.5 h-3.5" />
+          <Cpu class="w-3.5 h-3.5 flex-shrink-0" />
           <span class="truncate max-w-[120px]" title={session.model || "Default"}>
             {session.model ? session.model.split("/").pop() : "Default"}
           </span>
@@ -398,7 +461,7 @@ function SessionRow({ session }: { session: Session }) {
       {/* Last Active */}
       <td class="py-3 px-4">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
-          <Clock class="w-3.5 h-3.5" />
+          <Clock class="w-3.5 h-3.5 flex-shrink-0" />
           <span>{session.updatedAt ? formatTimestamp(session.updatedAt) : "—"}</span>
         </div>
       </td>
@@ -406,7 +469,7 @@ function SessionRow({ session }: { session: Session }) {
       {/* Tokens */}
       <td class="py-3 px-4">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
-          <Hash class="w-3.5 h-3.5" />
+          <Hash class="w-3.5 h-3.5 flex-shrink-0" />
           <span>{formatTokens(session)}</span>
           <span class="text-xs opacity-60">({formatContextUsage(session)})</span>
         </div>
@@ -416,23 +479,13 @@ function SessionRow({ session }: { session: Session }) {
       <td class="py-3 px-4">
         <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <IconButton
-            icon={<ExternalLink class="w-4 h-4" />}
+            icon={<MessageSquare class="w-4 h-4" />}
             label={t("sessions.admin.openInChat")}
             size="sm"
             variant="ghost"
             onClick={(e) => {
               e.stopPropagation();
               openInChat(session.key);
-            }}
-          />
-          <IconButton
-            icon={<Settings2 class="w-4 h-4" />}
-            label={t("sessions.admin.configure")}
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              openSessionDetail(session);
             }}
           />
         </div>
@@ -452,7 +505,7 @@ function SessionDetailModal() {
       open={!!session}
       onClose={closeSessionDetail}
       title={session.label || session.displayName || t("sessions.admin.sessionDetails")}
-      size="lg"
+      size="xl"
       footer={
         <div class="flex items-center justify-between">
           <div>
@@ -464,7 +517,12 @@ function SessionDetailModal() {
                 <Button size="sm" variant="ghost" onClick={() => (isDeleting.value = false)}>
                   {t("actions.cancel")}
                 </Button>
-                <Button size="sm" variant="danger" onClick={deleteSession}>
+                <Button
+                  size="sm"
+                  variant="danger"
+                  icon={<Trash2 class="w-4 h-4" />}
+                  onClick={deleteSession}
+                >
                   {t("actions.delete")}
                 </Button>
               </div>
@@ -472,10 +530,10 @@ function SessionDetailModal() {
               <Button
                 size="sm"
                 variant="ghost"
+                icon={<Trash2 class="w-4 h-4" />}
                 onClick={() => (isDeleting.value = true)}
                 class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
               >
-                <Trash2 class="w-4 h-4 mr-1.5" />
                 {t("actions.delete")}
               </Button>
             )}
@@ -493,7 +551,7 @@ function SessionDetailModal() {
     >
       <div class="space-y-6">
         {/* Session Info */}
-        <div class="flex items-start gap-4 p-4 rounded-xl bg-[var(--color-bg-secondary)]">
+        <div class="flex items-start gap-4 p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
           <div
             class={`p-3 rounded-xl ${
               kind === "main"
@@ -539,66 +597,75 @@ function SessionDetailModal() {
 
         {/* Stats */}
         <div class="grid grid-cols-3 gap-4">
-          <div class="text-center p-3 rounded-xl bg-[var(--color-bg-secondary)]">
-            <div class="text-lg font-semibold">{formatTokens(session)}</div>
-            <div class="text-xs text-[var(--color-text-muted)]">{t("sessions.admin.tokens")}</div>
+          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+            <div class="text-xl font-bold">{formatTokens(session)}</div>
+            <div class="text-sm text-[var(--color-text-muted)]">{t("sessions.admin.tokens")}</div>
           </div>
-          <div class="text-center p-3 rounded-xl bg-[var(--color-bg-secondary)]">
-            <div class="text-lg font-semibold">{formatContextUsage(session)}</div>
-            <div class="text-xs text-[var(--color-text-muted)]">
+          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+            <div class="text-xl font-bold">{formatContextUsage(session)}</div>
+            <div class="text-sm text-[var(--color-text-muted)]">
               {t("sessions.admin.contextUsed")}
             </div>
           </div>
-          <div class="text-center p-3 rounded-xl bg-[var(--color-bg-secondary)]">
-            <div class="text-lg font-semibold">
+          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+            <div class="text-xl font-bold">
               {session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—"}
             </div>
-            <div class="text-xs text-[var(--color-text-muted)]">
+            <div class="text-sm text-[var(--color-text-muted)]">
               {t("sessions.admin.lastActive")}
             </div>
           </div>
         </div>
 
         {/* Edit Form */}
-        <div class="space-y-4">
+        <div class="space-y-5">
+          {/* Label - full width */}
           <div>
-            <label class="block text-sm font-medium mb-1.5">{t("sessions.admin.label")}</label>
+            <label class="block text-sm font-medium mb-2">{t("sessions.admin.label")}</label>
             <Input
               value={editLabel.value}
               onInput={(e) => (editLabel.value = (e.target as HTMLInputElement).value)}
               placeholder={t("sessions.admin.labelPlaceholder")}
             />
-            <p class="text-xs text-[var(--color-text-muted)] mt-1">
+            <p class="text-xs text-[var(--color-text-muted)] mt-1.5">
               {t("sessions.admin.labelHelp")}
             </p>
           </div>
 
-          <div class="grid grid-cols-3 gap-4">
-            <div>
-              <label class="block text-sm font-medium mb-1.5">{t("sessions.admin.thinking")}</label>
-              <Dropdown
-                value={editThinking.value}
-                onChange={(val) => (editThinking.value = val)}
-                options={LEVEL_OPTIONS}
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1.5">{t("sessions.admin.verbose")}</label>
-              <Dropdown
-                value={editVerbose.value}
-                onChange={(val) => (editVerbose.value = val)}
-                options={LEVEL_OPTIONS}
-              />
-            </div>
-            <div>
-              <label class="block text-sm font-medium mb-1.5">
-                {t("sessions.admin.reasoning")}
-              </label>
-              <Dropdown
-                value={editReasoning.value}
-                onChange={(val) => (editReasoning.value = val)}
-                options={LEVEL_OPTIONS}
-              />
+          {/* Level overrides */}
+          <div>
+            <label class="block text-sm font-medium mb-2">{t("sessions.admin.overrides")}</label>
+            <div class="grid grid-cols-3 gap-4">
+              <div>
+                <label class="block text-xs text-[var(--color-text-muted)] mb-1.5">
+                  {t("sessions.admin.thinking")}
+                </label>
+                <Dropdown
+                  value={editThinking.value}
+                  onChange={(val) => (editThinking.value = val)}
+                  options={LEVEL_OPTIONS}
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-[var(--color-text-muted)] mb-1.5">
+                  {t("sessions.admin.verbose")}
+                </label>
+                <Dropdown
+                  value={editVerbose.value}
+                  onChange={(val) => (editVerbose.value = val)}
+                  options={LEVEL_OPTIONS}
+                />
+              </div>
+              <div>
+                <label class="block text-xs text-[var(--color-text-muted)] mb-1.5">
+                  {t("sessions.admin.reasoning")}
+                </label>
+                <Dropdown
+                  value={editReasoning.value}
+                  onChange={(val) => (editReasoning.value = val)}
+                  options={LEVEL_OPTIONS}
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -606,13 +673,13 @@ function SessionDetailModal() {
         {/* Open in Chat */}
         <Button
           variant="secondary"
-          class="w-full"
+          fullWidth
+          icon={<MessageSquare class="w-4 h-4" />}
           onClick={() => {
             closeSessionDetail();
             openInChat(session.key);
           }}
         >
-          <ExternalLink class="w-4 h-4 mr-2" />
           {t("sessions.admin.openInChat")}
         </Button>
       </div>
@@ -637,20 +704,34 @@ export function SessionsAdminView(_props: RouteProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div class="flex items-start justify-between">
-          <div>
+        {/* Header with Search */}
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
             <h1 class="text-2xl font-bold">{t("sessions.admin.title")}</h1>
             <p class="text-[var(--color-text-muted)] mt-1">{t("sessions.admin.description")}</p>
           </div>
-          <Button
-            onClick={loadAdminSessions}
-            disabled={isLoading.value || !isConnected.value}
-            variant="secondary"
-          >
-            <RefreshCw class={`w-4 h-4 mr-2 ${isLoading.value ? "animate-spin" : ""}`} />
-            {t("actions.refresh")}
-          </Button>
+          <div class="flex items-center gap-3">
+            {/* Search in header */}
+            {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
+              <div class="relative">
+                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                <Input
+                  type="text"
+                  value={searchQuery.value}
+                  onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                  placeholder={t("sessions.admin.searchPlaceholder")}
+                  class="pl-10 w-64"
+                />
+              </div>
+            )}
+            <IconButton
+              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+              label={t("actions.refresh")}
+              onClick={loadAdminSessions}
+              disabled={isLoading.value || !isConnected.value}
+              variant="ghost"
+            />
+          </div>
         </div>
 
         {/* Stats Cards */}
@@ -694,27 +775,6 @@ export function SessionsAdminView(_props: RouteProps) {
           </div>
         )}
 
-        {/* Search & Filters */}
-        {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
-          <div class="flex items-center gap-4">
-            <div class="relative flex-1 max-w-md">
-              <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-              <Input
-                type="text"
-                value={searchQuery.value}
-                onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-                placeholder={t("sessions.admin.searchPlaceholder")}
-                class="pl-10"
-              />
-            </div>
-            <Dropdown
-              value={kindFilter.value}
-              onChange={(val) => (kindFilter.value = val)}
-              options={KIND_FILTER_OPTIONS}
-            />
-          </div>
-        )}
-
         {/* Error */}
         {error.value && (
           <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
@@ -741,7 +801,7 @@ export function SessionsAdminView(_props: RouteProps) {
                     <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.model")}</th>
                     <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.lastActive")}</th>
                     <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.tokens")}</th>
-                    <th class="py-3 px-4 font-medium w-20"></th>
+                    <th class="py-3 px-4 font-medium w-16"></th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--color-border)]">
