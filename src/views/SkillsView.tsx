@@ -398,7 +398,9 @@ function SkillRow({ skill }: { skill: SkillStatusEntry }) {
           <span>{getSourceLabel(skill.source)}</span>
         </div>
 
-        <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+        <div class="w-24 flex justify-end">
+          <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
+        </div>
 
         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
         <span role="presentation" onClick={handleToggleClick}>
