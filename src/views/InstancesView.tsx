@@ -89,14 +89,14 @@ async function loadInstances(): Promise<void> {
 
 function AccessBadges({ roles, scopes }: { roles?: string[]; scopes?: string[] }) {
   const all = [...(roles ?? []), ...(scopes ?? [])];
-  if (all.length === 0) return <span class="text-[var(--color-text-muted)]">—</span>;
+  if (all.length === 0) return null;
 
   const MAX_SHOWN = 2;
   const shown = all.slice(0, MAX_SHOWN);
   const extra = all.length - shown.length;
 
   return (
-    <div class="flex items-center gap-1" title={all.join(", ")}>
+    <div class="flex items-center gap-1 mt-1" title={all.join(", ")}>
       {shown.map((item) => (
         <Badge key={item} variant="default" size="sm">
           {item}
@@ -132,6 +132,7 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
               {presence.host || presence.instanceId || "Unknown"}
             </div>
             {presence.ip && <div class="text-xs text-[var(--color-text-muted)]">{presence.ip}</div>}
+            <AccessBadges roles={presence.roles} scopes={presence.scopes} />
           </div>
         </div>
       </td>
@@ -166,11 +167,6 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
       {/* Idle */}
       <td class="py-3 px-4 whitespace-nowrap text-sm text-[var(--color-text-muted)]">
         {formatIdleTime(presence.lastInputSeconds)}
-      </td>
-
-      {/* Roles/Scopes */}
-      <td class="py-3 px-4">
-        <AccessBadges roles={presence.roles} scopes={presence.scopes} />
       </td>
     </tr>
   );
@@ -247,7 +243,6 @@ export function InstancesView(_props: RouteProps) {
                     <th class="py-3 px-4 font-medium w-40">{t("instances.columns.platform")}</th>
                     <th class="py-3 px-4 font-medium w-28">{t("instances.columns.lastSeen")}</th>
                     <th class="py-3 px-4 font-medium w-20">{t("instances.columns.idle")}</th>
-                    <th class="py-3 px-4 font-medium">{t("instances.columns.access")}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--color-border)]">
