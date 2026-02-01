@@ -232,6 +232,60 @@ export function setThemeCache(id: string, css: string): void {
 }
 
 // ============================================
+// New Chat Settings
+// ============================================
+
+export interface NewChatSettings {
+  /** Skip agent/model picker, use defaults immediately */
+  useDefaults: boolean;
+  /** Default agent ID for new chats */
+  defaultAgentId: string;
+  /** Default model override (null = use agent's default) */
+  defaultModel: string | null;
+}
+
+const DEFAULT_NEW_CHAT_SETTINGS: NewChatSettings = {
+  useDefaults: true,
+  defaultAgentId: "main",
+  defaultModel: null,
+};
+
+export function getNewChatSettings(): NewChatSettings {
+  return getRaw<NewChatSettings>("new-chat-settings") ?? DEFAULT_NEW_CHAT_SETTINGS;
+}
+
+export function setNewChatSettings(settings: NewChatSettings): void {
+  setRaw("new-chat-settings", settings);
+}
+
+// ============================================
+// Auto-Title Settings
+// ============================================
+
+export interface AutoTitleSettings {
+  /** Use LLM to generate chat titles */
+  enabled: boolean;
+  /** Agent to use for title generation (null = main) */
+  agentId: string | null;
+  /** Model to use for title generation (null = agent's default) */
+  model: string | null;
+}
+
+const DEFAULT_AUTO_TITLE_SETTINGS: AutoTitleSettings = {
+  enabled: false,
+  agentId: null,
+  model: null,
+};
+
+export function getAutoTitleSettings(): AutoTitleSettings {
+  return getRaw<AutoTitleSettings>("auto-title-settings") ?? DEFAULT_AUTO_TITLE_SETTINGS;
+}
+
+export function setAutoTitleSettings(settings: AutoTitleSettings): void {
+  setRaw("auto-title-settings", settings);
+}
+
+// ============================================
 // Migration
 // ============================================
 

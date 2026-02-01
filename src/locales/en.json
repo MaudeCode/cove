@@ -343,6 +343,27 @@
       "timeRelative": "Relative (2 hours ago)",
       "timeAbsolute": "Absolute (3:45 PM)"
     },
+    "newChat": {
+      "title": "New Chat",
+      "useDefaults": "Always use defaults",
+      "useDefaultsDescription": "Skip the agent/model picker when creating new chats",
+      "defaultAgent": "Default Agent",
+      "defaultAgentDescription": "Which agent to use for new chats",
+      "defaultModel": "Default Model",
+      "defaultModelDescription": "Model override for new chats",
+      "agentDefault": "Agent Default"
+    },
+    "autoTitle": {
+      "title": "Chat Titles",
+      "enabled": "Auto-generate titles",
+      "enabledDescription": "Use AI to create descriptive chat titles",
+      "agent": "Agent for titles",
+      "agentDescription": "Which agent to use for generating titles",
+      "model": "Model",
+      "modelDescription": "Model for title generation",
+      "costWarning": "Each title costs ~3k tokens. Consider using a faster/cheaper model.",
+      "disabledHint": "When disabled, titles use the first 50 characters of your message."
+    },
     "account": {
       "title": "Account",
       "logoutDescription": "Disconnect from the gateway"
