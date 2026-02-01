@@ -2,14 +2,17 @@
  * AssistantMessage
  *
  * Assistant message with avatar, name, and tool calls inline at their insertion points.
+ * Supports images from content blocks or MEDIA: lines.
  */
 
 import type { Message, ToolCall } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
+import { MessageImages } from "./MessageImages";
 import { ToolCall as ToolCallComponent } from "./ToolCall";
 import { BouncingDots } from "@/components/ui";
 import { formatRelativeTime, t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
+import { parseMediaFromContent, mediaUrlsToImages } from "@/lib/media-parse";
 
 interface AssistantMessageProps {
   message: Message;
@@ -114,8 +117,16 @@ export function AssistantMessage({
   assistantAvatar,
   isStreaming = false,
 }: AssistantMessageProps) {
-  const blocks = buildContentBlocks(message.content, message.toolCalls ?? []);
-  const hasContent = blocks.length > 0 || isStreaming;
+  // Parse MEDIA: lines from content
+  const parsedMedia = parseMediaFromContent(message.content);
+  const mediaImages = mediaUrlsToImages(parsedMedia.mediaUrls);
+
+  // Combine images from message.images (content blocks) and parsed MEDIA: lines
+  const allImages = [...(message.images ?? []), ...mediaImages];
+
+  // Build content blocks using cleaned text (MEDIA: lines removed)
+  const blocks = buildContentBlocks(parsedMedia.text, message.toolCalls ?? []);
+  const hasContent = blocks.length > 0 || isStreaming || allImages.length > 0;
 
   // Debug: log every render to track reactivity issues
   log.chat.debug("AssistantMessage render", {
@@ -123,6 +134,8 @@ export function AssistantMessage({
     contentLen: message.content.length,
     toolCallsCount: message.toolCalls?.length ?? 0,
     blocksCount: blocks.length,
+    imagesCount: allImages.length,
+    localPaths: parsedMedia.localPaths,
     isStreaming,
   });
 
@@ -168,6 +181,18 @@ export function AssistantMessage({
             </div>
           );
         })}
+
+        {/* Images from content blocks or MEDIA: lines */}
+        {allImages.length > 0 && <MessageImages images={allImages} />}
+
+        {/* Note about local files that couldn't be displayed */}
+        {parsedMedia.localPaths.length > 0 && (
+          <div class="text-xs text-[var(--color-text-muted)] italic">
+            {parsedMedia.localPaths.length === 1
+              ? `📎 File: ${parsedMedia.localPaths[0]}`
+              : `📎 ${parsedMedia.localPaths.length} files attached`}
+          </div>
+        )}
 
         {/* Show streaming indicator after all content */}
         {isStreaming && (
