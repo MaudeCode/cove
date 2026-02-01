@@ -86,7 +86,7 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
   useSignalEffect(() => {
     const _ = currentIndex.value; // Subscribe to changes
     transitioning.value = true;
-    tooltipPosition.value = null; // Clear position during transition
+    // Don't clear position - keep old position during fade out
     updateTarget();
   });
 
@@ -261,9 +261,10 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
         ref={tooltipRef}
         class="absolute z-10 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl shadow-lg p-4 max-w-sm transition-opacity duration-150"
         style={{
-          top: pos?.top ?? 0,
-          left: pos?.left ?? 0,
+          top: pos?.top ?? -9999,
+          left: pos?.left ?? -9999,
           opacity: pos && !transitioning.value ? 1 : 0,
+          pointerEvents: pos && !transitioning.value ? "auto" : "none",
         }}
       >
         {/* Arrow */}
