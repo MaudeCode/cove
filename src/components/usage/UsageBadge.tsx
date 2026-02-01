@@ -10,6 +10,7 @@ import { useState, useRef } from "preact/hooks";
 import { hasAnthropicUsage, anthropicUsage, primaryUsageWindow } from "@/signals/usage";
 import { getUsageLevel } from "@/types/usage";
 import { useClickOutside } from "@/hooks";
+import { Tooltip } from "@/components/ui";
 import type { UsageWindow } from "@/types/usage";
 
 export function UsageBadge() {
@@ -33,32 +34,39 @@ export function UsageBadge() {
 
   const level = getUsageLevel(primary.usedPercent);
 
+  // Build tooltip content
+  const tooltipContent = `${usage.displayName}${usage.plan ? ` (${usage.plan})` : ""}: ${Math.round(primary.usedPercent)}% ${primary.label}`;
+
   return (
     <div ref={containerRef} class="relative">
       {/* Compact badge */}
-      <button
-        type="button"
-        onClick={() => setExpanded(!expanded)}
-        class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[var(--color-bg-surface)] transition-colors"
-        aria-expanded={expanded}
-        aria-label={`Anthropic usage: ${Math.round(primary.usedPercent)}% ${primary.label}`}
-      >
-        {/* Mini progress bar */}
-        <div class="w-16 h-1.5 bg-[var(--color-border)] rounded-full overflow-hidden">
-          <div
-            class={`h-full rounded-full transition-all ${getProgressColor(level)}`}
-            style={{ width: `${Math.min(100, primary.usedPercent)}%` }}
-          />
-        </div>
+      <Tooltip content={tooltipContent} placement="bottom" disabled={expanded}>
+        <button
+          type="button"
+          onClick={() => setExpanded(!expanded)}
+          class="flex items-center gap-2 px-2 py-1 rounded-md hover:bg-[var(--color-bg-surface)] transition-colors"
+          aria-expanded={expanded}
+          aria-label={`Anthropic usage: ${Math.round(primary.usedPercent)}% ${primary.label}`}
+        >
+          {/* Mini progress bar */}
+          <div class="w-16 h-1.5 bg-[var(--color-border)] rounded-full overflow-hidden">
+            <div
+              class={`h-full rounded-full transition-all ${getProgressColor(level)}`}
+              style={{ width: `${Math.min(100, primary.usedPercent)}%` }}
+            />
+          </div>
 
-        {/* Percentage */}
-        <span class={`text-xs font-medium ${getTextColor(level)}`}>
-          {Math.round(primary.usedPercent)}%
-        </span>
+          {/* Percentage */}
+          <span class={`text-xs font-medium ${getTextColor(level)}`}>
+            {Math.round(primary.usedPercent)}%
+          </span>
 
-        {/* Label */}
-        <span class="text-xs text-[var(--color-text-muted)] hidden sm:inline">{primary.label}</span>
-      </button>
+          {/* Label */}
+          <span class="text-xs text-[var(--color-text-muted)] hidden sm:inline">
+            {primary.label}
+          </span>
+        </button>
+      </Tooltip>
 
       {/* Expanded popover */}
       {expanded && (
