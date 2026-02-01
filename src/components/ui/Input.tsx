@@ -9,7 +9,7 @@ import { forwardRef } from "preact/compat";
 
 export type InputSize = "sm" | "md" | "lg";
 
-export interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "size"> {
+interface InputProps extends Omit<JSX.InputHTMLAttributes<HTMLInputElement>, "size"> {
   /** Input size */
   size?: InputSize;
   /** Error message */

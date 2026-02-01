@@ -10,7 +10,8 @@
 import { Monitor, Sun, Moon, Check } from "lucide-preact";
 import { t } from "@/lib/i18n";
 import { themePreference, setTheme, setLightTheme, setDarkTheme, getAllThemes } from "@/lib/theme";
-import { Toggle, Tooltip } from "@/components/ui";
+import { Toggle } from "@/components/ui/Toggle";
+import { Tooltip } from "@/components/ui/Tooltip";
 import type { Theme } from "@/types/theme";
 
 /** Theme swatch button */

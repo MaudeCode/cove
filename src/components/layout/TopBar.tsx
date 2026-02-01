@@ -8,15 +8,10 @@ import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
 import { sidebarOpen } from "@/signals/ui";
-import {
-  IconButton,
-  ThemePicker,
-  CoveLogo,
-  CloseIcon,
-  MenuIcon,
-  SettingsIcon,
-} from "@/components/ui";
-import { UsageBadge } from "@/components/usage";
+import { IconButton } from "@/components/ui/IconButton";
+import { CoveLogo } from "@/components/ui/CoveLogo";
+import { XIcon, MenuIcon, SettingsIcon } from "@/components/ui/icons";
+import { UsageBadge } from "@/components/usage/UsageBadge";
 
 export function TopBar() {
   return (
@@ -27,7 +22,7 @@ export function TopBar() {
           {/* Hamburger menu for mobile */}
           <div class="lg:hidden">
             <IconButton
-              icon={sidebarOpen.value ? <CloseIcon /> : <MenuIcon />}
+              icon={sidebarOpen.value ? <XIcon /> : <MenuIcon />}
               label={t("accessibility.sidebarToggle")}
               onClick={() => (sidebarOpen.value = !sidebarOpen.value)}
               variant="ghost"
@@ -64,11 +59,6 @@ export function TopBar() {
 
           {/* Usage badge - only shows when Anthropic OAuth is active */}
           <UsageBadge />
-
-          {/* Theme selector */}
-          <div data-tour="theme-picker">
-            <ThemePicker />
-          </div>
 
           {/* Settings button */}
           <div data-tour="settings">

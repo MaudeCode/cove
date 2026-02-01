@@ -7,7 +7,10 @@
 import { useState, useEffect, useRef } from "preact/hooks";
 import type { Session } from "@/types/sessions";
 import { t } from "@/lib/i18n";
-import { Modal, Button, Input, FormField } from "@/components/ui";
+import { Modal } from "@/components/ui/Modal";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { FormField } from "@/components/ui/FormField";
 import { getSessionLabel } from "./SessionItem";
 
 interface SessionRenameModalProps {

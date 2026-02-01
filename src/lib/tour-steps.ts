@@ -4,7 +4,7 @@
  * Defines the spotlight tour steps and their targets.
  */
 
-import type { TourStep } from "@/components/tour";
+import type { TourStep } from "@/components/tour/SpotlightTour";
 
 export const ONBOARDING_TOUR_STEPS: TourStep[] = [
   {
@@ -29,17 +29,10 @@ export const ONBOARDING_TOUR_STEPS: TourStep[] = [
     placement: "top",
   },
   {
-    target: "[data-tour='theme-picker']",
-    title: "Themes",
-    content:
-      "Customize your experience with 12+ themes. Supports automatic switching based on your system's light/dark mode.",
-    placement: "bottom",
-  },
-  {
     target: "[data-tour='settings']",
     title: "Settings",
     content:
-      "Configure font size, time display format, keyboard shortcuts, and more. Your preferences are saved automatically.",
+      "Customize your experience with 12+ themes, font sizes, time formats, and more. Preferences are saved automatically.",
     placement: "bottom",
   },
 ];

@@ -6,8 +6,8 @@
 
 import type { ComponentChildren } from "preact";
 
-export type BadgeVariant = "default" | "success" | "warning" | "error" | "info";
-export type BadgeSize = "sm" | "md";
+type BadgeVariant = "default" | "success" | "warning" | "error" | "info";
+type BadgeSize = "sm" | "md";
 
 export interface BadgeProps {
   /** Badge variant */

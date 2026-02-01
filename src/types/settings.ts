@@ -1,13 +1,18 @@
 /**
  * Settings Types
+ *
+ * Type definitions for user settings and auth state stored in localStorage.
+ * These are the source of truth — storage.ts imports from here.
  */
 
-import type { Theme, TimeFormat, FontSize } from "@/signals/settings";
+import type { TimeFormat, FontSize } from "@/signals/settings";
 
-/** User settings stored in localStorage */
-export interface UserSettings {
-  /** Color theme */
-  theme: Theme;
+/**
+ * User settings stored in localStorage
+ */
+export interface StoredSettings {
+  /** Selected theme ID */
+  theme: string;
 
   /** Locale for i18n */
   locale: string;
@@ -17,22 +22,33 @@ export interface UserSettings {
 
   /** Font size */
   fontSize: FontSize;
-
-  /** Font family */
-  fontFamily: string;
 }
 
-/** Auth state stored in localStorage */
-export interface AuthState {
+/**
+ * Auth credentials stored in localStorage
+ */
+export interface StoredAuth {
   /** Gateway URL */
-  gatewayUrl: string;
+  url: string;
 
   /** Auth mode */
-  authMode: "password" | "token";
+  authMode: "token" | "password";
 
-  /** Stored token (if remember me) */
-  token?: string;
+  /** Stored credential (token or password if remember me) */
+  credential?: string;
 
-  /** Recent session keys */
+  /** Whether to persist credentials */
+  rememberMe: boolean;
+}
+
+/**
+ * Complete storage schema
+ */
+export interface StorageSchema {
+  settings: StoredSettings;
+  auth: StoredAuth;
   recentSessions: string[];
+  schemaVersion: number;
+  hasCompletedOnboarding: boolean;
+  pendingTour: boolean;
 }

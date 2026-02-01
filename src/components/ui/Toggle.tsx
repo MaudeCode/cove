@@ -7,12 +7,9 @@
 import type { JSX } from "preact";
 import { forwardRef } from "preact/compat";
 
-export type ToggleSize = "sm" | "md" | "lg";
+type ToggleSize = "sm" | "md" | "lg";
 
-export interface ToggleProps extends Omit<
-  JSX.HTMLAttributes<HTMLButtonElement>,
-  "size" | "onChange"
-> {
+interface ToggleProps extends Omit<JSX.HTMLAttributes<HTMLButtonElement>, "size" | "onChange"> {
   /** Whether toggle is checked */
   checked: boolean;
   /** Called when toggle state changes */

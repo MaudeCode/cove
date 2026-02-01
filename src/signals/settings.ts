@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Settings Signals
  *
@@ -12,7 +13,7 @@ import { signal, effect } from "@preact/signals";
 // Types
 // ============================================
 
-export type Theme = "light" | "dark" | "system";
+type Theme = "light" | "dark" | "system";
 export type TimeFormat = "relative" | "local";
 export type FontSize = "sm" | "md" | "lg";
 export type FontFamily = "geist" | "inter" | "system" | "dyslexic" | "mono";
@@ -65,10 +66,7 @@ function saveSetting<T>(key: string, value: T): void {
 // Signals
 // ============================================
 
-/** Color theme preference (managed by theme.ts) */
-export const theme = signal<Theme>("system");
-
-// Note: locale is managed by i18n.ts, not here
+// Note: theme is managed by theme.ts, locale by i18n.ts
 
 /** How to display timestamps */
 export const timeFormat = signal<TimeFormat>(

@@ -7,7 +7,7 @@
 
 import type { ComponentChildren } from "preact";
 
-export type ChipSize = "xs" | "sm" | "md";
+type ChipSize = "xs" | "sm" | "md";
 
 export interface ChipProps {
   /** Whether the chip is selected/active */

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Sessions Signals
  *
@@ -51,7 +52,7 @@ function saveCachedSessions(sessions: Session[]): void {
 // ============================================
 
 /** All known sessions (initialized from cache) */
-export const sessions = signal<Session[]>(loadCachedSessions());
+const sessions = signal<Session[]>(loadCachedSessions());
 
 /** Currently active session key */
 export const activeSessionKey = signal<string | null>(null);
@@ -66,16 +67,16 @@ export const sessionSearchQuery = signal<string>("");
 export const showCronSessions = signal<boolean>(false);
 
 /** Whether to show spawn/sub-agent sessions (shown by default) */
-export const showSpawnSessions = signal<boolean>(true);
+const showSpawnSessions = signal<boolean>(true);
 
 /** Whether we're loading sessions */
-export const isLoadingSessions = signal<boolean>(false);
+const isLoadingSessions = signal<boolean>(false);
 
 /** Session key currently being deleted (for animation) */
 export const deletingSessionKey = signal<string | null>(null);
 
 /** Error from loading sessions */
-export const sessionsError = signal<string | null>(null);
+const sessionsError = signal<string | null>(null);
 
 // ============================================
 // Derived State
@@ -172,16 +173,6 @@ export const sessionsGrouped = computed(() => {
   return groupSessionsByTime(sessionsByRecent.value);
 });
 
-/** Whether any sessions are hidden by filters */
-export const hasHiddenSessions = computed(() => {
-  const total = sessions.value.length;
-  const visible = sessionsByRecent.value.length;
-  return visible < total;
-});
-
-/** Number of sessions */
-export const sessionCount = computed(() => sessions.value.length);
-
 // ============================================
 // Actions
 // ============================================
@@ -238,35 +229,12 @@ export function toggleCronSessions(): void {
 }
 
 /**
- * Toggle showing spawn sessions
+ * Rename session
  */
-export function toggleSpawnSessions(): void {
-  showSpawnSessions.value = !showSpawnSessions.value;
-}
-
-/**
- * Find or create main session
- */
-export function ensureMainSession(): string {
-  // Default to 'main' session key
-  const mainKey = "main";
-
-  // Check if main session exists
-  const mainSession = sessions.value.find((s) => s.key === mainKey);
-
-  if (!mainSession) {
-    // Add placeholder for main session
-    sessions.value = [
-      {
-        key: mainKey,
-        label: "Main",
-        channel: "webchat",
-      },
-      ...sessions.value,
-    ];
-  }
-
-  return mainKey;
+async function renameSession(sessionKey: string, label: string): Promise<void> {
+  await send("sessions.rename", { sessionKey, label });
+  // Update local state
+  sessions.value = sessions.value.map((s) => (s.key === sessionKey ? { ...s, label } : s));
 }
 
 /**
@@ -288,7 +256,7 @@ export function updateSession(sessionKey: string, updates: Partial<Session>): vo
 /**
  * Remove a session from the list
  */
-export function removeSession(sessionKey: string): void {
+function removeSession(sessionKey: string): void {
   sessions.value = sessions.value.filter((s) => s.key !== sessionKey);
   if (activeSessionKey.value === sessionKey) {
     activeSessionKey.value = null;

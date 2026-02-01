@@ -11,8 +11,9 @@ import { getAgentId, formatAgentName, looksLikeUuid, formatTokens } from "@/lib/
 import { capitalize } from "@/lib/utils";
 import { deletingSessionKey } from "@/signals/sessions";
 import { getStreamingRun } from "@/signals/chat";
-import { useClickOutside } from "@/hooks";
-import { MoreIcon, EditIcon, TrashIcon, PinIcon, Spinner } from "@/components/ui";
+import { useClickOutside } from "@/hooks/useClickOutside";
+import { MoreIcon, EditIcon, TrashIcon, PinIcon } from "@/components/ui/icons";
+import { Spinner } from "@/components/ui/Spinner";
 
 export interface SessionItemProps {
   /** The session to display */

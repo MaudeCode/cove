@@ -25,13 +25,13 @@ const CACHE_KEY = "cove:usage-cache";
 // ============================================
 
 /** Raw usage summary from gateway */
-export const usageSummary = signal<UsageSummary | null>(null);
+const usageSummary = signal<UsageSummary | null>(null);
 
 /** Whether we're currently fetching usage */
-export const isLoadingUsage = signal(false);
+const isLoadingUsage = signal(false);
 
 /** Last fetch error */
-export const usageError = signal<string | null>(null);
+const usageError = signal<string | null>(null);
 
 /** Poll timer */
 let pollTimer: ReturnType<typeof setInterval> | null = null;
@@ -73,7 +73,7 @@ export const primaryUsageWindow = computed<UsageWindow | null>(() => {
 /**
  * Fetch usage from gateway
  */
-export async function fetchUsage(): Promise<void> {
+async function fetchUsage(): Promise<void> {
   if (!isConnected.value) {
     log.usage.debug("Skipping usage fetch - not connected");
     return;
@@ -123,7 +123,7 @@ export function startUsagePolling(): void {
 /**
  * Stop polling for usage updates
  */
-export function stopUsagePolling(): void {
+function stopUsagePolling(): void {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
@@ -134,7 +134,7 @@ export function stopUsagePolling(): void {
 /**
  * Load cached usage from localStorage
  */
-export function loadCachedUsage(): void {
+function loadCachedUsage(): void {
   try {
     const cached = localStorage.getItem(CACHE_KEY);
     if (cached) {
@@ -143,19 +143,6 @@ export function loadCachedUsage(): void {
     }
   } catch {
     // Ignore parse errors
-  }
-}
-
-/**
- * Clear usage data
- */
-export function clearUsage(): void {
-  usageSummary.value = null;
-  usageError.value = null;
-  try {
-    localStorage.removeItem(CACHE_KEY);
-  } catch {
-    // Ignore
   }
 }
 

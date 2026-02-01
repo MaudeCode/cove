@@ -10,7 +10,7 @@ import { forwardRef } from "preact/compat";
 import { Eye, EyeOff } from "lucide-preact";
 import { Input, type InputSize } from "./Input";
 
-export interface PasswordInputProps extends Omit<
+interface PasswordInputProps extends Omit<
   JSX.InputHTMLAttributes<HTMLInputElement>,
   "size" | "type"
 > {

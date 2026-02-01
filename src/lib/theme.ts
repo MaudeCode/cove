@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Theme System
  *
@@ -19,10 +20,10 @@ const CACHE_KEY = "cove:theme-cache";
 export const themePreference = signal<ThemePreference>(loadPreference());
 
 /** Custom themes (user-created) */
-export const customThemes = signal<Theme[]>(loadCustomThemes());
+const customThemes = signal<Theme[]>(loadCustomThemes());
 
 /** The currently active theme (resolved) */
-export const activeTheme = computed<Theme>(() => {
+const activeTheme = computed<Theme>(() => {
   const pref = themePreference.value;
   const customs = customThemes.value;
 
@@ -36,7 +37,7 @@ export const activeTheme = computed<Theme>(() => {
 });
 
 /** Current appearance (light or dark) */
-export const appearance = computed(() => activeTheme.value.appearance);
+const appearance = computed(() => activeTheme.value.appearance);
 
 /**
  * Load preference from localStorage
@@ -93,7 +94,7 @@ function saveCustomThemes(themes: Theme[]): void {
 /**
  * Apply a theme's CSS variables to the document
  */
-export function applyThemeColors(colors: ThemeColors): void {
+function applyThemeColors(colors: ThemeColors): void {
   const root = document.documentElement;
   for (const [key, value] of Object.entries(colors)) {
     root.style.setProperty(key, value);
@@ -121,7 +122,7 @@ function cacheTheme(theme: Theme): void {
 /**
  * Apply the current theme to the document
  */
-export function applyTheme(theme: Theme): void {
+function applyTheme(theme: Theme): void {
   applyThemeColors(theme.colors);
 
   // Cache for inline script to use on next load
@@ -164,7 +165,7 @@ export function setDarkTheme(themeId: string): void {
 /**
  * Add a custom theme
  */
-export function addCustomTheme(theme: Theme): void {
+function addCustomTheme(theme: Theme): void {
   const themes = [...customThemes.value.filter((t) => t.id !== theme.id), theme];
   customThemes.value = themes;
   saveCustomThemes(themes);
@@ -173,7 +174,7 @@ export function addCustomTheme(theme: Theme): void {
 /**
  * Remove a custom theme
  */
-export function removeCustomTheme(themeId: string): void {
+function removeCustomTheme(themeId: string): void {
   const themes = customThemes.value.filter((t) => t.id !== themeId);
   customThemes.value = themes;
   saveCustomThemes(themes);

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /**
  * Message Detection
  *
@@ -26,7 +27,7 @@ const CRON_PREFIX_PATTERN = /^\s*\[cron\]/i;
 /**
  * Check if a message is a heartbeat prompt
  */
-export function isHeartbeatPrompt(message: Message): boolean {
+function isHeartbeatPrompt(message: Message): boolean {
   if (message.role !== "user") return false;
   return HEARTBEAT_PROMPT_PATTERNS.some((pattern) => pattern.test(message.content));
 }
@@ -90,7 +91,7 @@ export function isCompactionSummary(message: Message): boolean {
 /**
  * Get the type of special message (if any)
  */
-export type SpecialMessageType =
+type SpecialMessageType =
   | "heartbeat-prompt"
   | "heartbeat-response"
   | "compaction"
@@ -98,7 +99,7 @@ export type SpecialMessageType =
   | "cron-summary"
   | null;
 
-export function getSpecialMessageType(message: Message): SpecialMessageType {
+function getSpecialMessageType(message: Message): SpecialMessageType {
   if (isHeartbeatPrompt(message)) return "heartbeat-prompt";
   if (isHeartbeatResponse(message)) return "heartbeat-response";
   if (isNoReply(message)) return "no-reply";

@@ -6,7 +6,7 @@
  */
 
 import { t } from "@/lib/i18n";
-import { Button } from "@/components/ui";
+import { Button } from "@/components/ui/Button";
 import { ArrowLeft, ArrowRight } from "lucide-preact";
 
 interface WizardNavProps {

@@ -7,11 +7,11 @@
 
 import { useState, useRef, useCallback } from "preact/hooks";
 import { ChevronDown } from "lucide-preact";
-import { useClickOutside } from "@/hooks";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
-export type DropdownSize = "sm" | "md" | "lg";
+type DropdownSize = "sm" | "md" | "lg";
 
-export interface DropdownOption {
+interface DropdownOption {
   value: string;
   label: string;
   disabled?: boolean;
