@@ -6,7 +6,7 @@
 
 import { useState, useRef } from "preact/hooks";
 import type { Session } from "@/types/sessions";
-import { formatRelativeTimeCompact, t } from "@/lib/i18n";
+import { formatTimestampCompact, t } from "@/lib/i18n";
 import { getAgentId, formatAgentName, looksLikeUuid, formatTokens } from "@/lib/session-utils";
 import { capitalize } from "@/lib/utils";
 import { deletingSessionKey } from "@/signals/sessions";
@@ -230,7 +230,7 @@ export function SessionItem({
             <span class="flex-1 min-w-0" />
             {lastActive && (
               <span class="whitespace-nowrap flex-shrink-0">
-                {formatRelativeTimeCompact(new Date(lastActive))}
+                {formatTimestampCompact(new Date(lastActive))}
               </span>
             )}
           </span>

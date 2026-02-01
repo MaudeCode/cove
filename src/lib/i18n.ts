@@ -247,6 +247,42 @@ export function formatTimestamp(date: Date | number): string {
 }
 
 /**
+ * Format timestamp in compact form, respecting timeFormat setting
+ *
+ * @example
+ * // With timeFormat="relative": "6h", "2d"
+ * // With timeFormat="local": "3:45 PM" (today), "Jan 31" (this year), "Jan '25" (older)
+ */
+export function formatTimestampCompact(date: Date | number): string {
+  if (timeFormat.value === "local") {
+    const d = typeof date === "number" ? new Date(date) : date;
+    const now = new Date();
+    const isToday =
+      d.getDate() === now.getDate() &&
+      d.getMonth() === now.getMonth() &&
+      d.getFullYear() === now.getFullYear();
+
+    if (isToday) {
+      // Show time for today
+      return formatTime(d, "short");
+    } else if (d.getFullYear() === now.getFullYear()) {
+      // Show "Jan 31" for this year
+      return new Intl.DateTimeFormat(locale.value, {
+        month: "short",
+        day: "numeric",
+      }).format(d);
+    } else {
+      // Show "Jan '25" for older
+      return new Intl.DateTimeFormat(locale.value, {
+        month: "short",
+        year: "2-digit",
+      }).format(d);
+    }
+  }
+  return formatRelativeTimeCompact(date);
+}
+
+/**
  * Format relative time in compact form (e.g., "6h", "2d", "3w")
  *
  * @example
