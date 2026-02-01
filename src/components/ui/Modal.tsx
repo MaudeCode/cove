@@ -67,29 +67,35 @@ export function Modal({
     [closeOnEscape, onClose],
   );
 
-  // Focus trap
+  // Focus trap - only run on open change, not on every render
   useEffect(() => {
     if (!open) return;
 
     // Store previously focused element
     previousActiveElement.current = document.activeElement as HTMLElement;
 
-    // Focus the modal
-    modalRef.current?.focus();
-
-    // Add escape listener
-    document.addEventListener("keydown", handleKeyDown);
+    // Focus the modal only if focus is not already inside it
+    if (modalRef.current && !modalRef.current.contains(document.activeElement)) {
+      modalRef.current.focus();
+    }
 
     // Prevent body scroll
     document.body.style.overflow = "hidden";
 
     return () => {
-      document.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "";
 
       // Restore focus
       previousActiveElement.current?.focus();
     };
+  }, [open]);
+
+  // Escape key listener - separate effect to avoid refocusing on handler change
+  useEffect(() => {
+    if (!open) return;
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
   }, [open, handleKeyDown]);
 
   if (!open) return null;
