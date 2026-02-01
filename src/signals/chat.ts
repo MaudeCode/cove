@@ -20,38 +20,27 @@ import {
   RUN_ABORT_CLEANUP_DELAY_MS,
 } from "@/lib/constants";
 import { isHeartbeatMessage } from "@/lib/message-detection";
+import { getMessagesCache, setMessagesCache } from "@/lib/storage";
 
 // ============================================
 // Message Cache
 // ============================================
 
-const MESSAGES_CACHE_KEY = "cove:messages-cache";
-const MESSAGES_SESSION_KEY = "cove:messages-session";
-
 /** Current cached session key */
 let cachedSessionKey: string | null = null;
 
 function loadCachedMessages(): Message[] {
-  try {
-    cachedSessionKey = localStorage.getItem(MESSAGES_SESSION_KEY);
-    const cached = localStorage.getItem(MESSAGES_CACHE_KEY);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-  } catch {
-    // Ignore
+  const cache = getMessagesCache();
+  if (cache) {
+    cachedSessionKey = cache.sessionKey;
+    return cache.messages;
   }
   return [];
 }
 
 export function saveCachedMessages(sessionKey: string, msgs: Message[]): void {
-  try {
-    localStorage.setItem(MESSAGES_SESSION_KEY, sessionKey);
-    localStorage.setItem(MESSAGES_CACHE_KEY, JSON.stringify(msgs));
-    cachedSessionKey = sessionKey;
-  } catch {
-    // Ignore
-  }
+  setMessagesCache(sessionKey, msgs);
+  cachedSessionKey = sessionKey;
 }
 
 export function getCachedSessionKey(): string | null {

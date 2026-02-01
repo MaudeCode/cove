@@ -36,6 +36,7 @@ import {
   NodesView,
   DebugView,
   LogsView,
+  StatsView,
 } from "@/views/PlaceholderView";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { SpotlightTour } from "@/components/tour/SpotlightTour";
@@ -136,6 +137,7 @@ function MainRouter() {
 
       {/* Control */}
       <OverviewView path="/overview" />
+      <StatsView path="/stats" />
       <ChannelsView path="/channels" />
       <InstancesView path="/instances" />
       <SessionsView path="/sessions" />

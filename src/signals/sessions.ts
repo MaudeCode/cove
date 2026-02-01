@@ -18,40 +18,15 @@ import {
   groupSessionsByTime,
 } from "@/lib/session-utils";
 import { SESSION_DELETE_ANIMATION_MS } from "@/lib/constants";
+import { getSessionsCache, setSessionsCache } from "@/lib/storage";
 import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
-
-// ============================================
-// Cache
-// ============================================
-
-const SESSIONS_CACHE_KEY = "cove:sessions-cache";
-
-function loadCachedSessions(): Session[] {
-  try {
-    const cached = localStorage.getItem(SESSIONS_CACHE_KEY);
-    if (cached) {
-      return JSON.parse(cached);
-    }
-  } catch {
-    // Ignore
-  }
-  return [];
-}
-
-function saveCachedSessions(sessions: Session[]): void {
-  try {
-    localStorage.setItem(SESSIONS_CACHE_KEY, JSON.stringify(sessions));
-  } catch {
-    // Ignore
-  }
-}
 
 // ============================================
 // State
 // ============================================
 
 /** All known sessions (initialized from cache) */
-const sessions = signal<Session[]>(loadCachedSessions());
+export const sessions = signal<Session[]>(getSessionsCache() ?? []);
 
 /** Currently active session key */
 export const activeSessionKey = signal<string | null>(null);
@@ -190,7 +165,7 @@ export async function loadSessions(params?: SessionsListParams): Promise<void> {
     });
 
     sessions.value = result.sessions ?? [];
-    saveCachedSessions(sessions.value);
+    setSessionsCache(sessions.value);
   } catch (err) {
     sessionsError.value = err instanceof Error ? err.message : String(err);
     throw err;
