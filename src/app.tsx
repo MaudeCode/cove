@@ -32,13 +32,13 @@ import { ConfigView } from "@/views/ConfigView";
 import { SettingsView } from "@/views/SettingsView";
 import {
   ChannelsView,
-  InstancesView,
   SkillsView,
   NodesView,
   DebugView,
   LogsView,
   StatsView,
 } from "@/views/PlaceholderView";
+import { InstancesView } from "@/views/InstancesView";
 import { SessionsAdminView } from "@/views/SessionsAdminView";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { SpotlightTour } from "@/components/tour/SpotlightTour";
