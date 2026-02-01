@@ -562,28 +562,24 @@ export function SkillsView(_props: RouteProps) {
                   leftElement={<Search class="w-4 h-4" />}
                 />
               </div>
-              <div class="flex items-center gap-3">
-                <select
-                  class="px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-sm"
-                  value={sourceFilter.value}
-                  onChange={(e) => {
-                    sourceFilter.value = (e.target as HTMLSelectElement).value as
-                      | SkillSource
-                      | "all";
-                  }}
-                >
-                  <option value="all">{t("skills.filters.allSources")}</option>
-                  <option value="bundled">{t("skills.source.bundled")}</option>
-                  <option value="managed">{t("skills.source.managed")}</option>
-                  <option value="workspace">{t("skills.source.workspace")}</option>
-                </select>
-                {/* Results count - inline to prevent reflow */}
-                <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-                  {filtered.length !== s.total
-                    ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
-                    : t("skills.count", { count: s.total })}
-                </span>
-              </div>
+              <select
+                class="px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-sm"
+                value={sourceFilter.value}
+                onChange={(e) => {
+                  sourceFilter.value = (e.target as HTMLSelectElement).value as SkillSource | "all";
+                }}
+              >
+                <option value="all">{t("skills.filters.allSources")}</option>
+                <option value="bundled">{t("skills.source.bundled")}</option>
+                <option value="managed">{t("skills.source.managed")}</option>
+                <option value="workspace">{t("skills.source.workspace")}</option>
+              </select>
+              {/* Results count - fixed width to prevent reflow */}
+              <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap min-w-[140px] text-right">
+                {filtered.length !== s.total
+                  ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
+                  : t("skills.count", { count: s.total })}
+              </span>
             </div>
 
             {/* Skills list */}
