@@ -5,6 +5,7 @@
  */
 
 import { useSignal } from "@preact/signals";
+import { useEffect } from "preact/hooks";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { ChevronDownIcon, ExternalLinkIcon } from "@/components/ui/icons";
@@ -66,14 +67,24 @@ function NavItemComponent({ item }: NavItemComponentProps) {
 
 interface CollapsibleNavSectionProps {
   section: NavSectionType;
-  defaultOpen?: boolean;
+  forceOpen?: boolean;
 }
 
-function CollapsibleNavSection({ section, defaultOpen = false }: CollapsibleNavSectionProps) {
-  const isOpen = useSignal(defaultOpen);
+function CollapsibleNavSection({ section, forceOpen = false }: CollapsibleNavSectionProps) {
+  const isOpen = useSignal(forceOpen);
   const visibleItems = section.items;
 
+  // Sync with forceOpen when it changes
+  useEffect(() => {
+    if (forceOpen) {
+      isOpen.value = true;
+    }
+  }, [forceOpen]);
+
   if (visibleItems.length === 0) return null;
+
+  // When forceOpen is true, always show as open
+  const showContent = forceOpen || isOpen.value;
 
   return (
     <div class="border-b border-[var(--color-border)] last:border-b-0">
@@ -84,11 +95,11 @@ function CollapsibleNavSection({ section, defaultOpen = false }: CollapsibleNavS
         class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold uppercase tracking-wider hover:bg-[var(--color-bg-hover)] transition-colors text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]"
       >
         <span>{t(section.titleKey)}</span>
-        <ChevronDownIcon open={isOpen.value} />
+        <ChevronDownIcon open={showContent} />
       </button>
 
       {/* Collapsible content */}
-      {isOpen.value && (
+      {showContent && (
         <ul class="px-3 pb-2 space-y-0.5">
           {visibleItems.map((item) => (
             <li key={item.id}>
@@ -102,7 +113,7 @@ function CollapsibleNavSection({ section, defaultOpen = false }: CollapsibleNavS
 }
 
 interface NavSectionsProps {
-  /** Whether sections should be expanded by default */
+  /** Whether sections should be forced open (single-chat mode) */
   expanded?: boolean;
 }
 
@@ -119,7 +130,7 @@ export function NavSections({ expanded = false }: NavSectionsProps) {
       }
     >
       {navigation.map((section) => (
-        <CollapsibleNavSection key={section.titleKey} section={section} defaultOpen={expanded} />
+        <CollapsibleNavSection key={section.titleKey} section={section} forceOpen={expanded} />
       ))}
     </div>
   );
