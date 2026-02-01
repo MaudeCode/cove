@@ -91,18 +91,13 @@ function AccessBadges({ roles, scopes }: { roles?: string[]; scopes?: string[] }
   const all = [...(roles ?? []), ...(scopes ?? [])];
   if (all.length === 0) return null;
 
-  const MAX_SHOWN = 2;
-  const shown = all.slice(0, MAX_SHOWN);
-  const extra = all.length - shown.length;
-
   return (
-    <div class="flex items-center gap-1 mt-1" title={all.join(", ")}>
-      {shown.map((item) => (
+    <div class="flex flex-wrap items-center gap-1 mt-1">
+      {all.map((item) => (
         <Badge key={item} variant="default" size="sm">
           {item}
         </Badge>
       ))}
-      {extra > 0 && <span class="text-xs text-[var(--color-text-muted)]">+{extra}</span>}
     </div>
   );
 }
