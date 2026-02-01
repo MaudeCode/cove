@@ -8,7 +8,7 @@
 import { useSignal, useComputed } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
-import { connect, lastError, disconnect } from "@/lib/gateway";
+import { connect, lastError, disconnect, probeGateway } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
@@ -48,6 +48,8 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const connecting = useSignal(false);
   const connected = useSignal(false);
   const urlError = useSignal<string | null>(null);
+  const probing = useSignal(false);
+  const probeSuccess = useSignal(false);
 
   const canProceedFromUrl = useComputed(() => {
     const value = url.value.trim();
@@ -137,13 +139,34 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
     step.value = "auth";
   };
 
+  const handleProbeAndProceed = async () => {
+    if (!validateUrl()) return;
+
+    probing.value = true;
+    probeSuccess.value = false;
+    urlError.value = null;
+
+    const result = await probeGateway(url.value);
+
+    probing.value = false;
+
+    if (result.ok) {
+      probeSuccess.value = true;
+      // Brief delay to show success state
+      setTimeout(() => {
+        step.value = "auth";
+        probeSuccess.value = false;
+      }, 500);
+    } else {
+      urlError.value = result.error || t("onboarding.probeError");
+    }
+  };
+
   const goNext = () => {
     if (step.value === "welcome") {
       step.value = "url";
     } else if (step.value === "url") {
-      if (validateUrl()) {
-        step.value = "auth";
-      }
+      handleProbeAndProceed();
     } else if (step.value === "auth") {
       step.value = "connect";
       handleConnect();
@@ -183,9 +206,12 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
             onUrlChange={(v) => {
               url.value = v;
               urlError.value = null;
+              probeSuccess.value = false;
             }}
             error={urlError.value}
             canProceed={canProceedFromUrl.value}
+            probing={probing.value}
+            probeSuccess={probeSuccess.value}
             onNext={goNext}
             onBack={goBack}
             onSkip={handleSkip}
@@ -294,14 +320,26 @@ interface UrlStepProps {
   onUrlChange: (value: string) => void;
   error: string | null;
   canProceed: boolean;
+  probing: boolean;
+  probeSuccess: boolean;
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
 }
 
-function UrlStep({ url, onUrlChange, error, canProceed, onNext, onBack, onSkip }: UrlStepProps) {
+function UrlStep({
+  url,
+  onUrlChange,
+  error,
+  canProceed,
+  probing,
+  probeSuccess,
+  onNext,
+  onBack,
+  onSkip,
+}: UrlStepProps) {
   const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter" && canProceed) {
+    if (e.key === "Enter" && canProceed && !probing) {
       onNext();
     }
   };
@@ -320,9 +358,18 @@ function UrlStep({ url, onUrlChange, error, canProceed, onNext, onBack, onSkip }
           onKeyDown={handleKeyDown}
           placeholder={t("auth.gatewayUrlPlaceholder")}
           error={error || undefined}
+          disabled={probing}
           fullWidth
         />
       </FormField>
+
+      {/* Probe success feedback */}
+      {probeSuccess && (
+        <div class="flex items-center gap-2 mt-3 text-sm text-[var(--color-success)]">
+          <StatusIcon variant="success" size="sm" />
+          <span>{t("onboarding.gatewayFound")}</span>
+        </div>
+      )}
 
       <HintBox
         title={t("onboarding.troubleshootTitle")}
@@ -334,10 +381,18 @@ function UrlStep({ url, onUrlChange, error, canProceed, onNext, onBack, onSkip }
         class="mt-4"
       />
 
-      <WizardNav onBack={onBack} onNext={onNext} nextDisabled={!canProceed} />
+      <WizardNav
+        onBack={onBack}
+        onNext={onNext}
+        nextDisabled={!canProceed || probing}
+        nextLoading={probing}
+        nextLabel={probing ? t("onboarding.verifying") : undefined}
+      />
 
       <div class="text-center mt-4">
-        <LinkButton onClick={onSkip}>{t("onboarding.skipToLogin")}</LinkButton>
+        <LinkButton onClick={onSkip} disabled={probing}>
+          {t("onboarding.skipToLogin")}
+        </LinkButton>
       </div>
     </Card>
   );
