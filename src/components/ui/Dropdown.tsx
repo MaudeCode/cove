@@ -40,17 +40,17 @@ export interface DropdownProps {
 
 const sizeStyles: Record<DropdownSize, { trigger: string; menu: string; option: string }> = {
   sm: {
-    trigger: "px-2.5 py-1.5 text-xs min-w-[100px]",
+    trigger: "px-2.5 py-1.5 text-xs",
     menu: "text-xs",
     option: "px-2.5 py-1.5",
   },
   md: {
-    trigger: "px-3 py-2 text-sm min-w-[120px]",
+    trigger: "px-3 py-2 text-sm",
     menu: "text-sm",
     option: "px-3 py-2",
   },
   lg: {
-    trigger: "px-4 py-3 text-base min-w-[140px]",
+    trigger: "px-4 py-3 text-base",
     menu: "text-base",
     option: "px-4 py-3",
   },
@@ -149,7 +149,7 @@ export function Dropdown({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         class={`
-          w-full flex items-center justify-between gap-2 rounded-md cursor-pointer
+          flex items-center justify-between gap-2 rounded-md cursor-pointer
           bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]
           border border-[var(--color-border)] transition-all duration-200 ease-out
           shadow-soft-sm hover:shadow-soft focus:shadow-soft
@@ -178,7 +178,6 @@ export function Dropdown({
                   right: `${window.innerWidth - triggerRef.current.getBoundingClientRect().right}px`,
                 }
               : { left: `${triggerRef.current.getBoundingClientRect().left}px` }),
-            minWidth: `${triggerRef.current.offsetWidth}px`,
           }}
           class={`
             z-[100]
