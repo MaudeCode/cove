@@ -28,7 +28,18 @@ import { LinkButton } from "@/components/ui/LinkButton";
 import { HintBox } from "@/components/ui/HintBox";
 import { StatusIcon } from "@/components/ui/StatusIcon";
 import { Tooltip } from "@/components/ui/Tooltip";
-import { ArrowRight, ArrowLeft, Zap, Shield, Globe, Check, AlertCircle } from "lucide-preact";
+import {
+  ArrowRight,
+  ArrowLeft,
+  Zap,
+  Shield,
+  Globe,
+  Check,
+  AlertCircle,
+  MessageSquare,
+  LayoutGrid,
+} from "lucide-preact";
+import { appMode, type AppMode } from "@/signals/settings";
 import { WizardNav } from "./WizardNav";
 import { WizardProgress } from "./WizardProgress";
 
@@ -51,6 +62,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const probing = useSignal(false);
   const probeSuccess = useSignal(false);
   const showTour = useSignal(true);
+  const selectedMode = useSignal<AppMode>("single");
 
   const canProceedFromUrl = useComputed(() => {
     const value = url.value.trim();
@@ -286,9 +298,15 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
             error={lastError.value}
             showTour={showTour.value}
             onShowTourChange={(v) => (showTour.value = v)}
+            selectedMode={selectedMode.value}
+            onModeChange={(mode) => {
+              selectedMode.value = mode;
+              appMode.value = mode;
+            }}
             onRetry={handleRetry}
             onContinue={() => {
               setPendingTour(showTour.value);
+              appMode.value = selectedMode.value;
               onComplete();
             }}
           />
@@ -541,6 +559,8 @@ interface ConnectStepProps {
   error: string | null;
   showTour: boolean;
   onShowTourChange: (value: boolean) => void;
+  selectedMode: AppMode;
+  onModeChange: (mode: AppMode) => void;
   onRetry: () => void;
   onContinue: () => void;
 }
@@ -551,6 +571,8 @@ function ConnectStep({
   error,
   showTour,
   onShowTourChange,
+  selectedMode,
+  onModeChange,
   onRetry,
   onContinue,
 }: ConnectStepProps) {
@@ -568,7 +590,46 @@ function ConnectStep({
         <>
           <StatusIcon variant="success" class="mx-auto mb-4" />
           <h2 class="text-lg font-semibold mb-2">{t("onboarding.success")}</h2>
-          <p class="text-sm text-[var(--color-text-muted)] mb-4">{t("onboarding.successDesc")}</p>
+          <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.successDesc")}</p>
+
+          {/* Mode Selection */}
+          <div class="mb-6">
+            <p class="text-sm font-medium text-[var(--color-text-primary)] mb-3">
+              {t("onboarding.modeTitle")}
+            </p>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => onModeChange("single")}
+                class={`p-4 rounded-lg border-2 text-left transition-colors ${
+                  selectedMode === "single"
+                    ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
+                    : "border-[var(--color-border)] hover:border-[var(--color-accent)]/50"
+                }`}
+              >
+                <MessageSquare class="w-5 h-5 mb-2 text-[var(--color-accent)]" />
+                <div class="text-sm font-medium">{t("onboarding.modeSingle")}</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-1">
+                  {t("onboarding.modeSingleDesc")}
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => onModeChange("multi")}
+                class={`p-4 rounded-lg border-2 text-left transition-colors ${
+                  selectedMode === "multi"
+                    ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
+                    : "border-[var(--color-border)] hover:border-[var(--color-accent)]/50"
+                }`}
+              >
+                <LayoutGrid class="w-5 h-5 mb-2 text-[var(--color-accent)]" />
+                <div class="text-sm font-medium">{t("onboarding.modeMulti")}</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-1">
+                  {t("onboarding.modeMultiDesc")}
+                </div>
+              </button>
+            </div>
+          </div>
 
           <div class="mb-6">
             <Toggle
