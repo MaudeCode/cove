@@ -2,6 +2,7 @@
  * NavSection
  *
  * Collapsible navigation section with nav items.
+ * Open/closed state persists to localStorage per mode.
  */
 
 import { useSignal } from "@preact/signals";
@@ -10,6 +11,35 @@ import { t } from "@/lib/i18n";
 import { ChevronDownIcon, ExternalLinkIcon } from "@/components/ui/icons";
 import { navigation, type NavItem, type NavSection as NavSectionType } from "@/lib/navigation";
 import { currentPath } from "./Sidebar";
+
+// ============================================
+// localStorage persistence for section states
+// ============================================
+
+const STORAGE_KEY_PREFIX = "cove:nav-sections";
+
+type SectionStates = Record<string, boolean>;
+
+function getSectionStates(mode: string): SectionStates {
+  try {
+    const key = `${STORAGE_KEY_PREFIX}-${mode}`;
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setSectionState(mode: string, sectionKey: string, isOpen: boolean): void {
+  try {
+    const key = `${STORAGE_KEY_PREFIX}-${mode}`;
+    const states = getSectionStates(mode);
+    states[sectionKey] = isOpen;
+    localStorage.setItem(key, JSON.stringify(states));
+  } catch {
+    // Ignore storage errors
+  }
+}
 
 interface NavItemComponentProps {
   item: NavItem;
@@ -66,21 +96,32 @@ function NavItemComponent({ item }: NavItemComponentProps) {
 
 interface CollapsibleNavSectionProps {
   section: NavSectionType;
+  mode: string;
   defaultOpen?: boolean;
 }
 
-function CollapsibleNavSection({ section, defaultOpen = false }: CollapsibleNavSectionProps) {
-  const isOpen = useSignal(defaultOpen);
+function CollapsibleNavSection({ section, mode, defaultOpen = false }: CollapsibleNavSectionProps) {
+  // Read initial state from localStorage, fallback to defaultOpen
+  const storedStates = getSectionStates(mode);
+  const initialOpen = storedStates[section.titleKey] ?? defaultOpen;
+
+  const isOpen = useSignal(initialOpen);
   const visibleItems = section.items;
 
   if (visibleItems.length === 0) return null;
+
+  const handleToggle = () => {
+    const newValue = !isOpen.value;
+    isOpen.value = newValue;
+    setSectionState(mode, section.titleKey, newValue);
+  };
 
   return (
     <div class="border-b border-[var(--color-border)] last:border-b-0">
       {/* Section header - clickable to toggle */}
       <button
         type="button"
-        onClick={() => (isOpen.value = !isOpen.value)}
+        onClick={handleToggle}
         class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold uppercase tracking-wider hover:bg-[var(--color-bg-hover)] transition-colors text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]"
       >
         <span>{t(section.titleKey)}</span>
@@ -110,8 +151,8 @@ interface NavSectionsProps {
  * Navigation sections container
  */
 export function NavSections({ expanded = false }: NavSectionsProps) {
-  // Key by expanded state so sections remount with correct defaults when mode changes
-  const modeKey = expanded ? "expanded" : "collapsed";
+  // Mode key for localStorage separation
+  const mode = expanded ? "single" : "multi";
 
   return (
     <div
@@ -123,8 +164,9 @@ export function NavSections({ expanded = false }: NavSectionsProps) {
     >
       {navigation.map((section) => (
         <CollapsibleNavSection
-          key={`${modeKey}-${section.titleKey}`}
+          key={`${mode}-${section.titleKey}`}
           section={section}
+          mode={mode}
           defaultOpen={expanded}
         />
       ))}
