@@ -130,8 +130,8 @@ export function ThemeSettings() {
       </div>
 
       {isSystemMode ? (
-        /* System mode: show light and dark theme selections */
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        /* System mode: show light and dark theme selections side by side */
+        <div class="grid grid-cols-2 gap-6">
           {/* Light theme selection */}
           <div>
             <SectionHeader
