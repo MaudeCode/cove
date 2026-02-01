@@ -41,7 +41,8 @@ import {
 } from "@/views/PlaceholderView";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { SpotlightTour } from "@/components/tour/SpotlightTour";
-import { ONBOARDING_TOUR_STEPS } from "@/lib/tour-steps";
+import { getTourSteps } from "@/lib/tour-steps";
+import { appMode } from "@/signals/settings";
 
 // Initialize storage synchronously so we can check saved auth immediately
 initStorage();
@@ -112,7 +113,7 @@ export function App() {
 
       {/* Spotlight tour overlay */}
       {showTour.value && (
-        <SpotlightTour steps={ONBOARDING_TOUR_STEPS} onComplete={handleTourComplete} />
+        <SpotlightTour steps={getTourSteps(appMode.value)} onComplete={handleTourComplete} />
       )}
     </TooltipProvider>
   );
