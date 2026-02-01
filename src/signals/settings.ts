@@ -103,7 +103,7 @@ effect(() => {
 /** Apply font family to document */
 effect(() => {
   const families: Record<FontFamily, string> = {
-    geist: '"Geist", ui-sans-serif, system-ui, sans-serif',
+    geist: '"Geist Sans", ui-sans-serif, system-ui, sans-serif',
     inter: '"Inter", ui-sans-serif, system-ui, sans-serif',
     system: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
     dyslexic: '"OpenDyslexic", ui-sans-serif, system-ui, sans-serif',
