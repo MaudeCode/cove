@@ -17,6 +17,9 @@
   },
   "dependencies": {
     "@floating-ui/dom": "^1.7.5",
+    "@fontsource/geist-sans": "^5.2.5",
+    "@fontsource/inter": "^5.2.8",
+    "@fontsource/opendyslexic": "^5.2.5",
     "@preact/signals": "^2.6.2",
     "lucide-preact": "^0.563.0",
     "marked": "^17.0.1",
