@@ -2,6 +2,3 @@ bun run lint
 bun run format:check
 bun run typecheck
 pnpm knip
-
-# kluster.ai code review (AI-powered)
-.husky/scripts/kluster-review.sh
