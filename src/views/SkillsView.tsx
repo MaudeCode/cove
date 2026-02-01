@@ -42,6 +42,23 @@ import { getSkillStatus, hasMissingRequirements, getMissingSummary } from "@/typ
 import type { RouteProps } from "@/types/routes";
 
 // ============================================
+// Constants
+// ============================================
+
+const SOURCE_OPTIONS = [
+  { value: "all", label: () => t("skills.filters.allSources") },
+  { value: "bundled", label: () => t("skills.source.bundled") },
+  { value: "managed", label: () => t("skills.source.managed") },
+  { value: "workspace", label: () => t("skills.source.workspace") },
+] as const;
+
+const SOURCE_ICONS: Record<string, typeof Package> = {
+  bundled: Package,
+  managed: FolderCog,
+  workspace: Folder,
+};
+
+// ============================================
 // Local State
 // ============================================
 
@@ -66,6 +83,23 @@ const isInstalling = signal<boolean>(false);
 // ============================================
 // Computed Values
 // ============================================
+
+/** Compute stats in a single pass for efficiency */
+const stats = computed(() => {
+  const all = skills.value;
+  let eligible = 0;
+  let disabled = 0;
+  let missingReqs = 0;
+
+  for (const skill of all) {
+    const status = getSkillStatus(skill);
+    if (status === "eligible") eligible++;
+    else if (status === "disabled") disabled++;
+    else if (status === "missing-reqs") missingReqs++;
+  }
+
+  return { total: all.length, eligible, disabled, missingReqs };
+});
 
 const filteredSkills = computed(() => {
   let result = skills.value;
@@ -92,16 +126,6 @@ const filteredSkills = computed(() => {
   }
 
   return result;
-});
-
-const stats = computed(() => {
-  const all = skills.value;
-  return {
-    total: all.length,
-    eligible: all.filter((s) => getSkillStatus(s) === "eligible").length,
-    disabled: all.filter((s) => s.disabled).length,
-    missingReqs: all.filter((s) => getSkillStatus(s) === "missing-reqs").length,
-  };
 });
 
 // ============================================
@@ -138,10 +162,11 @@ async function toggleSkillEnabled(skill: SkillStatusEntry): Promise<void> {
       s.skillKey === skill.skillKey ? { ...s, disabled: !newEnabled } : s,
     );
 
-    const message = newEnabled
-      ? t("skills.enabledSuccess", { name: skill.name })
-      : t("skills.disabledSuccess", { name: skill.name });
-    toast.success(message);
+    toast.success(
+      newEnabled
+        ? t("skills.enabledSuccess", { name: skill.name })
+        : t("skills.disabledSuccess", { name: skill.name }),
+    );
   } catch (err) {
     toast.error(getErrorMessage(err));
   }
@@ -160,7 +185,7 @@ async function installSkill(skill: SkillStatusEntry, installId: string): Promise
     if (result.ok) {
       toast.success(t("skills.installSuccess", { name: skill.name }));
       installModal.value = null;
-      await loadSkills(); // Refresh to update status
+      await loadSkills();
     } else {
       toast.error(result.message || t("skills.installFailed"));
     }
@@ -187,65 +212,158 @@ function clearFilters(): void {
   statusFilter.value = "all";
 }
 
+function setStatusFilter(status: SkillStatus | "all"): void {
+  statusFilter.value = status;
+}
+
 // ============================================
-// Status Helpers
+// Badge Helpers
 // ============================================
 
 function getStatusBadge(status: SkillStatus) {
-  switch (status) {
-    case "eligible":
-      return { variant: "success" as const, label: t("skills.status.eligible") };
-    case "disabled":
-      return { variant: "default" as const, label: t("skills.status.disabled") };
-    case "missing-reqs":
-      return { variant: "warning" as const, label: t("skills.status.missingReqs") };
-    case "blocked":
-      return { variant: "error" as const, label: t("skills.status.blocked") };
-  }
+  const variants: Record<
+    SkillStatus,
+    { variant: "success" | "default" | "warning" | "error"; key: string }
+  > = {
+    eligible: { variant: "success", key: "skills.status.eligible" },
+    disabled: { variant: "default", key: "skills.status.disabled" },
+    "missing-reqs": { variant: "warning", key: "skills.status.missingReqs" },
+    blocked: { variant: "error", key: "skills.status.blocked" },
+  };
+  const { variant, key } = variants[status];
+  return { variant, label: t(key) };
 }
 
-function getSourceBadge(source: SkillSource) {
-  switch (source) {
-    case "bundled":
-      return { icon: Package, label: t("skills.source.bundled") };
-    case "managed":
-      return { icon: FolderCog, label: t("skills.source.managed") };
-    case "workspace":
-      return { icon: Folder, label: t("skills.source.workspace") };
-    default:
-      return { icon: Puzzle, label: source || "Unknown" };
-  }
+function getSourceIcon(source: SkillSource) {
+  return SOURCE_ICONS[source] || Puzzle;
+}
+
+function getSourceLabel(source: SkillSource) {
+  const option = SOURCE_OPTIONS.find((o) => o.value === source);
+  return option ? option.label() : source;
 }
 
 // ============================================
-// Components
+// Sub-Components
 // ============================================
 
+/** Expanded detail panel for a skill */
+function SkillDetails({ skill }: { skill: SkillStatusEntry }) {
+  const missing = getMissingSummary(skill);
+  const hasInstallOptions = skill.install.length > 0 && hasMissingRequirements(skill);
+
+  return (
+    <div class="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        {/* Left column: Metadata */}
+        <div class="space-y-2">
+          <DetailRow label={t("skills.skillKey")}>
+            <code class="text-xs bg-[var(--color-bg-primary)] px-1 py-0.5 rounded">
+              {skill.skillKey}
+            </code>
+          </DetailRow>
+          <DetailRow label={t("skills.location")}>
+            <span class="text-xs break-all">{skill.filePath}</span>
+          </DetailRow>
+          {skill.homepage && (
+            <div>
+              <a
+                href={skill.homepage}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-1 text-[var(--color-accent)] hover:underline"
+              >
+                {t("skills.homepage")}
+                <ExternalLink class="w-3 h-3" />
+              </a>
+            </div>
+          )}
+        </div>
+
+        {/* Right column: Requirements & actions */}
+        <div class="space-y-2">
+          {missing.length > 0 && (
+            <div>
+              <span class="text-[var(--color-warning)] font-medium">
+                {t("skills.missingRequirements")}:
+              </span>
+              <ul class="list-disc list-inside text-xs mt-1 space-y-0.5">
+                {missing.map((item) => (
+                  <li key={item}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {skill.blockedByAllowlist && (
+            <div class="flex items-center gap-2 text-[var(--color-error)]">
+              <ShieldOff class="w-4 h-4" />
+              <span>{t("skills.blockedByAllowlist")}</span>
+            </div>
+          )}
+
+          {hasInstallOptions && (
+            <div class="pt-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={Download}
+                onClick={() => {
+                  installModal.value = skill;
+                }}
+              >
+                {t("skills.installDeps")}
+              </Button>
+            </div>
+          )}
+
+          {skill.primaryEnv && (
+            <div class="text-xs text-[var(--color-text-muted)]">
+              {t("skills.primaryEnv")}: <code>{skill.primaryEnv}</code>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Simple label: value row */
+function DetailRow({ label, children }: { label: string; children: preact.ComponentChildren }) {
+  return (
+    <div>
+      <span class="text-[var(--color-text-muted)]">{label}:</span> {children}
+    </div>
+  );
+}
+
+/** Single skill row with expand/collapse */
 function SkillRow({ skill }: { skill: SkillStatusEntry }) {
   const status = getSkillStatus(skill);
   const statusBadge = getStatusBadge(status);
-  const sourceBadge = getSourceBadge(skill.source);
-  const SourceIcon = sourceBadge.icon;
+  const SourceIcon = getSourceIcon(skill.source);
   const isExpanded = expandedSkills.value.has(skill.skillKey);
-  const missing = getMissingSummary(skill);
-  const hasInstallOptions = skill.install.length > 0;
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      toggleExpanded(skill.skillKey);
+    }
+  };
+
+  const handleToggleClick = (e: Event) => {
+    e.stopPropagation();
+  };
 
   return (
     <div class="border-b border-[var(--color-border)] last:border-b-0">
-      {/* Main row */}
       <div
         class="flex items-center gap-4 px-4 py-3 hover:bg-[var(--color-bg-tertiary)] cursor-pointer"
         role="button"
         tabIndex={0}
         onClick={() => toggleExpanded(skill.skillKey)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            toggleExpanded(skill.skillKey);
-          }
-        }}
+        onKeyDown={handleKeyDown}
       >
-        {/* Expand/collapse icon */}
         <IconButton
           icon={isExpanded ? <ChevronDown /> : <ChevronRight />}
           label={isExpanded ? t("actions.collapse") : t("actions.expand")}
@@ -254,10 +372,8 @@ function SkillRow({ skill }: { skill: SkillStatusEntry }) {
           showTooltip={false}
         />
 
-        {/* Emoji */}
         <span class="text-xl w-8 text-center flex-shrink-0">{skill.emoji || "🔧"}</span>
 
-        {/* Name & description */}
         <div class="flex-1 min-w-0">
           <div class="flex items-center gap-2">
             <span class="font-medium truncate">{skill.name}</span>
@@ -270,18 +386,15 @@ function SkillRow({ skill }: { skill: SkillStatusEntry }) {
           <div class="text-sm text-[var(--color-text-muted)] truncate">{skill.description}</div>
         </div>
 
-        {/* Source */}
         <div class="hidden md:flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
           <SourceIcon class="w-4 h-4" />
-          <span>{sourceBadge.label}</span>
+          <span>{getSourceLabel(skill.source)}</span>
         </div>
 
-        {/* Status badge */}
         <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
 
-        {/* Enable/disable toggle */}
         {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
-        <span role="presentation" onClick={(e) => e.stopPropagation()}>
+        <span role="presentation" onClick={handleToggleClick}>
           <Toggle
             checked={!skill.disabled}
             onChange={() => toggleSkillEnabled(skill)}
@@ -291,105 +404,22 @@ function SkillRow({ skill }: { skill: SkillStatusEntry }) {
         </span>
       </div>
 
-      {/* Expanded details */}
-      {isExpanded && (
-        <div class="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            {/* Left column: File path & source info */}
-            <div class="space-y-2">
-              <div>
-                <span class="text-[var(--color-text-muted)]">{t("skills.skillKey")}:</span>{" "}
-                <code class="text-xs bg-[var(--color-bg-primary)] px-1 py-0.5 rounded">
-                  {skill.skillKey}
-                </code>
-              </div>
-              <div>
-                <span class="text-[var(--color-text-muted)]">{t("skills.location")}:</span>{" "}
-                <span class="text-xs break-all">{skill.filePath}</span>
-              </div>
-              {skill.homepage && (
-                <div>
-                  <a
-                    href={skill.homepage}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    class="inline-flex items-center gap-1 text-[var(--color-accent)] hover:underline"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    {t("skills.homepage")}
-                    <ExternalLink class="w-3 h-3" />
-                  </a>
-                </div>
-              )}
-            </div>
-
-            {/* Right column: Requirements & install */}
-            <div class="space-y-2">
-              {/* Missing requirements */}
-              {missing.length > 0 && (
-                <div>
-                  <span class="text-[var(--color-warning)] font-medium">
-                    {t("skills.missingRequirements")}:
-                  </span>
-                  <ul class="list-disc list-inside text-xs mt-1 space-y-0.5">
-                    {missing.map((item) => (
-                      <li key={item}>{item}</li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
-              {/* Blocked by allowlist */}
-              {skill.blockedByAllowlist && (
-                <div class="flex items-center gap-2 text-[var(--color-error)]">
-                  <ShieldOff class="w-4 h-4" />
-                  <span>{t("skills.blockedByAllowlist")}</span>
-                </div>
-              )}
-
-              {/* Install options */}
-              {hasInstallOptions && hasMissingRequirements(skill) && (
-                <div class="pt-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    icon={Download}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      installModal.value = skill;
-                    }}
-                  >
-                    {t("skills.installDeps")}
-                  </Button>
-                </div>
-              )}
-
-              {/* Primary env hint */}
-              {skill.primaryEnv && (
-                <div class="text-xs text-[var(--color-text-muted)]">
-                  {t("skills.primaryEnv")}: <code>{skill.primaryEnv}</code>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {isExpanded && <SkillDetails skill={skill} />}
     </div>
   );
 }
 
+/** Install dependencies modal */
 function InstallModal() {
   const skill = installModal.value;
   if (!skill) return null;
 
+  const closeModal = () => {
+    installModal.value = null;
+  };
+
   return (
-    <Modal
-      open={true}
-      onClose={() => {
-        installModal.value = null;
-      }}
-      title={t("skills.installTitle", { name: skill.name })}
-    >
+    <Modal open={true} onClose={closeModal} title={t("skills.installTitle", { name: skill.name })}>
       <div class="space-y-4">
         <p class="text-sm text-[var(--color-text-muted)]">{t("skills.installDescription")}</p>
 
@@ -398,7 +428,7 @@ function InstallModal() {
             <button
               key={option.id}
               type="button"
-              class="w-full flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)] transition-colors text-left"
+              class="w-full flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)] transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => installSkill(skill, option.id)}
               disabled={isInstalling.value}
             >
@@ -418,12 +448,7 @@ function InstallModal() {
       </div>
 
       <div class="mt-6 flex justify-end">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            installModal.value = null;
-          }}
-        >
+        <Button variant="secondary" onClick={closeModal}>
           {t("actions.cancel")}
         </Button>
       </div>
@@ -431,28 +456,25 @@ function InstallModal() {
   );
 }
 
+/** Empty state with optional filter reset */
 function EmptyState() {
   const hasFilters =
     searchQuery.value || sourceFilter.value !== "all" || statusFilter.value !== "all";
 
-  if (hasFilters) {
-    return (
-      <div class="text-center py-12">
-        <Search class="w-12 h-12 mx-auto text-[var(--color-text-muted)] mb-4" />
-        <h3 class="text-lg font-medium mb-2">{t("skills.noResults")}</h3>
-        <p class="text-[var(--color-text-muted)] mb-4">{t("skills.noResultsDescription")}</p>
+  return (
+    <div class="text-center py-12">
+      <Search class="w-12 h-12 mx-auto text-[var(--color-text-muted)] mb-4" />
+      <h3 class="text-lg font-medium mb-2">
+        {hasFilters ? t("skills.noResults") : t("skills.emptyTitle")}
+      </h3>
+      <p class="text-[var(--color-text-muted)] mb-4">
+        {hasFilters ? t("skills.noResultsDescription") : t("skills.emptyDescription")}
+      </p>
+      {hasFilters && (
         <Button variant="secondary" onClick={clearFilters}>
           {t("skills.clearFilters")}
         </Button>
-      </div>
-    );
-  }
-
-  return (
-    <div class="text-center py-12">
-      <Puzzle class="w-12 h-12 mx-auto text-[var(--color-text-muted)] mb-4" />
-      <h3 class="text-lg font-medium mb-2">{t("skills.emptyTitle")}</h3>
-      <p class="text-[var(--color-text-muted)]">{t("skills.emptyDescription")}</p>
+      )}
     </div>
   );
 }
@@ -462,7 +484,6 @@ function EmptyState() {
 // ============================================
 
 export function SkillsView(_props: RouteProps) {
-  // Load skills on mount
   useEffect(() => {
     if (isConnected.value) {
       loadSkills();
@@ -516,27 +537,21 @@ export function SkillsView(_props: RouteProps) {
                 label={t("skills.stats.total")}
                 value={s.total}
                 active={statusFilter.value === "all"}
-                onClick={() => {
-                  statusFilter.value = "all";
-                }}
+                onClick={() => setStatusFilter("all")}
               />
               <StatCard
                 icon={CheckCircle}
                 label={t("skills.stats.eligible")}
                 value={s.eligible}
                 active={statusFilter.value === "eligible"}
-                onClick={() => {
-                  statusFilter.value = "eligible";
-                }}
+                onClick={() => setStatusFilter("eligible")}
               />
               <StatCard
                 icon={XCircle}
                 label={t("skills.stats.disabled")}
                 value={s.disabled}
                 active={statusFilter.value === "disabled"}
-                onClick={() => {
-                  statusFilter.value = "disabled";
-                }}
+                onClick={() => setStatusFilter("disabled")}
               />
               <StatCard
                 icon={AlertTriangle}
@@ -544,9 +559,7 @@ export function SkillsView(_props: RouteProps) {
                 value={s.missingReqs}
                 active={statusFilter.value === "missing-reqs"}
                 highlight={s.missingReqs > 0}
-                onClick={() => {
-                  statusFilter.value = "missing-reqs";
-                }}
+                onClick={() => setStatusFilter("missing-reqs")}
               />
             </div>
 
@@ -563,7 +576,6 @@ export function SkillsView(_props: RouteProps) {
                   leftElement={<Search class="w-4 h-4" />}
                   class="flex-1"
                 />
-                {/* Results count - next to search box */}
                 <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
                   {filtered.length !== s.total
                     ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
@@ -575,12 +587,7 @@ export function SkillsView(_props: RouteProps) {
                 onChange={(v) => {
                   sourceFilter.value = v as SkillSource | "all";
                 }}
-                options={[
-                  { value: "all", label: t("skills.filters.allSources") },
-                  { value: "bundled", label: t("skills.source.bundled") },
-                  { value: "managed", label: t("skills.source.managed") },
-                  { value: "workspace", label: t("skills.source.workspace") },
-                ]}
+                options={SOURCE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
                 size="sm"
                 aria-label={t("skills.filters.allSources")}
               />
@@ -613,7 +620,6 @@ export function SkillsView(_props: RouteProps) {
           </>
         )}
 
-        {/* Install modal */}
         <InstallModal />
       </div>
     </div>
