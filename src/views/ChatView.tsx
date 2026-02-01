@@ -108,7 +108,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     });
   }, [activeSessionKey.value]);
 
-  // Handle reconnection: process queued messages and refresh history
+  // Handle reconnection: process queued messages
   useEffect(() => {
     const connected = isConnected.value;
     const wasConnected = wasConnectedRef.current;
@@ -120,13 +120,9 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         processMessageQueue();
       }
 
-      // Refresh history to ensure we have the latest messages
-      const currentSession = effectiveSessionKey.value;
-      if (currentSession) {
-        loadHistory(currentSession).catch(() => {
-          // Error will be shown via historyError signal
-        });
-      }
+      // Don't reload history on reconnect - we already have messages cached locally.
+      // Reloading causes a brief flash as messages are replaced.
+      // The session-switch effect handles loading when actually switching sessions.
     }
 
     wasConnectedRef.current = connected;
