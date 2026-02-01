@@ -6,7 +6,8 @@
 
 import type { ComponentChildren } from "preact";
 import { t } from "@/lib/i18n";
-import { Button, Card, Dropdown, ThemePicker } from "@/components/ui";
+import { Button, Card, Dropdown } from "@/components/ui";
+import { ThemeSettings } from "@/components/settings";
 import { gatewayVersion, gatewayUrl, isConnected } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
 import {
@@ -104,12 +105,8 @@ export function SettingsView(_props: SettingsViewProps) {
         {/* Appearance Section */}
         <SettingsSection titleKey="settings.appearance.title">
           <div class="space-y-6">
-            <SettingRow
-              labelKey="settings.appearance.theme"
-              descriptionKey="settings.appearance.themeDescription"
-            >
-              <ThemePicker />
-            </SettingRow>
+            {/* Theme selection - full layout */}
+            <ThemeSettings />
 
             <SettingRow
               labelKey="settings.appearance.fontSize"
