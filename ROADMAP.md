@@ -779,10 +779,10 @@ export const navigation: NavSection[] = [
 
 > Message-level actions and media support.
 
-- [ ] Message actions menu (hover or kebab menu)
-  - [ ] Copy message (formatted text)
-  - [ ] Copy message (raw markdown)
-  - [ ] Retry failed message
+- [x] Message actions menu (hover kebab menu)
+  - [x] Copy message (formatted text)
+  - [x] Copy message (raw markdown)
+  - [x] Retry failed message (inline button, already existed)
 - [x] Copy code blocks individually
 - [x] File upload (click or drag-drop)
 - [x] Image paste from clipboard
