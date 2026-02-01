@@ -563,8 +563,7 @@
     "viewDocs": "View documentation",
     "stats": {
       "total": "Total",
-      "connected": "Connected",
-      "configured": "Configured",
+      "active": "Active (24h)",
       "errors": "Errors"
     },
     "status": {
