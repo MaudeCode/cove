@@ -39,25 +39,23 @@ export function HeartbeatIndicator() {
   const exchanges = heartbeats.filter(isHeartbeatResponse).slice(-10).reverse();
 
   return (
-    <div class="relative" ref={buttonRef}>
-      <div class="relative">
-        <IconButton
-          icon={<Heart class="w-4 h-4" />}
-          label={t("chat.heartbeats", { count })}
-          onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
-          variant="ghost"
-          size="sm"
-          class="border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
-        />
-        {unseenCount > 0 && (
-          <Badge
-            variant="default"
-            class="absolute -top-1.5 -right-1.5 min-w-[1.25rem] h-5 text-xs px-1 pointer-events-none"
-          >
-            {unseenCount}
-          </Badge>
-        )}
-      </div>
+    <div class="relative inline-block" ref={buttonRef}>
+      <IconButton
+        icon={<Heart class="w-4 h-4" />}
+        label={t("chat.heartbeats", { count })}
+        onClick={() => (isOpen ? handleClose() : setIsOpen(true))}
+        variant="ghost"
+        size="sm"
+        class="border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
+      />
+      {unseenCount > 0 && (
+        <Badge
+          variant="default"
+          class="absolute -top-1.5 -right-1.5 min-w-[1.25rem] h-5 text-xs px-1 pointer-events-none"
+        >
+          {unseenCount}
+        </Badge>
+      )}
 
       {/* Dropdown */}
       {isOpen && (
