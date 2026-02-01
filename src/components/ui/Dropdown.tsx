@@ -137,7 +137,7 @@ export function Dropdown({
   );
 
   return (
-    <div class={`relative ${className || ""}`}>
+    <div class={`relative w-fit ${className || ""}`}>
       {/* Trigger button */}
       <button
         ref={triggerRef}
