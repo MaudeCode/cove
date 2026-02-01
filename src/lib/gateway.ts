@@ -255,11 +255,17 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
     disconnect();
   }
 
+  // Track if this is a reconnect attempt before overwriting state
+  const isReconnectAttempt = reconnectAttempt.value > 0;
+
   currentConfig = config;
   connectionState.value = "connecting";
   isInitialLoad.value = false;
   lastError.value = null;
-  reconnectAttempt.value = 0;
+  // Only reset attempt counter for fresh connections, not reconnects
+  if (!isReconnectAttempt) {
+    reconnectAttempt.value = 0;
+  }
   gatewayUrl.value = config.url;
 
   return new Promise((resolve, reject) => {
