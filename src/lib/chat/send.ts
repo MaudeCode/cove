@@ -19,7 +19,9 @@ import {
   markMessageSent,
   isStreaming,
 } from "@/signals/chat";
+import { sessions } from "@/signals/sessions";
 import { autoRenameSession, isUserCreatedChat } from "./auto-rename";
+import { t } from "@/lib/i18n";
 import type { Message, MessageImage } from "@/types/messages";
 import type { ChatSendResult } from "@/types/chat";
 import type { AttachmentPayload } from "@/types/attachments";
@@ -124,12 +126,11 @@ export async function sendMessage(
     markMessageSent(messageId);
 
     // Auto-rename on first message in user-created chats
+    // Only rename if session label is still "New Chat" (not already renamed)
     if (!isRetry && isUserCreatedChat(sessionKey)) {
-      const userMessages = messages.value.filter(
-        (m) => m.role === "user" && m.sessionKey === sessionKey,
-      );
-      // If this is the only user message, it's the first one - rename the session
-      if (userMessages.length === 1) {
+      const session = sessions.value.find((s) => s.key === sessionKey);
+      const newChatLabel = t("newChatModal.title");
+      if (session?.label === newChatLabel) {
         // Fire and forget - don't block on rename
         autoRenameSession(sessionKey, message).catch(() => {});
       }
