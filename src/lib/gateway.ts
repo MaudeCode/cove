@@ -121,6 +121,97 @@ export interface ConnectConfig {
 // Connection Management
 // ============================================
 
+/** Probe timeout in milliseconds */
+const PROBE_TIMEOUT_MS = 5000;
+
+export interface ProbeResult {
+  /** Whether the probe succeeded */
+  ok: boolean;
+  /** Error message if probe failed */
+  error?: string;
+  /** Gateway version (if available from challenge) */
+  version?: string;
+}
+
+/**
+ * Probe a gateway URL to check if it's a valid OpenClaw gateway.
+ * Opens a WebSocket, waits for connect.challenge event, then closes.
+ * Does not authenticate.
+ */
+export function probeGateway(url: string): Promise<ProbeResult> {
+  return new Promise((resolve) => {
+    let probeWs: WebSocket | null = null;
+    let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+    const cleanup = () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
+      if (probeWs) {
+        probeWs.onopen = null;
+        probeWs.onmessage = null;
+        probeWs.onerror = null;
+        probeWs.onclose = null;
+        probeWs.close();
+        probeWs = null;
+      }
+    };
+
+    const fail = (error: string) => {
+      cleanup();
+      resolve({ ok: false, error });
+    };
+
+    const succeed = (version?: string) => {
+      cleanup();
+      resolve({ ok: true, version });
+    };
+
+    // Timeout handler
+    timeoutId = setTimeout(() => {
+      fail("Connection timed out");
+    }, PROBE_TIMEOUT_MS);
+
+    try {
+      probeWs = new WebSocket(url);
+
+      probeWs.onopen = () => {
+        log.gateway.debug("Probe: WebSocket opened, waiting for challenge...");
+      };
+
+      probeWs.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          // Check if it's a connect.challenge event
+          if (msg.type === "evt" && msg.event === "connect.challenge") {
+            log.gateway.debug("Probe: Received connect.challenge, gateway is valid");
+            succeed(msg.payload?.version);
+          } else {
+            // Got some other message - still likely a gateway, but unexpected
+            log.gateway.debug("Probe: Received unexpected message:", msg.type, msg.event);
+            succeed();
+          }
+        } catch {
+          fail("Invalid response from server");
+        }
+      };
+
+      probeWs.onerror = () => {
+        fail("Connection failed");
+      };
+
+      probeWs.onclose = (event) => {
+        if (!event.wasClean) {
+          fail("Connection closed unexpectedly");
+        }
+      };
+    } catch (err) {
+      fail(err instanceof Error ? err.message : "Failed to connect");
+    }
+  });
+}
+
 /**
  * Connect to the gateway
  */
