@@ -3,22 +3,40 @@
  *
  * Wraps console methods for consistent logging with prefixes.
  * In dev mode, also sends logs to /__cove_debug endpoint for file-based debugging.
+ *
+ * Log level controlled by VITE_LOG_LEVEL env var:
+ *   - "debug" | "info" | "warn" | "error" | "off"
+ *   - Default: "off" in production, "warn" in dev
+ *   - Set VITE_LOG_LEVEL=debug for verbose logging
  */
 
-type LogLevel = "debug" | "info" | "warn" | "error";
+type LogLevel = "debug" | "info" | "warn" | "error" | "off";
 
 const LOG_LEVELS: Record<LogLevel, number> = {
   debug: 0,
   info: 1,
   warn: 2,
   error: 3,
+  off: 4,
 };
-
-// Set minimum log level (could be configured via env)
-const MIN_LEVEL: LogLevel = "debug";
 
 // Dev mode file logging
 const DEV_MODE = import.meta.env.DEV;
+
+/**
+ * Resolve log level from environment.
+ * Priority: VITE_LOG_LEVEL > default (off in prod, warn in dev)
+ */
+function resolveLogLevel(): LogLevel {
+  const envLevel = import.meta.env.VITE_LOG_LEVEL as string | undefined;
+  if (envLevel && envLevel in LOG_LEVELS) {
+    return envLevel as LogLevel;
+  }
+  // Default: warn in dev (so errors/warnings show), off in prod
+  return DEV_MODE ? "warn" : "off";
+}
+
+const MIN_LEVEL: LogLevel = resolveLogLevel();
 
 function shouldLog(level: LogLevel): boolean {
   return LOG_LEVELS[level] >= LOG_LEVELS[MIN_LEVEL];
