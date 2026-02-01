@@ -177,23 +177,15 @@ function toggleExpanded(channelId: string) {
 }
 
 // ============================================
-// Computed Stats & Filters
+// Computed Stats
 // ============================================
-
-const configuredChannels = computed(() =>
-  channels.value.filter((c) => c.status !== "not-configured"),
-);
-
-const unconfiguredChannels = computed(() =>
-  channels.value.filter((c) => c.status === "not-configured"),
-);
 
 const stats = computed(() => {
   const list = channels.value;
   return {
     total: list.length,
     connected: list.filter((c) => c.status === "connected").length,
-    configured: configuredChannels.value.length,
+    configured: list.filter((c) => c.status === "configured" || c.status === "connected").length,
     errors: list.filter((c) => c.status === "error").length,
   };
 });
@@ -413,30 +405,6 @@ function ChannelRow({ channel }: { channel: ChannelDisplayData }) {
   );
 }
 
-function UnconfiguredChannelCard({ channel }: { channel: ChannelDisplayData }) {
-  return (
-    <a
-      href={`https://docs.openclaw.ai/channels/${channel.id}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      class="flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border)] hover:border-[var(--color-accent)] hover:bg-[var(--color-bg-hover)] transition-colors group"
-    >
-      <ChannelIcon
-        channelId={channel.id}
-        size={24}
-        colored={false}
-        class="opacity-50 group-hover:opacity-100 transition-opacity"
-      />
-      <div class="flex-1 min-w-0">
-        <div class="font-medium text-[var(--color-text-secondary)] group-hover:text-[var(--color-text-primary)]">
-          {channel.label}
-        </div>
-      </div>
-      <ExternalLink class="w-4 h-4 text-[var(--color-text-muted)] opacity-0 group-hover:opacity-100 transition-opacity" />
-    </a>
-  );
-}
-
 function LogoutModal() {
   if (!logoutModal.value) return null;
 
@@ -556,8 +524,8 @@ export function ChannelsView(_props: RouteProps) {
           </div>
         )}
 
-        {/* Configured Channels Table */}
-        {isConnected.value && !isLoading.value && configuredChannels.value.length > 0 && (
+        {/* Channels Table */}
+        {isConnected.value && !isLoading.value && channels.value.length > 0 && (
           <Card padding="none" class="overflow-hidden">
             <div class="overflow-x-auto">
               <table class="w-full">
@@ -573,7 +541,7 @@ export function ChannelsView(_props: RouteProps) {
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--color-border)]">
-                  {configuredChannels.value.map((channel) => (
+                  {channels.value.map((channel) => (
                     <ChannelRow key={channel.id} channel={channel} />
                   ))}
                 </tbody>
@@ -582,48 +550,30 @@ export function ChannelsView(_props: RouteProps) {
           </Card>
         )}
 
-        {/* Empty state - no configured channels */}
-        {isConnected.value &&
-          !isLoading.value &&
-          configuredChannels.value.length === 0 &&
-          unconfiguredChannels.value.length === 0 &&
-          !error.value && (
-            <Card>
-              <div class="p-16 text-center">
-                <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-                <h3 class="text-lg font-medium mb-2">{t("channels.emptyTitle")}</h3>
-                <p class="text-[var(--color-text-muted)] mb-4">{t("channels.emptyDescription")}</p>
-                <a
-                  href="https://docs.openclaw.ai/channels"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  class="inline-flex items-center gap-2 text-[var(--color-accent)] hover:underline"
-                >
-                  {t("channels.learnMore")}
-                  <ExternalLink class="w-4 h-4" />
-                </a>
-              </div>
-            </Card>
-          )}
-
-        {/* Unconfigured Channels */}
-        {isConnected.value && !isLoading.value && unconfiguredChannels.value.length > 0 && (
-          <div class="space-y-3">
-            <h2 class="text-lg font-semibold text-[var(--color-text-secondary)]">
-              {t("channels.unconfigured")}
-            </h2>
-            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
-              {unconfiguredChannels.value.map((channel) => (
-                <UnconfiguredChannelCard key={channel.id} channel={channel} />
-              ))}
+        {/* Empty state */}
+        {isConnected.value && !isLoading.value && channels.value.length === 0 && !error.value && (
+          <Card>
+            <div class="p-16 text-center">
+              <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+              <h3 class="text-lg font-medium mb-2">{t("channels.emptyTitle")}</h3>
+              <p class="text-[var(--color-text-muted)] mb-4">{t("channels.emptyDescription")}</p>
+              <a
+                href="https://docs.openclaw.ai/channels"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 text-[var(--color-accent)] hover:underline"
+              >
+                {t("channels.learnMore")}
+                <ExternalLink class="w-4 h-4" />
+              </a>
             </div>
-          </div>
+          </Card>
         )}
 
         {/* Footer count */}
-        {isConnected.value && !isLoading.value && configuredChannels.value.length > 0 && (
+        {isConnected.value && !isLoading.value && channels.value.length > 0 && (
           <p class="text-sm text-[var(--color-text-muted)] text-center">
-            {t("channels.configuredCount", { count: configuredChannels.value.length })}
+            {t("channels.count", { count: channels.value.length })}
           </p>
         )}
       </div>
