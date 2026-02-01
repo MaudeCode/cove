@@ -268,13 +268,6 @@
       "timeRelative": "Relative (2 hours ago)",
       "timeAbsolute": "Absolute (3:45 PM)"
     },
-    "shortcuts": {
-      "title": "Keyboard Shortcuts",
-      "send": "Send message",
-      "newline": "New line",
-      "search": "Search messages",
-      "closeSearch": "Close search"
-    },
     "account": {
       "title": "Account",
       "logoutDescription": "Disconnect from the gateway"

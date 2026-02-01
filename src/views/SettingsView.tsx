@@ -82,33 +82,6 @@ function InfoRow({ label, value, truncate }: InfoRowProps) {
   );
 }
 
-interface ShortcutRowProps {
-  keys: string[];
-  description: string;
-}
-
-/** A keyboard shortcut row */
-function ShortcutRow({ keys, description }: ShortcutRowProps) {
-  return (
-    <div class="flex items-center justify-between text-sm">
-      <span class="text-[var(--color-text-primary)]">{description}</span>
-      <div class="flex items-center gap-1">
-        {keys.map((key, i) => (
-          <>
-            {i > 0 && <span class="text-[var(--color-text-muted)]">+</span>}
-            <kbd
-              key={key}
-              class="px-2 py-0.5 text-xs rounded bg-[var(--color-bg-secondary)] border border-[var(--color-border)] font-mono"
-            >
-              {key}
-            </kbd>
-          </>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 // ============================================
 // Main Component
 // ============================================
@@ -193,16 +166,6 @@ export function SettingsView(_props: SettingsViewProps) {
                 size="sm"
               />
             </SettingRow>
-          </div>
-        </SettingsSection>
-
-        {/* Keyboard Shortcuts Section */}
-        <SettingsSection titleKey="settings.shortcuts.title">
-          <div class="space-y-2">
-            <ShortcutRow keys={["Enter"]} description={t("settings.shortcuts.send")} />
-            <ShortcutRow keys={["Shift", "Enter"]} description={t("settings.shortcuts.newline")} />
-            <ShortcutRow keys={["⌘/Ctrl", "F"]} description={t("settings.shortcuts.search")} />
-            <ShortcutRow keys={["Esc"]} description={t("settings.shortcuts.closeSearch")} />
           </div>
         </SettingsSection>
 
