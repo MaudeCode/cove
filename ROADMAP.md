@@ -865,11 +865,13 @@ export const navigation: NavSection[] = [
 - [ ] Enable/disable toggles
 - [ ] Channel-specific actions (QR login for WhatsApp, etc.)
 
-### 3.3 Instances View
-- [ ] List connected clients/services (presence beacons)
-- [ ] Instance metadata (mode, roles, scopes, last input)
-- [ ] Refresh button
-- [ ] Presence age display
+### 3.3 Instances View ✅
+- [x] List connected clients/services (presence beacons)
+- [x] Instance metadata (mode, roles, scopes, last input)
+- [x] Refresh button
+- [x] Presence age display
+- [x] Stat cards (total, gateways, clients)
+- [x] Device icon detection (server, monitor, smartphone)
 
 ### 3.4 Sessions View
 - [ ] List all sessions with filters (active minutes, limit)
