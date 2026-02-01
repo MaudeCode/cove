@@ -304,6 +304,8 @@
       "label": "Label",
       "labelPlaceholder": "Give this session a memorable name",
       "labelHelp": "A friendly name to help identify this session in lists.",
+      "editLabel": "Edit label",
+      "overrides": "Session Overrides",
       "tokens": "Tokens",
       "contextUsed": "Context Used",
       "lastActive": "Last Active",
