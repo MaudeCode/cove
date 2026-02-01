@@ -173,3 +173,12 @@ export function transformChannelsResponse(response: ChannelsStatusResponse): Cha
     };
   });
 }
+
+/** Get the most recent activity timestamp from a channel's accounts */
+export function getChannelLastActivity(channel: ChannelDisplayData): number {
+  return channel.accounts.reduce((latest, acc) => {
+    const inbound = acc.lastInboundAt ?? 0;
+    const outbound = acc.lastOutboundAt ?? 0;
+    return Math.max(latest, inbound, outbound);
+  }, 0);
+}
