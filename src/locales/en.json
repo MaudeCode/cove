@@ -615,6 +615,38 @@
     }
   },
 
+  "stats": {
+    "title": "Server Stats",
+    "description": "Gateway metrics and usage statistics",
+    "loadError": "Failed to load server stats",
+    "gateway": {
+      "title": "Gateway",
+      "unknown": "Unknown host",
+      "uptime": "Uptime",
+      "sessions": "Sessions"
+    },
+    "usage": {
+      "title": "Token Usage",
+      "period": "Last {days} days",
+      "totalCost": "Total Cost",
+      "input": "Input",
+      "output": "Output",
+      "total": "Total",
+      "cache": "Cache Tokens",
+      "cacheRead": "Cache Read",
+      "cacheWrite": "Cache Write",
+      "unavailable": "Usage data not available"
+    },
+    "daily": {
+      "title": "Daily Activity"
+    },
+    "agents": {
+      "title": "Agents",
+      "default": "Default",
+      "sessions": "sessions"
+    }
+  },
+
   "config": {
     "title": "Configuration",
     "comingSoon": "Configuration editor coming in Phase 3.3",

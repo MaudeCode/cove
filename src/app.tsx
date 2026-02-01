@@ -30,7 +30,8 @@ import { StatusView as OverviewView } from "@/views/StatusView";
 import { CronView } from "@/views/CronView";
 import { ConfigView } from "@/views/ConfigView";
 import { SettingsView } from "@/views/SettingsView";
-import { SkillsView, NodesView, DebugView, LogsView, StatsView } from "@/views/PlaceholderView";
+import { SkillsView, NodesView, DebugView, LogsView } from "@/views/PlaceholderView";
+import { ServerStatsView } from "@/views/ServerStatsView";
 import { ChannelsView } from "@/views/ChannelsView";
 import { InstancesView } from "@/views/InstancesView";
 import { SessionsAdminView } from "@/views/SessionsAdminView";
@@ -147,7 +148,7 @@ function MainRouter() {
 
       {/* Control */}
       <OverviewView path="/overview" />
-      <StatsView path="/stats" />
+      <ServerStatsView path="/stats" />
       <ChannelsView path="/channels" />
       <InstancesView path="/instances" />
       <SessionsAdminView path="/sessions" />

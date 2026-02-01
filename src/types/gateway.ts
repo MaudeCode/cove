@@ -62,6 +62,9 @@ export interface HelloPayload {
       mainSessionKey?: string;
       scope?: string;
     };
+    uptimeMs?: number;
+    configPath?: string;
+    stateDir?: string;
   };
   canvasHostUrl?: string;
   auth?: {

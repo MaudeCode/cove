@@ -57,7 +57,3 @@ export function DebugView(_props: RouteProps) {
 export function LogsView(_props: RouteProps) {
   return <PlaceholderView titleKey="nav.logs" icon="📋" />;
 }
-
-export function StatsView(_props: RouteProps) {
-  return <PlaceholderView titleKey="nav.stats" icon="📊" />;
-}
