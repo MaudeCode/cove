@@ -47,15 +47,16 @@ import type { RouteProps } from "@/types/routes";
 
 const SOURCE_OPTIONS = [
   { value: "all", label: () => t("skills.filters.allSources") },
-  { value: "bundled", label: () => t("skills.source.bundled") },
-  { value: "managed", label: () => t("skills.source.managed") },
-  { value: "workspace", label: () => t("skills.source.workspace") },
+  { value: "openclaw-bundled", label: () => t("skills.source.bundled") },
+  { value: "openclaw-managed", label: () => t("skills.source.managed") },
+  { value: "openclaw-workspace", label: () => t("skills.source.workspace") },
 ] as const;
 
 const SOURCE_ICONS: Record<string, typeof Package> = {
-  bundled: Package,
-  managed: FolderCog,
-  workspace: Folder,
+  "openclaw-bundled": Package,
+  "openclaw-managed": FolderCog,
+  "openclaw-workspace": Folder,
+  "openclaw-extra": Folder,
 };
 
 // ============================================
