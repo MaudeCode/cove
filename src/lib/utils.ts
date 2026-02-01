@@ -12,6 +12,16 @@ export function capitalize(s: string): string {
 }
 
 /**
+ * Check if an avatar string is a URL (vs emoji/initials)
+ */
+export function isAvatarUrl(avatar: string | undefined): boolean {
+  if (!avatar) return false;
+  return (
+    avatar.startsWith("http://") || avatar.startsWith("https://") || avatar.startsWith("data:")
+  );
+}
+
+/**
  * Check if a string has content (non-empty after trimming)
  */
 export function hasContent(s?: string | null): s is string {
