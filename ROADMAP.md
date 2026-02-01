@@ -915,8 +915,8 @@ export const navigation: NavSection[] = [
 - [x] Expandable detail rows with requirements/install options
 - [x] Enable/disable toggle per skill
 - [x] Install dependencies via skills.install API
-- [ ] View SKILL.md contents (deferred)
-- [ ] Install from ClawdHub (deferred - needs API)
+- [x] **ClawHub integration** — Browse, search, and install skills from clawhub.ai
+- [ ] View SKILL.md contents (deferred - needs gateway API)
 
 ### 3.7 Nodes Management
 - [ ] List paired nodes (mobile devices)
