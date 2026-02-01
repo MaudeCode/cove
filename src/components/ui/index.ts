@@ -16,6 +16,7 @@ export { LinkButton } from "./LinkButton";
 
 // Form controls
 export { Input, type InputProps, type InputSize } from "./Input";
+export { PasswordInput, type PasswordInputProps } from "./PasswordInput";
 export { DatePicker } from "./DatePicker";
 export { Dropdown, type DropdownProps, type DropdownOption, type DropdownSize } from "./Dropdown";
 export { ThemePicker } from "./ThemePicker";
