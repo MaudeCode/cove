@@ -689,7 +689,8 @@
       "stars": "stars",
       "viewOnClawhub": "View on ClawHub",
       "noResults": "No Skills Found",
-      "tryDifferentSearch": "Try a different search term."
+      "tryDifferentSearch": "Try a different search term.",
+      "notYetSupported": "ClawHub installation coming soon! Install manually: openclaw skills install {slug}"
     }
   },
 

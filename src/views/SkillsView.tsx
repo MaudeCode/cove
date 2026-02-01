@@ -12,42 +12,17 @@ import { send, isConnected } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
-import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
-import { Modal } from "@/components/ui/Modal";
-import { Toggle } from "@/components/ui/Toggle";
 import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
-import {
-  RefreshCw,
-  Search,
-  Puzzle,
-  CheckCircle,
-  XCircle,
-  AlertTriangle,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  Download,
-  Package,
-  Folder,
-  FolderCog,
-  ShieldOff,
-} from "lucide-preact";
+import { HintBox } from "@/components/ui/HintBox";
+import { RefreshCw, Search, Puzzle, CheckCircle, XCircle, AlertTriangle } from "lucide-preact";
 import type { SkillStatusReport, SkillStatusEntry, SkillStatus, SkillSource } from "@/types/skills";
-import { getSkillStatus, hasMissingRequirements, getMissingSummary } from "@/types/skills";
-import { ClawHubBrowser } from "@/components/skills/ClawHubBrowser";
+import { getSkillStatus } from "@/types/skills";
+import { ClawHubBrowser, SkillRow, InstallDepsModal } from "@/components/skills";
 import type { RouteProps } from "@/types/routes";
-
-// ============================================
-// Tab State
-// ============================================
-
-type SkillsTab = "installed" | "clawhub";
-const activeTab = signal<SkillsTab>("installed");
 
 // ============================================
 // Constants
@@ -61,40 +36,32 @@ const SOURCE_OPTIONS = [
   { value: "openclaw-extra", label: () => t("skills.source.extra") },
 ] as const;
 
-const SOURCE_ICONS: Record<string, typeof Package> = {
-  "openclaw-bundled": Package,
-  "openclaw-managed": FolderCog,
-  "openclaw-workspace": Folder,
-  "openclaw-extra": Folder,
-};
+// ============================================
+// State
+// ============================================
 
-// ============================================
-// Local State
-// ============================================
+type SkillsTab = "installed" | "clawhub";
+const activeTab = signal<SkillsTab>("installed");
 
 const skills = signal<SkillStatusEntry[]>([]);
-const workspaceDir = signal<string>("");
-const managedSkillsDir = signal<string>("");
-const isLoading = signal<boolean>(false);
+const workspaceDir = signal("");
+const managedSkillsDir = signal("");
+const isLoading = signal(false);
 const error = signal<string | null>(null);
 
-// Search and filters
-const searchQuery = signal<string>("");
+// Filters
+const searchQuery = signal("");
 const sourceFilter = signal<SkillSource | "all">("all");
 const statusFilter = signal<SkillStatus | "all">("all");
 
-// Expanded rows
+// UI state
 const expandedSkills = signal<Set<string>>(new Set());
-
-// Install modal
 const installModal = signal<SkillStatusEntry | null>(null);
-const isInstalling = signal<boolean>(false);
 
 // ============================================
-// Computed Values
+// Computed
 // ============================================
 
-/** Compute stats in a single pass for efficiency */
 const stats = computed(() => {
   const all = skills.value;
   let eligible = 0;
@@ -114,7 +81,6 @@ const stats = computed(() => {
 const filteredSkills = computed(() => {
   let result = skills.value;
 
-  // Search filter
   const query = searchQuery.value.toLowerCase().trim();
   if (query) {
     result = result.filter(
@@ -125,12 +91,10 @@ const filteredSkills = computed(() => {
     );
   }
 
-  // Source filter
   if (sourceFilter.value !== "all") {
     result = result.filter((s) => s.source === sourceFilter.value);
   }
 
-  // Status filter
   if (statusFilter.value !== "all") {
     result = result.filter((s) => getSkillStatus(s) === statusFilter.value);
   }
@@ -167,7 +131,6 @@ async function toggleSkillEnabled(skill: SkillStatusEntry): Promise<void> {
       enabled: newEnabled,
     });
 
-    // Update local state
     skills.value = skills.value.map((s) =>
       s.skillKey === skill.skillKey ? { ...s, disabled: !newEnabled } : s,
     );
@@ -179,30 +142,6 @@ async function toggleSkillEnabled(skill: SkillStatusEntry): Promise<void> {
     );
   } catch (err) {
     toast.error(getErrorMessage(err));
-  }
-}
-
-async function installSkill(skill: SkillStatusEntry, installId: string): Promise<void> {
-  isInstalling.value = true;
-
-  try {
-    const result = await send<{ ok: boolean; message?: string }>("skills.install", {
-      name: skill.name,
-      installId,
-      timeoutMs: 60000,
-    });
-
-    if (result.ok) {
-      toast.success(t("skills.installSuccess", { name: skill.name }));
-      installModal.value = null;
-      await loadSkills();
-    } else {
-      toast.error(result.message || t("skills.installFailed"));
-    }
-  } catch (err) {
-    toast.error(getErrorMessage(err));
-  } finally {
-    isInstalling.value = false;
   }
 }
 
@@ -222,285 +161,10 @@ function clearFilters(): void {
   statusFilter.value = "all";
 }
 
-function setStatusFilter(status: SkillStatus | "all"): void {
-  statusFilter.value = status;
-}
-
-// ============================================
-// Badge Helpers
-// ============================================
-
-function getStatusBadge(status: SkillStatus) {
-  const variants: Record<
-    SkillStatus,
-    { variant: "success" | "default" | "warning" | "error"; key: string }
-  > = {
-    eligible: { variant: "success", key: "skills.status.eligible" },
-    disabled: { variant: "default", key: "skills.status.disabled" },
-    "missing-reqs": { variant: "warning", key: "skills.status.missingReqs" },
-    blocked: { variant: "error", key: "skills.status.blocked" },
-  };
-  const { variant, key } = variants[status];
-  return { variant, label: t(key) };
-}
-
-function getSourceIcon(source: SkillSource) {
-  return SOURCE_ICONS[source] || Puzzle;
-}
-
-function getSourceLabel(source: SkillSource) {
-  const option = SOURCE_OPTIONS.find((o) => o.value === source);
-  return option ? option.label() : source;
-}
-
 // ============================================
 // Sub-Components
 // ============================================
 
-/** Expanded detail panel for a skill */
-function SkillDetails({ skill }: { skill: SkillStatusEntry }) {
-  const missing = getMissingSummary(skill);
-  const hasInstallOptions = skill.install.length > 0 && hasMissingRequirements(skill);
-
-  return (
-    <div class="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]">
-      {/* Full description */}
-      <p class="text-sm text-[var(--color-text-secondary)] mb-4">{skill.description}</p>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-        {/* Left column: Metadata */}
-        <div class="space-y-2">
-          <DetailRow label={t("skills.skillKey")}>
-            <code class="text-xs bg-[var(--color-bg-primary)] px-1 py-0.5 rounded">
-              {skill.skillKey}
-            </code>
-          </DetailRow>
-          <DetailRow label={t("skills.location")}>
-            <span class="text-xs break-all">{skill.filePath}</span>
-          </DetailRow>
-          {skill.homepage && (
-            <div>
-              <a
-                href={skill.homepage}
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-1 text-[var(--color-accent)] hover:underline"
-              >
-                {t("skills.homepage")}
-                <ExternalLink class="w-3 h-3" />
-              </a>
-            </div>
-          )}
-        </div>
-
-        {/* Right column: Requirements & actions */}
-        <div class="space-y-2">
-          {missing.length > 0 && (
-            <div>
-              <span class="text-[var(--color-warning)] font-medium">
-                {t("skills.missingRequirements")}:
-              </span>
-              <ul class="list-disc list-inside text-xs mt-1 space-y-0.5">
-                {missing.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {skill.blockedByAllowlist && (
-            <div class="flex items-center gap-2 text-[var(--color-error)]">
-              <ShieldOff class="w-4 h-4" />
-              <span>{t("skills.blockedByAllowlist")}</span>
-            </div>
-          )}
-
-          {hasInstallOptions && (
-            <div class="pt-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={Download}
-                onClick={() => {
-                  installModal.value = skill;
-                }}
-              >
-                {t("skills.installDeps")}
-              </Button>
-            </div>
-          )}
-
-          {skill.primaryEnv && (
-            <div class="text-xs text-[var(--color-text-muted)]">
-              {t("skills.primaryEnv")}: <code>{skill.primaryEnv}</code>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/** Simple label: value row */
-function DetailRow({ label, children }: { label: string; children: preact.ComponentChildren }) {
-  return (
-    <div>
-      <span class="text-[var(--color-text-muted)]">{label}:</span> {children}
-    </div>
-  );
-}
-
-/** Single skill row with expand/collapse */
-function SkillRow({ skill }: { skill: SkillStatusEntry }) {
-  const status = getSkillStatus(skill);
-  const statusBadge = getStatusBadge(status);
-  const SourceIcon = getSourceIcon(skill.source);
-  const isExpanded = expandedSkills.value.has(skill.skillKey);
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    if (e.key === "Enter" || e.key === " ") {
-      e.preventDefault();
-      toggleExpanded(skill.skillKey);
-    }
-  };
-
-  const handleToggleClick = (e: Event) => {
-    e.stopPropagation();
-  };
-
-  return (
-    <div class="border-b border-[var(--color-border)] last:border-b-0">
-      <div
-        class="flex items-center gap-4 px-4 py-3 hover:bg-[var(--color-bg-tertiary)] cursor-pointer"
-        role="button"
-        tabIndex={0}
-        onClick={() => toggleExpanded(skill.skillKey)}
-        onKeyDown={handleKeyDown}
-      >
-        <IconButton
-          icon={isExpanded ? <ChevronDown /> : <ChevronRight />}
-          label={isExpanded ? t("actions.collapse") : t("actions.expand")}
-          size="sm"
-          variant="ghost"
-          showTooltip={false}
-        />
-
-        <span class="text-xl w-8 text-center flex-shrink-0">{skill.emoji || "🔧"}</span>
-
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="font-medium truncate">{skill.name}</span>
-            {skill.always && (
-              <span class="text-xs text-[var(--color-text-muted)]" title={t("skills.alwaysActive")}>
-                ⚡
-              </span>
-            )}
-          </div>
-          <div class="text-sm text-[var(--color-text-muted)] truncate" title={skill.description}>
-            {skill.description}
-          </div>
-        </div>
-
-        <div class="hidden md:flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
-          <SourceIcon class="w-4 h-4" />
-          <span>{getSourceLabel(skill.source)}</span>
-        </div>
-
-        <div class="w-24 flex justify-end">
-          <Badge variant={statusBadge.variant}>{statusBadge.label}</Badge>
-        </div>
-
-        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events */}
-        <span role="presentation" onClick={handleToggleClick}>
-          <Toggle
-            checked={!skill.disabled}
-            onChange={() => toggleSkillEnabled(skill)}
-            size="sm"
-            aria-label={skill.disabled ? t("skills.enable") : t("skills.disable")}
-          />
-        </span>
-      </div>
-
-      {isExpanded && <SkillDetails skill={skill} />}
-    </div>
-  );
-}
-
-/** Install dependencies modal */
-function InstallModal() {
-  const skill = installModal.value;
-  if (!skill) return null;
-
-  const closeModal = () => {
-    installModal.value = null;
-  };
-
-  return (
-    <Modal open={true} onClose={closeModal} title={t("skills.installTitle", { name: skill.name })}>
-      <div class="space-y-4">
-        <p class="text-sm text-[var(--color-text-muted)]">{t("skills.installDescription")}</p>
-
-        <div class="space-y-2">
-          {skill.install.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              class="w-full flex items-center gap-3 p-3 rounded-lg border border-[var(--color-border)] hover:bg-[var(--color-bg-tertiary)] transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={() => installSkill(skill, option.id)}
-              disabled={isInstalling.value}
-            >
-              <Download class="w-5 h-5 text-[var(--color-accent)]" />
-              <div class="flex-1">
-                <div class="font-medium">{option.label}</div>
-                {option.bins.length > 0 && (
-                  <div class="text-xs text-[var(--color-text-muted)]">
-                    {t("skills.providesBins")}: {option.bins.join(", ")}
-                  </div>
-                )}
-              </div>
-              {isInstalling.value && <Spinner size="sm" />}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div class="mt-6 flex justify-end">
-        <Button variant="secondary" onClick={closeModal}>
-          {t("actions.cancel")}
-        </Button>
-      </div>
-    </Modal>
-  );
-}
-
-/** Empty state with optional filter reset */
-function EmptyState() {
-  const hasFilters =
-    searchQuery.value || sourceFilter.value !== "all" || statusFilter.value !== "all";
-
-  return (
-    <div class="text-center py-12">
-      <Search class="w-12 h-12 mx-auto text-[var(--color-text-muted)] mb-4" />
-      <h3 class="text-lg font-medium mb-2">
-        {hasFilters ? t("skills.noResults") : t("skills.emptyTitle")}
-      </h3>
-      <p class="text-[var(--color-text-muted)] mb-4">
-        {hasFilters ? t("skills.noResultsDescription") : t("skills.emptyDescription")}
-      </p>
-      {hasFilters && (
-        <Button variant="secondary" onClick={clearFilters}>
-          {t("skills.clearFilters")}
-        </Button>
-      )}
-    </div>
-  );
-}
-
-// ============================================
-// Main View
-// ============================================
-
-/** Tab button component */
 function TabButton({ tab, label, active }: { tab: SkillsTab; label: string; active: boolean }) {
   return (
     <button
@@ -519,6 +183,33 @@ function TabButton({ tab, label, active }: { tab: SkillsTab; label: string; acti
   );
 }
 
+function EmptyState({ hasFilters }: { hasFilters: boolean }) {
+  return (
+    <div class="text-center py-12">
+      <Search class="w-12 h-12 mx-auto text-[var(--color-text-muted)] mb-4" />
+      <h3 class="text-lg font-medium mb-2">
+        {hasFilters ? t("skills.noResults") : t("skills.emptyTitle")}
+      </h3>
+      <p class="text-[var(--color-text-muted)] mb-4">
+        {hasFilters ? t("skills.noResultsDescription") : t("skills.emptyDescription")}
+      </p>
+      {hasFilters && (
+        <button
+          type="button"
+          onClick={clearFilters}
+          class="text-[var(--color-accent)] hover:underline"
+        >
+          {t("skills.clearFilters")}
+        </button>
+      )}
+    </div>
+  );
+}
+
+// ============================================
+// Main View
+// ============================================
+
 export function SkillsView(_props: RouteProps) {
   useEffect(() => {
     if (isConnected.value && activeTab.value === "installed") {
@@ -529,6 +220,8 @@ export function SkillsView(_props: RouteProps) {
   const filtered = filteredSkills.value;
   const s = stats.value;
   const tab = activeTab.value;
+  const hasFilters =
+    !!searchQuery.value || sourceFilter.value !== "all" || statusFilter.value !== "all";
 
   return (
     <div class="flex-1 overflow-y-auto p-6">
@@ -565,48 +258,47 @@ export function SkillsView(_props: RouteProps) {
         {/* Installed Tab */}
         {tab === "installed" && (
           <>
-            {/* Error state */}
-            {error.value && (
-              <Card class="border-[var(--color-error)] bg-[var(--color-error)]/10">
-                <div class="flex items-center gap-3 text-[var(--color-error)]">
-                  <AlertTriangle class="w-5 h-5 flex-shrink-0" />
-                  <span>{error.value}</span>
-                </div>
-              </Card>
-            )}
+            {/* Error */}
+            {error.value && <HintBox variant="error">{error.value}</HintBox>}
 
-            {/* Loading state */}
+            {/* Loading */}
             {isLoading.value && skills.value.length === 0 && (
               <div class="flex items-center justify-center py-12">
                 <Spinner size="lg" />
               </div>
             )}
 
-            {/* Main content */}
+            {/* Content */}
             {!isLoading.value && !error.value && (
               <>
-                {/* Stat cards */}
+                {/* Stats */}
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <StatCard
                     icon={Puzzle}
                     label={t("skills.stats.total")}
                     value={s.total}
                     active={statusFilter.value === "all"}
-                    onClick={() => setStatusFilter("all")}
+                    onClick={() => {
+                      statusFilter.value = "all";
+                    }}
                   />
                   <StatCard
                     icon={CheckCircle}
                     label={t("skills.stats.eligible")}
                     value={s.eligible}
                     active={statusFilter.value === "eligible"}
-                    onClick={() => setStatusFilter("eligible")}
+                    onClick={() => {
+                      statusFilter.value = "eligible";
+                    }}
                   />
                   <StatCard
                     icon={XCircle}
                     label={t("skills.stats.disabled")}
                     value={s.disabled}
                     active={statusFilter.value === "disabled"}
-                    onClick={() => setStatusFilter("disabled")}
+                    onClick={() => {
+                      statusFilter.value = "disabled";
+                    }}
                   />
                   <StatCard
                     icon={AlertTriangle}
@@ -614,7 +306,9 @@ export function SkillsView(_props: RouteProps) {
                     value={s.missingReqs}
                     active={statusFilter.value === "missing-reqs"}
                     highlight={s.missingReqs > 0}
-                    onClick={() => setStatusFilter("missing-reqs")}
+                    onClick={() => {
+                      statusFilter.value = "missing-reqs";
+                    }}
                   />
                 </div>
 
@@ -652,11 +346,20 @@ export function SkillsView(_props: RouteProps) {
                 {/* Skills list */}
                 <Card padding="none">
                   {filtered.length === 0 ? (
-                    <EmptyState />
+                    <EmptyState hasFilters={hasFilters} />
                   ) : (
                     <div>
                       {filtered.map((skill) => (
-                        <SkillRow key={skill.skillKey} skill={skill} />
+                        <SkillRow
+                          key={skill.skillKey}
+                          skill={skill}
+                          isExpanded={expandedSkills.value.has(skill.skillKey)}
+                          onToggleExpand={() => toggleExpanded(skill.skillKey)}
+                          onToggleEnabled={() => toggleSkillEnabled(skill)}
+                          onInstall={(s) => {
+                            installModal.value = s;
+                          }}
+                        />
                       ))}
                     </div>
                   )}
@@ -678,7 +381,14 @@ export function SkillsView(_props: RouteProps) {
           </>
         )}
 
-        <InstallModal />
+        {/* Install modal */}
+        <InstallDepsModal
+          skill={installModal.value}
+          onClose={() => {
+            installModal.value = null;
+          }}
+          onSuccess={loadSkills}
+        />
       </div>
     </div>
   );

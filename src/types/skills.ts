@@ -4,8 +4,13 @@
  * Types for the skills.status gateway method response.
  */
 
-/** Known skill sources, but API may return other values */
-export type SkillSource = "bundled" | "managed" | "workspace" | string;
+/** Known skill sources from the API */
+export type SkillSource =
+  | "openclaw-bundled"
+  | "openclaw-managed"
+  | "openclaw-workspace"
+  | "openclaw-extra"
+  | string;
 
 export interface SkillConfigCheck {
   path: string;
