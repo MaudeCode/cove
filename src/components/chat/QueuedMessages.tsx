@@ -22,8 +22,8 @@ import {
 } from "@/components/ui/icons";
 import type { Message, MessageImage } from "@/types/messages";
 
-/** Character threshold for collapsing long messages */
-const COLLAPSE_THRESHOLD = 150;
+/** Character threshold for showing expand/collapse toggle */
+const COLLAPSE_THRESHOLD = 100;
 
 /** Max image dimension for display in modal */
 const MAX_PREVIEW_SIZE = 120;
@@ -117,10 +117,6 @@ export function QueuedMessages() {
             const isLong = message.content.length > COLLAPSE_THRESHOLD;
             const isExpanded = expandedIds.has(message.id);
             const hasImages = message.images && message.images.length > 0;
-            const displayContent =
-              isLong && !isExpanded
-                ? `${message.content.slice(0, COLLAPSE_THRESHOLD)}…`
-                : message.content;
 
             return (
               <div
@@ -130,8 +126,12 @@ export function QueuedMessages() {
                 {/* Message content */}
                 <div class="flex items-start gap-2">
                   <div class="flex-1 min-w-0">
-                    <p class="text-sm text-[var(--color-text-secondary)] whitespace-pre-wrap break-words">
-                      {displayContent}
+                    <p
+                      class={`text-sm text-[var(--color-text-secondary)] break-words ${
+                        isLong && !isExpanded ? "line-clamp-1" : "whitespace-pre-wrap"
+                      }`}
+                    >
+                      {message.content}
                     </p>
                     {/* Image indicator */}
                     {hasImages && (
