@@ -10,7 +10,7 @@ import Router from "preact-router";
 import { initTheme } from "@/lib/theme";
 import { initI18n } from "@/lib/i18n";
 import { initStorage, getAuth, hasCompletedOnboarding, consumePendingTour } from "@/lib/storage";
-import { isConnected, connect } from "@/lib/gateway";
+import { isConnected, connect, connectionState } from "@/lib/gateway";
 import { initChat } from "@/lib/chat/init";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
@@ -90,10 +90,18 @@ export function App() {
   };
 
   // Determine which view to show
+  // When reconnecting, keep showing the main router (with disabled input via ConnectionBanner)
+  // Only show LoginView when truly disconnected (not reconnecting)
+  const isReconnecting = connectionState.value === "reconnecting";
+  const showLogin =
+    !showOnboarding.value &&
+    !isReconnecting &&
+    (authChecked.value ? !isConnected.value : !hasSavedAuth.value);
+
   let content;
   if (showOnboarding.value) {
     content = <WelcomeWizard onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />;
-  } else if (authChecked.value ? !isConnected.value : !hasSavedAuth.value) {
+  } else if (showLogin) {
     content = <LoginView />;
   } else {
     content = <MainRouter />;
