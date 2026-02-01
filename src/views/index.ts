@@ -7,6 +7,7 @@
 // Core views
 export { ChatView } from "./ChatView";
 export { LoginView } from "./LoginView";
+export { SettingsView } from "./SettingsView";
 
 // Control views
 export { StatusView as OverviewView } from "./StatusView"; // Reuse Status as Overview for now

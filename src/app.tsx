@@ -32,6 +32,7 @@ import {
   ConfigView,
   DebugView,
   LogsView,
+  SettingsView,
 } from "@/views";
 
 // Initialize storage synchronously so we can check saved auth immediately
@@ -103,6 +104,7 @@ function MainRouter() {
       <NodesView path="/nodes" />
 
       {/* Settings */}
+      <SettingsView path="/settings" />
       <ConfigView path="/config" />
       <DebugView path="/debug" />
       <LogsView path="/logs" />
