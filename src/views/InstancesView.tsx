@@ -7,7 +7,7 @@
 
 import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { t } from "@/lib/i18n";
+import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import { Card } from "@/components/ui/Card";
@@ -41,14 +41,6 @@ function getDeviceIcon(presence: SystemPresence) {
   if (family.includes("mac") || family.includes("windows") || family.includes("linux"))
     return Monitor;
   return Globe;
-}
-
-function formatPresenceAge(ts: number): string {
-  const seconds = Math.floor((Date.now() - ts) / 1000);
-  if (seconds < 60) return t("instances.justNow");
-  if (seconds < 3600) return t("instances.minutesAgo", { count: Math.floor(seconds / 60) });
-  if (seconds < 86400) return t("instances.hoursAgo", { count: Math.floor(seconds / 3600) });
-  return t("instances.daysAgo", { count: Math.floor(seconds / 86400) });
 }
 
 function formatIdleTime(seconds?: number): string {
@@ -155,7 +147,7 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
       <td class="py-3 px-4 whitespace-nowrap">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Clock class="w-3.5 h-3.5" />
-          <span>{formatPresenceAge(presence.ts)}</span>
+          <span>{formatTimestamp(presence.ts, { relative: true })}</span>
         </div>
       </td>
 
