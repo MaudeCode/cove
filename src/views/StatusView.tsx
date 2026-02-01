@@ -16,8 +16,8 @@ import {
   gatewayUrl,
   gatewayCommit,
   gatewayHost,
+  gatewayUptime,
   connectedAt,
-  gatewayUptimeMs,
   presence,
   disconnect,
   send,
@@ -169,14 +169,9 @@ async function fetchDashboardData() {
 // Computed Values
 // ============================================
 
-const uptime = computed(() => {
-  const startUptime = gatewayUptimeMs.value;
-  const connected = connectedAt.value;
-  if (startUptime == null || connected == null) return null;
-
-  // Calculate current gateway uptime based on initial uptime + time since we connected
-  const elapsed = Date.now() - connected;
-  const ms = startUptime + elapsed;
+const uptimeFormatted = computed(() => {
+  const ms = gatewayUptime.value;
+  if (ms == null) return null;
 
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
@@ -403,7 +398,7 @@ export function StatusView(_props: RouteProps) {
             <StatCard
               icon={Clock}
               label="Uptime"
-              value={uptime.value ?? "—"}
+              value={uptimeFormatted.value ?? "—"}
               subtext={
                 connectedAt.value ? `Since ${formatTimestamp(connectedAt.value)}` : undefined
               }
