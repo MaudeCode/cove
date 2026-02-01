@@ -42,7 +42,33 @@
     "hint2": "Check that the gateway is running",
     "hint3": "Ensure your credentials are valid",
     "hint4": "Try refreshing if using HTTPS with self-signed certs",
-    "tryAgain": "Try Again"
+    "tryAgain": "Try Again",
+    "showFeatureTour": "Show feature tour"
+  },
+
+  "tour": {
+    "skipTour": "Skip tour",
+    "startChatting": "Start Chatting",
+    "themesTitle": "Personalize Your Experience",
+    "themesDesc": "Choose from multiple themes to match your style.",
+    "themesTip1": "6 built-in themes: Light, Dark, Nord, Dracula, and more",
+    "themesTip2": "System preference auto-switching supported",
+    "themesTip3": "Change anytime in Settings",
+    "shortcutsTitle": "Keyboard Shortcuts",
+    "shortcutsDesc": "Work faster with keyboard navigation.",
+    "shortcutsTip1": "⌘/Ctrl + K — Quick command palette",
+    "shortcutsTip2": "⌘/Ctrl + F — Search messages",
+    "shortcutsTip3": "Enter to send, Shift+Enter for newline",
+    "sessionsTitle": "Session Management",
+    "sessionsDesc": "Organize conversations your way.",
+    "sessionsTip1": "Multiple sessions with different contexts",
+    "sessionsTip2": "Rename, pin, and filter sessions",
+    "sessionsTip3": "Switch models per session",
+    "uploadsTitle": "File Uploads",
+    "uploadsDesc": "Share images and files with your assistant.",
+    "uploadsTip1": "Drag & drop files into the chat",
+    "uploadsTip2": "Paste images directly from clipboard",
+    "uploadsTip3": "Click the attachment button to browse"
   },
 
   "actions": {

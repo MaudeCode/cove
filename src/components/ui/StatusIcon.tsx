@@ -5,8 +5,8 @@
  * Use for success confirmations, error states, empty states, etc.
  */
 
-import type { ComponentChildren } from "preact";
 import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-preact";
+import type { FunctionComponent } from "preact";
 
 type StatusIconVariant = "success" | "error" | "warning" | "info";
 type StatusIconSize = "sm" | "md" | "lg";
@@ -16,8 +16,6 @@ interface StatusIconProps {
   variant: StatusIconVariant;
   /** Size of the circle */
   size?: StatusIconSize;
-  /** Custom icon (overrides default) */
-  icon?: ComponentChildren;
   /** Additional class */
   class?: string;
 }
@@ -35,16 +33,16 @@ const sizeStyles: Record<StatusIconSize, { container: string; icon: string }> = 
   lg: { container: "w-16 h-16", icon: "w-8 h-8" },
 };
 
-const defaultIcons: Record<StatusIconVariant, ComponentChildren> = {
-  success: <CheckCircle />,
-  error: <XCircle />,
-  warning: <AlertTriangle />,
-  info: <Info />,
+const defaultIcons: Record<StatusIconVariant, FunctionComponent<{ class?: string }>> = {
+  success: CheckCircle,
+  error: XCircle,
+  warning: AlertTriangle,
+  info: Info,
 };
 
-export function StatusIcon({ variant, size = "lg", icon, class: className }: StatusIconProps) {
+export function StatusIcon({ variant, size = "lg", class: className }: StatusIconProps) {
   const { container, icon: iconSize } = sizeStyles[size];
-  const defaultIcon = defaultIcons[variant];
+  const IconComponent = defaultIcons[variant];
 
   return (
     <div
@@ -56,7 +54,7 @@ export function StatusIcon({ variant, size = "lg", icon, class: className }: Sta
         ${className || ""}
       `}
     >
-      <span class={iconSize}>{icon || defaultIcon}</span>
+      <IconComponent class={iconSize} />
     </div>
   );
 }

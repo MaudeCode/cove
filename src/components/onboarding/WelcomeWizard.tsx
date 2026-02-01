@@ -33,8 +33,9 @@ import {
 import { ArrowRight, ArrowLeft, Zap, Shield, Globe, Check, AlertCircle } from "lucide-preact";
 import { WizardNav } from "./WizardNav";
 import { WizardProgress } from "./WizardProgress";
+import { FeatureTour } from "./FeatureTour";
 
-type WizardStep = "welcome" | "url" | "auth" | "connect";
+type WizardStep = "welcome" | "url" | "auth" | "connect" | "tour";
 
 interface WelcomeWizardProps {
   onComplete: () => void;
@@ -52,6 +53,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const urlError = useSignal<string | null>(null);
   const probing = useSignal(false);
   const probeSuccess = useSignal(false);
+  const showTour = useSignal(true);
 
   const canProceedFromUrl = useComputed(() => {
     const value = url.value.trim();
@@ -239,11 +241,13 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   return (
     <div class="flex-1 flex items-center justify-center p-8">
       <div class="w-full max-w-md">
-        <WizardProgress
-          steps={["welcome", "url", "auth", "connect"] as const}
-          current={step.value}
-          class="mb-8"
-        />
+        {step.value !== "tour" && (
+          <WizardProgress
+            steps={["welcome", "url", "auth", "connect"] as const}
+            current={step.value === "tour" ? "connect" : step.value}
+            class="mb-8"
+          />
+        )}
 
         {/* Step content */}
         {step.value === "welcome" && <WelcomeStep onNext={goNext} onSkip={handleSkip} />}
@@ -284,10 +288,20 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
             connecting={connecting.value}
             connected={connected.value}
             error={lastError.value}
+            showTour={showTour.value}
+            onShowTourChange={(v) => (showTour.value = v)}
             onRetry={handleRetry}
-            onComplete={onComplete}
+            onContinue={() => {
+              if (showTour.value) {
+                step.value = "tour";
+              } else {
+                onComplete();
+              }
+            }}
           />
         )}
+
+        {step.value === "tour" && <FeatureTour onComplete={onComplete} onSkip={onComplete} />}
       </div>
     </div>
   );
@@ -534,11 +548,21 @@ interface ConnectStepProps {
   connecting: boolean;
   connected: boolean;
   error: string | null;
+  showTour: boolean;
+  onShowTourChange: (value: boolean) => void;
   onRetry: () => void;
-  onComplete: () => void;
+  onContinue: () => void;
 }
 
-function ConnectStep({ connecting, connected, error, onRetry, onComplete }: ConnectStepProps) {
+function ConnectStep({
+  connecting,
+  connected,
+  error,
+  showTour,
+  onShowTourChange,
+  onRetry,
+  onContinue,
+}: ConnectStepProps) {
   return (
     <Card variant="elevated" padding="lg" class="text-center">
       {connecting && (
@@ -553,14 +577,24 @@ function ConnectStep({ connecting, connected, error, onRetry, onComplete }: Conn
         <>
           <StatusIcon variant="success" class="mx-auto mb-4" />
           <h2 class="text-lg font-semibold mb-2">{t("onboarding.success")}</h2>
-          <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.successDesc")}</p>
+          <p class="text-sm text-[var(--color-text-muted)] mb-4">{t("onboarding.successDesc")}</p>
+
+          <div class="mb-6">
+            <Toggle
+              checked={showTour}
+              onChange={onShowTourChange}
+              label={t("onboarding.showFeatureTour")}
+              size="sm"
+            />
+          </div>
+
           <Button
             variant="primary"
-            onClick={onComplete}
+            onClick={onContinue}
             fullWidth
             iconRight={<ArrowRight class="w-4 h-4" />}
           >
-            {t("onboarding.startChatting")}
+            {showTour ? t("actions.continue") : t("onboarding.startChatting")}
           </Button>
         </>
       )}
