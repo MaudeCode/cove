@@ -565,24 +565,26 @@ function JobEditForm() {
   return (
     <div class="space-y-5">
       {/* Basic Info */}
-      <div class="grid grid-cols-2 gap-4">
-        <FormField label={t("cron.form.name")}>
-          <Input
-            value={editName.value}
-            onInput={(e) => (editName.value = (e.target as HTMLInputElement).value)}
-            placeholder={t("cron.form.namePlaceholder")}
-            fullWidth
-          />
-        </FormField>
-        <FormField label={t("cron.form.enabled")}>
-          <div class="pt-2">
-            <Toggle
-              checked={editEnabled.value}
-              onChange={(checked) => (editEnabled.value = checked)}
-              label={editEnabled.value ? t("cron.enabled") : t("cron.disabled")}
+      <div class="flex items-end gap-4">
+        <div class="flex-1">
+          <FormField label={t("cron.form.name")}>
+            <Input
+              value={editName.value}
+              onInput={(e) => (editName.value = (e.target as HTMLInputElement).value)}
+              placeholder={t("cron.form.namePlaceholder")}
+              fullWidth
             />
-          </div>
-        </FormField>
+          </FormField>
+        </div>
+        <div class="flex items-center gap-2 pb-1">
+          <Toggle
+            checked={editEnabled.value}
+            onChange={(checked) => (editEnabled.value = checked)}
+          />
+          <span class="text-sm text-[var(--color-text-secondary)]">
+            {editEnabled.value ? t("cron.enabled") : t("cron.disabled")}
+          </span>
+        </div>
       </div>
 
       <FormField label={t("cron.form.description")} hint={t("cron.form.descriptionHint")}>
