@@ -167,7 +167,8 @@
     "dateTo": "To",
     "attachFile": "Attach file",
     "dropFiles": "Drop files here",
-    "imageViewer": "Image viewer"
+    "imageViewer": "Image viewer",
+    "copyMarkdown": "Copy markdown"
   },
 
   "sessions": {
