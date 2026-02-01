@@ -27,8 +27,7 @@ import {
   type FontFamily,
   type TimeFormat,
 } from "@/signals/settings";
-import { agents, defaultAgentId } from "@/signals/agents";
-import { getAgentDisplayName, getAgentEmoji } from "@/types/agents";
+import { agentOptions, defaultAgentId } from "@/signals/agents";
 import { APP_VERSION } from "@/lib/constants";
 
 // ============================================
@@ -200,10 +199,7 @@ export function SettingsView(_props: SettingsViewProps) {
                 onChange={(value) => {
                   newChatSettings.value = { ...newChatSettings.value, defaultAgentId: value };
                 }}
-                options={agents.value.map((agent) => ({
-                  value: agent.id,
-                  label: `${getAgentEmoji(agent)} ${getAgentDisplayName(agent)}`,
-                }))}
+                options={agentOptions.value}
                 size="sm"
                 class="min-w-[180px]"
               />
@@ -240,10 +236,7 @@ export function SettingsView(_props: SettingsViewProps) {
                         agentId: value === defaultAgentId.value ? null : value,
                       };
                     }}
-                    options={agents.value.map((agent) => ({
-                      value: agent.id,
-                      label: `${getAgentEmoji(agent)} ${getAgentDisplayName(agent)}`,
-                    }))}
+                    options={agentOptions.value}
                     size="sm"
                     class="min-w-[180px]"
                   />
