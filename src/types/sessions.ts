@@ -56,6 +56,15 @@ export interface Session {
     role: string;
     content: unknown;
   }>;
+
+  /** Thinking level override */
+  thinking?: string;
+
+  /** Verbose level override */
+  verbose?: string;
+
+  /** Reasoning level override */
+  reasoning?: string;
 }
 
 export interface SessionsListResult {

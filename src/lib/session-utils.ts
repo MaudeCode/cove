@@ -173,3 +173,27 @@ export function formatTokens(tokens: number | undefined): string | null {
   if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}K`;
   return tokens.toString();
 }
+
+// ============================================
+// Session Kind Utilities (for admin views)
+// ============================================
+
+/** Session kind for display/filtering */
+export type SessionKind = "main" | "channel" | "cron" | "isolated";
+
+/**
+ * Get the display kind for a session (for filtering and display)
+ */
+export function getSessionDisplayKind(session: Session): SessionKind {
+  if (session.key.includes(":cron:")) return "cron";
+  if (isChannelSession(session)) return "channel";
+  if (isMainSession(session.key)) return "main";
+  return "isolated";
+}
+
+/**
+ * Extract error message from unknown error
+ */
+export function getErrorMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
