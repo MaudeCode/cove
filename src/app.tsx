@@ -9,7 +9,7 @@ import { signal } from "@preact/signals";
 import Router from "preact-router";
 import { initTheme } from "@/lib/theme";
 import { initI18n } from "@/lib/i18n";
-import { initStorage, getAuth } from "@/lib/storage";
+import { initStorage, getAuth, hasCompletedOnboarding } from "@/lib/storage";
 import { isConnected, connect } from "@/lib/gateway";
 import { initChat } from "@/lib/chat";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
@@ -34,6 +34,7 @@ import {
   LogsView,
   SettingsView,
 } from "@/views";
+import { WelcomeWizard } from "@/components/onboarding";
 
 // Initialize storage synchronously so we can check saved auth immediately
 initStorage();
@@ -42,6 +43,7 @@ initStorage();
 const savedAuth = getAuth();
 const hasSavedAuth = signal(!!(savedAuth?.url && savedAuth.rememberMe));
 const authChecked = signal(false);
+const showOnboarding = signal(!hasCompletedOnboarding() && !savedAuth?.url);
 
 export function App() {
   // Initialize remaining systems on mount
@@ -54,10 +56,28 @@ export function App() {
     });
   }, []);
 
-  // Determine if we should show login content
-  // Before auth check completes: use hasSavedAuth to prevent flash of login for auto-connect
-  // After auth check completes: use isConnected directly
-  const showLoginContent = authChecked.value ? !isConnected.value : !hasSavedAuth.value;
+  // Determine what content to show
+  // 1. First-run users without saved auth → onboarding wizard
+  // 2. Not connected (after auth check) → login view
+  // 3. Connected → main router
+
+  const handleOnboardingComplete = () => {
+    showOnboarding.value = false;
+  };
+
+  const handleOnboardingSkip = () => {
+    showOnboarding.value = false;
+  };
+
+  // Determine which view to show
+  let content;
+  if (showOnboarding.value) {
+    content = <WelcomeWizard onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />;
+  } else if (authChecked.value ? !isConnected.value : !hasSavedAuth.value) {
+    content = <LoginView />;
+  } else {
+    content = <MainRouter />;
+  }
 
   return (
     <TooltipProvider>
@@ -67,7 +87,7 @@ export function App() {
         }}
       >
         {/* Always render AppShell - just change content inside */}
-        <AppShell>{showLoginContent ? <LoginView /> : <MainRouter />}</AppShell>
+        <AppShell>{content}</AppShell>
       </ErrorBoundary>
       <ToastContainer position="top-right" />
     </TooltipProvider>

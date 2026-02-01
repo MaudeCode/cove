@@ -40,6 +40,7 @@ export interface StorageSchema {
   auth: StoredAuth;
   recentSessions: string[];
   schemaVersion: number;
+  hasCompletedOnboarding: boolean;
 }
 
 /**
@@ -70,6 +71,7 @@ const defaults: StorageSchema = {
   },
   recentSessions: [],
   schemaVersion: CURRENT_SCHEMA_VERSION,
+  hasCompletedOnboarding: false,
 };
 
 // ============================================
@@ -253,6 +255,20 @@ export function addRecentSession(sessionKey: string): void {
   const filtered = recent.filter((key) => key !== sessionKey);
   const updated = [sessionKey, ...filtered].slice(0, 20);
   set("recentSessions", updated);
+}
+
+/**
+ * Check if user has completed onboarding
+ */
+export function hasCompletedOnboarding(): boolean {
+  return get("hasCompletedOnboarding") ?? false;
+}
+
+/**
+ * Mark onboarding as complete
+ */
+export function completeOnboarding(): void {
+  set("hasCompletedOnboarding", true);
 }
 
 // ============================================
