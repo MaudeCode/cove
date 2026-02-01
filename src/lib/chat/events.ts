@@ -42,8 +42,12 @@ export function subscribeToChatEvents(): () => void {
     const evt = payload as AgentEvent;
     if (evt.stream === "tool") {
       handleToolEvent(evt);
-    } else if (evt.stream === "lifecycle" && evt.data?.phase === "start") {
-      handleLifecycleStart(evt);
+    } else if (evt.stream === "lifecycle") {
+      if (evt.data?.phase === "start") {
+        handleLifecycleStart(evt);
+      } else if (evt.data?.phase === "end" || evt.data?.phase === "error") {
+        handleLifecycleEnd(evt);
+      }
     } else if (evt.stream === "compaction") {
       handleCompactionEvent(evt);
     }
@@ -62,9 +66,6 @@ export function unsubscribeFromChatEvents(): void {
   }
 }
 
-/** Timeout for empty pending runs (handles heartbeats and other suppressed responses) */
-const EMPTY_PENDING_TIMEOUT_MS = 5000;
-
 /**
  * Handle lifecycle start event - ensures run exists even before text deltas.
  */
@@ -75,17 +76,40 @@ function handleLifecycleStart(evt: AgentEvent): void {
   if (!existingRun && sessionKey) {
     log.chat.debug("Creating run on-the-fly for lifecycle start:", runId, "session:", sessionKey);
     startRun(runId, sessionKey);
+  }
+}
 
-    // Set a timeout to clean up runs that never receive any content.
-    // This handles cases where the gateway suppresses responses (HEARTBEAT_OK, NO_REPLY)
-    // and never sends a final event.
-    setTimeout(() => {
-      const run = activeRuns.value.get(runId);
-      if (run && run.status === "pending" && run.content === "") {
-        log.chat.debug("Cleaning up empty pending run (likely suppressed response):", runId);
-        completeRun(runId);
-      }
-    }, EMPTY_PENDING_TIMEOUT_MS);
+/**
+ * Handle lifecycle end event - completes runs that may not receive a chat.final event.
+ * This is critical for heartbeat runs where the gateway suppresses chat events but still
+ * sends lifecycle events.
+ */
+function handleLifecycleEnd(evt: AgentEvent): void {
+  const { runId } = evt;
+  const existingRun = activeRuns.value.get(runId);
+
+  if (existingRun && (existingRun.status === "pending" || existingRun.status === "streaming")) {
+    log.chat.debug("Completing run via lifecycle end:", runId, "phase:", evt.data?.phase);
+
+    // If the run has content, create a message from it
+    if (existingRun.content) {
+      const finalMessage = {
+        id: `assistant_${runId}`,
+        role: "assistant" as const,
+        content: existingRun.content,
+        toolCalls: existingRun.toolCalls?.length ? existingRun.toolCalls : undefined,
+        timestamp: Date.now(),
+      };
+      completeRun(runId, finalMessage);
+    } else {
+      // Empty run (heartbeat, no-reply, etc.) - just complete without adding a message
+      completeRun(runId);
+    }
+
+    // Process next queued message
+    if (existingRun.sessionKey) {
+      setTimeout(() => processNextQueuedMessage(existingRun.sessionKey), 100);
+    }
   }
 }
 
