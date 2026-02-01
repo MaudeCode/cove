@@ -6,7 +6,7 @@
 
 import type { ComponentChildren } from "preact";
 import { t } from "@/lib/i18n";
-import { Card, Select, ThemePicker } from "@/components/ui";
+import { Card, Dropdown, ThemePicker } from "@/components/ui";
 import { gatewayVersion, gatewayUrl } from "@/lib/gateway";
 import {
   fontSize,
@@ -130,16 +130,16 @@ export function SettingsView(_props: SettingsViewProps) {
               labelKey="settings.appearance.fontSize"
               descriptionKey="settings.appearance.fontSizeDescription"
             >
-              <Select
+              <Dropdown
                 value={fontSize.value}
-                onChange={(e) => {
-                  fontSize.value = (e.target as HTMLSelectElement).value as FontSize;
+                onChange={(value) => {
+                  fontSize.value = value as FontSize;
                 }}
                 options={FONT_SIZE_OPTIONS.map((opt) => ({
                   value: opt.value,
                   label: t(opt.labelKey),
                 }))}
-                class="w-28"
+                size="sm"
               />
             </SettingRow>
 
@@ -147,16 +147,16 @@ export function SettingsView(_props: SettingsViewProps) {
               labelKey="settings.appearance.fontFamily"
               descriptionKey="settings.appearance.fontFamilyDescription"
             >
-              <Select
+              <Dropdown
                 value={fontFamily.value}
-                onChange={(e) => {
-                  fontFamily.value = (e.target as HTMLSelectElement).value as FontFamily;
+                onChange={(value) => {
+                  fontFamily.value = value as FontFamily;
                 }}
                 options={FONT_FAMILY_OPTIONS.map((opt) => ({
                   value: opt.value,
                   label: t(opt.labelKey),
                 }))}
-                class="w-36"
+                size="sm"
               />
             </SettingRow>
           </div>
