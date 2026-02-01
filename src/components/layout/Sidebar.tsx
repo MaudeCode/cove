@@ -16,7 +16,7 @@ import {
   removeSessionAnimated,
   loadSessions,
 } from "@/signals/sessions";
-import { activeRuns } from "@/signals/chat";
+import { activeRuns, getStreamingRun } from "@/signals/chat";
 import { newChatSettings, isMultiChatMode } from "@/signals/settings";
 import { showNewChatModal } from "@/signals/ui";
 import { Button } from "@/components/ui/Button";
@@ -168,18 +168,13 @@ export function Sidebar() {
  * Separate component to properly subscribe to activeRuns signal changes
  */
 function SingleChatSidebar() {
-  // Check if main session is streaming by accessing activeRuns.value directly
-  // This ensures the component re-renders when activeRuns changes
+  // Force subscription to activeRuns changes by reading .value
+  // This ensures re-render when streaming state changes
+  void activeRuns.value;
+
+  // Now use the shared helper to check streaming state
   const mainKey = mainSessionKey.value;
-  let isMainStreaming = false;
-  if (mainKey) {
-    for (const run of activeRuns.value.values()) {
-      if (run.sessionKey === mainKey && (run.status === "pending" || run.status === "streaming")) {
-        isMainStreaming = true;
-        break;
-      }
-    }
-  }
+  const isMainStreaming = mainKey ? !!getStreamingRun(mainKey) : false;
 
   return (
     <div class="flex-1 overflow-y-auto">
