@@ -880,19 +880,25 @@ export const navigation: NavSection[] = [
 - [ ] Include/exclude unknown sessions toggle
 - [ ] Click to switch active session
 
-### 3.5 Cron Job Management
-- [ ] List all jobs (enabled/disabled)
-- [ ] Job details (schedule, payload, target)
-- [ ] Create new job
-  - [ ] Schedule types: at, every, cron
-  - [ ] Payload types: systemEvent, agentTurn
-  - [ ] Session target picker
-- [ ] Edit existing jobs
-- [ ] Delete jobs
-- [ ] Enable/disable toggle
-- [ ] Run job manually (trigger now)
-- [ ] View run history (timestamps, outcomes)
-- [ ] Next run preview
+### 3.5 Cron Job Management ✅
+- [x] List all jobs (enabled/disabled)
+- [x] Job details (schedule, payload, target)
+- [x] Create new job
+  - [x] Schedule types: at, every, cron
+  - [x] Payload types: systemEvent, agentTurn
+  - [x] Session target picker
+- [x] Edit existing jobs
+- [x] Delete jobs
+- [x] Enable/disable toggle
+- [x] Run job manually (trigger now)
+- [x] View run history (timestamps, outcomes)
+- [x] Next run preview
+- [x] Stat cards (total/enabled/disabled/next wake)
+- [x] Search filter
+- [x] Cron expression quick-pick examples
+- [x] Interval preset buttons (1m, 5m, 10m, etc.)
+- [x] Datetime picker for one-time schedules
+- [x] Auto-set payload kind based on session target
 
 ### 3.6 Skills Browser
 - [ ] List bundled, managed, and workspace skills
