@@ -170,6 +170,12 @@ export const navigation: NavSection[] = [
         external: EXTERNAL_URLS.github,
       },
       {
+        id: "github-openclaw",
+        labelKey: "nav.githubOpenClaw",
+        icon: GitHubIcon,
+        external: EXTERNAL_URLS.githubOpenClaw,
+      },
+      {
         id: "discord",
         labelKey: "nav.discord",
         icon: DiscordIcon,

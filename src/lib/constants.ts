@@ -38,6 +38,7 @@ export const APP_VERSION = __APP_VERSION__;
 
 export const EXTERNAL_URLS = {
   docs: "https://docs.openclaw.ai",
-  github: "https://github.com/openclaw/openclaw",
+  github: "https://github.com/MaudeCode/cove",
+  githubOpenClaw: "https://github.com/openclaw/openclaw",
   discord: "https://discord.com/invite/clawd",
 } as const;
