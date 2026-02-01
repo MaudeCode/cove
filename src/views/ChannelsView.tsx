@@ -22,7 +22,6 @@ import { ChannelIcon } from "@/components/ui/ChannelIcon";
 import {
   RefreshCw,
   MessageSquare,
-  CheckCircle2,
   AlertCircle,
   Clock,
   LogOut,
@@ -126,10 +125,18 @@ async function handleLogout(): Promise<void> {
 
 const stats = computed(() => {
   const list = channels.value;
+  // Count channels with activity in the last 24 hours
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+  const activeCount = list.filter((c) =>
+    c.accounts.some((a) => {
+      const lastActivity = Math.max(a.lastInboundAt ?? 0, a.lastOutboundAt ?? 0);
+      return lastActivity > oneDayAgo;
+    }),
+  ).length;
+
   return {
     total: list.length,
-    connected: list.filter((c) => c.status === "connected").length,
-    configured: list.filter((c) => c.status === "configured" || c.status === "connected").length,
+    active: activeCount,
     errors: list.filter((c) => c.status === "error").length,
   };
 });
@@ -338,22 +345,13 @@ export function ChannelsView(_props: RouteProps) {
 
         {/* Stats Cards */}
         {isConnected.value && !isLoading.value && (
-          <div class="grid grid-cols-4 gap-3">
+          <div class="grid grid-cols-3 gap-3">
             <StatCard
               icon={MessageSquare}
               label={t("channels.stats.total")}
               value={statValues.total}
             />
-            <StatCard
-              icon={CheckCircle2}
-              label={t("channels.stats.connected")}
-              value={statValues.connected}
-            />
-            <StatCard
-              icon={Zap}
-              label={t("channels.stats.configured")}
-              value={statValues.configured}
-            />
+            <StatCard icon={Zap} label={t("channels.stats.active")} value={statValues.active} />
             <StatCard
               icon={AlertCircle}
               label={t("channels.stats.errors")}
