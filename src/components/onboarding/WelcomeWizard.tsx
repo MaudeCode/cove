@@ -113,23 +113,16 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   });
 
   const validateUrl = () => {
-    const value = url.value.trim();
-    if (!value) {
+    if (!url.value.trim()) {
       urlError.value = t("errors.required");
       return false;
     }
-    if (!value.startsWith("ws://") && !value.startsWith("wss://")) {
+    if (!canProceedFromUrl.value) {
       urlError.value = t("onboarding.urlError");
       return false;
     }
-    try {
-      new URL(value);
-      urlError.value = null;
-      return true;
-    } catch {
-      urlError.value = t("errors.invalid");
-      return false;
-    }
+    urlError.value = null;
+    return true;
   };
 
   const handleConnect = async () => {
