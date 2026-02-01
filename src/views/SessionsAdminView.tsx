@@ -417,7 +417,7 @@ function SessionRow({ session }: { session: Session }) {
                 />
               </div>
             ) : (
-              <div class="flex items-center gap-2 group/label max-w-[200px]">
+              <div class="flex items-center gap-2 group/label max-w-[280px]">
                 <div class="font-medium truncate flex-1" title={displayName}>
                   {displayName}
                 </div>
@@ -432,7 +432,7 @@ function SessionRow({ session }: { session: Session }) {
               </div>
             )}
             <div
-              class="text-xs text-[var(--color-text-muted)] font-mono truncate max-w-[200px]"
+              class="text-xs text-[var(--color-text-muted)] font-mono truncate max-w-[280px]"
               title={session.key}
             >
               {session.key}
