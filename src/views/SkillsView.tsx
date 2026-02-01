@@ -472,147 +472,151 @@ export function SkillsView(_props: RouteProps) {
   const s = stats.value;
 
   return (
-    <div class="max-w-5xl mx-auto px-4 py-6 space-y-6">
-      {/* Header */}
-      <div class="flex items-center justify-between">
-        <div>
-          <h1 class="text-2xl font-bold">{t("skills.title")}</h1>
-          <p class="text-[var(--color-text-muted)]">{t("skills.description")}</p>
-        </div>
-        <IconButton
-          icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-          onClick={loadSkills}
-          disabled={isLoading.value}
-          label={t("actions.refresh")}
-        />
-      </div>
-
-      {/* Error state */}
-      {error.value && (
-        <Card class="border-[var(--color-error)] bg-[var(--color-error)]/10">
-          <div class="flex items-center gap-3 text-[var(--color-error)]">
-            <AlertTriangle class="w-5 h-5 flex-shrink-0" />
-            <span>{error.value}</span>
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div class="flex items-center justify-between">
+          <div>
+            <h1 class="text-2xl font-bold">{t("skills.title")}</h1>
+            <p class="text-[var(--color-text-muted)]">{t("skills.description")}</p>
           </div>
-        </Card>
-      )}
-
-      {/* Loading state */}
-      {isLoading.value && skills.value.length === 0 && (
-        <div class="flex items-center justify-center py-12">
-          <Spinner size="lg" />
+          <IconButton
+            icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+            onClick={loadSkills}
+            disabled={isLoading.value}
+            label={t("actions.refresh")}
+          />
         </div>
-      )}
 
-      {/* Main content */}
-      {!isLoading.value && !error.value && (
-        <>
-          {/* Stat cards */}
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <StatCard
-              icon={Puzzle}
-              label={t("skills.stats.total")}
-              value={s.total}
-              active={statusFilter.value === "all"}
-              onClick={() => {
-                statusFilter.value = "all";
-              }}
-            />
-            <StatCard
-              icon={CheckCircle}
-              label={t("skills.stats.eligible")}
-              value={s.eligible}
-              active={statusFilter.value === "eligible"}
-              onClick={() => {
-                statusFilter.value = "eligible";
-              }}
-            />
-            <StatCard
-              icon={XCircle}
-              label={t("skills.stats.disabled")}
-              value={s.disabled}
-              active={statusFilter.value === "disabled"}
-              onClick={() => {
-                statusFilter.value = "disabled";
-              }}
-            />
-            <StatCard
-              icon={AlertTriangle}
-              label={t("skills.stats.missingReqs")}
-              value={s.missingReqs}
-              active={statusFilter.value === "missing-reqs"}
-              highlight={s.missingReqs > 0}
-              onClick={() => {
-                statusFilter.value = "missing-reqs";
-              }}
-            />
+        {/* Error state */}
+        {error.value && (
+          <Card class="border-[var(--color-error)] bg-[var(--color-error)]/10">
+            <div class="flex items-center gap-3 text-[var(--color-error)]">
+              <AlertTriangle class="w-5 h-5 flex-shrink-0" />
+              <span>{error.value}</span>
+            </div>
+          </Card>
+        )}
+
+        {/* Loading state */}
+        {isLoading.value && skills.value.length === 0 && (
+          <div class="flex items-center justify-center py-12">
+            <Spinner size="lg" />
           </div>
+        )}
 
-          {/* Filters */}
-          <div class="flex flex-col sm:flex-row gap-4">
-            <div class="flex-1">
-              <Input
-                type="text"
-                placeholder={t("skills.searchPlaceholder")}
-                value={searchQuery.value}
-                onInput={(e) => {
-                  searchQuery.value = (e.target as HTMLInputElement).value;
+        {/* Main content */}
+        {!isLoading.value && !error.value && (
+          <>
+            {/* Stat cards */}
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <StatCard
+                icon={Puzzle}
+                label={t("skills.stats.total")}
+                value={s.total}
+                active={statusFilter.value === "all"}
+                onClick={() => {
+                  statusFilter.value = "all";
                 }}
-                leftElement={<Search class="w-4 h-4" />}
+              />
+              <StatCard
+                icon={CheckCircle}
+                label={t("skills.stats.eligible")}
+                value={s.eligible}
+                active={statusFilter.value === "eligible"}
+                onClick={() => {
+                  statusFilter.value = "eligible";
+                }}
+              />
+              <StatCard
+                icon={XCircle}
+                label={t("skills.stats.disabled")}
+                value={s.disabled}
+                active={statusFilter.value === "disabled"}
+                onClick={() => {
+                  statusFilter.value = "disabled";
+                }}
+              />
+              <StatCard
+                icon={AlertTriangle}
+                label={t("skills.stats.missingReqs")}
+                value={s.missingReqs}
+                active={statusFilter.value === "missing-reqs"}
+                highlight={s.missingReqs > 0}
+                onClick={() => {
+                  statusFilter.value = "missing-reqs";
+                }}
               />
             </div>
-            <div class="flex gap-2">
-              <select
-                class="px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-sm"
-                value={sourceFilter.value}
-                onChange={(e) => {
-                  sourceFilter.value = (e.target as HTMLSelectElement).value as SkillSource | "all";
-                }}
-              >
-                <option value="all">{t("skills.filters.allSources")}</option>
-                <option value="bundled">{t("skills.source.bundled")}</option>
-                <option value="managed">{t("skills.source.managed")}</option>
-                <option value="workspace">{t("skills.source.workspace")}</option>
-              </select>
+
+            {/* Filters */}
+            <div class="flex flex-col sm:flex-row gap-4">
+              <div class="flex-1">
+                <Input
+                  type="text"
+                  placeholder={t("skills.searchPlaceholder")}
+                  value={searchQuery.value}
+                  onInput={(e) => {
+                    searchQuery.value = (e.target as HTMLInputElement).value;
+                  }}
+                  leftElement={<Search class="w-4 h-4" />}
+                />
+              </div>
+              <div class="flex gap-2">
+                <select
+                  class="px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)] text-sm"
+                  value={sourceFilter.value}
+                  onChange={(e) => {
+                    sourceFilter.value = (e.target as HTMLSelectElement).value as
+                      | SkillSource
+                      | "all";
+                  }}
+                >
+                  <option value="all">{t("skills.filters.allSources")}</option>
+                  <option value="bundled">{t("skills.source.bundled")}</option>
+                  <option value="managed">{t("skills.source.managed")}</option>
+                  <option value="workspace">{t("skills.source.workspace")}</option>
+                </select>
+              </div>
             </div>
-          </div>
 
-          {/* Results count */}
-          {filtered.length !== s.total && (
-            <p class="text-sm text-[var(--color-text-muted)]">
-              {t("skills.filteredCount", { filtered: filtered.length, total: s.total })}
-            </p>
-          )}
+            {/* Results count */}
+            {filtered.length !== s.total && (
+              <p class="text-sm text-[var(--color-text-muted)]">
+                {t("skills.filteredCount", { filtered: filtered.length, total: s.total })}
+              </p>
+            )}
 
-          {/* Skills list */}
-          <Card padding="none">
-            {filtered.length === 0 ? (
-              <EmptyState />
-            ) : (
-              <div>
-                {filtered.map((skill) => (
-                  <SkillRow key={skill.skillKey} skill={skill} />
-                ))}
+            {/* Skills list */}
+            <Card padding="none">
+              {filtered.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <div>
+                  {filtered.map((skill) => (
+                    <SkillRow key={skill.skillKey} skill={skill} />
+                  ))}
+                </div>
+              )}
+            </Card>
+
+            {/* Workspace info */}
+            {workspaceDir.value && (
+              <div class="text-xs text-[var(--color-text-muted)] space-y-1">
+                <div>
+                  {t("skills.workspaceDir")}: <code>{workspaceDir.value}</code>
+                </div>
+                <div>
+                  {t("skills.managedDir")}: <code>{managedSkillsDir.value}</code>
+                </div>
               </div>
             )}
-          </Card>
+          </>
+        )}
 
-          {/* Workspace info */}
-          {workspaceDir.value && (
-            <div class="text-xs text-[var(--color-text-muted)] space-y-1">
-              <div>
-                {t("skills.workspaceDir")}: <code>{workspaceDir.value}</code>
-              </div>
-              <div>
-                {t("skills.managedDir")}: <code>{managedSkillsDir.value}</code>
-              </div>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Install modal */}
-      <InstallModal />
+        {/* Install modal */}
+        <InstallModal />
+      </div>
     </div>
   );
 }
