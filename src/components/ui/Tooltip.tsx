@@ -85,13 +85,33 @@ export function TooltipProvider({ children }: { children: ComponentChildren }) {
  * The actual tooltip rendered in portal
  */
 function TooltipPortal({ state }: { state: TooltipState | null }) {
+  const tooltipRef = useRef<HTMLDivElement>(null);
+  const [finalPlacement, setFinalPlacement] = useState<TooltipPlacement>("top");
+  const [position, setPosition] = useState({ top: 0, left: 0 });
+
+  // Calculate position after render (need tooltip dimensions)
+  useEffect(() => {
+    if (!state?.triggerRect || !tooltipRef.current) return;
+
+    const tooltip = tooltipRef.current;
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const { adjustedPlacement, pos } = calculateSmartPosition(
+      state.triggerRect,
+      tooltipRect,
+      state.placement,
+    );
+
+    setFinalPlacement(adjustedPlacement);
+    setPosition(pos);
+  }, [state?.triggerRect, state?.placement, state?.content]);
+
   if (!state?.triggerRect) return null;
 
-  const { content, placement, triggerRect, isVisible } = state;
-  const position = calculatePosition(triggerRect, placement);
+  const { content, isVisible } = state;
 
   return (
     <div
+      ref={tooltipRef}
       role="tooltip"
       class={`
         fixed z-[9999] pointer-events-none
@@ -101,7 +121,6 @@ function TooltipPortal({ state }: { state: TooltipState | null }) {
       style={{
         top: `${position.top}px`,
         left: `${position.left}px`,
-        transform: position.transform,
       }}
     >
       {/* Tooltip content */}
@@ -121,7 +140,7 @@ function TooltipPortal({ state }: { state: TooltipState | null }) {
       <div
         class={`
           absolute w-0 h-0 border-[6px]
-          ${getArrowStyles(placement)}
+          ${getArrowStyles(finalPlacement)}
         `}
       />
     </div>
@@ -129,40 +148,85 @@ function TooltipPortal({ state }: { state: TooltipState | null }) {
 }
 
 /**
- * Calculate tooltip position based on trigger rect and placement
+ * Calculate smart tooltip position with viewport boundary detection
  */
-function calculatePosition(
-  rect: DOMRect,
-  placement: TooltipPlacement,
-): { top: number; left: number; transform: string } {
-  const gap = 8; // Distance from trigger
+function calculateSmartPosition(
+  triggerRect: DOMRect,
+  tooltipRect: DOMRect,
+  preferredPlacement: TooltipPlacement,
+): {
+  adjustedPlacement: TooltipPlacement;
+  pos: { top: number; left: number };
+} {
+  const gap = 8;
+  const padding = 8; // Min distance from viewport edge
+  const viewport = {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  };
 
-  switch (placement) {
-    case "top":
-      return {
-        top: rect.top - gap,
-        left: rect.left + rect.width / 2,
-        transform: "translate(-50%, -100%)",
-      };
-    case "bottom":
-      return {
-        top: rect.bottom + gap,
-        left: rect.left + rect.width / 2,
-        transform: "translate(-50%, 0)",
-      };
-    case "left":
-      return {
-        top: rect.top + rect.height / 2,
-        left: rect.left - gap,
-        transform: "translate(-100%, -50%)",
-      };
-    case "right":
-      return {
-        top: rect.top + rect.height / 2,
-        left: rect.right + gap,
-        transform: "translate(0, -50%)",
-      };
+  // Check available space in each direction
+  const space = {
+    top: triggerRect.top,
+    bottom: viewport.height - triggerRect.bottom,
+    left: triggerRect.left,
+    right: viewport.width - triggerRect.right,
+  };
+
+  // Determine if preferred placement fits
+  const fits = {
+    top: space.top >= tooltipRect.height + gap + padding,
+    bottom: space.bottom >= tooltipRect.height + gap + padding,
+    left: space.left >= tooltipRect.width + gap + padding,
+    right: space.right >= tooltipRect.width + gap + padding,
+  };
+
+  // Choose placement (prefer requested, fallback to opposite, then sides)
+  let finalPlacement = preferredPlacement;
+
+  if (preferredPlacement === "top" && !fits.top) {
+    finalPlacement = fits.bottom ? "bottom" : fits.left ? "left" : fits.right ? "right" : "bottom";
+  } else if (preferredPlacement === "bottom" && !fits.bottom) {
+    finalPlacement = fits.top ? "top" : fits.left ? "left" : fits.right ? "right" : "top";
+  } else if (preferredPlacement === "left" && !fits.left) {
+    finalPlacement = fits.right ? "right" : fits.top ? "top" : fits.bottom ? "bottom" : "right";
+  } else if (preferredPlacement === "right" && !fits.right) {
+    finalPlacement = fits.left ? "left" : fits.top ? "top" : fits.bottom ? "bottom" : "left";
   }
+
+  // Calculate position based on final placement
+  let top: number;
+  let left: number;
+
+  switch (finalPlacement) {
+    case "top":
+      top = triggerRect.top - tooltipRect.height - gap;
+      left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+      break;
+    case "bottom":
+      top = triggerRect.bottom + gap;
+      left = triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+      break;
+    case "left":
+      top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
+      left = triggerRect.left - tooltipRect.width - gap;
+      break;
+    case "right":
+      top = triggerRect.top + triggerRect.height / 2 - tooltipRect.height / 2;
+      left = triggerRect.right + gap;
+      break;
+  }
+
+  // Clamp horizontal position to viewport
+  left = Math.max(padding, Math.min(left, viewport.width - tooltipRect.width - padding));
+
+  // Clamp vertical position to viewport
+  top = Math.max(padding, Math.min(top, viewport.height - tooltipRect.height - padding));
+
+  return {
+    adjustedPlacement: finalPlacement,
+    pos: { top, left },
+  };
 }
 
 /**
