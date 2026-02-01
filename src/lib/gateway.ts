@@ -87,6 +87,15 @@ export const tickIntervalMs = signal<number | null>(null);
 /** Connected at timestamp */
 export const connectedAt = signal<number | null>(null);
 
+/** Gateway uptime at connection time (ms) */
+export const gatewayUptimeMs = signal<number | null>(null);
+
+/** Config path on the gateway */
+export const gatewayConfigPath = signal<string | null>(null);
+
+/** State directory on the gateway */
+export const gatewayStateDir = signal<string | null>(null);
+
 /** Presence list (connected clients) */
 export const presence = signal<unknown[]>([]);
 
@@ -315,6 +324,9 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
 
                 // Snapshot data
                 presence.value = hello.snapshot?.presence ?? [];
+                gatewayUptimeMs.value = hello.snapshot?.uptimeMs ?? null;
+                gatewayConfigPath.value = hello.snapshot?.configPath ?? null;
+                gatewayStateDir.value = hello.snapshot?.stateDir ?? null;
 
                 // Capture main session key from snapshot
                 const sessionDefaults = hello.snapshot?.sessionDefaults;
