@@ -162,31 +162,31 @@
   }
 }
 
-/* Bouncing dots for typing/loading indicators - sequential wave effect */
+/* Bouncing dots for typing/loading indicators - sequential wave effect with pause */
 @keyframes bounce-dot {
   0%,
-  80%,
+  57%,
   100% {
     transform: translateY(0);
   }
-  40% {
+  28% {
     transform: translateY(-5px);
   }
 }
 
-/* Staggered delays for wave effect */
+/* Staggered delays for wave effect - 1.4s cycle with ~400ms rest pause */
 .animate-bounce-dot-1 {
-  animation: bounce-dot 1s ease-in-out infinite;
+  animation: bounce-dot 1.4s ease-in-out infinite;
   animation-delay: 0ms;
 }
 
 .animate-bounce-dot-2 {
-  animation: bounce-dot 1s ease-in-out infinite;
+  animation: bounce-dot 1.4s ease-in-out infinite;
   animation-delay: 150ms;
 }
 
 .animate-bounce-dot-3 {
-  animation: bounce-dot 1s ease-in-out infinite;
+  animation: bounce-dot 1.4s ease-in-out infinite;
   animation-delay: 300ms;
 }
 
