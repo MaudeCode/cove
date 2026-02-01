@@ -146,7 +146,7 @@ export function Dropdown({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         class={`
-          w-full flex items-center justify-between gap-2 rounded-lg cursor-pointer
+          w-full flex items-center justify-between gap-2 rounded-md cursor-pointer
           bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]
           border border-[var(--color-border)] transition-all duration-200 ease-out
           shadow-soft-sm hover:shadow-soft focus:shadow-soft
