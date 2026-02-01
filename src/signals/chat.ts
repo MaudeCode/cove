@@ -18,6 +18,7 @@ import {
   RUN_CLEANUP_DELAY_MS,
   RUN_ERROR_CLEANUP_DELAY_MS,
   RUN_ABORT_CLEANUP_DELAY_MS,
+  STALE_RUN_TIMEOUT_MS,
 } from "@/lib/constants";
 import { isHeartbeatMessage } from "@/lib/message-detection";
 import { getMessagesCache, setMessagesCache } from "@/lib/storage";
@@ -451,4 +452,52 @@ export function updateQueuedMessage(
   messageQueue.value = messageQueue.value.map((m) =>
     m.id === messageId ? { ...m, content: newContent, images: newImages } : m,
   );
+}
+
+// ============================================
+// Stale Run Cleanup
+// ============================================
+
+let staleRunCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Clean up runs that have been stuck in pending/streaming without activity.
+ * This handles edge cases like heartbeat responses that don't complete properly.
+ */
+function cleanupStaleRuns(): void {
+  const now = Date.now();
+  const staleRunIds: string[] = [];
+
+  for (const [runId, run] of activeRuns.value) {
+    if (run.status === "pending" || run.status === "streaming") {
+      const age = now - run.startedAt;
+      if (age > STALE_RUN_TIMEOUT_MS) {
+        staleRunIds.push(runId);
+      }
+    }
+  }
+
+  if (staleRunIds.length > 0) {
+    const newRuns = new Map(activeRuns.value);
+    for (const runId of staleRunIds) {
+      newRuns.delete(runId);
+    }
+    activeRuns.value = newRuns;
+    syncStreamingSignals();
+  }
+}
+
+/** Start periodic stale run cleanup */
+export function startStaleRunCleanup(): void {
+  if (staleRunCheckInterval) return;
+  // Check every 5 seconds
+  staleRunCheckInterval = setInterval(cleanupStaleRuns, 5000);
+}
+
+/** Stop periodic stale run cleanup */
+export function stopStaleRunCleanup(): void {
+  if (staleRunCheckInterval) {
+    clearInterval(staleRunCheckInterval);
+    staleRunCheckInterval = null;
+  }
 }
