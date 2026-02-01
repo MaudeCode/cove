@@ -352,6 +352,11 @@
       "timeRelative": "Relative (2 hours ago)",
       "timeAbsolute": "Absolute (3:45 PM)"
     },
+    "appMode": {
+      "title": "Interface",
+      "multiChat": "Multi-chat mode",
+      "multiChatDescription": "Show session sidebar with multiple conversations"
+    },
     "newChat": {
       "title": "New Chat",
       "useDefaults": "Always use defaults",

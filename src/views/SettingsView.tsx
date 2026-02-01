@@ -18,6 +18,8 @@ import {
   fontFamily,
   timeFormat,
   newChatSettings,
+  appMode,
+  isMultiChatMode,
   FONT_SIZE_OPTIONS,
   FONT_FAMILY_OPTIONS,
   TIME_FORMAT_OPTIONS,
@@ -174,37 +176,54 @@ export function SettingsView(_props: SettingsViewProps) {
           </div>
         </SettingsSection>
 
-        {/* New Chat Section */}
-        <SettingsSection titleKey="settings.newChat.title">
-          <div class="space-y-6">
-            <SettingRow
-              labelKey="settings.newChat.useDefaults"
-              descriptionKey="settings.newChat.useDefaultsDescription"
-            >
-              <Toggle
-                checked={newChatSettings.value.useDefaults}
-                onChange={(checked) => {
-                  newChatSettings.value = { ...newChatSettings.value, useDefaults: checked };
-                }}
-              />
-            </SettingRow>
-
-            <SettingRow
-              labelKey="settings.newChat.defaultAgent"
-              descriptionKey="settings.newChat.defaultAgentDescription"
-            >
-              <Dropdown
-                value={newChatSettings.value.defaultAgentId}
-                onChange={(value) => {
-                  newChatSettings.value = { ...newChatSettings.value, defaultAgentId: value };
-                }}
-                options={agentOptions.value}
-                size="sm"
-                class="min-w-[180px]"
-              />
-            </SettingRow>
-          </div>
+        {/* App Mode Section */}
+        <SettingsSection titleKey="settings.appMode.title">
+          <SettingRow
+            labelKey="settings.appMode.multiChat"
+            descriptionKey="settings.appMode.multiChatDescription"
+          >
+            <Toggle
+              checked={appMode.value === "multi"}
+              onChange={(checked) => {
+                appMode.value = checked ? "multi" : "single";
+              }}
+            />
+          </SettingRow>
         </SettingsSection>
+
+        {/* New Chat Section - only in multi-chat mode */}
+        {isMultiChatMode.value && (
+          <SettingsSection titleKey="settings.newChat.title">
+            <div class="space-y-6">
+              <SettingRow
+                labelKey="settings.newChat.useDefaults"
+                descriptionKey="settings.newChat.useDefaultsDescription"
+              >
+                <Toggle
+                  checked={newChatSettings.value.useDefaults}
+                  onChange={(checked) => {
+                    newChatSettings.value = { ...newChatSettings.value, useDefaults: checked };
+                  }}
+                />
+              </SettingRow>
+
+              <SettingRow
+                labelKey="settings.newChat.defaultAgent"
+                descriptionKey="settings.newChat.defaultAgentDescription"
+              >
+                <Dropdown
+                  value={newChatSettings.value.defaultAgentId}
+                  onChange={(value) => {
+                    newChatSettings.value = { ...newChatSettings.value, defaultAgentId: value };
+                  }}
+                  options={agentOptions.value}
+                  size="sm"
+                  class="min-w-[180px]"
+                />
+              </SettingRow>
+            </div>
+          </SettingsSection>
+        )}
 
         {/* About Section */}
         <SettingsSection titleKey="settings.about.title">
