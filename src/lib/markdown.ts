@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Markdown Renderer
  *
@@ -123,11 +122,4 @@ const marked = createMarkdownRenderer();
  */
 export function renderMarkdown(content: string): string {
   return marked.parse(content) as string;
-}
-
-/**
- * Render inline markdown (no block elements)
- */
-function renderInlineMarkdown(content: string): string {
-  return marked.parseInline(content) as string;
 }

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Media Parsing
  *
@@ -7,9 +6,6 @@
  */
 
 import type { MessageImage } from "@/types/messages";
-
-/** MEDIA: token regex - for quick check if content has any MEDIA: lines */
-const MEDIA_LINE_RE = /^MEDIA:/im;
 
 /** Check if a URL is a valid remote image URL */
 function isRemoteUrl(url: string): boolean {
@@ -93,11 +89,4 @@ export function mediaUrlsToImages(urls: string[]): MessageImage[] {
     url,
     alt: `Image ${index + 1}`,
   }));
-}
-
-/**
- * Check if content has any MEDIA: lines
- */
-function hasMediaLines(content: string): boolean {
-  return MEDIA_LINE_RE.test(content);
 }

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Settings Signals
  *
@@ -13,7 +12,6 @@ import { signal, effect } from "@preact/signals";
 // Types
 // ============================================
 
-type Theme = "light" | "dark" | "system";
 export type TimeFormat = "relative" | "local";
 export type FontSize = "sm" | "md" | "lg";
 export type FontFamily = "geist" | "inter" | "system" | "dyslexic" | "mono";

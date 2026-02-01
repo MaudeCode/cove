@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Chat Signals
  *
@@ -299,11 +298,6 @@ export function addMessage(message: Message): void {
   messages.value = [...messages.value, message];
 }
 
-/** Update an existing message by ID */
-function updateMessage(id: string, updates: Partial<Message>): void {
-  messages.value = messages.value.map((msg) => (msg.id === id ? { ...msg, ...updates } : msg));
-}
-
 /** Mark a message as sending */
 export function markMessageSending(messageId: string): void {
   setMessageStatus(messageId, "sending", undefined);
@@ -317,11 +311,6 @@ export function markMessageSent(messageId: string): void {
 /** Mark a message as failed */
 export function markMessageFailed(messageId: string, error: string): void {
   setMessageStatus(messageId, "failed", error);
-}
-
-/** Mark a message as queued (waiting for current stream to finish) */
-function markMessageQueued(messageId: string): void {
-  setMessageStatus(messageId, "queued", undefined);
 }
 
 // ============================================
@@ -462,9 +451,4 @@ export function queueMessage(message: Message): void {
 /** Remove a message from the queue */
 export function dequeueMessage(messageId: string): void {
   messageQueue.value = messageQueue.value.filter((m) => m.id !== messageId);
-}
-
-/** Clear the message queue */
-function clearQueue(): void {
-  messageQueue.value = [];
 }
