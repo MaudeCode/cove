@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Logger utility
  *
@@ -100,14 +99,6 @@ function createLogger(namespace: string) {
       }
     },
   };
-}
-
-/**
- * Clear the debug log file (dev mode only)
- */
-function clearDebugLog(): void {
-  if (!DEV_MODE) return;
-  fetch("/__cove_debug", { method: "DELETE" }).catch(() => {});
 }
 
 // Pre-configured loggers for common modules

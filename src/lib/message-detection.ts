@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Message Detection
  *
@@ -86,24 +85,4 @@ const COMPACTION_PATTERNS = [
 export function isCompactionSummary(message: Message): boolean {
   if (message.role !== "user") return false;
   return COMPACTION_PATTERNS.some((pattern) => pattern.test(message.content));
-}
-
-/**
- * Get the type of special message (if any)
- */
-type SpecialMessageType =
-  | "heartbeat-prompt"
-  | "heartbeat-response"
-  | "compaction"
-  | "no-reply"
-  | "cron-summary"
-  | null;
-
-function getSpecialMessageType(message: Message): SpecialMessageType {
-  if (isHeartbeatPrompt(message)) return "heartbeat-prompt";
-  if (isHeartbeatResponse(message)) return "heartbeat-response";
-  if (isNoReply(message)) return "no-reply";
-  if (isCompactionSummary(message)) return "compaction";
-  if (isCronSummary(message)) return "cron-summary";
-  return null;
 }

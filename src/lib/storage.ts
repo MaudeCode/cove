@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Typed localStorage Wrapper
  *
@@ -9,7 +8,7 @@
  * - Quota error handling
  */
 
-import type { StoredSettings, StoredAuth, StorageSchema } from "@/types/settings";
+import type { StoredAuth, StorageSchema } from "@/types/settings";
 
 // Re-export types for consumers
 export type { StoredAuth } from "@/types/settings";
@@ -67,31 +66,11 @@ function get<K extends keyof StorageSchema>(key: K): StorageSchema[K] | null {
 }
 
 /**
- * Get a value from storage with a default fallback
- */
-function getWithDefault<K extends keyof StorageSchema>(
-  key: K,
-  defaultValue: StorageSchema[K],
-): StorageSchema[K] {
-  const value = get(key);
-  return value ?? defaultValue;
-}
-
-/**
  * Set a value in storage
- *
- * @throws StorageQuotaError if quota is exceeded
  */
 function set<K extends keyof StorageSchema>(key: K, value: StorageSchema[K]): void {
-  try {
-    const serialized = JSON.stringify(value);
-    localStorage.setItem(PREFIX + key, serialized);
-  } catch (err) {
-    if (isQuotaError(err)) {
-      throw new StorageQuotaError(`Storage quota exceeded when saving ${key}`);
-    }
-    throw err;
-  }
+  const serialized = JSON.stringify(value);
+  localStorage.setItem(PREFIX + key, serialized);
 }
 
 /**
@@ -99,24 +78,6 @@ function set<K extends keyof StorageSchema>(key: K, value: StorageSchema[K]): vo
  */
 function remove(key: keyof StorageSchema): void {
   localStorage.removeItem(PREFIX + key);
-}
-
-/**
- * Clear all Cove storage
- */
-function clear(): void {
-  const keysToRemove: string[] = [];
-
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith(PREFIX)) {
-      keysToRemove.push(key);
-    }
-  }
-
-  for (const key of keysToRemove) {
-    localStorage.removeItem(key);
-  }
 }
 
 // ============================================
@@ -177,21 +138,6 @@ function runMigrations(): void {
 // ============================================
 
 /**
- * Get settings with defaults
- */
-function getSettings(): StoredSettings {
-  return getWithDefault("settings", defaults.settings);
-}
-
-/**
- * Update settings (partial update)
- */
-function updateSettings(updates: Partial<StoredSettings>): void {
-  const current = getSettings();
-  set("settings", { ...current, ...updates });
-}
-
-/**
  * Get auth credentials
  */
 export function getAuth(): StoredAuth | null {
@@ -210,23 +156,6 @@ export function saveAuth(auth: StoredAuth): void {
  */
 export function clearAuth(): void {
   remove("auth");
-}
-
-/**
- * Get recent sessions
- */
-function getRecentSessions(): string[] {
-  return getWithDefault("recentSessions", []);
-}
-
-/**
- * Add a session to recent list (max 20, most recent first)
- */
-function addRecentSession(sessionKey: string): void {
-  const recent = getRecentSessions();
-  const filtered = recent.filter((key) => key !== sessionKey);
-  const updated = [sessionKey, ...filtered].slice(0, 20);
-  set("recentSessions", updated);
 }
 
 /**
@@ -259,54 +188,6 @@ export function consumePendingTour(): boolean {
     remove("pendingTour");
   }
   return pending;
-}
-
-// ============================================
-// Error Handling
-// ============================================
-
-/**
- * Custom error for quota exceeded
- */
-class StorageQuotaError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "StorageQuotaError";
-  }
-}
-
-/**
- * Check if an error is a quota exceeded error
- */
-function isQuotaError(err: unknown): boolean {
-  if (err instanceof DOMException) {
-    // Different browsers use different error names/codes
-    return (
-      err.code === 22 || // Legacy
-      err.code === 1014 || // Firefox
-      err.name === "QuotaExceededError" ||
-      err.name === "NS_ERROR_DOM_QUOTA_REACHED"
-    );
-  }
-  return false;
-}
-
-/**
- * Check available storage space (approximate)
- */
-async function checkStorageQuota(): Promise<{ used: number; available: number } | null> {
-  if ("storage" in navigator && "estimate" in navigator.storage) {
-    try {
-      const estimate = await navigator.storage.estimate();
-      return {
-        used: estimate.usage ?? 0,
-        available: estimate.quota ?? 0,
-      };
-    } catch {
-      return null;
-    }
-  }
-  return null;
 }
 
 // ============================================

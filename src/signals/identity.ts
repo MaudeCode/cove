@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Identity Signals
  *
@@ -17,11 +16,6 @@ export interface AssistantIdentity {
   name: string;
   avatar: string | null;
   agentId: string | null;
-}
-
-interface UserIdentity {
-  name: string;
-  avatar: string | null;
 }
 
 // ============================================
@@ -81,12 +75,4 @@ export async function loadAssistantIdentity(sessionKey?: string): Promise<void> 
   } finally {
     isLoadingIdentity.value = false;
   }
-}
-
-/**
- * Set user identity (from settings or login)
- */
-function setUserIdentity(name: string, avatar?: string | null): void {
-  userName.value = name || DEFAULT_USER_NAME;
-  userAvatar.value = avatar ?? null;
 }

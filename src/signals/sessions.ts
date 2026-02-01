@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Sessions Signals
  *
@@ -226,15 +225,6 @@ export function setSessionSearchQuery(query: string): void {
  */
 export function toggleCronSessions(): void {
   showCronSessions.value = !showCronSessions.value;
-}
-
-/**
- * Rename session
- */
-async function renameSession(sessionKey: string, label: string): Promise<void> {
-  await send("sessions.rename", { sessionKey, label });
-  // Update local state
-  sessions.value = sessions.value.map((s) => (s.key === sessionKey ? { ...s, label } : s));
 }
 
 /**

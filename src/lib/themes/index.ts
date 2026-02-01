@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Built-in Theme Definitions
  */
@@ -57,14 +56,4 @@ const themeMap = new Map<string, Theme>(builtInThemes.map((t) => [t.id, t]));
 /** Get a theme by ID (built-in or custom) */
 export function getTheme(id: string, customThemes: Theme[] = []): Theme | undefined {
   return themeMap.get(id) ?? customThemes.find((t) => t.id === id);
-}
-
-/** Get all themes (built-in + custom) */
-function getAllThemes(customThemes: Theme[] = []): Theme[] {
-  return [...builtInThemes, ...customThemes];
-}
-
-/** Get themes by appearance */
-function getThemesByAppearance(appearance: "light" | "dark", customThemes: Theme[] = []): Theme[] {
-  return getAllThemes(customThemes).filter((t) => t.appearance === appearance);
 }

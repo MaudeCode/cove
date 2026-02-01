@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Chat History
  *
@@ -12,7 +11,6 @@ import {
   historyError,
   thinkingLevel,
   setMessages,
-  clearMessages,
   saveCachedMessages,
 } from "@/signals/chat";
 import type { Message } from "@/types/messages";
@@ -151,12 +149,4 @@ export async function loadHistory(
   } finally {
     isLoadingHistory.value = false;
   }
-}
-
-/**
- * Reload history for current session.
- */
-async function reloadHistory(sessionKey: string): Promise<void> {
-  clearMessages();
-  await loadHistory(sessionKey);
 }

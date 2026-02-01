@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Toast Component
  *
@@ -54,13 +53,6 @@ function showToast(message: string, type: ToastType = "info", duration = 5000): 
  */
 function dismissToast(id: string): void {
   toasts.value = toasts.value.filter((t) => t.id !== id);
-}
-
-/**
- * Clear all toasts
- */
-function clearToasts(): void {
-  toasts.value = [];
 }
 
 // Convenience functions

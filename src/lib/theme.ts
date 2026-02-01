@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 /**
  * Theme System
  *
@@ -35,9 +34,6 @@ const activeTheme = computed<Theme>(() => {
 
   return getTheme(pref.selected, customs) ?? getTheme("dark", customs)!;
 });
-
-/** Current appearance (light or dark) */
-const appearance = computed(() => activeTheme.value.appearance);
 
 /**
  * Load preference from localStorage
@@ -78,17 +74,6 @@ function loadCustomThemes(): Theme[] {
     // Ignore
   }
   return [];
-}
-
-/**
- * Save custom themes to localStorage
- */
-function saveCustomThemes(themes: Theme[]): void {
-  try {
-    localStorage.setItem(CUSTOM_THEMES_KEY, JSON.stringify(themes));
-  } catch {
-    // Ignore
-  }
 }
 
 /**
@@ -160,29 +145,6 @@ export function setLightTheme(themeId: string): void {
  */
 export function setDarkTheme(themeId: string): void {
   themePreference.value = { ...themePreference.value, darkTheme: themeId };
-}
-
-/**
- * Add a custom theme
- */
-function addCustomTheme(theme: Theme): void {
-  const themes = [...customThemes.value.filter((t) => t.id !== theme.id), theme];
-  customThemes.value = themes;
-  saveCustomThemes(themes);
-}
-
-/**
- * Remove a custom theme
- */
-function removeCustomTheme(themeId: string): void {
-  const themes = customThemes.value.filter((t) => t.id !== themeId);
-  customThemes.value = themes;
-  saveCustomThemes(themes);
-
-  // If this was the active theme, switch to default
-  if (themePreference.value.selected === themeId) {
-    setTheme("system");
-  }
 }
 
 /**
