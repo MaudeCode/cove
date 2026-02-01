@@ -668,6 +668,28 @@
     },
     "filters": {
       "allSources": "All Sources"
+    },
+    "tabs": {
+      "installed": "Installed",
+      "clawhub": "ClawHub"
+    },
+    "clawhub": {
+      "title": "Browse ClawHub",
+      "description": "Discover and install skills from the community registry.",
+      "searchPlaceholder": "Search ClawHub skills...",
+      "install": "Install",
+      "installing": "Installing...",
+      "installTitle": "Install {name}",
+      "installConfirm": "Install {name} v{version} from ClawHub?",
+      "installSuccess": "Installed {name} from ClawHub",
+      "installFailed": "Failed to install from ClawHub",
+      "noDescription": "No description available",
+      "changelog": "Changelog",
+      "downloads": "downloads",
+      "stars": "stars",
+      "viewOnClawhub": "View on ClawHub",
+      "noResults": "No Skills Found",
+      "tryDifferentSearch": "Try a different search term."
     }
   },
 
