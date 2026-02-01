@@ -908,13 +908,15 @@ export const navigation: NavSection[] = [
 - [x] Datetime picker for one-time schedules
 - [x] Auto-set payload kind based on session target
 
-### 3.6 Skills Browser
-- [ ] List bundled, managed, and workspace skills
-- [ ] Search/filter skills
-- [ ] View skill description & location
-- [ ] View SKILL.md contents
-- [ ] Enable/disable toggle per skill
-- [ ] Install from ClawdHub
+### 3.6 Skills Browser ✅
+- [x] List bundled, managed, and workspace skills
+- [x] Search/filter skills (by name, source, status)
+- [x] View skill description & location
+- [x] Expandable detail rows with requirements/install options
+- [x] Enable/disable toggle per skill
+- [x] Install dependencies via skills.install API
+- [ ] View SKILL.md contents (deferred)
+- [ ] Install from ClawdHub (deferred - needs API)
 
 ### 3.7 Nodes Management
 - [ ] List paired nodes (mobile devices)
