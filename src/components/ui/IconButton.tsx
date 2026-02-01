@@ -7,6 +7,7 @@
 import type { ComponentChildren, JSX } from "preact";
 import { forwardRef } from "preact/compat";
 import { Spinner } from "./Spinner";
+import { Tooltip, type TooltipPlacement } from "./Tooltip";
 
 export type IconButtonSize = "sm" | "md" | "lg";
 export type IconButtonVariant = "default" | "ghost" | "danger";
@@ -24,6 +25,10 @@ export interface IconButtonProps extends Omit<JSX.HTMLAttributes<HTMLButtonEleme
   disabled?: boolean;
   /** Show loading spinner */
   loading?: boolean;
+  /** Show tooltip on hover (default: true) */
+  showTooltip?: boolean;
+  /** Tooltip placement */
+  tooltipPlacement?: TooltipPlacement;
 }
 
 const sizeStyles: Record<IconButtonSize, { button: string; icon: string }> = {
@@ -59,6 +64,8 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       variant = "default",
       loading = false,
       disabled,
+      showTooltip = true,
+      tooltipPlacement = "top",
       class: className,
       ...props
     },
@@ -67,13 +74,12 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
     const isDisabled = disabled || loading;
     const styles = sizeStyles[size];
 
-    return (
+    const button = (
       <button
         ref={ref}
         type="button"
         disabled={isDisabled}
         aria-label={label}
-        title={label}
         class={`
           inline-flex items-center justify-center
           rounded-md transition-all duration-200 ease-out
@@ -98,6 +104,16 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         )}
       </button>
     );
+
+    if (showTooltip && label) {
+      return (
+        <Tooltip content={label} placement={tooltipPlacement} delay={400}>
+          {button}
+        </Tooltip>
+      );
+    }
+
+    return button;
   },
 );
 
