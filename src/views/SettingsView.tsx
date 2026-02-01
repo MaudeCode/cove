@@ -18,7 +18,6 @@ import {
   fontFamily,
   timeFormat,
   newChatSettings,
-  autoTitleSettings,
   FONT_SIZE_OPTIONS,
   FONT_FAMILY_OPTIONS,
   TIME_FORMAT_OPTIONS,
@@ -27,7 +26,7 @@ import {
   type FontFamily,
   type TimeFormat,
 } from "@/signals/settings";
-import { agentOptions, defaultAgentId } from "@/signals/agents";
+import { agentOptions } from "@/signals/agents";
 import { APP_VERSION } from "@/lib/constants";
 
 // ============================================
@@ -204,55 +203,6 @@ export function SettingsView(_props: SettingsViewProps) {
                 class="min-w-[180px]"
               />
             </SettingRow>
-          </div>
-        </SettingsSection>
-
-        {/* Auto-Title Section */}
-        <SettingsSection titleKey="settings.autoTitle.title">
-          <div class="space-y-6">
-            <SettingRow
-              labelKey="settings.autoTitle.enabled"
-              descriptionKey="settings.autoTitle.enabledDescription"
-            >
-              <Toggle
-                checked={autoTitleSettings.value.enabled}
-                onChange={(checked) => {
-                  autoTitleSettings.value = { ...autoTitleSettings.value, enabled: checked };
-                }}
-              />
-            </SettingRow>
-
-            {autoTitleSettings.value.enabled && (
-              <>
-                <SettingRow
-                  labelKey="settings.autoTitle.agent"
-                  descriptionKey="settings.autoTitle.agentDescription"
-                >
-                  <Dropdown
-                    value={autoTitleSettings.value.agentId || defaultAgentId.value}
-                    onChange={(value) => {
-                      autoTitleSettings.value = {
-                        ...autoTitleSettings.value,
-                        agentId: value === defaultAgentId.value ? null : value,
-                      };
-                    }}
-                    options={agentOptions.value}
-                    size="sm"
-                    class="min-w-[180px]"
-                  />
-                </SettingRow>
-
-                <div class="p-3 rounded-lg bg-[var(--color-bg-tertiary)] text-xs text-[var(--color-text-muted)]">
-                  ⚠️ {t("settings.autoTitle.costWarning")}
-                </div>
-              </>
-            )}
-
-            {!autoTitleSettings.value.enabled && (
-              <div class="text-sm text-[var(--color-text-muted)]">
-                ℹ️ {t("settings.autoTitle.disabledHint")}
-              </div>
-            )}
           </div>
         </SettingsSection>
 
