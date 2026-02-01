@@ -246,13 +246,13 @@ function SkillRow({ skill }: { skill: SkillStatusEntry }) {
         }}
       >
         {/* Expand/collapse icon */}
-        <button
-          type="button"
-          class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-          aria-label={isExpanded ? t("actions.collapse") : t("actions.expand")}
-        >
-          {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
-        </button>
+        <IconButton
+          icon={isExpanded ? <ChevronDown /> : <ChevronRight />}
+          label={isExpanded ? t("actions.collapse") : t("actions.expand")}
+          size="sm"
+          variant="ghost"
+          showTooltip={false}
+        />
 
         {/* Emoji */}
         <span class="text-xl w-8 text-center flex-shrink-0">{skill.emoji || "🔧"}</span>
