@@ -33,7 +33,7 @@ export function TopBar() {
           {/* Logo */}
           <a href="/" class="flex items-center gap-2.5 font-semibold text-lg group no-underline">
             <CoveLogo size="md" animated />
-            <span class="bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-warning)] bg-clip-text text-transparent">
+            <span class="bg-gradient-to-r from-[var(--color-accent)] to-[color-mix(in_oklch,var(--color-accent),var(--color-text-primary)_40%)] bg-clip-text text-transparent">
               {t("app.name")}
             </span>
           </a>
