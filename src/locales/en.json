@@ -662,8 +662,9 @@
     },
     "source": {
       "bundled": "Bundled",
-      "managed": "Managed",
-      "workspace": "Workspace"
+      "workspace": "Workspace",
+      "managed": "Installed",
+      "extra": "Extra"
     },
     "filters": {
       "allSources": "All Sources"
