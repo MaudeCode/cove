@@ -16,6 +16,10 @@ interface LinkButtonProps extends Omit<JSX.HTMLAttributes<HTMLButtonElement>, "s
   size?: LinkButtonSize;
   /** Muted color (default) or inherit parent color */
   muted?: boolean;
+  /** Icon before text */
+  icon?: ComponentChildren;
+  /** Icon after text */
+  iconRight?: ComponentChildren;
 }
 
 const sizeStyles: Record<LinkButtonSize, string> = {
@@ -28,6 +32,8 @@ export function LinkButton({
   children,
   size = "sm",
   muted = true,
+  icon,
+  iconRight,
   class: className,
   ...props
 }: LinkButtonProps) {
@@ -35,6 +41,7 @@ export function LinkButton({
     <button
       type="button"
       class={`
+        inline-flex items-center gap-1
         ${sizeStyles[size]}
         ${muted ? "text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)]" : "text-[var(--color-accent)] hover:text-[var(--color-accent-hover)]"}
         transition-colors
@@ -43,7 +50,9 @@ export function LinkButton({
       `}
       {...props}
     >
+      {icon && <span class="flex-shrink-0">{icon}</span>}
       {children}
+      {iconRight && <span class="flex-shrink-0">{iconRight}</span>}
     </button>
   );
 }

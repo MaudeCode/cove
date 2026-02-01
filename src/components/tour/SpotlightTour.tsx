@@ -286,8 +286,7 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
 
         {/* Navigation */}
         <div class="flex items-center justify-between gap-2">
-          <LinkButton onClick={onComplete}>
-            <X class="w-3 h-3 mr-1" />
+          <LinkButton onClick={onComplete} icon={<X class="w-3 h-3" />}>
             {t("tour.skipTour")}
           </LinkButton>
 
