@@ -417,8 +417,8 @@ function SessionRow({ session }: { session: Session }) {
                 />
               </div>
             ) : (
-              <div class="flex items-center justify-between gap-2 group/label">
-                <div class="font-medium truncate" title={displayName}>
+              <div class="flex items-center gap-2 group/label max-w-[200px]">
+                <div class="font-medium truncate flex-1" title={displayName}>
                   {displayName}
                 </div>
                 <IconButton
@@ -459,7 +459,7 @@ function SessionRow({ session }: { session: Session }) {
       </td>
 
       {/* Last Active */}
-      <td class="py-3 px-4">
+      <td class="py-3 px-4 whitespace-nowrap">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Clock class="w-3.5 h-3.5 flex-shrink-0" />
           <span>{session.updatedAt ? formatTimestamp(session.updatedAt) : "—"}</span>
@@ -467,7 +467,7 @@ function SessionRow({ session }: { session: Session }) {
       </td>
 
       {/* Tokens */}
-      <td class="py-3 px-4">
+      <td class="py-3 px-4 whitespace-nowrap">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Hash class="w-3.5 h-3.5 flex-shrink-0" />
           <span>{formatTokens(session)}</span>
