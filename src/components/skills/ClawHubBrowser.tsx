@@ -2,13 +2,12 @@
  * ClawHubBrowser
  *
  * Browse and install skills from ClawHub registry.
+ * Note: Requires CORS headers on ClawHub API (pending PR).
  */
 
 import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
-import { send } from "@/lib/gateway";
-import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -17,8 +16,10 @@ import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { HintBox } from "@/components/ui/HintBox";
 import { Search, Download, Star, ExternalLink, RefreshCw, Globe, Calendar } from "lucide-preact";
 import { listSkills, searchSkills, type ClawHubSkill } from "@/lib/clawhub";
+import { getErrorMessage } from "@/lib/session-utils";
 
 // ============================================
 // State
@@ -72,20 +73,10 @@ async function installSkill(skill: ClawHubSkill): Promise<void> {
   isInstalling.value = true;
 
   try {
-    // Use the gateway's skills.install method
-    // It expects a ClawHub skill name and install ID
-    const result = await send<{ ok: boolean; message?: string }>("skills.install", {
-      name: skill.slug,
-      installId: "clawhub", // Special install ID for ClawHub
-      timeoutMs: 120000, // 2 minutes for download + extract
-    });
-
-    if (result.ok) {
-      toast.success(t("skills.clawhub.installSuccess", { name: skill.displayName }));
-      installModal.value = null;
-    } else {
-      toast.error(result.message || t("skills.clawhub.installFailed"));
-    }
+    // TODO: Once OpenClaw supports ClawHub installation, this will work.
+    // For now, show a helpful message about manual installation.
+    toast.error(t("skills.clawhub.notYetSupported", { slug: skill.slug }));
+    installModal.value = null;
   } catch (err) {
     toast.error(getErrorMessage(err));
   } finally {
@@ -94,7 +85,7 @@ async function installSkill(skill: ClawHubSkill): Promise<void> {
 }
 
 // ============================================
-// Components
+// Sub-Components
 // ============================================
 
 function SkillCard({ skill }: { skill: ClawHubSkill }) {
@@ -219,12 +210,21 @@ function InstallModal() {
   );
 }
 
+function EmptyState() {
+  return (
+    <div class="text-center py-12">
+      <Globe class="w-12 h-12 mx-auto text-[var(--color-text-muted)] mb-4" />
+      <h3 class="text-lg font-medium mb-2">{t("skills.clawhub.noResults")}</h3>
+      <p class="text-[var(--color-text-muted)]">{t("skills.clawhub.tryDifferentSearch")}</p>
+    </div>
+  );
+}
+
 // ============================================
 // Main Component
 // ============================================
 
 export function ClawHubBrowser() {
-  // Load on mount
   useEffect(() => {
     loadSkills();
   }, []);
@@ -261,13 +261,7 @@ export function ClawHubBrowser() {
       </div>
 
       {/* Error */}
-      {error.value && (
-        <Card class="border-[var(--color-error)] bg-[var(--color-error)]/10">
-          <div class="flex items-center gap-3 text-[var(--color-error)]">
-            <span>{error.value}</span>
-          </div>
-        </Card>
-      )}
+      {error.value && <HintBox variant="error">{error.value}</HintBox>}
 
       {/* Loading */}
       {isLoading.value && skills.value.length === 0 && (
@@ -276,7 +270,7 @@ export function ClawHubBrowser() {
         </div>
       )}
 
-      {/* Skills grid */}
+      {/* Skills list */}
       {skills.value.length > 0 && (
         <div class="grid gap-4">
           {skills.value.map((skill) => (
@@ -286,13 +280,7 @@ export function ClawHubBrowser() {
       )}
 
       {/* Empty state */}
-      {!isLoading.value && !error.value && skills.value.length === 0 && (
-        <div class="text-center py-12">
-          <Globe class="w-12 h-12 mx-auto text-[var(--color-text-muted)] mb-4" />
-          <h3 class="text-lg font-medium mb-2">{t("skills.clawhub.noResults")}</h3>
-          <p class="text-[var(--color-text-muted)]">{t("skills.clawhub.tryDifferentSearch")}</p>
-        </div>
-      )}
+      {!isLoading.value && !error.value && skills.value.length === 0 && <EmptyState />}
 
       {/* Load more */}
       {hasMore && !isLoading.value && (
