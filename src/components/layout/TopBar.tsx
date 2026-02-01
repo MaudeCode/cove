@@ -37,9 +37,11 @@ export function TopBar() {
 
           {/* Logo */}
           <a href="/" class="flex items-center gap-2.5 font-semibold text-lg group no-underline">
-            <span class="text-xl group-hover:scale-110 transition-transform" aria-hidden="true">
-              🦞
-            </span>
+            <img
+              src="/cove-icon.png"
+              alt="Cove"
+              class="w-8 h-8 rounded-lg group-hover:scale-110 transition-transform"
+            />
             <span class="bg-gradient-to-r from-[var(--color-accent)] to-[var(--color-warning)] bg-clip-text text-transparent">
               {t("app.name")}
             </span>

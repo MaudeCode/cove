@@ -212,7 +212,11 @@ export function MessageList({
           {!isLoading && !error && messages.length === 0 && !isStreaming && (
             <div class="flex-1 flex items-center justify-center py-16">
               <div class="text-center">
-                <div class="text-5xl mb-4">💬</div>
+                <img
+                  src="/cove-icon.png"
+                  alt=""
+                  class="w-20 h-20 mx-auto mb-4 rounded-2xl opacity-80"
+                />
                 <h3 class="text-lg font-medium mb-1">{t("chat.emptyState.title")}</h3>
                 <p class="text-[var(--color-text-muted)]">{t("chat.emptyState.description")}</p>
               </div>
