@@ -547,10 +547,6 @@
     "emptyDescription": "No connected clients or services found.",
     "count": "{count} instance",
     "count_plural": "{count} instances",
-    "justNow": "just now",
-    "minutesAgo": "{count}m ago",
-    "hoursAgo": "{count}h ago",
-    "daysAgo": "{count}d ago",
     "idle": "Idle",
     "idleSeconds": "{count}s",
     "idleMinutes": "{count}m",
@@ -565,8 +561,7 @@
       "mode": "Mode",
       "platform": "Platform",
       "lastSeen": "Last Seen",
-      "idle": "Idle",
-      "access": "Access"
+      "idle": "Idle"
     }
   },
 
