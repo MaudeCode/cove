@@ -947,9 +947,9 @@ export const navigation: NavSection[] = [
 - [ ] Export filtered logs
 - [ ] Truncation indicator for large logs
 
-### 3.11 Docs Link
-- [ ] Nav item linking to https://docs.openclaw.ai
-- [ ] Opens in new tab
+### 3.11 Docs Link ✅
+- [x] Nav item linking to https://docs.openclaw.ai
+- [x] Opens in new tab
 
 ### 3.12 Server Stats ✅
 - [x] Gateway info (host, version, config path, state dir)
