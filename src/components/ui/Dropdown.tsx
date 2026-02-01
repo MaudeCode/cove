@@ -34,6 +34,8 @@ export interface DropdownProps {
   class?: string;
   /** Disabled state */
   disabled?: boolean;
+  /** Menu alignment (default: left) */
+  align?: "left" | "right";
 }
 
 const sizeStyles: Record<DropdownSize, { trigger: string; menu: string; option: string }> = {
@@ -63,6 +65,7 @@ export function Dropdown({
   "aria-label": ariaLabel,
   class: className,
   disabled = false,
+  align = "left",
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -170,7 +173,11 @@ export function Dropdown({
           style={{
             position: "fixed",
             top: `${triggerRef.current.getBoundingClientRect().bottom + 4}px`,
-            left: `${triggerRef.current.getBoundingClientRect().left}px`,
+            ...(align === "right"
+              ? {
+                  right: `${window.innerWidth - triggerRef.current.getBoundingClientRect().right}px`,
+                }
+              : { left: `${triggerRef.current.getBoundingClientRect().left}px` }),
             minWidth: `${triggerRef.current.offsetWidth}px`,
           }}
           class={`
