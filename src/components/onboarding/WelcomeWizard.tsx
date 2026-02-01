@@ -18,6 +18,7 @@ import { saveAuth, completeOnboarding } from "@/lib/storage";
 import {
   Button,
   Input,
+  PasswordInput,
   Dropdown,
   Toggle,
   Card,
@@ -503,9 +504,8 @@ function AuthStep({
           label={authMode === "token" ? t("auth.token") : t("auth.password")}
           htmlFor="credential"
         >
-          <Input
+          <PasswordInput
             id="credential"
-            type="password"
             value={credential}
             onInput={(e) => onCredentialChange((e.target as HTMLInputElement).value)}
             onKeyDown={handleKeyDown}

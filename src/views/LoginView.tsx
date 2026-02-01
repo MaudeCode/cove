@@ -14,7 +14,16 @@ import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
 import { getAuth, saveAuth } from "@/lib/storage";
-import { Input, Dropdown, Button, Toggle, Card, FormField, CoveLogo } from "@/components/ui";
+import {
+  Input,
+  PasswordInput,
+  Dropdown,
+  Button,
+  Toggle,
+  Card,
+  FormField,
+  CoveLogo,
+} from "@/components/ui";
 
 export function LoginView() {
   const url = useSignal("");
@@ -172,9 +181,8 @@ export function LoginView() {
               label={authMode.value === "token" ? t("auth.token") : t("auth.password")}
               htmlFor="auth-credential"
             >
-              <Input
+              <PasswordInput
                 id="auth-credential"
-                type="password"
                 value={token.value}
                 onInput={(e) => (token.value = (e.target as HTMLInputElement).value)}
                 onKeyDown={handleKeyDown}
