@@ -7,22 +7,35 @@
 
 import { X, FileText, Image as ImageIcon } from "lucide-preact";
 import type { Attachment } from "@/types/attachments";
-import { Tooltip } from "@/components/ui";
+import { Spinner, Tooltip } from "@/components/ui";
 import { t } from "@/lib/i18n";
 
 interface AttachmentPreviewProps {
   attachments: Attachment[];
   onRemove: (id: string) => void;
+  isProcessing?: boolean;
 }
 
-export function AttachmentPreview({ attachments, onRemove }: AttachmentPreviewProps) {
-  if (attachments.length === 0) return null;
+export function AttachmentPreview({ attachments, onRemove, isProcessing }: AttachmentPreviewProps) {
+  if (attachments.length === 0 && !isProcessing) return null;
 
   return (
-    <div class="flex flex-wrap gap-2 px-4 pb-2">
+    <div class="flex flex-wrap gap-2 px-4 pb-2 items-center">
       {attachments.map((att) => (
         <AttachmentItem key={att.id} attachment={att} onRemove={() => onRemove(att.id)} />
       ))}
+      {isProcessing && (
+        <div
+          class="
+            w-16 h-16 rounded-lg
+            border border-[var(--color-border)]
+            bg-[var(--color-bg-secondary)]
+            flex items-center justify-center
+          "
+        >
+          <Spinner size="sm" />
+        </div>
+      )}
     </div>
   );
 }

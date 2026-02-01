@@ -51,6 +51,7 @@ export function ChatInput({
     clearAttachments,
     getPayloads,
     handlePaste,
+    isProcessing,
     error: attachmentError,
     clearError,
   } = useAttachments();
@@ -235,10 +236,14 @@ export function ChatInput({
             </div>
           )}
 
-          {/* Attachment previews */}
-          {hasAttachments && (
+          {/* Attachment previews + processing indicator */}
+          {(hasAttachments || isProcessing) && (
             <div class="pt-3">
-              <AttachmentPreview attachments={attachments} onRemove={removeAttachment} />
+              <AttachmentPreview
+                attachments={attachments}
+                onRemove={removeAttachment}
+                isProcessing={isProcessing}
+              />
             </div>
           )}
 
