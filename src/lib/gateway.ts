@@ -99,6 +99,16 @@ export const gatewayStateDir = signal<string | null>(null);
 /** Presence list (connected clients) */
 export const presence = signal<unknown[]>([]);
 
+/** Computed gateway uptime (updates based on initial snapshot + elapsed time) */
+export const gatewayUptime = computed(() => {
+  const startUptime = gatewayUptimeMs.value;
+  const connected = connectedAt.value;
+  if (startUptime == null || connected == null) return null;
+
+  const elapsed = Date.now() - connected;
+  return startUptime + elapsed;
+});
+
 // ============================================
 // Internal State
 // ============================================
