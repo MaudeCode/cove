@@ -20,7 +20,8 @@ import {
   isStreaming,
 } from "@/signals/chat";
 import { sessions } from "@/signals/sessions";
-import { autoRenameSession, isUserCreatedChat } from "./auto-rename";
+import { autoRenameSession } from "./auto-rename";
+import { isUserCreatedChat } from "@/lib/session-utils";
 import { t } from "@/lib/i18n";
 import type { Message, MessageImage } from "@/types/messages";
 import type { ChatSendResult } from "@/types/chat";

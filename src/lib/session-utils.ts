@@ -45,6 +45,14 @@ export function isUtilitySession(session: Session): boolean {
 }
 
 /**
+ * Check if a session key is a user-created chat (vs main session, cron, etc.)
+ * User-created chats have format: agent:<agentId>:chat:<uuid>
+ */
+export function isUserCreatedChat(sessionKey: string): boolean {
+  return /^agent:[^:]+:chat:[^:]+$/.test(sessionKey);
+}
+
+/**
  * Check if a session is a spawn/sub-agent session
  */
 export function isSpawnSession(session: Session): boolean {
