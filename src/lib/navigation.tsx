@@ -18,6 +18,7 @@ import {
   SlidersHorizontal,
   FileText,
   BookOpen,
+  Palette,
 } from "lucide-preact";
 
 // ============================================
@@ -61,6 +62,7 @@ const ConfigIcon = () => <Settings class={iconClass} aria-hidden="true" />;
 const DebugIcon = () => <SlidersHorizontal class={iconClass} aria-hidden="true" />;
 const LogsIcon = () => <FileText class={iconClass} aria-hidden="true" />;
 const DocsIcon = () => <BookOpen class={iconClass} aria-hidden="true" />;
+const SettingsIcon = () => <Palette class={iconClass} aria-hidden="true" />;
 
 // ============================================
 // Navigation Configuration
@@ -122,6 +124,11 @@ export const navigation: NavSection[] = [
   {
     titleKey: "nav.sections.settings",
     items: [
+      {
+        id: "settings",
+        labelKey: "nav.settings",
+        icon: SettingsIcon,
+      },
       {
         id: "config",
         labelKey: "nav.config",

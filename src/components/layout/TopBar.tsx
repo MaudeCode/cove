@@ -4,6 +4,7 @@
  * Header with logo, connection status, theme toggle, and settings.
  */
 
+import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
 import { logout } from "@/lib/logout";
@@ -70,7 +71,13 @@ export function TopBar() {
           <ThemePicker />
 
           {/* Settings button */}
-          <IconButton icon={<SettingsIcon />} label={t("nav.settings")} variant="ghost" size="md" />
+          <IconButton
+            icon={<SettingsIcon />}
+            label={t("nav.settings")}
+            onClick={() => route("/settings")}
+            variant="ghost"
+            size="md"
+          />
 
           {/* Logout button - only shown when connected */}
           {isConnected.value && (
