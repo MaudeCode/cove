@@ -20,6 +20,7 @@ import { Modal } from "@/components/ui/Modal";
 import { IconButton } from "@/components/ui/IconButton";
 import { Toggle } from "@/components/ui/Toggle";
 import { FormField } from "@/components/ui/FormField";
+import { Textarea } from "@/components/ui/Textarea";
 import {
   RefreshCw,
   Search,
@@ -83,8 +84,33 @@ const editPayloadMessage = signal<string>("");
 const editPayloadModel = signal<string>("");
 
 // ============================================
+// Constants
+// ============================================
+
+const INTERVAL_PRESETS = [
+  { ms: 60000, label: "1m" },
+  { ms: 300000, label: "5m" },
+  { ms: 600000, label: "10m" },
+  { ms: 1800000, label: "30m" },
+  { ms: 3600000, label: "1h" },
+  { ms: 21600000, label: "6h" },
+  { ms: 86400000, label: "24h" },
+];
+
+// ============================================
 // Helpers
 // ============================================
+
+function msToDatetimeLocal(ms: number): string {
+  const d = new Date(ms);
+  // Format: YYYY-MM-DDTHH:mm (local time)
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function datetimeLocalToMs(val: string): number {
+  return new Date(val).getTime();
+}
 
 function formatSchedule(schedule: CronSchedule): string {
   switch (schedule.kind) {
@@ -597,20 +623,43 @@ function JobEditForm({ isCreate: _isCreate = false }: { isCreate?: boolean }) {
             </div>
           )}
           {editScheduleKind.value === "every" && (
-            <Input
-              type="number"
-              value={editScheduleEveryMs.value}
-              onInput={(e) => (editScheduleEveryMs.value = (e.target as HTMLInputElement).value)}
-              placeholder={t("cron.form.intervalPlaceholder")}
-              fullWidth
-            />
+            <div class="space-y-2">
+              <div class="flex flex-wrap gap-2">
+                {INTERVAL_PRESETS.map(({ ms, label }) => (
+                  <button
+                    key={ms}
+                    type="button"
+                    onClick={() => (editScheduleEveryMs.value = String(ms))}
+                    class={`
+                      px-3 py-1.5 text-sm rounded-lg border transition-colors
+                      ${
+                        editScheduleEveryMs.value === String(ms)
+                          ? "bg-[var(--color-accent)]/10 border-[var(--color-accent)] text-[var(--color-accent)]"
+                          : "border-[var(--color-border)] hover:border-[var(--color-border-hover)]"
+                      }
+                    `}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <Input
+                type="number"
+                value={editScheduleEveryMs.value}
+                onInput={(e) => (editScheduleEveryMs.value = (e.target as HTMLInputElement).value)}
+                placeholder={t("cron.form.intervalPlaceholder")}
+                fullWidth
+              />
+            </div>
           )}
           {editScheduleKind.value === "at" && (
             <Input
-              type="number"
-              value={editScheduleAtMs.value}
-              onInput={(e) => (editScheduleAtMs.value = (e.target as HTMLInputElement).value)}
-              placeholder={t("cron.form.timestampPlaceholder")}
+              type="datetime-local"
+              value={msToDatetimeLocal(Number(editScheduleAtMs.value) || Date.now())}
+              onInput={(e) => {
+                const val = (e.target as HTMLInputElement).value;
+                editScheduleAtMs.value = String(datetimeLocalToMs(val));
+              }}
               fullWidth
             />
           )}
@@ -641,18 +690,20 @@ function JobEditForm({ isCreate: _isCreate = false }: { isCreate?: boolean }) {
         }
       >
         {editSessionTarget.value === "main" ? (
-          <Input
+          <Textarea
             value={editPayloadText.value}
-            onInput={(e) => (editPayloadText.value = (e.target as HTMLInputElement).value)}
+            onInput={(e) => (editPayloadText.value = (e.target as HTMLTextAreaElement).value)}
             placeholder={t("cron.form.systemEventPlaceholder")}
+            rows={3}
             fullWidth
           />
         ) : (
           <div class="space-y-3">
-            <Input
+            <Textarea
               value={editPayloadMessage.value}
-              onInput={(e) => (editPayloadMessage.value = (e.target as HTMLInputElement).value)}
+              onInput={(e) => (editPayloadMessage.value = (e.target as HTMLTextAreaElement).value)}
               placeholder={t("cron.form.agentMessagePlaceholder")}
+              rows={3}
               fullWidth
             />
             <Input
