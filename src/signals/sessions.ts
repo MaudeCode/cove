@@ -14,7 +14,6 @@ import {
   isMainSession,
   isCronSession,
   isSpawnSession,
-  isUtilitySession,
   isChannelSession,
   groupSessionsByTime,
 } from "@/lib/session-utils";
@@ -40,9 +39,6 @@ export const sessionSearchQuery = signal<string>("");
 
 /** Whether to show cron sessions (hidden by default) */
 export const showCronSessions = signal<boolean>(false);
-
-/** Whether to show utility sessions (hidden by default) */
-export const showUtilitySessions = signal<boolean>(false);
 
 /** Whether to show spawn/sub-agent sessions (shown by default) */
 const showSpawnSessions = signal<boolean>(true);
@@ -116,11 +112,6 @@ export const sessionsByRecent = computed(() => {
   // Hide cron sessions unless toggled
   if (!showCronSessions.value) {
     filtered = filtered.filter((s) => !isCronSession(s));
-  }
-
-  // Hide utility sessions unless toggled
-  if (!showUtilitySessions.value) {
-    filtered = filtered.filter((s) => !isUtilitySession(s));
   }
 
   // Hide spawn sessions if toggled off
@@ -209,13 +200,6 @@ export function setSessionSearchQuery(query: string): void {
  */
 export function toggleCronSessions(): void {
   showCronSessions.value = !showCronSessions.value;
-}
-
-/**
- * Toggle showing utility sessions
- */
-export function toggleUtilitySessions(): void {
-  showUtilitySessions.value = !showUtilitySessions.value;
 }
 
 /**
