@@ -443,19 +443,84 @@
 
   "cron": {
     "title": "Cron Jobs",
-    "comingSoon": "Cron job management coming in Phase 3.2",
-    "noJobs": "No cron jobs configured",
+    "description": "Schedule and manage automated tasks.",
     "createJob": "Create Job",
     "editJob": "Edit Job",
     "deleteJob": "Delete Job",
+    "confirmDelete": "Delete this job?",
     "runNow": "Run Now",
     "enable": "Enable",
     "disable": "Disable",
     "enabled": "Enabled",
     "disabled": "Disabled",
+    "running": "Running",
+    "pending": "Pending",
+    "lastOk": "Last OK",
+    "lastFailed": "Last Failed",
     "schedule": "Schedule",
     "nextRun": "Next Run",
-    "lastRun": "Last Run"
+    "lastRun": "Last Run",
+    "lastDuration": "Last Duration",
+    "recentRuns": "Recent Runs",
+    "noRuns": "No runs recorded yet.",
+    "searchPlaceholder": "Search jobs...",
+    "emptyTitle": "No Cron Jobs",
+    "emptyDescription": "Create a job to schedule automated tasks.",
+    "noResults": "No Matching Jobs",
+    "noResultsDescription": "Try adjusting your search or filters.",
+    "clearFilters": "Clear Filters",
+    "count": "{count} job",
+    "count_plural": "{count} jobs",
+    "filteredCount": "Showing {filtered} of {total} jobs",
+    "stats": {
+      "total": "Total",
+      "enabled": "Enabled",
+      "disabled": "Disabled",
+      "nextWake": "Next Wake"
+    },
+    "filters": {
+      "all": "All Jobs",
+      "enabled": "Enabled",
+      "disabled": "Disabled"
+    },
+    "columns": {
+      "job": "Job",
+      "schedule": "Schedule",
+      "target": "Target",
+      "nextRun": "Next Run",
+      "status": "Status"
+    },
+    "scheduleKind": {
+      "cron": "Cron Expression",
+      "every": "Interval",
+      "at": "One-time"
+    },
+    "sessionTarget": {
+      "main": "Main Session",
+      "isolated": "Isolated Session"
+    },
+    "payloadKind": {
+      "systemEvent": "System Event",
+      "agentTurn": "Agent Turn"
+    },
+    "form": {
+      "name": "Name",
+      "namePlaceholder": "My Job",
+      "description": "Description",
+      "descriptionPlaceholder": "What does this job do?",
+      "descriptionHint": "Optional description for this job.",
+      "enabled": "Enabled",
+      "schedule": "Schedule",
+      "timezonePlaceholder": "Timezone (e.g., America/New_York)",
+      "intervalPlaceholder": "Interval in milliseconds",
+      "timestampPlaceholder": "Unix timestamp in milliseconds",
+      "sessionTarget": "Session Target",
+      "sessionTargetHint": "Main injects into the main session. Isolated runs in a separate session.",
+      "payload": "Payload",
+      "systemEventPlaceholder": "Text to inject as system event",
+      "agentMessagePlaceholder": "Message to send to the agent",
+      "modelPlaceholder": "Model override (optional)"
+    }
   },
 
   "config": {
