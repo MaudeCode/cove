@@ -97,6 +97,15 @@ const INTERVAL_PRESETS = [
   { ms: 86400000, label: "24h" },
 ];
 
+const CRON_EXAMPLES = [
+  { expr: "*/5 * * * *", label: "Every 5 min" },
+  { expr: "0 * * * *", label: "Hourly" },
+  { expr: "0 8 * * *", label: "8am daily" },
+  { expr: "0 9 * * 1-5", label: "9am weekdays" },
+  { expr: "0 0 * * *", label: "Midnight" },
+  { expr: "0 0 * * 0", label: "Weekly (Sun)" },
+];
+
 // ============================================
 // Helpers
 // ============================================
@@ -607,19 +616,41 @@ function JobEditForm({ isCreate: _isCreate = false }: { isCreate?: boolean }) {
             options={SCHEDULE_KIND_OPTIONS}
           />
           {editScheduleKind.value === "cron" && (
-            <div class="grid grid-cols-2 gap-3">
-              <Input
-                value={editScheduleExpr.value}
-                onInput={(e) => (editScheduleExpr.value = (e.target as HTMLInputElement).value)}
-                placeholder="*/5 * * * *"
-                fullWidth
-              />
-              <Input
-                value={editScheduleTz.value}
-                onInput={(e) => (editScheduleTz.value = (e.target as HTMLInputElement).value)}
-                placeholder={t("cron.form.timezonePlaceholder")}
-                fullWidth
-              />
+            <div class="space-y-3">
+              <div class="grid grid-cols-2 gap-3">
+                <Input
+                  value={editScheduleExpr.value}
+                  onInput={(e) => (editScheduleExpr.value = (e.target as HTMLInputElement).value)}
+                  placeholder="*/5 * * * *"
+                  fullWidth
+                />
+                <Input
+                  value={editScheduleTz.value}
+                  onInput={(e) => (editScheduleTz.value = (e.target as HTMLInputElement).value)}
+                  placeholder={t("cron.form.timezonePlaceholder")}
+                  fullWidth
+                />
+              </div>
+              <div class="flex flex-wrap gap-2">
+                {CRON_EXAMPLES.map(({ expr, label }) => (
+                  <button
+                    key={expr}
+                    type="button"
+                    onClick={() => (editScheduleExpr.value = expr)}
+                    class={`
+                      px-2.5 py-1 text-xs rounded-lg border transition-colors
+                      ${
+                        editScheduleExpr.value === expr
+                          ? "bg-[var(--color-accent)]/10 border-[var(--color-accent)] text-[var(--color-accent)]"
+                          : "border-[var(--color-border)] hover:border-[var(--color-border-hover)] text-[var(--color-text-muted)]"
+                      }
+                    `}
+                    title={expr}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           )}
           {editScheduleKind.value === "every" && (
