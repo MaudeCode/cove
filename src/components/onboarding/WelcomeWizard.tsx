@@ -335,13 +335,17 @@ function UrlStep({ url, onUrlChange, error, canProceed, onNext, onBack, onSkip }
       </div>
 
       <div class="flex gap-3 mt-6">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft class="w-4 h-4 mr-2" />
+        <Button variant="ghost" onClick={onBack} icon={<ArrowLeft class="w-4 h-4" />}>
           {t("actions.back")}
         </Button>
-        <Button variant="primary" onClick={onNext} disabled={!canProceed} class="flex-1">
+        <Button
+          variant="primary"
+          onClick={onNext}
+          disabled={!canProceed}
+          class="flex-1"
+          iconRight={<ArrowRight class="w-4 h-4" />}
+        >
           {t("actions.continue")}
-          <ArrowRight class="w-4 h-4 ml-2" />
         </Button>
       </div>
 
@@ -435,13 +439,16 @@ function AuthStep({
       </div>
 
       <div class="flex gap-3 mt-6">
-        <Button variant="ghost" onClick={onBack}>
-          <ArrowLeft class="w-4 h-4 mr-2" />
+        <Button variant="ghost" onClick={onBack} icon={<ArrowLeft class="w-4 h-4" />}>
           {t("actions.back")}
         </Button>
-        <Button variant="primary" onClick={onNext} class="flex-1">
+        <Button
+          variant="primary"
+          onClick={onNext}
+          class="flex-1"
+          iconRight={<ArrowRight class="w-4 h-4" />}
+        >
           {t("actions.connect")}
-          <ArrowRight class="w-4 h-4 ml-2" />
         </Button>
       </div>
     </Card>
@@ -474,9 +481,13 @@ function ConnectStep({ connecting, connected, error, onRetry, onComplete }: Conn
           </div>
           <h2 class="text-lg font-semibold mb-2">{t("onboarding.success")}</h2>
           <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.successDesc")}</p>
-          <Button variant="primary" onClick={onComplete} fullWidth>
+          <Button
+            variant="primary"
+            onClick={onComplete}
+            fullWidth
+            iconRight={<ArrowRight class="w-4 h-4" />}
+          >
             {t("onboarding.startChatting")}
-            <ArrowRight class="w-4 h-4 ml-2" />
           </Button>
         </>
       )}
@@ -500,8 +511,12 @@ function ConnectStep({ connecting, connected, error, onRetry, onComplete }: Conn
             </ul>
           </div>
 
-          <Button variant="primary" onClick={onRetry} fullWidth>
-            <ArrowLeft class="w-4 h-4 mr-2" />
+          <Button
+            variant="primary"
+            onClick={onRetry}
+            fullWidth
+            icon={<ArrowLeft class="w-4 h-4" />}
+          >
             {t("onboarding.tryAgain")}
           </Button>
         </>
