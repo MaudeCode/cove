@@ -250,13 +250,21 @@ export function probeGateway(url: string, signal?: AbortSignal): Promise<ProbeRe
  * Connect to the gateway
  */
 export function connect(config: ConnectConfig): Promise<HelloPayload> {
-  // Clean up existing connection
-  if (ws) {
-    disconnect();
-  }
-
-  // Track if this is a reconnect attempt before overwriting state
+  // Track if this is a reconnect attempt before any cleanup
   const isReconnectAttempt = reconnectAttempt.value > 0;
+
+  // Clean up existing connection - but don't use disconnect() during reconnect
+  // as it resets reconnectAttempt and other state we want to preserve
+  if (ws) {
+    if (isReconnectAttempt) {
+      // Just close the socket without full disconnect
+      ws.onclose = null;
+      ws.close();
+      ws = null;
+    } else {
+      disconnect();
+    }
+  }
 
   currentConfig = config;
   connectionState.value = "connecting";
