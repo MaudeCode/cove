@@ -17,6 +17,7 @@ import {
   gatewayCommit,
   gatewayHost,
   connectedAt,
+  gatewayUptimeMs,
   presence,
   disconnect,
   send,
@@ -169,8 +170,14 @@ async function fetchDashboardData() {
 // ============================================
 
 const uptime = computed(() => {
-  if (!connectedAt.value) return null;
-  const ms = Date.now() - connectedAt.value;
+  const startUptime = gatewayUptimeMs.value;
+  const connected = connectedAt.value;
+  if (startUptime == null || connected == null) return null;
+
+  // Calculate current gateway uptime based on initial uptime + time since we connected
+  const elapsed = Date.now() - connected;
+  const ms = startUptime + elapsed;
+
   const seconds = Math.floor(ms / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
