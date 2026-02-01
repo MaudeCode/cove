@@ -16,6 +16,7 @@ import { ArrowDownIcon } from "@/components/ui/icons";
 import { CoveLogo } from "@/components/ui/CoveLogo";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
+import { isAvatarUrl } from "@/lib/utils";
 import { searchQuery, isSearchOpen, scrollToMessageId } from "@/signals/chat";
 import { groupMessages } from "@/lib/message-grouping";
 import { isNoReplyContent } from "@/lib/message-detection";
@@ -218,12 +219,20 @@ export function MessageList({
           {!isLoading && !error && messages.length === 0 && !isStreaming && (
             <div class="flex-1 flex items-center justify-center py-16">
               <div class="text-center max-w-md">
-                {assistantAvatar ? (
+                {isAvatarUrl(assistantAvatar) ? (
                   <img
                     src={assistantAvatar}
                     alt={assistantName || t("chat.emptyState.assistant")}
                     class="w-20 h-20 rounded-2xl mx-auto mb-4 opacity-90"
                   />
+                ) : assistantAvatar ? (
+                  <div
+                    class="text-6xl mx-auto mb-4"
+                    role="img"
+                    aria-label={assistantName || t("chat.emptyState.assistant")}
+                  >
+                    {assistantAvatar}
+                  </div>
                 ) : (
                   <CoveLogo size="lg" class="mx-auto mb-4 opacity-80" />
                 )}

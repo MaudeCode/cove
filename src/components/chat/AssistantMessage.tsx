@@ -14,6 +14,7 @@ import { ToolCall as ToolCallComponent } from "./ToolCall";
 import { BouncingDots } from "@/components/ui/BouncingDots";
 import { formatTimestamp, t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
+import { isAvatarUrl } from "@/lib/utils";
 import { parseMediaFromContent, mediaUrlsToImages } from "@/lib/media-parse";
 
 interface AssistantMessageProps {
@@ -152,9 +153,17 @@ export function AssistantMessage({
       {/* Header: Avatar + Name + Timestamp + Actions */}
       <div class="flex items-center gap-2 mb-1.5">
         {/* Avatar */}
-        <div class="w-6 h-6 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] flex items-center justify-center text-sm">
-          {assistantAvatar || "🤖"}
-        </div>
+        {isAvatarUrl(assistantAvatar) ? (
+          <img
+            src={assistantAvatar}
+            alt={assistantName || "Assistant"}
+            class="w-6 h-6 rounded-full object-cover"
+          />
+        ) : (
+          <div class="w-6 h-6 rounded-full bg-[var(--color-bg-surface)] border border-[var(--color-border)] flex items-center justify-center text-sm">
+            {assistantAvatar || "🤖"}
+          </div>
+        )}
 
         {/* Name */}
         <span class="text-sm font-medium text-[var(--color-text-primary)]">{assistantName}</span>

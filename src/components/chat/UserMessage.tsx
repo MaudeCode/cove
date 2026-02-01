@@ -12,6 +12,7 @@ import { MessageImages } from "./MessageImages";
 import { MessageActions } from "./MessageActions";
 import { BouncingDots } from "@/components/ui/BouncingDots";
 import { formatTimestamp, t } from "@/lib/i18n";
+import { isAvatarUrl } from "@/lib/utils";
 import { retryMessage } from "@/lib/chat/send";
 
 interface UserMessageProps {
@@ -42,9 +43,13 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
       {/* Header: Avatar + Name + Timestamp + Actions */}
       <div class="flex items-center gap-2 mb-1.5">
         {/* Avatar */}
-        <div class="w-6 h-6 rounded-full bg-[var(--color-accent)]/20 flex items-center justify-center text-xs font-medium text-[var(--color-accent)]">
-          {userAvatar || userName.charAt(0).toUpperCase()}
-        </div>
+        {isAvatarUrl(userAvatar) ? (
+          <img src={userAvatar} alt={userName} class="w-6 h-6 rounded-full object-cover" />
+        ) : (
+          <div class="w-6 h-6 rounded-full bg-[var(--color-accent)]/20 flex items-center justify-center text-xs font-medium text-[var(--color-accent)]">
+            {userAvatar || userName.charAt(0).toUpperCase()}
+          </div>
+        )}
 
         {/* Name */}
         <span class="text-sm font-medium text-[var(--color-text-primary)]">{userName}</span>
