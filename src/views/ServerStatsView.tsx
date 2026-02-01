@@ -126,7 +126,7 @@ function GatewayInfoCard() {
             {gatewayHost.value || t("stats.gateway.unknown")}
           </p>
         </div>
-        {gatewayVersion.value && (
+        {gatewayVersion.value && gatewayVersion.value !== "dev" && (
           <Badge variant="default" size="sm" class="ml-auto">
             v{gatewayVersion.value}
           </Badge>
