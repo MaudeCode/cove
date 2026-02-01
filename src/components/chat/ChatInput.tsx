@@ -258,12 +258,12 @@ export function ChatInput({
             rows={1}
             class={`
               w-full px-4 pb-12 text-sm rounded-xl resize-none
-              bg-transparent border-none outline-none
+              bg-transparent border-none
               placeholder:text-[var(--color-text-muted)]
               disabled:opacity-50 disabled:cursor-not-allowed
               ${hasAttachments ? "pt-2" : "pt-3"}
             `}
-            style={{ minHeight: "60px", maxHeight: "200px" }}
+            style={{ minHeight: "60px", maxHeight: "200px", outline: "none" }}
           />
 
           {/* Hidden file input */}
