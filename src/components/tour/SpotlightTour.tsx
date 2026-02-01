@@ -40,9 +40,21 @@ interface TooltipPosition {
   arrowPosition: "top" | "bottom" | "left" | "right";
 }
 
+// Timing constants
 const FADE_DURATION_MS = 150;
+const SCROLL_WAIT_MS = 300;
+const DOM_UPDATE_WAIT_MS = 50;
 
-export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: SpotlightTourProps) {
+// Layout constants
+const TOOLTIP_PADDING = 16;
+const ARROW_SIZE = 8;
+const DEFAULT_SPOTLIGHT_PADDING = 8;
+
+export function SpotlightTour({
+  steps,
+  onComplete,
+  spotlightPadding = DEFAULT_SPOTLIGHT_PADDING,
+}: SpotlightTourProps) {
   const currentIndex = useSignal(0);
   const displayedIndex = useSignal(0); // Lags behind currentIndex for content display
   const targetRect = useSignal<DOMRect | null>(null);
@@ -70,7 +82,7 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
     }
 
     // Small delay to let DOM update
-    await new Promise((r) => setTimeout(r, 50));
+    await new Promise((r) => setTimeout(r, DOM_UPDATE_WAIT_MS));
 
     const element = document.querySelector(currentStep.target);
     if (element) {
@@ -78,7 +90,7 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
       element.scrollIntoView({ behavior: "smooth", block: "center" });
 
       // Wait for scroll
-      await new Promise((r) => setTimeout(r, 300));
+      await new Promise((r) => setTimeout(r, SCROLL_WAIT_MS));
 
       const rect = element.getBoundingClientRect();
       targetRect.value = rect;
@@ -106,8 +118,6 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
 
     const tooltip = tooltipRef.current;
     const tooltipRect = tooltip.getBoundingClientRect();
-    const padding = 16;
-    const arrowSize = 8;
 
     const viewport = {
       width: window.innerWidth,
@@ -121,24 +131,25 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
     // Calculate position based on placement, with fallbacks
     const positions = {
       bottom: {
-        top: rect.bottom + spotlightPadding + arrowSize + padding,
+        top: rect.bottom + spotlightPadding + ARROW_SIZE + TOOLTIP_PADDING,
         left: rect.left + rect.width / 2 - tooltipRect.width / 2,
-        fits: rect.bottom + spotlightPadding + tooltipRect.height + padding < viewport.height,
+        fits:
+          rect.bottom + spotlightPadding + tooltipRect.height + TOOLTIP_PADDING < viewport.height,
       },
       top: {
-        top: rect.top - spotlightPadding - tooltipRect.height - arrowSize - padding,
+        top: rect.top - spotlightPadding - tooltipRect.height - ARROW_SIZE - TOOLTIP_PADDING,
         left: rect.left + rect.width / 2 - tooltipRect.width / 2,
-        fits: rect.top - spotlightPadding - tooltipRect.height - padding > 0,
+        fits: rect.top - spotlightPadding - tooltipRect.height - TOOLTIP_PADDING > 0,
       },
       right: {
         top: rect.top + rect.height / 2 - tooltipRect.height / 2,
-        left: rect.right + spotlightPadding + arrowSize + padding,
-        fits: rect.right + spotlightPadding + tooltipRect.width + padding < viewport.width,
+        left: rect.right + spotlightPadding + ARROW_SIZE + TOOLTIP_PADDING,
+        fits: rect.right + spotlightPadding + tooltipRect.width + TOOLTIP_PADDING < viewport.width,
       },
       left: {
         top: rect.top + rect.height / 2 - tooltipRect.height / 2,
-        left: rect.left - spotlightPadding - tooltipRect.width - arrowSize - padding,
-        fits: rect.left - spotlightPadding - tooltipRect.width - padding > 0,
+        left: rect.left - spotlightPadding - tooltipRect.width - ARROW_SIZE - TOOLTIP_PADDING,
+        fits: rect.left - spotlightPadding - tooltipRect.width - TOOLTIP_PADDING > 0,
       },
     };
 
@@ -164,8 +175,14 @@ export function SpotlightTour({ steps, onComplete, spotlightPadding = 8 }: Spotl
     left = pos.left;
 
     // Clamp to viewport
-    left = Math.max(padding, Math.min(left, viewport.width - tooltipRect.width - padding));
-    top = Math.max(padding, Math.min(top, viewport.height - tooltipRect.height - padding));
+    left = Math.max(
+      TOOLTIP_PADDING,
+      Math.min(left, viewport.width - tooltipRect.width - TOOLTIP_PADDING),
+    );
+    top = Math.max(
+      TOOLTIP_PADDING,
+      Math.min(top, viewport.height - tooltipRect.height - TOOLTIP_PADDING),
+    );
 
     // Arrow points opposite to placement
     const arrowPosition =
