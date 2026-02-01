@@ -14,7 +14,7 @@ import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
 import { getAuth, saveAuth } from "@/lib/storage";
-import { Input, Select, Button, Toggle, Card, FormField, CoveLogo } from "@/components/ui";
+import { Input, Dropdown, Button, Toggle, Card, FormField, CoveLogo } from "@/components/ui";
 
 export function LoginView() {
   const url = useSignal("");
@@ -157,15 +157,13 @@ export function LoginView() {
             </FormField>
 
             {/* Auth mode */}
-            <FormField label="Auth Mode" htmlFor="auth-mode">
-              <Select
-                id="auth-mode"
+            <FormField label="Auth Mode">
+              <Dropdown
                 value={authMode.value}
-                onChange={(e) =>
-                  (authMode.value = (e.target as HTMLSelectElement).value as "token" | "password")
-                }
+                onChange={(value) => (authMode.value = value as "token" | "password")}
                 options={authModeOptions}
-                fullWidth
+                aria-label="Auth Mode"
+                class="w-full"
               />
             </FormField>
 
