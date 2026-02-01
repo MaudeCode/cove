@@ -73,6 +73,18 @@ export function TooltipProvider({ children }: { children: ComponentChildren }) {
     setState((prev) => (prev ? { ...prev, triggerRect } : null));
   }, []);
 
+  // Global escape key handler - only active when tooltip is visible
+  useEffect(() => {
+    if (!shouldRender) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") hide();
+    };
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [shouldRender, hide]);
+
   return (
     <TooltipContext.Provider value={{ show, hide, update }}>
       {children}
@@ -288,15 +300,8 @@ export function Tooltip({
     };
   }, []);
 
-  // Handle escape key
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") hideTooltip();
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [hideTooltip]);
+  // Handle escape key - only when tooltip context exists
+  // (Provider handles global escape since only one tooltip shows at a time)
 
   // If no provider, render nothing (tooltip won't work but won't crash)
   if (!context) {
