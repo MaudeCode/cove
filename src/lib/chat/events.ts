@@ -15,6 +15,8 @@ import {
   errorRun,
   abortRun as abortRunSignal,
   isCompacting,
+  startStaleRunCleanup,
+  stopStaleRunCleanup,
 } from "@/signals/chat";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatEvent, AgentEvent } from "@/types/chat";
@@ -32,6 +34,9 @@ export function subscribeToChatEvents(): () => void {
   }
 
   log.chat.info("Subscribing to chat events");
+
+  // Start stale run cleanup to handle edge cases (e.g., heartbeat responses)
+  startStaleRunCleanup();
 
   chatEventUnsubscribe = on("chat", (payload) => {
     handleChatEvent(payload as ChatEvent);
@@ -59,6 +64,7 @@ export function unsubscribeFromChatEvents(): void {
     chatEventUnsubscribe();
     chatEventUnsubscribe = null;
   }
+  stopStaleRunCleanup();
 }
 
 /**
@@ -298,11 +304,17 @@ function handleFinalEvent(event: ChatEvent): void {
     hasMessage: !!message,
   });
 
-  // If no run exists, create one on-the-fly
-  if (!existingRun && message) {
+  // If no run exists, create one on-the-fly (even without message, to properly complete it)
+  if (!existingRun) {
     log.chat.debug("Creating run on-the-fly for final:", runId, "session:", sessionKey);
     startRun(runId, sessionKey);
     existingRun = activeRuns.value.get(runId);
+  }
+
+  // If still no run (shouldn't happen), just bail
+  if (!existingRun) {
+    log.chat.warn("Final event with no run and couldn't create one:", runId);
+    return;
   }
 
   let finalContent = existingRun?.content ?? "";
