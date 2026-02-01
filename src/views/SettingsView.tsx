@@ -130,6 +130,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   label: t(opt.labelKey),
                 }))}
                 size="sm"
+                class="min-w-[180px]"
               />
             </SettingRow>
 
@@ -147,6 +148,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   label: t(opt.labelKey),
                 }))}
                 size="sm"
+                class="min-w-[180px]"
               />
             </SettingRow>
           </div>
@@ -169,6 +171,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   label: t(opt.labelKey),
                 }))}
                 size="sm"
+                class="min-w-[180px]"
               />
             </SettingRow>
           </div>
@@ -203,6 +206,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   label: `${getAgentEmoji(agent)} ${getAgentDisplayName(agent)}`,
                 }))}
                 size="sm"
+                class="min-w-[180px]"
               />
             </SettingRow>
 
@@ -226,6 +230,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   })),
                 ]}
                 size="sm"
+                class="min-w-[180px]"
               />
             </SettingRow>
           </div>
@@ -265,6 +270,7 @@ export function SettingsView(_props: SettingsViewProps) {
                       label: `${getAgentEmoji(agent)} ${getAgentDisplayName(agent)}`,
                     }))}
                     size="sm"
+                    class="min-w-[180px]"
                   />
                 </SettingRow>
 
@@ -288,6 +294,7 @@ export function SettingsView(_props: SettingsViewProps) {
                       })),
                     ]}
                     size="sm"
+                    class="min-w-[180px]"
                   />
                 </SettingRow>
 
