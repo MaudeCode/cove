@@ -109,27 +109,21 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     });
   }, [activeSessionKey.value]);
 
-  // Handle reconnection: clear stale state and process queued messages
+  // Handle connection established (initial or reconnect)
   useEffect(() => {
     const connected = isConnected.value;
     const wasConnected = wasConnectedRef.current;
-
-    // Detect reconnection (was disconnected, now connected)
-    if (connected && !wasConnected) {
-      // Clear any active runs - they're gone after gateway restart
-      clearActiveRuns();
-
-      // Process any queued messages
-      if (hasQueuedMessages.value) {
-        processMessageQueue();
-      }
-
-      // Don't reload history on reconnect - we already have messages cached locally.
-      // Reloading causes a brief flash as messages are replaced.
-      // The session-switch effect handles loading when actually switching sessions.
-    }
-
     wasConnectedRef.current = connected;
+
+    if (!connected || wasConnected) return;
+
+    // Clear stale runs - harmless on initial connect, necessary on reconnect
+    clearActiveRuns();
+
+    // Process any queued messages
+    if (hasQueuedMessages.value) {
+      processMessageQueue();
+    }
   }, [connectionState.value]);
 
   const handleSend = async (
