@@ -196,8 +196,8 @@ export function MessageList({
         role="list"
         aria-label="Messages"
       >
-        {/* Centered container with max-width */}
-        <div class="max-w-5xl mx-auto px-6 py-6">
+        {/* Centered container with max-width - flex column with min-height for empty state */}
+        <div class="max-w-5xl mx-auto px-6 py-6 min-h-full flex flex-col">
           {/* Loading state */}
           {isLoading && (
             <div class="flex justify-center py-8">
@@ -217,10 +217,44 @@ export function MessageList({
           {/* Empty state */}
           {!isLoading && !error && messages.length === 0 && !isStreaming && (
             <div class="flex-1 flex items-center justify-center py-16">
-              <div class="text-center">
-                <CoveLogo size="lg" class="mx-auto mb-4 opacity-80" />
-                <h3 class="text-lg font-medium mb-1">{t("chat.emptyState.title")}</h3>
-                <p class="text-[var(--color-text-muted)]">{t("chat.emptyState.description")}</p>
+              <div class="text-center max-w-md">
+                {assistantAvatar ? (
+                  <img
+                    src={assistantAvatar}
+                    alt={assistantName || t("chat.emptyState.assistant")}
+                    class="w-20 h-20 rounded-2xl mx-auto mb-4 opacity-90"
+                  />
+                ) : (
+                  <CoveLogo size="lg" class="mx-auto mb-4 opacity-80" />
+                )}
+                <h3 class="text-xl font-medium mb-2">
+                  {assistantName
+                    ? t("chat.emptyState.titleWithName", { name: assistantName })
+                    : t("chat.emptyState.title")}
+                </h3>
+                <p class="text-[var(--color-text-muted)] mb-6">
+                  {t("chat.emptyState.description")}
+                </p>
+                <div class="text-sm text-[var(--color-text-muted)]">
+                  <p class="mb-2">{t("chat.emptyState.hint")}</p>
+                  <div class="flex items-center justify-center gap-4 text-xs">
+                    <span class="flex items-center gap-1">
+                      <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] font-mono">
+                        ⌘
+                      </kbd>
+                      <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] font-mono">
+                        F
+                      </kbd>
+                      <span class="ml-1">{t("chat.emptyState.search")}</span>
+                    </span>
+                    <span class="flex items-center gap-1">
+                      <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] font-mono">
+                        /new
+                      </kbd>
+                      <span class="ml-1">{t("chat.emptyState.newSession")}</span>
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           )}

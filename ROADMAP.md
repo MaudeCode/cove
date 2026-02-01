@@ -937,6 +937,17 @@ export const navigation: NavSection[] = [
 - [ ] Nav item linking to https://docs.openclaw.ai
 - [ ] Opens in new tab
 
+### 3.12 Server Stats
+- [ ] Gateway uptime history
+- [ ] Memory/CPU usage over time (if available from health API)
+- [ ] Request rate / throughput
+- [ ] Message volume (messages sent/received per hour/day)
+- [ ] Token usage trends
+- [ ] Error rate / failed requests
+- [ ] Session activity heatmap
+- [ ] Cron job execution history
+- [ ] Channel message volume by channel type
+
 ---
 
 ## Phase 4: Nice to Have

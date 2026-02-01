@@ -4,24 +4,21 @@
  * Provides translation and locale-aware formatting.
  *
  * Usage:
- *   import { t, formatDate, formatRelativeTime } from '@/lib/i18n'
+ *   import { t, formatTimestamp } from '@/lib/i18n'
  *
  *   t('actions.send')           // "Send"
  *   t('messages.count', { count: 5 })  // "5 messages"
- *   formatDate(new Date())      // "Jan 30, 2026"
- *   formatRelativeTime(date)    // "2 hours ago"
+ *   formatTimestamp(date)       // "2 hours ago" or "3:45 PM"
  */
 
 import { signal, effect, computed } from "@preact/signals";
 import { getLocaleStrings, type LocaleStrings } from "@/locales";
 import { timeFormat } from "@/signals/settings";
+import { getLocale } from "./storage";
 import { log } from "./logger";
 
-// Storage key
-const STORAGE_KEY = "cove:locale";
-
 /** Current locale code */
-const locale = signal<string>(loadLocale());
+const locale = signal<string>(getLocale());
 
 /** Current locale strings */
 const strings = signal<LocaleStrings>(getLocaleStrings(locale.value));
@@ -31,58 +28,6 @@ const isRTL = computed(() => {
   const rtlLocales = ["ar", "he", "fa", "ur"];
   return rtlLocales.includes(locale.value.split("-")[0]);
 });
-
-/**
- * Load locale from storage or detect from browser
- */
-function loadLocale(): string {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      // Fix: previous bug saved JSON-stringified values like '"en"'
-      // Strip quotes if present
-      const cleaned = stored.replace(/^"|"$/g, "");
-      if (cleaned && cleaned !== stored) {
-        // Fix the stored value
-        localStorage.setItem(STORAGE_KEY, cleaned);
-      }
-      return cleaned || "en";
-    }
-  } catch {
-    // Ignore
-  }
-
-  // Detect from browser
-  const browserLocale = navigator.language || "en";
-  // For now, we only support 'en', so normalize
-  return browserLocale.startsWith("en") ? "en" : "en";
-}
-
-/**
- * Save locale to storage
- */
-function saveLocale(loc: string): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, loc);
-  } catch {
-    // Ignore
-  }
-}
-
-/* eslint-disable no-unused-vars -- i18n utilities for future use */
-
-/**
- * Set the current locale
- */
-export function setLocale(loc: string): void {
-  locale.value = loc;
-  strings.value = getLocaleStrings(loc);
-  saveLocale(loc);
-
-  // Update document direction for RTL
-  document.documentElement.dir = isRTL.value ? "rtl" : "ltr";
-  document.documentElement.lang = loc;
-}
 
 /**
  * Initialize i18n system
@@ -153,55 +98,21 @@ export function t(key: string, params?: Record<string, string | number>): string
 }
 
 // ============================================
-// Date/Time/Number Formatting
+// Date/Time Formatting
 // ============================================
 
-type DateStyle = "short" | "medium" | "long" | "full";
 type TimeStyle = "short" | "medium" | "long";
 
 /**
- * Format a date
- *
- * @example
- * formatDate(new Date(), 'medium')  // "Jan 30, 2026"
- */
-export function formatDate(date: Date | number, style: DateStyle = "medium"): string {
-  const d = typeof date === "number" ? new Date(date) : date;
-  return new Intl.DateTimeFormat(locale.value, { dateStyle: style }).format(d);
-}
-
-/**
  * Format a time
- *
- * @example
- * formatTime(new Date(), 'short')  // "3:45 PM"
  */
-export function formatTime(date: Date | number, style: TimeStyle = "short"): string {
+function formatTime(date: Date | number, style: TimeStyle = "short"): string {
   const d = typeof date === "number" ? new Date(date) : date;
   return new Intl.DateTimeFormat(locale.value, { timeStyle: style }).format(d);
 }
 
 /**
- * Format a date and time
- *
- * @example
- * formatDateTime(new Date())  // "Jan 30, 2026, 3:45 PM"
- */
-export function formatDateTime(
-  date: Date | number,
-  dateStyle: DateStyle = "medium",
-  timeStyle: TimeStyle = "short",
-): string {
-  const d = typeof date === "number" ? new Date(date) : date;
-  return new Intl.DateTimeFormat(locale.value, { dateStyle, timeStyle }).format(d);
-}
-
-/**
  * Format a relative time (e.g., "2 hours ago", "in 5 minutes")
- *
- * @example
- * formatRelativeTime(pastDate)    // "2 hours ago"
- * formatRelativeTime(futureDate)  // "in 5 minutes"
  */
 function formatRelativeTime(date: Date | number): string {
   const d = typeof date === "number" ? new Date(date) : date;
@@ -249,6 +160,38 @@ export function formatTimestamp(date: Date | number): string {
 }
 
 /**
+ * Format relative time in compact form (e.g., "6h", "2d", "3w")
+ */
+function formatRelativeTimeCompact(date: Date | number): string {
+  const d = typeof date === "number" ? new Date(date) : date;
+  const now = Date.now();
+  const diffMs = Math.abs(d.getTime() - now);
+  const diffSec = Math.round(diffMs / 1000);
+  const diffMin = Math.round(diffSec / 60);
+  const diffHour = Math.round(diffMin / 60);
+  const diffDay = Math.round(diffHour / 24);
+  const diffWeek = Math.round(diffDay / 7);
+  const diffMonth = Math.round(diffDay / 30);
+  const diffYear = Math.round(diffDay / 365);
+
+  if (diffSec < 60) {
+    return t("time.compact.now");
+  } else if (diffMin < 60) {
+    return t("time.compact.minutes", { count: diffMin });
+  } else if (diffHour < 24) {
+    return t("time.compact.hours", { count: diffHour });
+  } else if (diffDay < 7) {
+    return t("time.compact.days", { count: diffDay });
+  } else if (diffWeek < 4) {
+    return t("time.compact.weeks", { count: diffWeek });
+  } else if (diffMonth < 12) {
+    return t("time.compact.months", { count: diffMonth });
+  } else {
+    return t("time.compact.years", { count: diffYear });
+  }
+}
+
+/**
  * Format timestamp in compact form, respecting timeFormat setting
  *
  * @example
@@ -283,92 +226,3 @@ export function formatTimestampCompact(date: Date | number): string {
   }
   return formatRelativeTimeCompact(date);
 }
-
-/**
- * Format relative time in compact form (e.g., "6h", "2d", "3w")
- *
- * @example
- * formatRelativeTimeCompact(pastDate)  // "6h"
- * formatRelativeTimeCompact(olderDate) // "2d"
- */
-function formatRelativeTimeCompact(date: Date | number): string {
-  const d = typeof date === "number" ? new Date(date) : date;
-  const now = Date.now();
-  const diffMs = Math.abs(d.getTime() - now);
-  const diffSec = Math.round(diffMs / 1000);
-  const diffMin = Math.round(diffSec / 60);
-  const diffHour = Math.round(diffMin / 60);
-  const diffDay = Math.round(diffHour / 24);
-  const diffWeek = Math.round(diffDay / 7);
-  const diffMonth = Math.round(diffDay / 30);
-  const diffYear = Math.round(diffDay / 365);
-
-  if (diffSec < 60) {
-    return t("time.compact.now");
-  } else if (diffMin < 60) {
-    return t("time.compact.minutes", { count: diffMin });
-  } else if (diffHour < 24) {
-    return t("time.compact.hours", { count: diffHour });
-  } else if (diffDay < 7) {
-    return t("time.compact.days", { count: diffDay });
-  } else if (diffWeek < 4) {
-    return t("time.compact.weeks", { count: diffWeek });
-  } else if (diffMonth < 12) {
-    return t("time.compact.months", { count: diffMonth });
-  } else {
-    return t("time.compact.years", { count: diffYear });
-  }
-}
-
-/**
- * Format a number
- *
- * @example
- * formatNumber(1234567.89)  // "1,234,567.89"
- * formatNumber(0.5, { style: 'percent' })  // "50%"
- */
-export function formatNumber(num: number, options?: Intl.NumberFormatOptions): string {
-  return new Intl.NumberFormat(locale.value, options).format(num);
-}
-
-/**
- * Format bytes to human readable string
- *
- * @example
- * formatBytes(1024)       // "1 KB"
- * formatBytes(1048576)    // "1 MB"
- */
-export function formatBytes(bytes: number, decimals = 1): string {
-  if (bytes === 0) return "0 B";
-
-  const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-
-  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(decimals))} ${sizes[i]}`;
-}
-
-/**
- * Format duration in milliseconds to human readable string
- *
- * @example
- * formatDuration(5000)    // "5s"
- * formatDuration(125000)  // "2m 5s"
- */
-export function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-
-  const seconds = Math.floor(ms / 1000) % 60;
-  const minutes = Math.floor(ms / 60000) % 60;
-  const hours = Math.floor(ms / 3600000);
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  } else if (minutes > 0) {
-    return `${minutes}m ${seconds}s`;
-  } else {
-    return `${seconds}s`;
-  }
-}
-
-/* eslint-enable no-unused-vars */

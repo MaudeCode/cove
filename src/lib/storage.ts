@@ -1,189 +1,104 @@
 /**
  * Typed localStorage Wrapper
  *
- * Provides type-safe access to localStorage with:
- * - Schema validation
- * - JSON serialization
- * - Migration support
- * - Quota error handling
+ * Central storage layer for all persisted state.
+ * All localStorage access should go through this module.
+ *
+ * Benefits:
+ * - Consistent key prefixing
+ * - Type safety
+ * - Central migration path
+ * - Error handling
  */
 
-import type { StoredAuth, StorageSchema } from "@/types/settings";
+import type { Message } from "@/types/messages";
+import type { Session } from "@/types/sessions";
+import type { UsageSummary } from "@/types/usage";
+import type { Theme } from "@/types/theme";
 
-// Re-export types for consumers
-export type { StoredAuth } from "@/types/settings";
+// ============================================
+// Configuration
+// ============================================
 
-/**
- * Current schema version - increment when schema changes
- */
-const CURRENT_SCHEMA_VERSION = 1;
-
-/**
- * Storage key prefix to avoid collisions
- */
 const PREFIX = "cove:";
-
-// ============================================
-// Default Values
-// ============================================
-
-const defaults: StorageSchema = {
-  settings: {
-    theme: "system",
-    locale: "en",
-    timeFormat: "relative",
-    fontSize: "md",
-  },
-  auth: {
-    url: "",
-    authMode: "token",
-    rememberMe: true,
-  },
-  recentSessions: [],
-  schemaVersion: CURRENT_SCHEMA_VERSION,
-  hasCompletedOnboarding: false,
-  pendingTour: false,
-};
+const SCHEMA_VERSION = 1;
 
 // ============================================
 // Core Functions
 // ============================================
 
 /**
- * Get a value from storage
+ * Get a raw value from storage (handles prefix and JSON parsing)
  */
-function get<K extends keyof StorageSchema>(key: K): StorageSchema[K] | null {
+function getRaw<T>(key: string): T | null {
   try {
     const raw = localStorage.getItem(PREFIX + key);
     if (raw === null) return null;
-
-    const parsed = JSON.parse(raw) as StorageSchema[K];
-    return parsed;
+    return JSON.parse(raw) as T;
   } catch {
-    // Invalid JSON or other error
     return null;
   }
 }
 
 /**
- * Set a value in storage
+ * Set a raw value in storage (handles prefix and JSON serialization)
  */
-function set<K extends keyof StorageSchema>(key: K, value: StorageSchema[K]): void {
-  const serialized = JSON.stringify(value);
-  localStorage.setItem(PREFIX + key, serialized);
+function setRaw<T>(key: string, value: T): void {
+  try {
+    localStorage.setItem(PREFIX + key, JSON.stringify(value));
+  } catch {
+    // Quota exceeded or other error - silently fail
+  }
 }
 
 /**
  * Remove a value from storage
  */
-function remove(key: keyof StorageSchema): void {
+function remove(key: string): void {
   localStorage.removeItem(PREFIX + key);
 }
 
 // ============================================
-// Migration Support
+// Auth
 // ============================================
 
-type Migration = (data: Record<string, unknown>) => Record<string, unknown>;
-
-/**
- * Migration functions keyed by target version
- */
-const migrations: Record<number, Migration> = {
-  // Example: Migration to version 2
-  // 2: (data) => {
-  //   // Transform data from v1 to v2
-  //   return { ...data, newField: 'default' };
-  // },
-};
-
-/**
- * Run migrations if needed
- */
-function runMigrations(): void {
-  const storedVersion = get("schemaVersion") ?? 0;
-
-  if (storedVersion >= CURRENT_SCHEMA_VERSION) {
-    return; // Already up to date
-  }
-
-  // Run each migration in order
-  for (let version = storedVersion + 1; version <= CURRENT_SCHEMA_VERSION; version++) {
-    const migration = migrations[version];
-    if (migration) {
-      // Get all current data
-      const allData: Record<string, unknown> = {};
-      for (const key of Object.keys(defaults) as Array<keyof StorageSchema>) {
-        allData[key] = get(key);
-      }
-
-      // Run migration
-      const migratedData = migration(allData);
-
-      // Save migrated data
-      for (const [key, value] of Object.entries(migratedData)) {
-        if (key in defaults) {
-          set(key as keyof StorageSchema, value as StorageSchema[keyof StorageSchema]);
-        }
-      }
-    }
-  }
-
-  // Update schema version
-  set("schemaVersion", CURRENT_SCHEMA_VERSION);
+export interface StoredAuth {
+  url: string;
+  authMode: "token" | "password";
+  credential?: string;
+  rememberMe: boolean;
 }
 
-// ============================================
-// Convenience Functions
-// ============================================
-
-/**
- * Get auth credentials
- */
 export function getAuth(): StoredAuth | null {
-  return get("auth");
+  return getRaw<StoredAuth>("auth");
 }
 
-/**
- * Save auth credentials
- */
 export function saveAuth(auth: StoredAuth): void {
-  set("auth", auth);
+  setRaw("auth", auth);
 }
 
-/**
- * Clear auth credentials
- */
 export function clearAuth(): void {
   remove("auth");
 }
 
-/**
- * Check if user has completed onboarding
- */
+// ============================================
+// Onboarding
+// ============================================
+
 export function hasCompletedOnboarding(): boolean {
-  return get("hasCompletedOnboarding") ?? false;
+  return getRaw<boolean>("hasCompletedOnboarding") ?? false;
 }
 
-/**
- * Mark onboarding as complete
- */
 export function completeOnboarding(): void {
-  set("hasCompletedOnboarding", true);
+  setRaw("hasCompletedOnboarding", true);
 }
 
-/**
- * Set pending tour flag (to show tour after onboarding)
- */
 export function setPendingTour(show: boolean): void {
-  set("pendingTour", show);
+  setRaw("pendingTour", show);
 }
 
-/**
- * Check and clear pending tour flag
- */
 export function consumePendingTour(): boolean {
-  const pending = get("pendingTour") ?? false;
+  const pending = getRaw<boolean>("pendingTour") ?? false;
   if (pending) {
     remove("pendingTour");
   }
@@ -191,12 +106,147 @@ export function consumePendingTour(): boolean {
 }
 
 // ============================================
-// Initialization
+// User Preferences
+// ============================================
+
+export type TimeFormat = "relative" | "local";
+export type FontSize = "sm" | "md" | "lg";
+export type FontFamily = "geist" | "inter" | "system" | "dyslexic" | "mono";
+
+const PREFERENCE_DEFAULTS = {
+  timeFormat: "relative" as TimeFormat,
+  fontSize: "md" as FontSize,
+  fontFamily: "geist" as FontFamily,
+  locale: "en",
+  theme: "system",
+  sidebarWidth: 280,
+};
+
+export function getTimeFormat(): TimeFormat {
+  return getRaw<TimeFormat>("time-format") ?? PREFERENCE_DEFAULTS.timeFormat;
+}
+
+export function setTimeFormat(value: TimeFormat): void {
+  setRaw("time-format", value);
+}
+
+export function getFontSize(): FontSize {
+  return getRaw<FontSize>("font-size") ?? PREFERENCE_DEFAULTS.fontSize;
+}
+
+export function setFontSize(value: FontSize): void {
+  setRaw("font-size", value);
+}
+
+export function getFontFamily(): FontFamily {
+  return getRaw<FontFamily>("font-family") ?? PREFERENCE_DEFAULTS.fontFamily;
+}
+
+export function setFontFamily(value: FontFamily): void {
+  setRaw("font-family", value);
+}
+
+export function getLocale(): string {
+  const stored = getRaw<string>("locale");
+  if (stored) return stored;
+
+  // Detect from browser
+  const browserLocale = navigator.language || "en";
+  return browserLocale.startsWith("en") ? "en" : "en";
+}
+
+export function getThemePreference<T>(): T | null {
+  return getRaw<T>("theme-preference");
+}
+
+export function setThemePreference<T>(pref: T): void {
+  setRaw("theme-preference", pref);
+}
+
+export function getSidebarWidth(): number {
+  return getRaw<number>("sidebarWidth") ?? PREFERENCE_DEFAULTS.sidebarWidth;
+}
+
+export function setSidebarWidth(width: number): void {
+  setRaw("sidebarWidth", width);
+}
+
+// ============================================
+// Caches
+// ============================================
+
+interface MessagesCache {
+  sessionKey: string;
+  messages: Message[];
+}
+
+export function getMessagesCache(): MessagesCache | null {
+  const sessionKey = getRaw<string>("messages-session");
+  const messages = getRaw<Message[]>("messages-cache");
+  if (sessionKey && messages) {
+    return { sessionKey, messages };
+  }
+  return null;
+}
+
+export function setMessagesCache(sessionKey: string, messages: Message[]): void {
+  setRaw("messages-session", sessionKey);
+  setRaw("messages-cache", messages);
+}
+
+export function getSessionsCache(): Session[] | null {
+  return getRaw<Session[]>("sessions-cache");
+}
+
+export function setSessionsCache(sessions: Session[]): void {
+  setRaw("sessions-cache", sessions);
+}
+
+export function getUsageCache(): UsageSummary | null {
+  return getRaw<UsageSummary>("usage-cache");
+}
+
+export function setUsageCache(usage: UsageSummary): void {
+  setRaw("usage-cache", usage);
+}
+
+export function getModelFavorites(): Set<string> {
+  const stored = getRaw<string[]>("model-favorites");
+  return new Set(stored ?? []);
+}
+
+export function setModelFavorites(favorites: Set<string>): void {
+  setRaw("model-favorites", [...favorites]);
+}
+
+// ============================================
+// Custom Themes
+// ============================================
+
+export function getCustomThemes(): Theme[] {
+  return getRaw<Theme[]>("custom-themes") ?? [];
+}
+
+export function setThemeCache(id: string, css: string): void {
+  setRaw("theme-cache", { id, css });
+}
+
+// ============================================
+// Migration
 // ============================================
 
 /**
- * Initialize storage - run migrations and set defaults
+ * Run migrations if needed.
+ * Called once on app init.
  */
 export function initStorage(): void {
-  runMigrations();
+  const version = getRaw<number>("schemaVersion") ?? 0;
+
+  if (version < SCHEMA_VERSION) {
+    // Run migrations here when needed
+    // Example:
+    // if (version < 2) { migrateV1toV2(); }
+
+    setRaw("schemaVersion", SCHEMA_VERSION);
+  }
 }

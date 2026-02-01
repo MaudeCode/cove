@@ -21,6 +21,7 @@ import {
   Palette,
   Github,
   MessageCircle,
+  BarChart3,
 } from "lucide-preact";
 import { EXTERNAL_URLS } from "@/lib/constants";
 
@@ -55,6 +56,7 @@ export interface NavSection {
 const iconClass = "w-5 h-5";
 
 const OverviewIcon = () => <LayoutDashboard class={iconClass} aria-hidden="true" />;
+const StatsIcon = () => <BarChart3 class={iconClass} aria-hidden="true" />;
 const ChannelsIcon = () => <Link class={iconClass} aria-hidden="true" />;
 const InstancesIcon = () => <Wifi class={iconClass} aria-hidden="true" />;
 const SessionsIcon = () => <Layers class={iconClass} aria-hidden="true" />;
@@ -81,6 +83,12 @@ export const navigation: NavSection[] = [
         id: "overview",
         labelKey: "nav.overview",
         icon: OverviewIcon,
+        requiresConnection: true,
+      },
+      {
+        id: "stats",
+        labelKey: "nav.stats",
+        icon: StatsIcon,
         requiresConnection: true,
       },
       {
