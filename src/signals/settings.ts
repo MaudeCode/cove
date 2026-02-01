@@ -22,7 +22,6 @@ export type FontFamily = "geist" | "inter" | "system" | "dyslexic" | "mono";
 // ============================================
 
 const STORAGE_KEYS = {
-  locale: "cove:locale",
   timeFormat: "cove:time-format",
   fontSize: "cove:font-size",
   fontFamily: "cove:font-family",
@@ -33,7 +32,6 @@ const STORAGE_KEYS = {
 // ============================================
 
 const DEFAULTS = {
-  locale: "en",
   timeFormat: "relative" as TimeFormat,
   fontSize: "md" as FontSize,
   fontFamily: "system" as FontFamily,
@@ -70,8 +68,7 @@ function saveSetting<T>(key: string, value: T): void {
 /** Color theme preference (managed by theme.ts) */
 export const theme = signal<Theme>("system");
 
-/** Current locale for i18n */
-export const locale = signal<string>(loadSetting(STORAGE_KEYS.locale, DEFAULTS.locale));
+// Note: locale is managed by i18n.ts, not here
 
 /** How to display timestamps */
 export const timeFormat = signal<TimeFormat>(
@@ -90,7 +87,6 @@ export const fontFamily = signal<FontFamily>(
 // Persistence Effects
 // ============================================
 
-effect(() => saveSetting(STORAGE_KEYS.locale, locale.value));
 effect(() => saveSetting(STORAGE_KEYS.timeFormat, timeFormat.value));
 effect(() => saveSetting(STORAGE_KEYS.fontSize, fontSize.value));
 effect(() => saveSetting(STORAGE_KEYS.fontFamily, fontFamily.value));
