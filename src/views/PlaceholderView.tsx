@@ -46,10 +46,6 @@ export function ChannelsView(_props: RouteProps) {
   return <PlaceholderView titleKey="nav.channels" icon="🔗" />;
 }
 
-export function InstancesView(_props: RouteProps) {
-  return <PlaceholderView titleKey="nav.instances" icon="📡" />;
-}
-
 export function SkillsView(_props: RouteProps) {
   return <PlaceholderView titleKey="nav.skills" icon="⚡" />;
 }

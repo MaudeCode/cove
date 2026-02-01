@@ -540,6 +540,28 @@
     }
   },
 
+  "instances": {
+    "title": "Instances",
+    "description": "Connected clients and services.",
+    "emptyTitle": "No Instances",
+    "emptyDescription": "No connected clients or services found.",
+    "count": "{count} instance",
+    "count_plural": "{count} instances",
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "daysAgo": "{count}d ago",
+    "idle": "Idle",
+    "idleSeconds": "{count}s",
+    "idleMinutes": "{count}m",
+    "idleHours": "{count}h",
+    "stats": {
+      "total": "Total",
+      "gateways": "Gateways",
+      "clients": "Clients"
+    }
+  },
+
   "config": {
     "title": "Configuration",
     "comingSoon": "Configuration editor coming in Phase 3.3",

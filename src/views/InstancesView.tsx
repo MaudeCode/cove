@@ -1,0 +1,280 @@
+/**
+ * InstancesView
+ *
+ * Connected clients/services overview (presence beacons).
+ * Route: /instances
+ */
+
+import { signal } from "@preact/signals";
+import { useEffect } from "preact/hooks";
+import { t } from "@/lib/i18n";
+import { send, isConnected } from "@/lib/gateway";
+import { getErrorMessage } from "@/lib/session-utils";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Badge } from "@/components/ui/Badge";
+import { Spinner } from "@/components/ui/Spinner";
+import { IconButton } from "@/components/ui/IconButton";
+import { StatCard } from "@/components/ui/StatCard";
+import { RefreshCw, Monitor, Server, Smartphone, Globe, Clock, Wifi, Shield } from "lucide-preact";
+import type { SystemPresence } from "@/types/presence";
+import type { RouteProps } from "@/types/routes";
+
+// ============================================
+// Local State
+// ============================================
+
+const instances = signal<SystemPresence[]>([]);
+const isLoading = signal<boolean>(false);
+const error = signal<string | null>(null);
+
+// ============================================
+// Helpers
+// ============================================
+
+function getDeviceIcon(presence: SystemPresence) {
+  const mode = presence.mode?.toLowerCase() ?? "";
+  const family = presence.deviceFamily?.toLowerCase() ?? "";
+
+  if (mode === "gateway") return Server;
+  if (family.includes("iphone") || family.includes("android")) return Smartphone;
+  if (family.includes("mac") || family.includes("windows") || family.includes("linux"))
+    return Monitor;
+  return Globe;
+}
+
+function formatPresenceAge(ts: number): string {
+  const seconds = Math.floor((Date.now() - ts) / 1000);
+  if (seconds < 60) return t("instances.justNow");
+  if (seconds < 3600) return t("instances.minutesAgo", { count: Math.floor(seconds / 60) });
+  if (seconds < 86400) return t("instances.hoursAgo", { count: Math.floor(seconds / 3600) });
+  return t("instances.daysAgo", { count: Math.floor(seconds / 86400) });
+}
+
+function formatIdleTime(seconds?: number): string {
+  if (seconds === undefined) return "—";
+  if (seconds < 60) return t("instances.idleSeconds", { count: seconds });
+  if (seconds < 3600) return t("instances.idleMinutes", { count: Math.floor(seconds / 60) });
+  return t("instances.idleHours", { count: Math.floor(seconds / 3600) });
+}
+
+function getModeVariant(mode?: string): "success" | "warning" | "default" {
+  if (!mode) return "default";
+  if (mode === "gateway") return "success";
+  if (mode === "webchat" || mode === "chat") return "warning";
+  return "default";
+}
+
+// ============================================
+// Actions
+// ============================================
+
+async function loadInstances(): Promise<void> {
+  isLoading.value = true;
+  error.value = null;
+
+  try {
+    const result = await send<SystemPresence[]>("system-presence", {});
+    instances.value = result ?? [];
+  } catch (err) {
+    error.value = getErrorMessage(err);
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+// ============================================
+// Components
+// ============================================
+
+function InstanceCard({ presence }: { presence: SystemPresence }) {
+  const Icon = getDeviceIcon(presence);
+  const isGateway = presence.mode === "gateway";
+
+  return (
+    <Card class="p-4">
+      <div class="flex items-start gap-4">
+        {/* Icon */}
+        <div
+          class={`p-3 rounded-xl flex-shrink-0 ${
+            isGateway ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"
+          }`}
+        >
+          <Icon
+            class={`w-6 h-6 ${
+              isGateway ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"
+            }`}
+          />
+        </div>
+
+        {/* Info */}
+        <div class="flex-1 min-w-0">
+          {/* Header */}
+          <div class="flex items-center gap-2 mb-1">
+            <span class="font-medium truncate">
+              {presence.host || presence.instanceId || "Unknown"}
+            </span>
+            {presence.mode && (
+              <Badge variant={getModeVariant(presence.mode)} size="sm">
+                {presence.mode}
+              </Badge>
+            )}
+          </div>
+
+          {/* Details */}
+          <div class="text-sm text-[var(--color-text-muted)] space-y-1">
+            {presence.ip && (
+              <div class="flex items-center gap-1.5">
+                <Wifi class="w-3.5 h-3.5" />
+                <span>{presence.ip}</span>
+              </div>
+            )}
+            {presence.platform && (
+              <div class="flex items-center gap-1.5">
+                <Monitor class="w-3.5 h-3.5" />
+                <span>{presence.platform}</span>
+                {presence.modelIdentifier && (
+                  <span class="text-[var(--color-text-muted)]/60">
+                    ({presence.modelIdentifier})
+                  </span>
+                )}
+              </div>
+            )}
+            {presence.version && (
+              <div class="flex items-center gap-1.5">
+                <Globe class="w-3.5 h-3.5" />
+                <span>v{presence.version}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Roles & Scopes */}
+          {(presence.roles?.length || presence.scopes?.length) && (
+            <div class="flex flex-wrap gap-1.5 mt-2">
+              {presence.roles?.map((role) => (
+                <Badge key={role} variant="default" size="sm">
+                  <Shield class="w-3 h-3 mr-1" />
+                  {role}
+                </Badge>
+              ))}
+              {presence.scopes?.map((scope) => (
+                <Badge key={scope} variant="default" size="sm">
+                  {scope}
+                </Badge>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Right side: timing info */}
+        <div class="text-right text-sm text-[var(--color-text-muted)] flex-shrink-0">
+          <div class="flex items-center gap-1.5 justify-end">
+            <Clock class="w-3.5 h-3.5" />
+            <span>{formatPresenceAge(presence.ts)}</span>
+          </div>
+          {presence.lastInputSeconds !== undefined && (
+            <div class="mt-1 text-xs">
+              {t("instances.idle")}: {formatIdleTime(presence.lastInputSeconds)}
+            </div>
+          )}
+          {presence.reason && (
+            <div class="mt-1 text-xs text-[var(--color-text-muted)]/60">{presence.reason}</div>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+// ============================================
+// Main View
+// ============================================
+
+export function InstancesView(_props: RouteProps) {
+  useEffect(() => {
+    if (isConnected.value) {
+      loadInstances();
+    }
+  }, [isConnected.value]);
+
+  const gatewayCount = instances.value.filter((i) => i.mode === "gateway").length;
+  const clientCount = instances.value.filter((i) => i.mode !== "gateway").length;
+
+  return (
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="max-w-5xl mx-auto space-y-6">
+        {/* Header */}
+        <div class="flex items-start justify-between gap-4">
+          <div class="flex-1">
+            <h1 class="text-2xl font-bold">{t("instances.title")}</h1>
+            <p class="text-[var(--color-text-muted)] mt-1">{t("instances.description")}</p>
+          </div>
+          <IconButton
+            icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+            label={t("actions.refresh")}
+            onClick={loadInstances}
+            disabled={isLoading.value || !isConnected.value}
+            variant="ghost"
+          />
+        </div>
+
+        {/* Stats Cards */}
+        {isConnected.value && !isLoading.value && (
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <StatCard
+              icon={Globe}
+              label={t("instances.stats.total")}
+              value={instances.value.length}
+            />
+            <StatCard icon={Server} label={t("instances.stats.gateways")} value={gatewayCount} />
+            <StatCard icon={Monitor} label={t("instances.stats.clients")} value={clientCount} />
+          </div>
+        )}
+
+        {/* Error */}
+        {error.value && (
+          <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+            {error.value}
+          </div>
+        )}
+
+        {/* Loading / Connecting */}
+        {(isLoading.value || !isConnected.value) && (
+          <div class="flex justify-center py-16">
+            <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
+          </div>
+        )}
+
+        {/* Instances List */}
+        {isConnected.value && !isLoading.value && instances.value.length > 0 && (
+          <div class="space-y-3">
+            {instances.value.map((presence, i) => (
+              <InstanceCard key={presence.instanceId || presence.host || i} presence={presence} />
+            ))}
+          </div>
+        )}
+
+        {/* Empty state */}
+        {isConnected.value && !isLoading.value && instances.value.length === 0 && !error.value && (
+          <Card>
+            <div class="p-16 text-center">
+              <Globe class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+              <h3 class="text-lg font-medium mb-2">{t("instances.emptyTitle")}</h3>
+              <p class="text-[var(--color-text-muted)] mb-4">{t("instances.emptyDescription")}</p>
+              <Button variant="secondary" onClick={loadInstances}>
+                {t("actions.refresh")}
+              </Button>
+            </div>
+          </Card>
+        )}
+
+        {/* Footer count */}
+        {isConnected.value && !isLoading.value && instances.value.length > 0 && (
+          <p class="text-sm text-[var(--color-text-muted)] text-center">
+            {t("instances.count", { count: instances.value.length })}
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
