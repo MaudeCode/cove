@@ -18,7 +18,7 @@ import { saveAuth, completeOnboarding } from "@/lib/storage";
 import {
   Button,
   Input,
-  Select,
+  Dropdown,
   Toggle,
   Card,
   FormField,
@@ -489,15 +489,13 @@ function AuthStep({
       <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.authSubtitle")}</p>
 
       <div class="space-y-4">
-        <FormField label={t("onboarding.authMethod")} htmlFor="auth-mode">
-          <Select
-            id="auth-mode"
+        <FormField label={t("onboarding.authMethod")}>
+          <Dropdown
             value={authMode}
-            onChange={(e) =>
-              onAuthModeChange((e.target as HTMLSelectElement).value as "token" | "password")
-            }
+            onChange={(value) => onAuthModeChange(value as "token" | "password")}
             options={authModeOptions}
-            fullWidth
+            aria-label={t("onboarding.authMethod")}
+            class="w-full"
           />
         </FormField>
 
