@@ -21,6 +21,7 @@ import {
 } from "@/signals/chat";
 import type { Message } from "@/types/messages";
 import type { ChatSendResult } from "@/types/chat";
+import type { AttachmentPayload } from "@/types/attachments";
 
 let idempotencyCounter = 0;
 
@@ -38,6 +39,7 @@ export async function sendMessage(
     thinking?: string;
     timeoutMs?: number;
     messageId?: string; // For retry
+    attachments?: AttachmentPayload[];
   },
 ): Promise<string> {
   const idempotencyKey = options?.messageId ?? generateIdempotencyKey();
@@ -88,6 +90,7 @@ export async function sendMessage(
       thinking: options?.thinking,
       timeoutMs: options?.timeoutMs,
       idempotencyKey,
+      attachments: options?.attachments,
     });
 
     if (result.status === "error") {

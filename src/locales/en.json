@@ -40,7 +40,8 @@
     "less": "Less",
     "viewAll": "View All",
     "showMore": "Show More",
-    "showLess": "Show Less"
+    "showLess": "Show Less",
+    "remove": "Remove"
   },
 
   "auth": {
@@ -161,7 +162,9 @@
     "compacting": "Compacting conversation...",
     "conversationCompacted": "Conversation compacted",
     "dateFrom": "From",
-    "dateTo": "To"
+    "dateTo": "To",
+    "attachFile": "Attach file",
+    "dropFiles": "Drop files here"
   },
 
   "sessions": {
