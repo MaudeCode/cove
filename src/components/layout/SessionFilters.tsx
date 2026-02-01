@@ -13,8 +13,6 @@ import {
   setSessionSearchQuery,
   showCronSessions,
   toggleCronSessions,
-  showUtilitySessions,
-  toggleUtilitySessions,
 } from "@/signals/sessions";
 import { Toggle } from "@/components/ui/Toggle";
 import { Chip } from "@/components/ui/Chip";
@@ -26,8 +24,7 @@ export function SessionFilters() {
 
   const hasSearch = sessionSearchQuery.value.trim() !== "";
   const hasKindFilter = sessionKindFilter.value !== null;
-  const hasActiveFilters =
-    hasSearch || hasKindFilter || showCronSessions.value || showUtilitySessions.value;
+  const hasActiveFilters = hasSearch || hasKindFilter || showCronSessions.value;
 
   // Keep filters open if there are active filters
   useEffect(() => {
@@ -117,21 +114,13 @@ export function SessionFilters() {
             ))}
           </div>
 
-          {/* Session visibility toggles */}
-          <div class="space-y-1.5">
-            <Toggle
-              size="sm"
-              checked={showCronSessions.value}
-              onChange={toggleCronSessions}
-              label={t("sessions.showCron")}
-            />
-            <Toggle
-              size="sm"
-              checked={showUtilitySessions.value}
-              onChange={toggleUtilitySessions}
-              label={t("sessions.showUtility")}
-            />
-          </div>
+          {/* Cron toggle */}
+          <Toggle
+            size="sm"
+            checked={showCronSessions.value}
+            onChange={toggleCronSessions}
+            label={t("sessions.showCron")}
+          />
         </div>
       )}
     </div>

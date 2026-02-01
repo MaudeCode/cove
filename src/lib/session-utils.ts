@@ -37,14 +37,6 @@ export function isCronSession(session: Session): boolean {
 }
 
 /**
- * Check if a session is a utility session (used for LLM title generation, etc.)
- * Utility sessions have format: agent:<agentId>:cove:utility
- */
-export function isUtilitySession(session: Session): boolean {
-  return session.key.includes(":cove:utility");
-}
-
-/**
  * Check if a session key is a user-created chat (vs main session, cron, etc.)
  * User-created chats have format: agent:<agentId>:chat:<uuid>
  */
