@@ -13,7 +13,6 @@ import {
   siGooglechat,
   siMatrix,
   siMastodon,
-  siNostr,
 } from "simple-icons";
 import { Globe } from "lucide-preact";
 
@@ -37,8 +36,8 @@ const channelIcons: Record<string, ChannelIconData> = {
   googlechat: { path: siGooglechat.path, hex: siGooglechat.hex, title: siGooglechat.title },
   matrix: { path: siMatrix.path, hex: siMatrix.hex, title: siMatrix.title },
   mastodon: { path: siMastodon.path, hex: siMastodon.hex, title: siMastodon.title },
-  nostr: { path: siNostr.path, hex: siNostr.hex, title: "Nostr" },
   imessage: { path: appleMessagesPath, hex: "34C759", title: "iMessage" },
+  // Nostr not in simple-icons, falls back to Globe
   // Webchat uses a generic globe icon (handled separately)
 };
 
