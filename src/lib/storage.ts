@@ -236,18 +236,15 @@ export function setThemeCache(id: string, css: string): void {
 // ============================================
 
 export interface NewChatSettings {
-  /** Skip agent/model picker, use defaults immediately */
+  /** Skip agent picker, use defaults immediately */
   useDefaults: boolean;
   /** Default agent ID for new chats */
   defaultAgentId: string;
-  /** Default model override (null = use agent's default) */
-  defaultModel: string | null;
 }
 
 const DEFAULT_NEW_CHAT_SETTINGS: NewChatSettings = {
   useDefaults: true,
   defaultAgentId: "main",
-  defaultModel: null,
 };
 
 export function getNewChatSettings(): NewChatSettings {
@@ -267,14 +264,11 @@ export interface AutoTitleSettings {
   enabled: boolean;
   /** Agent to use for title generation (null = main) */
   agentId: string | null;
-  /** Model to use for title generation (null = agent's default) */
-  model: string | null;
 }
 
 const DEFAULT_AUTO_TITLE_SETTINGS: AutoTitleSettings = {
   enabled: false,
   agentId: null,
-  model: null,
 };
 
 export function getAutoTitleSettings(): AutoTitleSettings {

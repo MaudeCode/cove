@@ -346,12 +346,9 @@
     "newChat": {
       "title": "New Chat",
       "useDefaults": "Always use defaults",
-      "useDefaultsDescription": "Skip the agent/model picker when creating new chats",
+      "useDefaultsDescription": "Skip the agent picker when creating new chats",
       "defaultAgent": "Default Agent",
-      "defaultAgentDescription": "Which agent to use for new chats",
-      "defaultModel": "Default Model",
-      "defaultModelDescription": "Model override for new chats",
-      "agentDefault": "Agent Default"
+      "defaultAgentDescription": "Which agent to use for new chats"
     },
     "autoTitle": {
       "title": "Chat Titles",
@@ -359,9 +356,7 @@
       "enabledDescription": "Use AI to create descriptive chat titles",
       "agent": "Agent for titles",
       "agentDescription": "Which agent to use for generating titles",
-      "model": "Model",
-      "modelDescription": "Model for title generation",
-      "costWarning": "Each title costs ~3k tokens. Consider using a faster/cheaper model.",
+      "costWarning": "Each title generation uses tokens from the selected agent.",
       "disabledHint": "When disabled, titles use the first 50 characters of your message."
     },
     "account": {
