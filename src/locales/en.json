@@ -258,6 +258,10 @@
       "github": "GitHub",
       "discord": "Discord Community"
     },
+    "account": {
+      "title": "Account",
+      "logoutDescription": "Disconnect from the gateway"
+    },
     "comingSoon": "Coming soon"
   },
 
