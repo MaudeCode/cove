@@ -134,7 +134,7 @@ export function Dropdown({
   );
 
   return (
-    <div class="relative inline-block">
+    <div class={`relative ${className || ""}`}>
       {/* Trigger button */}
       <button
         ref={triggerRef}
@@ -146,14 +146,13 @@ export function Dropdown({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         class={`
-          flex items-center justify-between gap-2 rounded-xl cursor-pointer
+          w-full flex items-center justify-between gap-2 rounded-xl cursor-pointer
           bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]
           border border-[var(--color-border)] transition-all duration-200 ease-out
           shadow-soft-sm hover:shadow-soft focus:shadow-soft
           focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-0 focus:border-transparent
           disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
           ${styles.trigger}
-          ${className || ""}
         `}
       >
         <span class="truncate">{displayLabel}</span>
