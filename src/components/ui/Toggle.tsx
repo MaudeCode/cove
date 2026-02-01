@@ -65,7 +65,22 @@ export const Toggle = forwardRef<HTMLButtonElement, ToggleProps>(
     const descId = id ? `${id}-desc` : undefined;
 
     return (
-      <div class={`flex items-start gap-3 ${className || ""}`}>
+      <div class={`flex items-start justify-between gap-3 ${className || ""}`}>
+        {(label || description) && (
+          <div class="flex flex-col">
+            {label && (
+              <span id={labelId} class="text-sm font-medium text-[var(--color-text-primary)]">
+                {label}
+              </span>
+            )}
+            {description && (
+              <span id={descId} class="text-xs text-[var(--color-text-muted)]">
+                {description}
+              </span>
+            )}
+          </div>
+        )}
+
         <button
           ref={ref}
           type="button"
@@ -95,21 +110,6 @@ export const Toggle = forwardRef<HTMLButtonElement, ToggleProps>(
             `}
           />
         </button>
-
-        {(label || description) && (
-          <div class="flex flex-col">
-            {label && (
-              <span id={labelId} class="text-sm font-medium text-[var(--color-text-primary)]">
-                {label}
-              </span>
-            )}
-            {description && (
-              <span id={descId} class="text-xs text-[var(--color-text-muted)]">
-                {description}
-              </span>
-            )}
-          </div>
-        )}
       </div>
     );
   },
