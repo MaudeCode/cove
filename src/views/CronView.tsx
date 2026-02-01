@@ -21,6 +21,9 @@ import { IconButton } from "@/components/ui/IconButton";
 import { Toggle } from "@/components/ui/Toggle";
 import { FormField } from "@/components/ui/FormField";
 import { Textarea } from "@/components/ui/Textarea";
+import { StatCard } from "@/components/ui/StatCard";
+import { ChipButtonGroup } from "@/components/ui/ChipButton";
+import { MiniStat } from "@/components/ui/MiniStat";
 import {
   RefreshCw,
   Search,
@@ -482,47 +485,6 @@ const WAKE_MODE_OPTIONS = [
   { value: "now", label: t("cron.wakeMode.now") },
 ];
 
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  active,
-  onClick,
-}: {
-  icon: typeof Clock;
-  label: string;
-  value: number | string;
-  active?: boolean;
-  onClick?: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      class={`
-        flex items-center gap-3 p-4 rounded-xl text-left transition-all
-        ${
-          active
-            ? "bg-[var(--color-accent)]/10 border-2 border-[var(--color-accent)]"
-            : "bg-[var(--color-bg-secondary)] border-2 border-transparent hover:bg-[var(--color-bg-tertiary)]"
-        }
-      `}
-    >
-      <div
-        class={`p-2 rounded-lg ${active ? "bg-[var(--color-accent)]/20" : "bg-[var(--color-bg-tertiary)]"}`}
-      >
-        <Icon
-          class={`w-5 h-5 ${active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
-        />
-      </div>
-      <div>
-        <div class="text-2xl font-bold">{value}</div>
-        <div class="text-sm text-[var(--color-text-muted)]">{label}</div>
-      </div>
-    </button>
-  );
-}
-
 function JobRow({ job }: { job: CronJob }) {
   const status = getStatusBadge(job);
 
@@ -677,49 +639,21 @@ function JobEditForm() {
                   fullWidth
                 />
               </div>
-              <div class="flex flex-wrap gap-2">
-                {CRON_EXAMPLES.map(({ expr, label }) => (
-                  <button
-                    key={expr}
-                    type="button"
-                    onClick={() => (editScheduleExpr.value = expr)}
-                    class={`
-                      px-2.5 py-1 text-xs rounded-lg border transition-colors
-                      ${
-                        editScheduleExpr.value === expr
-                          ? "bg-[var(--color-accent)]/10 border-[var(--color-accent)] text-[var(--color-accent)]"
-                          : "border-[var(--color-border)] hover:border-[var(--color-border-hover)] text-[var(--color-text-muted)]"
-                      }
-                    `}
-                    title={expr}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <ChipButtonGroup
+                options={CRON_EXAMPLES.map(({ expr, label }) => ({ value: expr, label }))}
+                value={editScheduleExpr.value}
+                onChange={(expr) => (editScheduleExpr.value = expr)}
+                size="sm"
+              />
             </div>
           )}
           {editScheduleKind.value === "every" && (
             <div class="space-y-2">
-              <div class="flex flex-wrap gap-2">
-                {INTERVAL_PRESETS.map(({ ms, label }) => (
-                  <button
-                    key={ms}
-                    type="button"
-                    onClick={() => (editScheduleEveryMs.value = String(ms))}
-                    class={`
-                      px-3 py-1.5 text-sm rounded-lg border transition-colors
-                      ${
-                        editScheduleEveryMs.value === String(ms)
-                          ? "bg-[var(--color-accent)]/10 border-[var(--color-accent)] text-[var(--color-accent)]"
-                          : "border-[var(--color-border)] hover:border-[var(--color-border-hover)]"
-                      }
-                    `}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
+              <ChipButtonGroup
+                options={INTERVAL_PRESETS.map(({ ms, label }) => ({ value: String(ms), label }))}
+                value={editScheduleEveryMs.value}
+                onChange={(val) => (editScheduleEveryMs.value = val)}
+              />
               <Input
                 type="number"
                 value={editScheduleEveryMs.value}
@@ -922,22 +856,14 @@ function JobModal() {
 
             {/* Stats */}
             <div class="grid grid-cols-3 gap-4">
-              <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-                <div class="text-xl font-bold">{formatNextRun(job)}</div>
-                <div class="text-sm text-[var(--color-text-muted)]">{t("cron.nextRun")}</div>
-              </div>
-              <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-                <div class="text-xl font-bold">{formatLastRun(job)}</div>
-                <div class="text-sm text-[var(--color-text-muted)]">{t("cron.lastRun")}</div>
-              </div>
-              <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-                <div class="text-xl font-bold">
-                  {job.state.lastDurationMs
-                    ? `${Math.round(job.state.lastDurationMs / 1000)}s`
-                    : "—"}
-                </div>
-                <div class="text-sm text-[var(--color-text-muted)]">{t("cron.lastDuration")}</div>
-              </div>
+              <MiniStat value={formatNextRun(job)} label={t("cron.nextRun")} />
+              <MiniStat value={formatLastRun(job)} label={t("cron.lastRun")} />
+              <MiniStat
+                value={
+                  job.state.lastDurationMs ? `${Math.round(job.state.lastDurationMs / 1000)}s` : "—"
+                }
+                label={t("cron.lastDuration")}
+              />
             </div>
           </>
         )}
