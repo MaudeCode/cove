@@ -10,6 +10,7 @@ import { Palette, Check, Monitor } from "lucide-preact";
 import { themePreference, setTheme, getAllThemes } from "@/lib/theme";
 import { useClickOutside } from "@/hooks";
 import { IconButton } from "./IconButton";
+import { Tooltip } from "./Tooltip";
 import { t } from "@/lib/i18n";
 import type { Theme } from "@/types/theme";
 
@@ -27,30 +28,31 @@ function ThemeSwatch({
   const accentColor = theme.colors["--color-accent"];
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      title={theme.name}
-      class={`
-        relative w-9 h-9 rounded-lg border-2 transition-all
-        hover:scale-110 hover:z-10
-        focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1
-        ${isSelected ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] ring-offset-1" : "border-[var(--color-border)] hover:border-[var(--color-border-hover)]"}
-      `}
-      style={{ backgroundColor: bgColor }}
-    >
-      {/* Accent color indicator */}
-      <span
-        class="absolute bottom-1 right-1 w-3 h-3 rounded-full border border-white/20"
-        style={{ backgroundColor: accentColor }}
-      />
-      {/* Check mark for selected */}
-      {isSelected && (
-        <span class="absolute inset-0 flex items-center justify-center">
-          <Check class="w-4 h-4 text-[var(--color-accent)]" strokeWidth={3} />
-        </span>
-      )}
-    </button>
+    <Tooltip content={theme.name} placement="top" delay={200}>
+      <button
+        type="button"
+        onClick={onClick}
+        class={`
+          relative w-9 h-9 rounded-lg border-2 transition-all
+          hover:scale-110 hover:z-10
+          focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-1
+          ${isSelected ? "border-[var(--color-accent)] ring-2 ring-[var(--color-accent)] ring-offset-1" : "border-[var(--color-border)] hover:border-[var(--color-border-hover)]"}
+        `}
+        style={{ backgroundColor: bgColor }}
+      >
+        {/* Accent color indicator */}
+        <span
+          class="absolute bottom-1 right-1 w-3 h-3 rounded-full border border-white/20"
+          style={{ backgroundColor: accentColor }}
+        />
+        {/* Check mark for selected */}
+        {isSelected && (
+          <span class="absolute inset-0 flex items-center justify-center">
+            <Check class="w-4 h-4 text-[var(--color-accent)]" strokeWidth={3} />
+          </span>
+        )}
+      </button>
+    </Tooltip>
   );
 }
 
