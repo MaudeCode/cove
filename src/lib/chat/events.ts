@@ -118,18 +118,10 @@ function handleLifecycleEnd(evt: AgentEvent): void {
       // Add a small delay to ensure the gateway has committed the messages.
       if (wasEmpty) {
         const sessionKeyForRefresh = existingRun.sessionKey;
-        setTimeout(async () => {
-          log.chat.info("Refreshing history after heartbeat for session:", sessionKeyForRefresh);
-          try {
-            await loadHistory(sessionKeyForRefresh);
-            const { messages, heartbeatCount } = await import("@/signals/chat");
-            log.chat.info("History refreshed", {
-              messageCount: messages.value.length,
-              heartbeatCount: heartbeatCount.value,
-            });
-          } catch (err) {
-            log.chat.error("Failed to refresh history after heartbeat:", err);
-          }
+        setTimeout(() => {
+          loadHistory(sessionKeyForRefresh).catch((err) => {
+            log.chat.warn("Failed to refresh history after heartbeat:", err);
+          });
         }, 500);
       }
     }
