@@ -9,7 +9,7 @@ import { useState, useRef, useCallback } from "preact/hooks";
 import { Heart } from "lucide-preact";
 import { IconButton, Badge } from "@/components/ui";
 import { heartbeatMessages, heartbeatCount } from "@/signals/chat";
-import { t, formatRelativeTime } from "@/lib/i18n";
+import { t, formatTimestamp } from "@/lib/i18n";
 import { isHeartbeatResponse } from "@/lib/message-detection";
 import { useClickOutside } from "@/hooks";
 
@@ -81,7 +81,7 @@ export function HeartbeatIndicator() {
                 >
                   <span class="text-[var(--color-success)]">✓</span>
                   <span class="text-[var(--color-text-muted)]">
-                    {formatRelativeTime(hb.timestamp)}
+                    {formatTimestamp(hb.timestamp)}
                   </span>
                 </div>
               ))

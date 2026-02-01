@@ -14,6 +14,7 @@
 
 import { signal, effect, computed } from "@preact/signals";
 import { getLocaleStrings, type LocaleStrings } from "@/locales";
+import { timeFormat } from "@/signals/settings";
 import { log } from "./logger";
 
 // Storage key
@@ -229,6 +230,20 @@ export function formatRelativeTime(date: Date | number): string {
   } else {
     return rtf.format(diffYear, "year");
   }
+}
+
+/**
+ * Format a timestamp based on user preference (relative or absolute).
+ * Use this for UI timestamps that should respect the setting.
+ *
+ * @example
+ * formatTimestamp(date)  // "2 hours ago" or "3:45 PM" depending on setting
+ */
+export function formatTimestamp(date: Date | number): string {
+  if (timeFormat.value === "local") {
+    return formatTime(date, "short");
+  }
+  return formatRelativeTime(date);
 }
 
 /**
