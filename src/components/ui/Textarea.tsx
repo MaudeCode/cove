@@ -15,6 +15,10 @@ interface TextareaProps extends Omit<JSX.HTMLAttributes<HTMLTextAreaElement>, "c
   rows?: number;
   /** Error state */
   error?: boolean;
+  /** Controlled value */
+  value?: string;
+  /** Placeholder text */
+  placeholder?: string;
 }
 
 export function Textarea({

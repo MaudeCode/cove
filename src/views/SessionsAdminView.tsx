@@ -45,8 +45,11 @@ import type { ComponentType } from "preact";
 // Kind Styling Config (single source of truth)
 // ============================================
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type IconComponent = ComponentType<any>;
+
 interface KindStyle {
-  icon: ComponentType<{ class?: string }>;
+  icon: IconComponent;
   color: string; // CSS variable name without var()
   badgeVariant: "default" | "success" | "warning" | "error" | "info";
 }

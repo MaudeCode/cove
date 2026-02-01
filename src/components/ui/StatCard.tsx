@@ -7,20 +7,25 @@
 
 import type { ComponentType } from "preact";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type IconComponent = ComponentType<any>;
+
 interface StatCardProps {
   /** Lucide icon component */
-  icon: ComponentType<{ class?: string }>;
+  icon: IconComponent;
   /** Label text below the value */
   label: string;
   /** Main value to display */
   value: number | string;
   /** Whether this card is actively selected */
   active?: boolean;
+  /** Highlight value (e.g., for errors) */
+  highlight?: boolean;
   /** Click handler */
   onClick?: () => void;
 }
 
-export function StatCard({ icon: Icon, label, value, active, onClick }: StatCardProps) {
+export function StatCard({ icon: Icon, label, value, active, highlight, onClick }: StatCardProps) {
   const isClickable = !!onClick;
 
   const content = (
@@ -33,7 +38,9 @@ export function StatCard({ icon: Icon, label, value, active, onClick }: StatCard
         />
       </div>
       <div>
-        <div class="text-2xl font-bold">{value}</div>
+        <div class={`text-2xl font-bold ${highlight ? "text-[var(--color-error)]" : ""}`}>
+          {value}
+        </div>
         <div class="text-sm text-[var(--color-text-muted)]">{label}</div>
       </div>
     </>
