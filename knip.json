@@ -5,6 +5,7 @@
     "src/main.tsx",
     "src/lib/utils.ts",
     "src/lib/i18n.ts",
+    "src/lib/clawhub.ts",
     "src/locales/index.ts"
   ]
 }

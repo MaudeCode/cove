@@ -39,7 +39,15 @@ import {
 } from "lucide-preact";
 import type { SkillStatusReport, SkillStatusEntry, SkillStatus, SkillSource } from "@/types/skills";
 import { getSkillStatus, hasMissingRequirements, getMissingSummary } from "@/types/skills";
+import { ClawHubBrowser } from "@/components/skills/ClawHubBrowser";
 import type { RouteProps } from "@/types/routes";
+
+// ============================================
+// Tab State
+// ============================================
+
+type SkillsTab = "installed" | "clawhub";
+const activeTab = signal<SkillsTab>("installed");
 
 // ============================================
 // Constants
@@ -492,15 +500,35 @@ function EmptyState() {
 // Main View
 // ============================================
 
+/** Tab button component */
+function TabButton({ tab, label, active }: { tab: SkillsTab; label: string; active: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        activeTab.value = tab;
+      }}
+      class={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+        active
+          ? "bg-[var(--color-accent)] text-white"
+          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
 export function SkillsView(_props: RouteProps) {
   useEffect(() => {
-    if (isConnected.value) {
+    if (isConnected.value && activeTab.value === "installed") {
       loadSkills();
     }
   }, [isConnected.value]);
 
   const filtered = filteredSkills.value;
   const s = stats.value;
+  const tab = activeTab.value;
 
   return (
     <div class="flex-1 overflow-y-auto p-6">
@@ -511,121 +539,141 @@ export function SkillsView(_props: RouteProps) {
             <h1 class="text-2xl font-bold">{t("skills.title")}</h1>
             <p class="text-[var(--color-text-muted)]">{t("skills.description")}</p>
           </div>
-          <IconButton
-            icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-            onClick={loadSkills}
-            disabled={isLoading.value}
-            label={t("actions.refresh")}
-          />
+          {tab === "installed" && (
+            <IconButton
+              icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+              onClick={loadSkills}
+              disabled={isLoading.value}
+              label={t("actions.refresh")}
+            />
+          )}
         </div>
 
-        {/* Error state */}
-        {error.value && (
-          <Card class="border-[var(--color-error)] bg-[var(--color-error)]/10">
-            <div class="flex items-center gap-3 text-[var(--color-error)]">
-              <AlertTriangle class="w-5 h-5 flex-shrink-0" />
-              <span>{error.value}</span>
-            </div>
-          </Card>
-        )}
+        {/* Tabs */}
+        <div class="flex gap-2">
+          <TabButton
+            tab="installed"
+            label={t("skills.tabs.installed")}
+            active={tab === "installed"}
+          />
+          <TabButton tab="clawhub" label={t("skills.tabs.clawhub")} active={tab === "clawhub"} />
+        </div>
 
-        {/* Loading state */}
-        {isLoading.value && skills.value.length === 0 && (
-          <div class="flex items-center justify-center py-12">
-            <Spinner size="lg" />
-          </div>
-        )}
+        {/* ClawHub Tab */}
+        {tab === "clawhub" && <ClawHubBrowser />}
 
-        {/* Main content */}
-        {!isLoading.value && !error.value && (
+        {/* Installed Tab */}
+        {tab === "installed" && (
           <>
-            {/* Stat cards */}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard
-                icon={Puzzle}
-                label={t("skills.stats.total")}
-                value={s.total}
-                active={statusFilter.value === "all"}
-                onClick={() => setStatusFilter("all")}
-              />
-              <StatCard
-                icon={CheckCircle}
-                label={t("skills.stats.eligible")}
-                value={s.eligible}
-                active={statusFilter.value === "eligible"}
-                onClick={() => setStatusFilter("eligible")}
-              />
-              <StatCard
-                icon={XCircle}
-                label={t("skills.stats.disabled")}
-                value={s.disabled}
-                active={statusFilter.value === "disabled"}
-                onClick={() => setStatusFilter("disabled")}
-              />
-              <StatCard
-                icon={AlertTriangle}
-                label={t("skills.stats.missingReqs")}
-                value={s.missingReqs}
-                active={statusFilter.value === "missing-reqs"}
-                highlight={s.missingReqs > 0}
-                onClick={() => setStatusFilter("missing-reqs")}
-              />
-            </div>
+            {/* Error state */}
+            {error.value && (
+              <Card class="border-[var(--color-error)] bg-[var(--color-error)]/10">
+                <div class="flex items-center gap-3 text-[var(--color-error)]">
+                  <AlertTriangle class="w-5 h-5 flex-shrink-0" />
+                  <span>{error.value}</span>
+                </div>
+              </Card>
+            )}
 
-            {/* Filters */}
-            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div class="flex-1 flex items-center gap-3">
-                <Input
-                  type="text"
-                  placeholder={t("skills.searchPlaceholder")}
-                  value={searchQuery.value}
-                  onInput={(e) => {
-                    searchQuery.value = (e.target as HTMLInputElement).value;
-                  }}
-                  leftElement={<Search class="w-4 h-4" />}
-                  class="flex-1"
-                />
-                <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-                  {filtered.length !== s.total
-                    ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
-                    : t("skills.count", { count: s.total })}
-                </span>
+            {/* Loading state */}
+            {isLoading.value && skills.value.length === 0 && (
+              <div class="flex items-center justify-center py-12">
+                <Spinner size="lg" />
               </div>
-              <Dropdown
-                value={sourceFilter.value}
-                onChange={(v) => {
-                  sourceFilter.value = v as SkillSource | "all";
-                }}
-                options={SOURCE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
-                size="sm"
-                align="right"
-                aria-label={t("skills.filters.allSources")}
-              />
-            </div>
+            )}
 
-            {/* Skills list */}
-            <Card padding="none">
-              {filtered.length === 0 ? (
-                <EmptyState />
-              ) : (
-                <div>
-                  {filtered.map((skill) => (
-                    <SkillRow key={skill.skillKey} skill={skill} />
-                  ))}
+            {/* Main content */}
+            {!isLoading.value && !error.value && (
+              <>
+                {/* Stat cards */}
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <StatCard
+                    icon={Puzzle}
+                    label={t("skills.stats.total")}
+                    value={s.total}
+                    active={statusFilter.value === "all"}
+                    onClick={() => setStatusFilter("all")}
+                  />
+                  <StatCard
+                    icon={CheckCircle}
+                    label={t("skills.stats.eligible")}
+                    value={s.eligible}
+                    active={statusFilter.value === "eligible"}
+                    onClick={() => setStatusFilter("eligible")}
+                  />
+                  <StatCard
+                    icon={XCircle}
+                    label={t("skills.stats.disabled")}
+                    value={s.disabled}
+                    active={statusFilter.value === "disabled"}
+                    onClick={() => setStatusFilter("disabled")}
+                  />
+                  <StatCard
+                    icon={AlertTriangle}
+                    label={t("skills.stats.missingReqs")}
+                    value={s.missingReqs}
+                    active={statusFilter.value === "missing-reqs"}
+                    highlight={s.missingReqs > 0}
+                    onClick={() => setStatusFilter("missing-reqs")}
+                  />
                 </div>
-              )}
-            </Card>
 
-            {/* Workspace info */}
-            {workspaceDir.value && (
-              <div class="text-xs text-[var(--color-text-muted)] space-y-1">
-                <div>
-                  {t("skills.workspaceDir")}: <code>{workspaceDir.value}</code>
+                {/* Filters */}
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div class="flex-1 flex items-center gap-3">
+                    <Input
+                      type="text"
+                      placeholder={t("skills.searchPlaceholder")}
+                      value={searchQuery.value}
+                      onInput={(e) => {
+                        searchQuery.value = (e.target as HTMLInputElement).value;
+                      }}
+                      leftElement={<Search class="w-4 h-4" />}
+                      class="flex-1"
+                    />
+                    <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
+                      {filtered.length !== s.total
+                        ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
+                        : t("skills.count", { count: s.total })}
+                    </span>
+                  </div>
+                  <Dropdown
+                    value={sourceFilter.value}
+                    onChange={(v) => {
+                      sourceFilter.value = v as SkillSource | "all";
+                    }}
+                    options={SOURCE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
+                    size="sm"
+                    align="right"
+                    aria-label={t("skills.filters.allSources")}
+                  />
                 </div>
-                <div>
-                  {t("skills.managedDir")}: <code>{managedSkillsDir.value}</code>
-                </div>
-              </div>
+
+                {/* Skills list */}
+                <Card padding="none">
+                  {filtered.length === 0 ? (
+                    <EmptyState />
+                  ) : (
+                    <div>
+                      {filtered.map((skill) => (
+                        <SkillRow key={skill.skillKey} skill={skill} />
+                      ))}
+                    </div>
+                  )}
+                </Card>
+
+                {/* Workspace info */}
+                {workspaceDir.value && (
+                  <div class="text-xs text-[var(--color-text-muted)] space-y-1">
+                    <div>
+                      {t("skills.workspaceDir")}: <code>{workspaceDir.value}</code>
+                    </div>
+                    <div>
+                      {t("skills.managedDir")}: <code>{managedSkillsDir.value}</code>
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </>
         )}
