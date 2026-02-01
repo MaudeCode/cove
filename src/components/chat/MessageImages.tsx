@@ -2,11 +2,11 @@
  * MessageImages
  *
  * Displays images attached to a message.
- * Supports click to expand/zoom.
+ * Supports click to expand/zoom and download.
  */
 
 import { useState } from "preact/hooks";
-import { X } from "lucide-preact";
+import { X, Download } from "lucide-preact";
 import type { MessageImage } from "@/types/messages";
 import { t } from "@/lib/i18n";
 
@@ -14,34 +14,93 @@ interface MessageImagesProps {
   images: MessageImage[];
 }
 
+/**
+ * Downloads an image by fetching as blob and triggering download.
+ */
+async function downloadImage(url: string, filename: string) {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    // Fallback: open in new tab if download fails
+    window.open(url, "_blank");
+  }
+}
+
+/**
+ * Extracts filename from URL or generates one.
+ */
+function getFilenameFromUrl(url: string, index: number): string {
+  try {
+    const pathname = new URL(url).pathname;
+    const name = pathname.split("/").pop();
+    if (name && /\.(png|jpe?g|gif|webp|svg)$/i.test(name)) {
+      return name;
+    }
+  } catch {
+    // Invalid URL, use fallback
+  }
+  return `image-${index + 1}.png`;
+}
+
 export function MessageImages({ images }: MessageImagesProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
 
   if (images.length === 0) return null;
+
+  const handleDownload = (e: Event, url: string, index: number) => {
+    e.stopPropagation();
+    downloadImage(url, getFilenameFromUrl(url, index));
+  };
 
   return (
     <>
       {/* Image grid */}
       <div class="flex flex-wrap gap-2 mt-2">
         {images.map((image, index) => (
-          <button
-            key={index}
-            type="button"
-            onClick={() => setExpandedIndex(index)}
-            class="
-              relative rounded-lg overflow-hidden cursor-pointer
-              border border-[var(--color-border)]
-              hover:border-[var(--color-accent)] hover:shadow-md
-              transition-all
-            "
-          >
-            <img
-              src={image.url}
-              alt={image.alt || `Image ${index + 1}`}
-              class="max-w-[200px] max-h-[200px] object-cover"
-              loading="lazy"
-            />
-          </button>
+          <div key={index} class="relative group">
+            <button
+              type="button"
+              onClick={() => setExpandedIndex(index)}
+              class="
+                relative rounded-lg overflow-hidden cursor-pointer
+                border border-[var(--color-border)]
+                hover:border-[var(--color-accent)] hover:shadow-md
+                transition-all
+              "
+            >
+              <img
+                src={image.url}
+                alt={image.alt || `Image ${index + 1}`}
+                class="max-w-[200px] max-h-[200px] object-cover"
+                loading="lazy"
+              />
+            </button>
+
+            {/* Download button on hover */}
+            <button
+              type="button"
+              onClick={(e) => handleDownload(e, image.url, index)}
+              aria-label={t("actions.download")}
+              class="
+                absolute bottom-2 right-2 p-1.5 rounded-lg cursor-pointer
+                bg-black/60 text-white
+                opacity-0 group-hover:opacity-100
+                hover:bg-black/80
+                transition-all
+              "
+            >
+              <Download class="w-4 h-4" />
+            </button>
+          </div>
         ))}
       </div>
 
@@ -61,19 +120,33 @@ export function MessageImages({ images }: MessageImagesProps) {
           }}
           tabIndex={0}
         >
-          {/* Close button */}
-          <button
-            type="button"
-            onClick={() => setExpandedIndex(null)}
-            aria-label={t("actions.close")}
-            class="
-              absolute top-4 right-4 p-2 rounded-full cursor-pointer
-              bg-white/10 text-white hover:bg-white/20
-              transition-colors
-            "
-          >
-            <X class="w-6 h-6" />
-          </button>
+          {/* Top-right controls: Download + Close */}
+          <div class="absolute top-4 right-4 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => handleDownload(e, images[expandedIndex].url, expandedIndex)}
+              aria-label={t("actions.download")}
+              class="
+                p-2 rounded-full cursor-pointer
+                bg-white/10 text-white hover:bg-white/20
+                transition-colors
+              "
+            >
+              <Download class="w-6 h-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() => setExpandedIndex(null)}
+              aria-label={t("actions.close")}
+              class="
+                p-2 rounded-full cursor-pointer
+                bg-white/10 text-white hover:bg-white/20
+                transition-colors
+              "
+            >
+              <X class="w-6 h-6" />
+            </button>
+          </div>
 
           {/* Navigation for multiple images */}
           {images.length > 1 && (
