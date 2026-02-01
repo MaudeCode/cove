@@ -210,6 +210,49 @@
   opacity: 0.7;
 }
 
+/* Task lists (GFM checkboxes) */
+.message-content ul:has(input[type="checkbox"]) {
+  list-style: none;
+  padding-left: 0.25em;
+}
+
+.message-content li:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+
+.message-content input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1.1em;
+  height: 1.1em;
+  margin-top: 0.25em;
+  border: 2px solid var(--color-text-muted);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: default;
+  flex-shrink: 0;
+}
+
+.message-content input[type="checkbox"]:checked {
+  background: var(--color-success);
+  border-color: var(--color-success);
+  position: relative;
+}
+
+.message-content input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 0.3em;
+  top: 0.1em;
+  width: 0.3em;
+  height: 0.55em;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
 /* ============================================
    Prism Syntax Highlighting (Theme-aware via CSS variables)
    ============================================ */
