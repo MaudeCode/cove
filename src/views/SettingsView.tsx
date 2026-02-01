@@ -28,7 +28,6 @@ import {
   type TimeFormat,
 } from "@/signals/settings";
 import { agents, defaultAgentId } from "@/signals/agents";
-import { models } from "@/signals/models";
 import { getAgentDisplayName, getAgentEmoji } from "@/types/agents";
 import { APP_VERSION } from "@/lib/constants";
 
@@ -209,30 +208,6 @@ export function SettingsView(_props: SettingsViewProps) {
                 class="min-w-[180px]"
               />
             </SettingRow>
-
-            <SettingRow
-              labelKey="settings.newChat.defaultModel"
-              descriptionKey="settings.newChat.defaultModelDescription"
-            >
-              <Dropdown
-                value={newChatSettings.value.defaultModel || "_default"}
-                onChange={(value) => {
-                  newChatSettings.value = {
-                    ...newChatSettings.value,
-                    defaultModel: value === "_default" ? null : value,
-                  };
-                }}
-                options={[
-                  { value: "_default", label: t("settings.newChat.agentDefault") },
-                  ...models.value.map((model) => ({
-                    value: model.id,
-                    label: model.displayName || model.id,
-                  })),
-                ]}
-                size="sm"
-                class="min-w-[180px]"
-              />
-            </SettingRow>
           </div>
         </SettingsSection>
 
@@ -269,30 +244,6 @@ export function SettingsView(_props: SettingsViewProps) {
                       value: agent.id,
                       label: `${getAgentEmoji(agent)} ${getAgentDisplayName(agent)}`,
                     }))}
-                    size="sm"
-                    class="min-w-[180px]"
-                  />
-                </SettingRow>
-
-                <SettingRow
-                  labelKey="settings.autoTitle.model"
-                  descriptionKey="settings.autoTitle.modelDescription"
-                >
-                  <Dropdown
-                    value={autoTitleSettings.value.model || "_default"}
-                    onChange={(value) => {
-                      autoTitleSettings.value = {
-                        ...autoTitleSettings.value,
-                        model: value === "_default" ? null : value,
-                      };
-                    }}
-                    options={[
-                      { value: "_default", label: t("settings.newChat.agentDefault") },
-                      ...models.value.map((model) => ({
-                        value: model.id,
-                        label: model.displayName || model.id,
-                      })),
-                    ]}
                     size="sm"
                     class="min-w-[180px]"
                   />
