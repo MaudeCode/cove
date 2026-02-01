@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
-import { RefreshCw, Monitor, Server, Smartphone, Globe, Clock, Wifi, Shield } from "lucide-preact";
+import { RefreshCw, Monitor, Server, Smartphone, Globe, Clock } from "lucide-preact";
 import type { SystemPresence } from "@/types/presence";
 import type { RouteProps } from "@/types/routes";
 
@@ -87,102 +87,67 @@ async function loadInstances(): Promise<void> {
 // Components
 // ============================================
 
-function InstanceCard({ presence }: { presence: SystemPresence }) {
+function InstanceRow({ presence }: { presence: SystemPresence }) {
   const Icon = getDeviceIcon(presence);
   const isGateway = presence.mode === "gateway";
 
   return (
-    <Card class="p-4">
-      <div class="flex items-start gap-4">
-        {/* Icon */}
-        <div
-          class={`p-3 rounded-xl flex-shrink-0 ${
-            isGateway ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"
-          }`}
-        >
-          <Icon
-            class={`w-6 h-6 ${
-              isGateway ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"
+    <tr class="hover:bg-[var(--color-bg-hover)] transition-colors">
+      {/* Instance */}
+      <td class="py-3 px-4">
+        <div class="flex items-center gap-3">
+          <div
+            class={`p-1.5 rounded-lg flex-shrink-0 ${
+              isGateway ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"
             }`}
-          />
-        </div>
-
-        {/* Info */}
-        <div class="flex-1 min-w-0">
-          {/* Header */}
-          <div class="flex items-center gap-2 mb-1">
-            <span class="font-medium truncate">
+          >
+            <Icon
+              class={`w-4 h-4 ${
+                isGateway ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"
+              }`}
+            />
+          </div>
+          <div class="min-w-0">
+            <div class="font-medium truncate">
               {presence.host || presence.instanceId || "Unknown"}
-            </span>
-            {presence.mode && (
-              <Badge variant={getModeVariant(presence.mode)} size="sm">
-                {presence.mode}
-              </Badge>
-            )}
-          </div>
-
-          {/* Details */}
-          <div class="text-sm text-[var(--color-text-muted)] space-y-1">
-            {presence.ip && (
-              <div class="flex items-center gap-1.5">
-                <Wifi class="w-3.5 h-3.5" />
-                <span>{presence.ip}</span>
-              </div>
-            )}
-            {presence.platform && (
-              <div class="flex items-center gap-1.5">
-                <Monitor class="w-3.5 h-3.5" />
-                <span>{presence.platform}</span>
-                {presence.modelIdentifier && (
-                  <span class="text-[var(--color-text-muted)]/60">
-                    ({presence.modelIdentifier})
-                  </span>
-                )}
-              </div>
-            )}
-            {presence.version && (
-              <div class="flex items-center gap-1.5">
-                <Globe class="w-3.5 h-3.5" />
-                <span>v{presence.version}</span>
-              </div>
-            )}
-          </div>
-
-          {/* Roles & Scopes */}
-          {(presence.roles?.length || presence.scopes?.length) && (
-            <div class="flex flex-wrap gap-1.5 mt-2">
-              {presence.roles?.map((role) => (
-                <Badge key={role} variant="default" size="sm">
-                  <Shield class="w-3 h-3 mr-1" />
-                  {role}
-                </Badge>
-              ))}
-              {presence.scopes?.map((scope) => (
-                <Badge key={scope} variant="default" size="sm">
-                  {scope}
-                </Badge>
-              ))}
             </div>
-          )}
-        </div>
-
-        {/* Right side: timing info */}
-        <div class="text-right text-sm text-[var(--color-text-muted)] flex-shrink-0">
-          <div class="flex items-center gap-1.5 justify-end">
-            <Clock class="w-3.5 h-3.5" />
-            <span>{formatPresenceAge(presence.ts)}</span>
+            {presence.ip && <div class="text-xs text-[var(--color-text-muted)]">{presence.ip}</div>}
           </div>
-          {presence.lastInputSeconds !== undefined && (
-            <div class="mt-1 text-xs">
-              {t("instances.idle")}: {formatIdleTime(presence.lastInputSeconds)}
-            </div>
-          )}
-          {presence.reason && (
-            <div class="mt-1 text-xs text-[var(--color-text-muted)]/60">{presence.reason}</div>
-          )}
         </div>
-      </div>
-    </Card>
+      </td>
+
+      {/* Mode */}
+      <td class="py-3 px-4">
+        {presence.mode ? (
+          <Badge variant={getModeVariant(presence.mode)} size="sm">
+            {presence.mode}
+          </Badge>
+        ) : (
+          <span class="text-[var(--color-text-muted)]">—</span>
+        )}
+      </td>
+
+      {/* Platform */}
+      <td class="py-3 px-4">
+        <div class="text-sm">{presence.platform || "—"}</div>
+        {presence.version && (
+          <div class="text-xs text-[var(--color-text-muted)]">v{presence.version}</div>
+        )}
+      </td>
+
+      {/* Last Seen */}
+      <td class="py-3 px-4 whitespace-nowrap">
+        <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
+          <Clock class="w-3.5 h-3.5" />
+          <span>{formatPresenceAge(presence.ts)}</span>
+        </div>
+      </td>
+
+      {/* Idle */}
+      <td class="py-3 px-4 whitespace-nowrap text-sm text-[var(--color-text-muted)]">
+        {formatIdleTime(presence.lastInputSeconds)}
+      </td>
+    </tr>
   );
 }
 
@@ -220,7 +185,7 @@ export function InstancesView(_props: RouteProps) {
 
         {/* Stats Cards */}
         {isConnected.value && !isLoading.value && (
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div class="grid grid-cols-3 gap-3">
             <StatCard
               icon={Globe}
               label={t("instances.stats.total")}
@@ -245,13 +210,31 @@ export function InstancesView(_props: RouteProps) {
           </div>
         )}
 
-        {/* Instances List */}
+        {/* Instances Table */}
         {isConnected.value && !isLoading.value && instances.value.length > 0 && (
-          <div class="space-y-3">
-            {instances.value.map((presence, i) => (
-              <InstanceCard key={presence.instanceId || presence.host || i} presence={presence} />
-            ))}
-          </div>
+          <Card padding="none">
+            <div class="overflow-x-auto">
+              <table class="w-full">
+                <thead>
+                  <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
+                    <th class="py-3 px-4 font-medium">{t("instances.columns.instance")}</th>
+                    <th class="py-3 px-4 font-medium w-24">{t("instances.columns.mode")}</th>
+                    <th class="py-3 px-4 font-medium w-40">{t("instances.columns.platform")}</th>
+                    <th class="py-3 px-4 font-medium w-28">{t("instances.columns.lastSeen")}</th>
+                    <th class="py-3 px-4 font-medium w-20">{t("instances.columns.idle")}</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-[var(--color-border)]">
+                  {instances.value.map((presence, i) => (
+                    <InstanceRow
+                      key={presence.instanceId || presence.host || i}
+                      presence={presence}
+                    />
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         )}
 
         {/* Empty state */}
