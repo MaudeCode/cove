@@ -12,7 +12,14 @@ import { compressImage } from "@/hooks/useAttachments";
 import { isSupportedImage } from "@/types/attachments";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
-import { XIcon, EditIcon, ChevronDownIcon, ImageIcon, PlusIcon } from "@/components/ui/icons";
+import {
+  XIcon,
+  EditIcon,
+  ChevronDownIcon,
+  ImageIcon,
+  PlusIcon,
+  TrashIcon,
+} from "@/components/ui/icons";
 import type { Message, MessageImage } from "@/types/messages";
 
 /** Character threshold for collapsing long messages */
@@ -156,7 +163,7 @@ export function QueuedMessages() {
                       title={t("actions.remove")}
                       aria-label={t("actions.remove")}
                     >
-                      <XIcon class="w-4 h-4" />
+                      <TrashIcon class="w-4 h-4" />
                     </button>
                   </div>
                 </div>
