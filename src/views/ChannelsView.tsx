@@ -18,6 +18,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
 import { Modal } from "@/components/ui/Modal";
+import { ChannelIcon } from "@/components/ui/ChannelIcon";
 import {
   RefreshCw,
   MessageSquare,
@@ -60,31 +61,6 @@ const logoutModal = signal<{
   label: string;
 } | null>(null);
 const isLoggingOut = signal<boolean>(false);
-
-// ============================================
-// Channel Icons
-// ============================================
-
-/** Get emoji icon for channel based on ID */
-function getChannelIcon(id: string): string {
-  const icons: Record<string, string> = {
-    telegram: "✈️",
-    discord: "🎮",
-    signal: "🔐",
-    whatsapp: "💬",
-    slack: "💼",
-    googlechat: "🗨️",
-    imessage: "🍎",
-    nostr: "🔮",
-    webchat: "🌐",
-    matrix: "🔷",
-    twitter: "🐦",
-    mastodon: "🐘",
-    email: "📧",
-    sms: "📱",
-  };
-  return icons[id.toLowerCase()] ?? "📡";
-}
 
 // ============================================
 // Status Helpers
@@ -363,9 +339,7 @@ function ChannelRow({ channel }: { channel: ChannelDisplayData }) {
               </div>
             )}
             {!hasAccounts && <div class="w-4" />}
-            <span class="text-xl" role="img" aria-label={channel.label}>
-              {getChannelIcon(channel.id)}
-            </span>
+            <ChannelIcon channelId={channel.id} size={24} />
             <div class="min-w-0">
               <div class="font-medium">{channel.label}</div>
               {channel.detailLabel !== channel.label && (
