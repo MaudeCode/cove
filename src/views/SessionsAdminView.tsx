@@ -417,8 +417,8 @@ function SessionRow({ session }: { session: Session }) {
                 />
               </div>
             ) : (
-              <div class="flex items-center gap-2 group/label max-w-[280px]">
-                <div class="font-medium truncate flex-1" title={displayName}>
+              <div class="flex items-center gap-2 group/label">
+                <div class="font-medium truncate" title={displayName}>
                   {displayName}
                 </div>
                 <IconButton
@@ -432,7 +432,7 @@ function SessionRow({ session }: { session: Session }) {
               </div>
             )}
             <div
-              class="text-xs text-[var(--color-text-muted)] font-mono truncate max-w-[280px]"
+              class="text-xs text-[var(--color-text-muted)] font-mono truncate"
               title={session.key}
             >
               {session.key}
@@ -790,10 +790,12 @@ export function SessionsAdminView(_props: RouteProps) {
                 <thead>
                   <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
                     <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.session")}</th>
-                    <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.model")}</th>
-                    <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.lastActive")}</th>
-                    <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.tokens")}</th>
-                    <th class="py-3 px-4 font-medium w-16"></th>
+                    <th class="py-3 px-4 font-medium w-32">{t("sessions.admin.columns.model")}</th>
+                    <th class="py-3 px-4 font-medium w-36">
+                      {t("sessions.admin.columns.lastActive")}
+                    </th>
+                    <th class="py-3 px-4 font-medium w-32">{t("sessions.admin.columns.tokens")}</th>
+                    <th class="py-3 px-4 font-medium w-12"></th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-[var(--color-border)]">
