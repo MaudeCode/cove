@@ -18,23 +18,7 @@ import { log } from "@/lib/logger";
 import { t } from "@/lib/i18n";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { ChevronDownIcon } from "@/components/ui/icons";
-
-const FAVORITES_KEY = "cove:model-favorites";
-
-/** Load favorite model IDs from localStorage */
-function loadFavorites(): Set<string> {
-  try {
-    const stored = localStorage.getItem(FAVORITES_KEY);
-    return stored ? new Set(JSON.parse(stored)) : new Set();
-  } catch {
-    return new Set();
-  }
-}
-
-/** Save favorite model IDs to localStorage */
-function saveFavorites(favorites: Set<string>): void {
-  localStorage.setItem(FAVORITES_KEY, JSON.stringify([...favorites]));
-}
+import { getModelFavorites, setModelFavorites } from "@/lib/storage";
 
 /**
  * Extract provider from a model ID (e.g., "anthropic" from "anthropic/claude-opus-4-5")
@@ -71,7 +55,7 @@ interface ModelPickerProps {
 export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPickerProps) {
   const [open, setOpen] = useState(false);
   const [updating, setUpdating] = useState(false);
-  const [favorites, setFavorites] = useState<Set<string>>(() => loadFavorites());
+  const [favorites, setFavoritesState] = useState<Set<string>>(() => getModelFavorites());
   const menuRef = useRef<HTMLDivElement>(null);
 
   // Close on click outside
@@ -123,8 +107,8 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     } else {
       newFavorites.add(modelId);
     }
-    setFavorites(newFavorites);
-    saveFavorites(newFavorites);
+    setFavoritesState(newFavorites);
+    setModelFavorites(newFavorites);
   };
 
   const handleSelect = async (modelId: string) => {

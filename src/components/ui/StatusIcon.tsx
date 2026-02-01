@@ -5,8 +5,7 @@
  * Use for success confirmations, error states, empty states, etc.
  */
 
-import { CheckCircle, XCircle, AlertTriangle, Info } from "lucide-preact";
-import type { ComponentType } from "preact";
+import { CheckCircle, XCircle, AlertTriangle, Info, type LucideIcon } from "lucide-preact";
 
 type StatusIconVariant = "success" | "error" | "warning" | "info";
 type StatusIconSize = "sm" | "md" | "lg";
@@ -33,8 +32,7 @@ const sizeStyles: Record<StatusIconSize, { container: string; icon: string }> = 
   lg: { container: "w-16 h-16", icon: "w-8 h-8" },
 };
 
-// Use ComponentType<any> to avoid Lucide's signal-based prop types conflicting with Preact
-const defaultIcons: Record<StatusIconVariant, ComponentType<any>> = {
+const defaultIcons: Record<StatusIconVariant, LucideIcon> = {
   success: CheckCircle,
   error: XCircle,
   warning: AlertTriangle,

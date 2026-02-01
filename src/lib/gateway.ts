@@ -69,11 +69,26 @@ const connectionId = signal<string | null>(null);
  */
 export const mainSessionKey = signal<string | null>(null);
 
-/** Gateway capabilities */
+/** Gateway capabilities (available methods) */
 const capabilities = signal<string[]>([]);
 
 /** Reconnect attempt count */
 export const reconnectAttempt = signal<number>(0);
+
+/** Server commit hash */
+export const gatewayCommit = signal<string | null>(null);
+
+/** Server host name */
+export const gatewayHost = signal<string | null>(null);
+
+/** Tick interval from gateway policy (ms) */
+export const tickIntervalMs = signal<number | null>(null);
+
+/** Connected at timestamp */
+export const connectedAt = signal<number | null>(null);
+
+/** Presence list (connected clients) */
+export const presence = signal<unknown[]>([]);
 
 // ============================================
 // Internal State
@@ -272,9 +287,20 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
             sendConnectRequest(config)
               .then((hello) => {
                 connectionState.value = "connected";
+                connectedAt.value = Date.now();
+
+                // Server info
                 gatewayVersion.value = hello.server?.version ?? null;
+                gatewayCommit.value = hello.server?.commit ?? null;
+                gatewayHost.value = hello.server?.host ?? null;
                 connectionId.value = hello.server?.connId ?? null;
+
+                // Features & policy
                 capabilities.value = hello.features?.methods ?? [];
+                tickIntervalMs.value = hello.policy?.tickIntervalMs ?? null;
+
+                // Snapshot data
+                presence.value = hello.snapshot?.presence ?? [];
 
                 // Capture main session key from snapshot
                 const sessionDefaults = hello.snapshot?.sessionDefaults;
@@ -381,11 +407,16 @@ export function disconnect(): void {
   }
 
   connectionState.value = "disconnected";
+  connectedAt.value = null;
   gatewayVersion.value = null;
+  gatewayCommit.value = null;
+  gatewayHost.value = null;
   gatewayUrl.value = null;
   connectionId.value = null;
   mainSessionKey.value = null;
   capabilities.value = [];
+  tickIntervalMs.value = null;
+  presence.value = [];
 }
 
 // ============================================
@@ -604,6 +635,12 @@ export const gateway = {
   /** Gateway version */
   version: gatewayVersion,
 
+  /** Gateway commit hash */
+  commit: gatewayCommit,
+
+  /** Gateway host name */
+  host: gatewayHost,
+
   /** Gateway URL */
   url: gatewayUrl,
 
@@ -613,8 +650,17 @@ export const gateway = {
   /** Main session key (from gateway) */
   mainSessionKey,
 
-  /** Capabilities */
+  /** Capabilities (available methods) */
   capabilities,
+
+  /** Tick interval (ms) */
+  tickIntervalMs,
+
+  /** Connected at timestamp */
+  connectedAt,
+
+  /** Presence list */
+  presence,
 
   /** Reconnect attempt count */
   reconnectAttempt,

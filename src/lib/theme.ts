@@ -9,17 +9,18 @@ import { signal, effect, computed } from "@preact/signals";
 import type { Theme, ThemePreference, ThemeColors } from "@/types/theme";
 import { DEFAULT_THEME_PREFERENCE } from "@/types/theme";
 import { getTheme, builtInThemes } from "@/lib/themes";
-
-// Storage keys (must match inline script in index.html)
-const STORAGE_KEY = "cove:theme-preference";
-const CUSTOM_THEMES_KEY = "cove:custom-themes";
-const CACHE_KEY = "cove:theme-cache";
+import {
+  getThemePreference,
+  setThemePreference as saveThemePreference,
+  getCustomThemes,
+  setThemeCache,
+} from "./storage";
 
 /** Current theme preference */
 export const themePreference = signal<ThemePreference>(loadPreference());
 
 /** Custom themes (user-created) */
-const customThemes = signal<Theme[]>(loadCustomThemes());
+const customThemes = signal<Theme[]>(getCustomThemes());
 
 /** The currently active theme (resolved) */
 const activeTheme = computed<Theme>(() => {
@@ -36,44 +37,14 @@ const activeTheme = computed<Theme>(() => {
 });
 
 /**
- * Load preference from localStorage
+ * Load preference from storage
  */
 function loadPreference(): ThemePreference {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      return { ...DEFAULT_THEME_PREFERENCE, ...JSON.parse(stored) };
-    }
-  } catch {
-    // Ignore
+  const stored = getThemePreference<ThemePreference>();
+  if (stored) {
+    return { ...DEFAULT_THEME_PREFERENCE, ...stored };
   }
   return DEFAULT_THEME_PREFERENCE;
-}
-
-/**
- * Save preference to localStorage
- */
-function savePreference(pref: ThemePreference): void {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pref));
-  } catch {
-    // Ignore
-  }
-}
-
-/**
- * Load custom themes from localStorage
- */
-function loadCustomThemes(): Theme[] {
-  try {
-    const stored = localStorage.getItem(CUSTOM_THEMES_KEY);
-    if (stored) {
-      return JSON.parse(stored);
-    }
-  } catch {
-    // Ignore
-  }
-  return [];
 }
 
 /**
@@ -90,18 +61,14 @@ function applyThemeColors(colors: ThemeColors): void {
  * Cache the theme for the inline script (prevents FOUC on reload)
  */
 function cacheTheme(theme: Theme): void {
-  try {
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify({
-        id: theme.id,
-        appearance: theme.appearance,
-        colors: theme.colors,
-      }),
-    );
-  } catch {
-    // Ignore
-  }
+  setThemeCache(
+    theme.id,
+    JSON.stringify({
+      id: theme.id,
+      appearance: theme.appearance,
+      colors: theme.colors,
+    }),
+  );
 }
 
 /**
@@ -167,7 +134,7 @@ export function initTheme(): void {
 
   // Save preference whenever it changes
   effect(() => {
-    savePreference(themePreference.value);
+    saveThemePreference(themePreference.value);
   });
 
   // Listen for system preference changes

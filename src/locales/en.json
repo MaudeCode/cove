@@ -172,6 +172,7 @@
     "chat": "Chat",
     "sessions": "Sessions",
     "overview": "Overview",
+    "stats": "Server Stats",
     "channels": "Channels",
     "instances": "Instances",
     "cron": "Cron Jobs",
@@ -218,7 +219,12 @@
     "newMessages_plural": "{count} new messages",
     "emptyState": {
       "title": "Start a conversation",
-      "description": "Send a message to begin chatting with your assistant"
+      "titleWithName": "Chat with {name}",
+      "description": "Send a message to begin chatting with your assistant",
+      "assistant": "Assistant",
+      "hint": "Quick tips:",
+      "search": "Search",
+      "newSession": "New session"
     },
     "toolCall": {
       "running": "Running...",

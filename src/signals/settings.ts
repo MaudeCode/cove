@@ -1,91 +1,45 @@
 /**
  * Settings Signals
  *
- * User preferences that persist to localStorage.
- *
- * @see Phase 0.9 in ROADMAP.md for full spec
+ * Reactive user preferences that persist to localStorage via storage.ts.
  */
 
 import { signal, effect } from "@preact/signals";
+import {
+  type TimeFormat,
+  type FontSize,
+  type FontFamily,
+  getTimeFormat,
+  setTimeFormat,
+  getFontSize,
+  setFontSize,
+  getFontFamily,
+  setFontFamily,
+} from "@/lib/storage";
 
-// ============================================
-// Types
-// ============================================
-
-export type TimeFormat = "relative" | "local";
-export type FontSize = "sm" | "md" | "lg";
-export type FontFamily = "geist" | "inter" | "system" | "dyslexic" | "mono";
-
-// ============================================
-// Storage Keys
-// ============================================
-
-const STORAGE_KEYS = {
-  timeFormat: "cove:time-format",
-  fontSize: "cove:font-size",
-  fontFamily: "cove:font-family",
-} as const;
-
-// ============================================
-// Defaults
-// ============================================
-
-const DEFAULTS = {
-  timeFormat: "relative" as TimeFormat,
-  fontSize: "md" as FontSize,
-  fontFamily: "geist" as FontFamily,
-};
-
-// ============================================
-// Storage Helpers
-// ============================================
-
-function loadSetting<T>(key: string, fallback: T): T {
-  try {
-    const stored = localStorage.getItem(key);
-    if (stored) {
-      return JSON.parse(stored) as T;
-    }
-  } catch {
-    // Ignore
-  }
-  return fallback;
-}
-
-function saveSetting<T>(key: string, value: T): void {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-  } catch {
-    // Ignore
-  }
-}
+// Re-export types for consumers
+export type { TimeFormat, FontSize, FontFamily } from "@/lib/storage";
 
 // ============================================
 // Signals
 // ============================================
 
-// Note: theme is managed by theme.ts, locale by i18n.ts
-
 /** How to display timestamps */
-export const timeFormat = signal<TimeFormat>(
-  loadSetting(STORAGE_KEYS.timeFormat, DEFAULTS.timeFormat),
-);
+export const timeFormat = signal<TimeFormat>(getTimeFormat());
 
 /** UI font size */
-export const fontSize = signal<FontSize>(loadSetting(STORAGE_KEYS.fontSize, DEFAULTS.fontSize));
+export const fontSize = signal<FontSize>(getFontSize());
 
 /** Font family preference */
-export const fontFamily = signal<FontFamily>(
-  loadSetting(STORAGE_KEYS.fontFamily, DEFAULTS.fontFamily),
-);
+export const fontFamily = signal<FontFamily>(getFontFamily());
 
 // ============================================
 // Persistence Effects
 // ============================================
 
-effect(() => saveSetting(STORAGE_KEYS.timeFormat, timeFormat.value));
-effect(() => saveSetting(STORAGE_KEYS.fontSize, fontSize.value));
-effect(() => saveSetting(STORAGE_KEYS.fontFamily, fontFamily.value));
+effect(() => setTimeFormat(timeFormat.value));
+effect(() => setFontSize(fontSize.value));
+effect(() => setFontFamily(fontFamily.value));
 
 // ============================================
 // DOM Application Effects
@@ -109,7 +63,7 @@ effect(() => {
 });
 
 // ============================================
-// Font Options (for UI)
+// Options (for UI dropdowns)
 // ============================================
 
 export const FONT_SIZE_OPTIONS: { value: FontSize; labelKey: string }[] = [
@@ -132,11 +86,11 @@ export const TIME_FORMAT_OPTIONS: { value: TimeFormat; labelKey: string }[] = [
 ];
 
 // ============================================
-// Reset to Defaults
+// Reset
 // ============================================
 
 export function resetToDefaults(): void {
-  fontSize.value = DEFAULTS.fontSize;
-  fontFamily.value = DEFAULTS.fontFamily;
-  timeFormat.value = DEFAULTS.timeFormat;
+  fontSize.value = "md";
+  fontFamily.value = "geist";
+  timeFormat.value = "relative";
 }

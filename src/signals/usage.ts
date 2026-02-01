@@ -7,6 +7,7 @@
 
 import { signal, computed } from "@preact/signals";
 import { gateway, isConnected } from "@/lib/gateway";
+import { getUsageCache, setUsageCache } from "@/lib/storage";
 import { log } from "@/lib/logger";
 import type { UsageSummary, ProviderUsageSnapshot, UsageWindow } from "@/types/usage";
 
@@ -17,15 +18,12 @@ import type { UsageSummary, ProviderUsageSnapshot, UsageWindow } from "@/types/u
 /** How often to poll for usage updates (ms) */
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 minutes
 
-/** Cache key for localStorage */
-const CACHE_KEY = "cove:usage-cache";
-
 // ============================================
 // State
 // ============================================
 
 /** Raw usage summary from gateway */
-const usageSummary = signal<UsageSummary | null>(null);
+const usageSummary = signal<UsageSummary | null>(loadCachedUsage());
 
 /** Whether we're currently fetching usage */
 const isLoadingUsage = signal(false);
@@ -67,6 +65,22 @@ export const primaryUsageWindow = computed<UsageWindow | null>(() => {
 });
 
 // ============================================
+// Cache
+// ============================================
+
+/**
+ * Load cached usage from storage
+ */
+function loadCachedUsage(): UsageSummary | null {
+  const cached = getUsageCache();
+  if (cached) {
+    log.usage.debug("Loaded cached usage");
+    return cached;
+  }
+  return null;
+}
+
+// ============================================
 // Actions
 // ============================================
 
@@ -85,14 +99,7 @@ async function fetchUsage(): Promise<void> {
   try {
     const result = await gateway.send<UsageSummary>("usage.status");
     usageSummary.value = result;
-
-    // Cache to localStorage
-    try {
-      localStorage.setItem(CACHE_KEY, JSON.stringify(result));
-    } catch {
-      // Ignore storage errors
-    }
-
+    setUsageCache(result);
     log.usage.debug("Usage fetched:", result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to fetch usage";
@@ -130,25 +137,3 @@ function stopUsagePolling(): void {
     log.usage.debug("Usage polling stopped");
   }
 }
-
-/**
- * Load cached usage from localStorage
- */
-function loadCachedUsage(): void {
-  try {
-    const cached = localStorage.getItem(CACHE_KEY);
-    if (cached) {
-      usageSummary.value = JSON.parse(cached) as UsageSummary;
-      log.usage.debug("Loaded cached usage");
-    }
-  } catch {
-    // Ignore parse errors
-  }
-}
-
-// ============================================
-// Initialize
-// ============================================
-
-// Load cache on module init
-loadCachedUsage();
