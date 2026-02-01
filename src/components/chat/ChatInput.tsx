@@ -222,9 +222,8 @@ export function ChatInput({
           onDrop={handleDrop}
           class={`
             relative bg-[var(--color-bg-surface)] border rounded-xl
-            shadow-soft-sm focus-within:shadow-soft
             transition-all duration-200
-            ${isDragging.value ? "border-[var(--color-accent)] bg-[var(--color-accent)]/5" : "border-[var(--color-border)] focus-within:border-[var(--color-accent)]/50"}
+            ${isDragging.value ? "border-[var(--color-accent)] bg-[var(--color-accent)]/5" : "border-[var(--color-border)] focus-within:border-[var(--color-accent)]"}
           `}
         >
           {/* Drag overlay */}
