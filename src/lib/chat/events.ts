@@ -366,26 +366,18 @@ function handleFinalEvent(event: ChatEvent): void {
   }
 
   // Check for heartbeat/no-reply responses - complete run immediately without adding message
-  const messageContent = message?.content;
-  const textContent =
-    typeof messageContent === "string"
-      ? messageContent
-      : Array.isArray(messageContent)
-        ? messageContent
-            .filter((b): b is { type: "text"; text: string } => b.type === "text")
-            .map((b) => b.text)
-            .join("")
-        : "";
-
-  if (
-    textContent &&
-    (isNoReplyContent(textContent) ||
-      isHeartbeatResponse({ role: "assistant", content: textContent, id: "", timestamp: 0 }))
-  ) {
-    log.chat.debug("Heartbeat/no-reply detected, completing run without message:", runId);
-    completeRun(runId);
-    setTimeout(() => processNextQueuedMessage(sessionKey), 100);
-    return;
+  if (message?.content) {
+    const parsed = parseMessageContent(message.content);
+    if (
+      parsed.text &&
+      (isNoReplyContent(parsed.text) ||
+        isHeartbeatResponse({ role: "assistant", content: parsed.text, id: "", timestamp: 0 }))
+    ) {
+      log.chat.debug("Heartbeat/no-reply detected, completing run without message:", runId);
+      completeRun(runId);
+      setTimeout(() => processNextQueuedMessage(sessionKey), 100);
+      return;
+    }
   }
 
   let finalContent = existingRun?.content ?? "";
