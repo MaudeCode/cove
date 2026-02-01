@@ -6,6 +6,7 @@
 
 import { send } from "@/lib/gateway";
 import { updateSession } from "@/signals/sessions";
+import { isUserCreatedChat } from "@/lib/session-utils";
 import { log } from "@/lib/logger";
 
 /**
@@ -21,14 +22,6 @@ function truncateMessage(message: string, maxLength: number): string {
 
   // Truncate and add ellipsis
   return cleaned.slice(0, maxLength).trim() + "…";
-}
-
-/**
- * Check if a session is a user-created chat (vs main session, cron, etc.)
- */
-export function isUserCreatedChat(sessionKey: string): boolean {
-  // User-created chats have format: agent:<agentId>:chat:<uuid>
-  return /^agent:[^:]+:chat:[^:]+$/.test(sessionKey);
 }
 
 /**
