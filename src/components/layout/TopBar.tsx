@@ -7,7 +7,6 @@
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
-import { logout } from "@/lib/logout";
 import { sidebarOpen } from "@/signals/ui";
 import {
   IconButton,
@@ -16,7 +15,6 @@ import {
   CloseIcon,
   MenuIcon,
   SettingsIcon,
-  LogoutIcon,
 } from "@/components/ui";
 import { UsageBadge } from "@/components/usage";
 
@@ -78,17 +76,6 @@ export function TopBar() {
             variant="ghost"
             size="md"
           />
-
-          {/* Logout button - only shown when connected */}
-          {isConnected.value && (
-            <IconButton
-              icon={<LogoutIcon />}
-              label={t("actions.logout")}
-              onClick={() => logout()}
-              variant="ghost"
-              size="md"
-            />
-          )}
         </div>
       </div>
     </header>
