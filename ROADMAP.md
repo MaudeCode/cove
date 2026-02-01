@@ -788,7 +788,6 @@ export const navigation: NavSection[] = [
 - [x] Image paste from clipboard
 - [x] Upload progress indicator (spinner while processing)
 - [x] Image/media preview in messages
-- [ ] Reply/quote support (if channel supports)
 - [ ] Typing indicator improvements (show who's typing)
 - [x] Heartbeat message UX
   - [x] Detect heartbeat prompt + HEARTBEAT_OK responses
