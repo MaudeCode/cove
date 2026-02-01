@@ -803,18 +803,36 @@ export const navigation: NavSection[] = [
 
 ### 2.4 Settings View
 
-> User preferences panel.
+> Full settings page accessible via cog icon in TopBar.
 
-- [ ] Appearance settings
-  - [ ] Theme picker (light, dark, system + custom themes)
-  - [ ] Font size (sm, md, lg)
-  - [ ] Font family (Geist, Inter, System, JetBrains Mono, OpenDyslexic)
-- [ ] Time display preference (relative vs absolute)
-- [ ] Notifications
-  - [ ] Enable/disable browser notifications
-  - [ ] Sound toggle
-- [ ] Keyboard shortcuts reference modal
-- [ ] About section (version, gateway info, links)
+**Navigation:**
+- [x] Add Settings to nav config (settings section)
+- [ ] Cog icon in TopBar navigates to Settings view
+- [ ] Settings view with sectioned layout
+
+**Appearance Section:**
+- [ ] Theme picker (already have ThemePicker component)
+- [ ] Font size (sm, md, lg) with live preview
+- [ ] Font family (Geist, Inter, System, JetBrains Mono, OpenDyslexic)
+
+**Preferences Section:**
+- [ ] Time display (relative vs absolute)
+- [ ] Date format preference
+
+**Notifications Section:**
+- [ ] Enable/disable browser notifications
+- [ ] Sound toggle
+
+**Help Section:**
+- [ ] Keyboard shortcuts reference
+- [ ] Links (docs, GitHub, Discord)
+
+**About Section:**
+- [ ] Cove version
+- [ ] Gateway info (version, URL)
+- [ ] OpenClaw links
+
+**Actions:**
 - [ ] Reset to defaults button
 
 ### 2.5 Onboarding

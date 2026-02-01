@@ -210,19 +210,23 @@
 
   "settings": {
     "title": "Settings",
+    "description": "Customize your Cove experience",
     "appearance": {
       "title": "Appearance",
       "theme": "Theme",
+      "themeDescription": "Choose your color scheme",
       "themeSystem": "System",
       "lightTheme": "Light Theme",
       "darkTheme": "Dark Theme",
       "lightThemes": "Light",
       "darkThemes": "Dark",
       "fontSize": "Font Size",
+      "fontSizeDescription": "Adjust text size throughout the app",
       "fontSizeSm": "Small",
       "fontSizeMd": "Medium",
       "fontSizeLg": "Large",
-      "fontFamily": "Font Family"
+      "fontFamily": "Font Family",
+      "fontFamilyDescription": "Choose your preferred typeface"
     },
     "language": {
       "title": "Language & Region",
@@ -235,6 +239,12 @@
       "title": "Notifications",
       "desktop": "Desktop Notifications",
       "sound": "Sound"
+    },
+    "about": {
+      "title": "About"
+    },
+    "links": {
+      "title": "Links"
     }
   },
 
