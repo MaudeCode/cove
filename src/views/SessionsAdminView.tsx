@@ -441,13 +441,6 @@ function SessionRow({ session }: { session: Session }) {
         </div>
       </td>
 
-      {/* Kind */}
-      <td class="py-3 px-4">
-        <Badge variant={getKindBadgeVariant(kind)} size="sm">
-          {getSessionKindLabel(kind)}
-        </Badge>
-      </td>
-
       {/* Model */}
       <td class="py-3 px-4">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
@@ -797,7 +790,6 @@ export function SessionsAdminView(_props: RouteProps) {
                 <thead>
                   <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
                     <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.session")}</th>
-                    <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.kind")}</th>
                     <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.model")}</th>
                     <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.lastActive")}</th>
                     <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.tokens")}</th>
