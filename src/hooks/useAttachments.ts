@@ -145,6 +145,8 @@ export interface UseAttachmentsResult {
   getPayloads: () => AttachmentPayload[];
   /** Handle paste event (for clipboard images) */
   handlePaste: (e: ClipboardEvent) => Promise<boolean>;
+  /** Whether files are being processed */
+  isProcessing: boolean;
   /** Error message if any */
   error: string | null;
   /** Clear error */
@@ -153,6 +155,7 @@ export interface UseAttachmentsResult {
 
 export function useAttachments(): UseAttachmentsResult {
   const attachments = useSignal<Attachment[]>([]);
+  const isProcessing = useSignal(false);
   const error = useSignal<string | null>(null);
 
   // Cleanup blob URLs on unmount
@@ -169,26 +172,31 @@ export function useAttachments(): UseAttachmentsResult {
   const addFiles = useCallback(async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     error.value = null;
+    isProcessing.value = true;
 
-    for (const file of fileArray) {
-      // Check file size
-      if (file.size > MAX_FILE_SIZE) {
-        error.value = `File "${file.name}" is too large (max 10MB)`;
-        continue;
-      }
+    try {
+      for (const file of fileArray) {
+        // Check file size
+        if (file.size > MAX_FILE_SIZE) {
+          error.value = `File "${file.name}" is too large (max 10MB)`;
+          continue;
+        }
 
-      // Non-image files can't be compressed, check payload limit
-      if (!isSupportedImage(file.type) && file.size > MAX_PAYLOAD_SIZE) {
-        error.value = `File "${file.name}" is too large (max 400KB for non-images)`;
-        continue;
-      }
+        // Non-image files can't be compressed, check payload limit
+        if (!isSupportedImage(file.type) && file.size > MAX_PAYLOAD_SIZE) {
+          error.value = `File "${file.name}" is too large (max 400KB for non-images)`;
+          continue;
+        }
 
-      try {
-        const attachment = await fileToAttachment(file);
-        attachments.value = [...attachments.value, attachment];
-      } catch {
-        error.value = `Failed to read "${file.name}"`;
+        try {
+          const attachment = await fileToAttachment(file);
+          attachments.value = [...attachments.value, attachment];
+        } catch {
+          error.value = `Failed to read "${file.name}"`;
+        }
       }
+    } finally {
+      isProcessing.value = false;
     }
   }, []);
 
@@ -234,22 +242,27 @@ export function useAttachments(): UseAttachmentsResult {
     // Prevent default paste behavior for images
     e.preventDefault();
     error.value = null;
+    isProcessing.value = true;
 
-    for (const item of imageItems) {
-      const file = item.getAsFile();
-      if (!file) continue;
+    try {
+      for (const item of imageItems) {
+        const file = item.getAsFile();
+        if (!file) continue;
 
-      if (file.size > MAX_FILE_SIZE) {
-        error.value = "Pasted image is too large (max 10MB)";
-        continue;
+        if (file.size > MAX_FILE_SIZE) {
+          error.value = "Pasted image is too large (max 10MB)";
+          continue;
+        }
+
+        try {
+          const attachment = await fileToAttachment(file);
+          attachments.value = [...attachments.value, attachment];
+        } catch {
+          error.value = "Failed to read pasted image";
+        }
       }
-
-      try {
-        const attachment = await fileToAttachment(file);
-        attachments.value = [...attachments.value, attachment];
-      } catch {
-        error.value = "Failed to read pasted image";
-      }
+    } finally {
+      isProcessing.value = false;
     }
 
     return true;
@@ -266,6 +279,7 @@ export function useAttachments(): UseAttachmentsResult {
     clearAttachments,
     getPayloads,
     handlePaste,
+    isProcessing: isProcessing.value,
     error: error.value,
     clearError,
   };

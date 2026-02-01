@@ -783,23 +783,21 @@ export const navigation: NavSection[] = [
   - [ ] Copy message (formatted text)
   - [ ] Copy message (raw markdown)
   - [ ] Retry failed message
-- [ ] Copy code blocks individually (already done, verify)
-- [ ] File upload (click or drag-drop)
-- [ ] Image paste from clipboard
-- [ ] Upload progress indicator
-- [ ] Image/media preview in messages
+- [x] Copy code blocks individually
+- [x] File upload (click or drag-drop)
+- [x] Image paste from clipboard
+- [x] Upload progress indicator (spinner while processing)
+- [x] Image/media preview in messages
 - [ ] Reply/quote support (if channel supports)
 - [ ] Typing indicator improvements (show who's typing)
-- [ ] Heartbeat message UX
-  - [ ] Detect heartbeat prompt + HEARTBEAT_OK responses
-  - [ ] Collapsed/muted styling (expandable on click)
-  - [ ] Group consecutive heartbeats into single collapsible block
-  - [ ] Optional: filter toggle to hide/show heartbeats
-- [ ] Compaction event UX
-  - [ ] Detect compaction summary messages in history
-  - [ ] Visual indicator for "conversation was compacted here"
-  - [ ] Collapsed/expandable view of compaction summary
-  - [ ] Clear separation between pre/post compaction context
+- [x] Heartbeat message UX
+  - [x] Detect heartbeat prompt + HEARTBEAT_OK responses
+  - [x] Collapsed/muted styling (expandable on click)
+  - [x] Group consecutive heartbeats into single collapsible block
+- [x] Compaction event UX
+  - [x] Detect compaction summary messages in history
+  - [x] Visual indicator for "conversation was compacted here"
+  - [x] Collapsed/expandable view of compaction summary
 
 ### 2.4 Settings View
 
