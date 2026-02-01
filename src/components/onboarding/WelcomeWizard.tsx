@@ -27,6 +27,7 @@ import {
   LinkButton,
   HintBox,
   StatusIcon,
+  Tooltip,
 } from "@/components/ui";
 import { ArrowRight, ArrowLeft, Zap, Shield, Globe, Check, AlertCircle } from "lucide-preact";
 import { WizardNav } from "./WizardNav";
@@ -401,9 +402,11 @@ function UrlStep({
     if (error && canProceed) {
       // Show error icon with tooltip - URL format valid but probe failed
       return (
-        <span title={error} class="cursor-help">
-          <AlertCircle class="w-4 h-4 text-[var(--color-error)]" />
-        </span>
+        <Tooltip content={error} placement="left">
+          <span class="cursor-help">
+            <AlertCircle class="w-4 h-4 text-[var(--color-error)]" />
+          </span>
+        </Tooltip>
       );
     }
     return null;
