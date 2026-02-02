@@ -605,6 +605,22 @@
     "result": "Result"
   },
 
+  "logs": {
+    "title": "Logs",
+    "description": "Gateway log viewer with live tailing.",
+    "searchPlaceholder": "Search logs...",
+    "live": "Live",
+    "paused": "Paused",
+    "all": "All",
+    "errors": "Errors",
+    "warnings": "Warnings",
+    "download": "Download",
+    "clear": "Clear",
+    "noLogs": "No logs available",
+    "noLogsHint": "Logs will appear here when the gateway writes them.",
+    "noMatches": "No logs match your filter"
+  },
+
   "channels": {
     "title": "Channels",
     "description": "Messaging platform integrations and status.",
