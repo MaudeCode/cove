@@ -378,7 +378,9 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
             type="button"
             class="p-0.5 -ml-1 hover:bg-[var(--color-bg-primary)]/20 rounded"
             onClick={handleToggle}
-            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-label={
+              isExpanded ? t("accessibility.collapseSection") : t("accessibility.expandSection")
+            }
           >
             {isExpanded ? (
               <ChevronDown class="w-3.5 h-3.5" />
