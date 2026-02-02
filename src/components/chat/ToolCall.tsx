@@ -10,6 +10,7 @@ import { useState } from "preact/hooks";
 import type { ToolCall as ToolCallType } from "@/types/messages";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/Spinner";
+import { JsonBlock } from "@/components/debug/JsonBlock";
 
 interface ToolCallProps {
   toolCall: ToolCallType;
@@ -118,19 +119,38 @@ interface CodeBlockProps {
 }
 
 function CodeBlock({ content, maxLines = 30, error = false }: CodeBlockProps) {
-  const text = typeof content === "string" ? content : JSON.stringify(content, null, 2);
+  // For JSON objects, use the syntax-highlighted JsonBlock
+  if (typeof content === "object" && content !== null) {
+    const json = JSON.stringify(content, null, 2);
+    const lines = json.split("\n");
+    const truncated = lines.length > maxLines;
+    const displayText = truncated ? lines.slice(0, maxLines).join("\n") + "\n..." : json;
+
+    if (error) {
+      // Error styling takes precedence - use simple display
+      return (
+        <pre class="text-xs p-2 rounded-md overflow-x-auto font-mono leading-relaxed bg-[var(--color-error)]/10 text-[var(--color-error)] max-h-[300px]">
+          {displayText}
+        </pre>
+      );
+    }
+
+    return <JsonBlock value={displayText} maxHeight="max-h-[300px]" />;
+  }
+
+  // For plain text content
+  const text = String(content);
   const lines = text.split("\n");
   const truncated = lines.length > maxLines;
   const displayText = truncated ? lines.slice(0, maxLines).join("\n") + "\n..." : text;
 
   return (
     <pre
-      class={`text-xs p-2 rounded-md overflow-x-auto font-mono leading-relaxed ${
+      class={`text-xs p-2 rounded-md overflow-x-auto font-mono leading-relaxed max-h-[300px] whitespace-pre-wrap ${
         error
           ? "bg-[var(--color-error)]/10 text-[var(--color-error)]"
           : "bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
       }`}
-      style={{ maxHeight: "300px" }}
     >
       {displayText}
     </pre>
