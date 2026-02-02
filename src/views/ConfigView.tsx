@@ -11,6 +11,7 @@ import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { toast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -193,105 +194,106 @@ export function ConfigView(_props: RouteProps) {
     : navTree;
 
   return (
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <PageHeader
-        title={t("config.title")}
-        subtitle={t("config.description")}
-        padded
-        actions={
-          <>
-            {isDirty.value && (
-              <span class="text-sm text-[var(--color-warning)]">{t("config.unsavedChanges")}</span>
-            )}
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={RotateCcw}
-              onClick={handleReset}
-              disabled={!isDirty.value}
-            >
-              {t("config.reset")}
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              icon={Save}
-              onClick={handleSave}
-              disabled={!canSave.value}
-            >
-              {isSaving.value ? t("config.saving") : t("config.save")}
-            </Button>
-            <IconButton
-              icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-              onClick={loadConfig}
-              disabled={isLoading.value}
-              label={t("actions.refresh")}
-            />
-          </>
-        }
-      />
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="max-w-6xl mx-auto space-y-6">
+        <PageHeader
+          title={t("config.title")}
+          subtitle={t("config.description")}
+          actions={
+            <>
+              {isDirty.value && (
+                <span class="text-sm text-[var(--color-warning)]">
+                  {t("config.unsavedChanges")}
+                </span>
+              )}
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={RotateCcw}
+                onClick={handleReset}
+                disabled={!isDirty.value}
+              >
+                {t("config.reset")}
+              </Button>
+              <Button
+                variant="primary"
+                size="sm"
+                icon={Save}
+                onClick={handleSave}
+                disabled={!canSave.value}
+              >
+                {isSaving.value ? t("config.saving") : t("config.save")}
+              </Button>
+              <IconButton
+                icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+                onClick={loadConfig}
+                disabled={isLoading.value}
+                label={t("actions.refresh")}
+              />
+            </>
+          }
+        />
 
-      {/* Error */}
-      {error.value && (
-        <div class="px-6 py-2">
-          <HintBox variant="error">{error.value}</HintBox>
-        </div>
-      )}
+        {/* Error */}
+        {error.value && <HintBox variant="error">{error.value}</HintBox>}
 
-      {/* Loading */}
-      {isLoading.value && !schemaValue && (
-        <div class="flex-1 flex items-center justify-center">
-          <Spinner size="lg" />
-        </div>
-      )}
+        {/* Loading */}
+        {isLoading.value && !schemaValue && (
+          <div class="flex items-center justify-center py-12">
+            <Spinner size="lg" />
+          </div>
+        )}
 
-      {/* Content */}
-      {!isLoading.value && schemaValue && (
-        <div class="flex-1 flex overflow-hidden">
-          {/* Sidebar */}
-          <div class="w-64 border-r border-[var(--color-border)] flex flex-col bg-[var(--color-bg-secondary)]">
-            {/* Search */}
-            <div class="p-3 border-b border-[var(--color-border)]">
-              <Input
-                type="text"
-                placeholder={t("config.searchPlaceholder")}
-                value={searchQuery.value}
-                onInput={(e) => {
-                  searchQuery.value = (e.target as HTMLInputElement).value;
-                }}
-                leftElement={<Search class="w-4 h-4" />}
-                class="text-sm"
+        {/* Content */}
+        {!isLoading.value && schemaValue && (
+          <Card class="overflow-hidden">
+            <div class="flex min-h-[600px]">
+              {/* Sidebar */}
+              <div class="w-64 border-r border-[var(--color-border)] flex flex-col bg-[var(--color-bg-secondary)]">
+                {/* Search */}
+                <div class="p-3 border-b border-[var(--color-border)]">
+                  <Input
+                    type="text"
+                    placeholder={t("config.searchPlaceholder")}
+                    value={searchQuery.value}
+                    onInput={(e) => {
+                      searchQuery.value = (e.target as HTMLInputElement).value;
+                    }}
+                    leftElement={<Search class="w-4 h-4" />}
+                    class="text-sm"
+                  />
+                </div>
+
+                {/* Nav tree */}
+                <div class="flex-1 overflow-y-auto p-2">
+                  {filteredTree.length === 0 ? (
+                    <p class="text-sm text-[var(--color-text-muted)] p-2">
+                      {query ? t("config.noResults") : t("config.noFields")}
+                    </p>
+                  ) : (
+                    filteredTree.map((item) => (
+                      <ConfigNavItem
+                        key={item.key}
+                        item={item}
+                        selectedPath={selectedPath}
+                        expandedNav={expandedNav}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Detail panel */}
+              <ConfigDetailPanel
+                selectedPath={selectedPath}
+                schema={schema}
+                draftConfig={draftConfig}
+                uiHints={uiHints}
               />
             </div>
-
-            {/* Nav tree */}
-            <div class="flex-1 overflow-y-auto p-2">
-              {filteredTree.length === 0 ? (
-                <p class="text-sm text-[var(--color-text-muted)] p-2">
-                  {query ? t("config.noResults") : t("config.noFields")}
-                </p>
-              ) : (
-                filteredTree.map((item) => (
-                  <ConfigNavItem
-                    key={item.key}
-                    item={item}
-                    selectedPath={selectedPath}
-                    expandedNav={expandedNav}
-                  />
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Detail panel */}
-          <ConfigDetailPanel
-            selectedPath={selectedPath}
-            schema={schema}
-            draftConfig={draftConfig}
-            uiHints={uiHints}
-          />
-        </div>
-      )}
+          </Card>
+        )}
+      </div>
     </div>
   );
 }
