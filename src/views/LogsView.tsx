@@ -152,6 +152,23 @@ function parseLogLine(raw: string): ParsedLogLine {
     }
   }
 
+  // Fallback: infer level from content if still not set
+  if (!level) {
+    const lowerRaw = raw.toLowerCase();
+    if (
+      lowerRaw.includes("error") ||
+      lowerRaw.includes("failed") ||
+      lowerRaw.includes("exception") ||
+      lowerRaw.includes("✗")
+    ) {
+      level = "error";
+    } else if (lowerRaw.includes("warn") || lowerRaw.includes("deprecated")) {
+      level = "warn";
+    } else if (lowerRaw.includes("debug") || lowerRaw.includes("trace")) {
+      level = "debug";
+    }
+  }
+
   return { id, raw, timestamp, level, message };
 }
 
@@ -274,16 +291,19 @@ function LogLine({ line }: { line: ParsedLogLine }) {
   const Icon = line.level ? levelIcons[line.level] : undefined;
   const colorClass = line.level ? levelColors[line.level] : "text-[var(--color-text-secondary)]";
 
+  // Format timestamp for display
+  const displayTime = line.timestamp
+    ? line.timestamp.split("T")[1]?.slice(0, 12) || line.timestamp.slice(0, 12)
+    : null;
+
   return (
-    <div class="flex items-start gap-2 py-1 px-3 hover:bg-[var(--color-bg-hover)] font-mono text-xs">
+    <div class="flex items-start gap-2 py-1.5 px-3 hover:bg-[var(--color-bg-hover)] font-mono text-xs border-b border-[var(--color-border)]/50 last:border-0">
       {Icon && <Icon size={14} class={`mt-0.5 flex-shrink-0 ${colorClass}`} />}
-      {!Icon && <span class="w-[14px]" />}
-      {line.timestamp && (
-        <span class="text-[var(--color-text-muted)] flex-shrink-0 w-24 truncate">
-          {line.timestamp.split("T")[1]?.slice(0, 12) || line.timestamp.slice(0, 12)}
-        </span>
+      {!Icon && <span class="w-[14px] flex-shrink-0" />}
+      {displayTime && (
+        <span class="text-[var(--color-text-muted)] flex-shrink-0 w-20">{displayTime}</span>
       )}
-      <span class={`flex-1 break-all ${colorClass}`}>{line.message}</span>
+      <span class={`flex-1 break-all whitespace-pre-wrap ${colorClass}`}>{line.message}</span>
     </div>
   );
 }
