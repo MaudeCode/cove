@@ -110,10 +110,31 @@ interface NavItem {
 // Build Nav Tree
 // ============================================
 
+/**
+ * Checks if a schema property is "navigation-worthy" (should appear in sidebar).
+ * Only objects with 2+ properties or arrays of objects qualify.
+ * Single-field objects and primitives should just be rendered inline.
+ */
+function isNavWorthy(propSchema: JsonSchema): boolean {
+  // Arrays of objects are nav-worthy (expandable list)
+  if (propSchema.type === "array" && propSchema.items?.properties) {
+    return true;
+  }
+
+  // Objects must have 2+ properties to be worth navigating to
+  if (propSchema.type === "object" && propSchema.properties) {
+    const propCount = Object.keys(propSchema.properties).length;
+    return propCount >= 2;
+  }
+
+  return false;
+}
+
 function buildNavTree(
   schemaObj: JsonSchema,
   config: Record<string, unknown>,
   parentPath: string[] = [],
+  depth: number = 0,
 ): NavItem[] {
   if (!schemaObj.properties) return [];
 
@@ -123,6 +144,12 @@ function buildNavTree(
     const path = [...parentPath, key];
     const hint = uiHints.value[key] ?? uiHints.value[path.join(".")] ?? {};
     const label = hint.label ?? propSchema.title ?? humanize(key);
+
+    // At depth 0 (top-level), include everything as nav items
+    // At deeper levels, only include nav-worthy items
+    if (depth > 0 && !isNavWorthy(propSchema)) {
+      continue;
+    }
 
     const item: NavItem = {
       key,
@@ -134,7 +161,11 @@ function buildNavTree(
     // If it's an object with properties, add children
     if (propSchema.type === "object" && propSchema.properties) {
       const configValue = (config[key] as Record<string, unknown>) ?? {};
-      item.children = buildNavTree(propSchema, configValue, path);
+      item.children = buildNavTree(propSchema, configValue, path, depth + 1);
+      // Remove empty children array
+      if (item.children.length === 0) {
+        delete item.children;
+      }
     }
 
     // If it's an array of objects, add each item as a child
