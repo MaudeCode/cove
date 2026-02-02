@@ -78,7 +78,7 @@ export function JsonBlock({ value, maxHeight = "max-h-48", id }: JsonBlockProps)
         size="sm"
         variant="ghost"
         label={t("actions.copy")}
-        class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+        class="absolute top-2 right-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100 transition-opacity"
         onClick={() => copyToClipboard(value, blockId)}
       />
     </div>
