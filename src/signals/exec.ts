@@ -5,7 +5,7 @@
  * Subscribes to gateway exec.approval events.
  */
 
-import { signal, computed } from "@preact/signals";
+import { signal } from "@preact/signals";
 import { subscribe, send, isConnected } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import type { ExecApprovalItem, ExecApprovalRequest, ExecApprovalDecision } from "@/types/exec";
@@ -15,13 +15,33 @@ import type { ExecApprovalItem, ExecApprovalRequest, ExecApprovalDecision } from
 // ============================================
 
 /** Queue of pending exec approval requests */
-export const execApprovalQueue = signal<ExecApprovalItem[]>([]);
+const execApprovalQueue = signal<ExecApprovalItem[]>([]);
 
-/** Set of resolved approval IDs (to prevent re-showing after approval) */
-export const resolvedApprovalIds = signal<Set<string>>(new Set());
+/** Map of resolved approval IDs to their decisions (to prevent re-showing after approval) */
+export const resolvedApprovalIds = signal<Map<string, string>>(new Map());
 
-/** Number of pending approvals */
-export const pendingCount = computed(() => execApprovalQueue.value.length);
+/** Prune resolved approvals older than 5 minutes to prevent memory buildup */
+const RESOLVED_TTL_MS = 5 * 60 * 1000;
+const resolvedTimestamps = new Map<string, number>();
+
+function pruneResolvedApprovals(): void {
+  const now = Date.now();
+  const toRemove: string[] = [];
+  for (const [id, timestamp] of resolvedTimestamps) {
+    if (now - timestamp > RESOLVED_TTL_MS) {
+      toRemove.push(id);
+    }
+  }
+  if (toRemove.length > 0) {
+    const newMap = new Map(resolvedApprovalIds.value);
+    for (const id of toRemove) {
+      newMap.delete(id);
+      resolvedTimestamps.delete(id);
+    }
+    resolvedApprovalIds.value = newMap;
+    log.exec.debug(`Pruned ${toRemove.length} old resolved approval(s)`);
+  }
+}
 
 /** Whether we're currently processing a decision */
 export const execApprovalBusy = signal(false);
@@ -44,7 +64,9 @@ function enqueueApproval(request: ExecApprovalRequest): void {
   };
 
   execApprovalQueue.value = [...execApprovalQueue.value, item];
-  log.exec.info(`Exec approval queued: ${request.command} (${pendingCount.value} pending)`);
+  log.exec.info(
+    `Exec approval queued: ${request.command} (${execApprovalQueue.value.length} pending)`,
+  );
 }
 
 /**
@@ -94,8 +116,14 @@ export async function handleExecApprovalDecisionDirect(
     // Also remove from queue if it's there
     dequeueApproval(approvalId);
 
-    // Track as resolved to prevent re-showing on re-render
-    resolvedApprovalIds.value = new Set([...resolvedApprovalIds.value, approvalId]);
+    // Track as resolved with decision to prevent re-showing on re-render
+    const newMap = new Map(resolvedApprovalIds.value);
+    newMap.set(approvalId, decision);
+    resolvedApprovalIds.value = newMap;
+    resolvedTimestamps.set(approvalId, Date.now());
+
+    // Prune old resolved approvals
+    pruneResolvedApprovals();
 
     log.exec.info(`Exec ${decision} (direct): id=${approvalId}`);
   } catch (err) {
