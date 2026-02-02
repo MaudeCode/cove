@@ -929,33 +929,43 @@ export const navigation: NavSection[] = [
 - [x] Expandable device details (ID, scopes, tokens)
 - [ ] **"Configure" button** → deep link to Config Editor `#exec` (exec approvals, node bindings)
 
-### 3.8 Configuration Editor
-- [ ] View current config (formatted JSON)
-- [ ] Schema-aware form UI (like OpenClaw default)
-- [ ] Edit with syntax highlighting (raw mode)
-- [ ] Diff view before applying
-- [ ] Apply config (with restart)
-- [ ] Config backup before changes
-- [ ] **Deep linking to sections** (e.g., `/config#channels.telegram`, `/config#exec`)
-  - Allows other views to link directly to relevant config
+### 3.8 Configuration Editor ✅
+- [x] View current config (formatted JSON)
+- [x] Schema-aware form UI (recursive ConfigNode renderer)
+- [x] Edit with syntax highlighting (raw mode)
+- [x] Diff view before applying
+- [x] Apply config (with restart via config.patch)
+- [x] Config backup (baseHash optimistic locking)
+- [x] **Deep linking to sections** (e.g., `/config#channels.telegram`, `/config#gateway`)
+  - URL hash navigation with sidebar tree
+- [x] Extracted: ConfigNode split into 5 files, nav-tree.ts, section-icons.ts
 
 **Views needing "Configure" button → Config Editor:**
 - ChannelsView: Link to `#channels` for enable/disable toggles
 - DevicesView: Link to `#exec` for exec approvals & node bindings
 
-### 3.9 Debug View
-- [ ] Raw snapshots display (status, health, heartbeat JSON)
-- [ ] Security audit summary
-- [ ] Manual RPC tester (method + params → result)
-- [ ] Event log viewer (live stream of gateway events)
+### 3.9 Debug View ✅
+- [x] Raw snapshots display (status, health, heartbeat JSON)
+- [x] Connection diagnostics (WebSocket state, URL, session key, reconnect attempts)
+- [x] Server info panel (version, host, commit, uptime)
+- [x] Client info panel (app version, platform, user agent)
+- [x] Paths panel (config path, state directory)
+- [x] Manual RPC tester (form mode + JSON mode)
+- [x] Event log viewer (live stream with expand/collapse, copy, pause)
+- [x] Snapshots panel (token stats, channel health badges, heartbeat agents)
+- [ ] Security audit summary (deferred)
 
-### 3.10 Logs Viewer
-- [ ] Gateway JSONL log viewer
-- [ ] Level filters (trace, debug, info, warn, error, fatal)
-- [ ] Text search filter
-- [ ] Auto-follow toggle (tail mode)
-- [ ] Export filtered logs
-- [ ] Truncation indicator for large logs
+### 3.10 Logs Viewer ✅
+- [x] Gateway log viewer with live tailing (2s polling)
+- [x] Level filters (debug, info, warn, error) - multi-select
+- [x] Text search filter
+- [x] Auto-follow toggle (tail mode with smart scroll detection)
+- [x] Export/download logs
+- [x] Clear logs button
+- [x] Parses multiple formats: JSON, OpenClaw text, cloudflared, bracketed
+- [x] Keyword-based level fallback detection
+- [x] Expandable JSON log fields
+- [x] Accessibility: aria-labels, aria-pressed, role="log", aria-live
 
 ### 3.11 Docs Link ✅
 - [x] Nav item linking to https://docs.openclaw.ai
