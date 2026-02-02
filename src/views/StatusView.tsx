@@ -464,16 +464,16 @@ export function StatusView(_props: RouteProps) {
 
         {/* Server Info */}
         {connected && (
-          <Card title="Server Information" padding="md">
+          <Card title={t("overview.serverInfo")} padding="md">
             <div class="divide-y divide-[var(--color-border)]">
-              <InfoRow label="Version" value={gatewayVersion.value} />
-              <InfoRow label="Commit" value={gatewayCommit.value?.substring(0, 8)} />
-              <InfoRow label="Host" value={gatewayHost.value} />
+              <InfoRow label={t("overview.version")} value={gatewayVersion.value} />
+              <InfoRow label={t("overview.commit")} value={gatewayCommit.value?.substring(0, 8)} />
+              <InfoRow label={t("overview.host")} value={gatewayHost.value} />
               <InfoRow
-                label="Capabilities"
+                label={t("overview.capabilities")}
                 value={
                   gateway.capabilities.value.length > 0
-                    ? `${gateway.capabilities.value.length} methods`
+                    ? t("overview.capabilitiesCount", { count: gateway.capabilities.value.length })
                     : null
                 }
               />
