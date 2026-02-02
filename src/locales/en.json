@@ -194,6 +194,7 @@
     "memory": "Memory",
     "skills": "Skills",
     "nodes": "Nodes",
+    "devices": "Devices",
     "sections": {
       "chat": "Chat",
       "control": "Control",
@@ -691,6 +692,52 @@
       "noResults": "No Skills Found",
       "tryDifferentSearch": "Try a different search term.",
       "notYetSupported": "ClawHub installation coming soon! Install manually: openclaw skills install {slug}"
+    }
+  },
+
+  "devices": {
+    "title": "Devices",
+    "description": "Manage paired devices and authentication tokens.",
+    "emptyTitle": "No Devices",
+    "emptyDescription": "No devices have been paired yet.",
+    "noResults": "No matching devices",
+    "count": "{count} device",
+    "count_plural": "{count} devices",
+    "filteredCount": "Showing {filtered} of {total}",
+    "searchPlaceholder": "Search devices...",
+    "pendingRequests": "Pending Pairing Requests",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveSuccess": "Device approved",
+    "rejectSuccess": "Device rejected",
+    "repair": "Repair",
+    "deviceId": "Device ID",
+    "clientId": "Client ID",
+    "scopes": "Scopes",
+    "approved": "Approved",
+    "tokens": "Auth Tokens",
+    "noTokens": "No tokens",
+    "tokenActive": "Active",
+    "tokenRevoked": "Revoked",
+    "rotateToken": "Rotate token",
+    "tokenManagement": "Token Management",
+    "tokenManagementDesc": "Manage authentication tokens for {name}.",
+    "tokenCreated": "Created",
+    "tokenRotatedAt": "Rotated",
+    "rotate": "Rotate",
+    "revoke": "Revoke",
+    "tokenRotated": "Token rotated and copied to clipboard",
+    "tokenCopied": "New token copied to clipboard",
+    "stats": {
+      "total": "Total",
+      "operators": "Operators",
+      "nodes": "Nodes",
+      "pending": "Pending"
+    },
+    "filters": {
+      "allRoles": "All Roles",
+      "operators": "Operators",
+      "nodes": "Nodes"
     }
   },
 
