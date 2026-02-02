@@ -249,9 +249,9 @@ export function ConfigView(_props: RouteProps) {
           <Card class="overflow-hidden">
             <div class="flex min-h-[600px]">
               {/* Sidebar */}
-              <div class="w-64 border-r border-[var(--color-border)] flex flex-col bg-[var(--color-bg-secondary)]">
+              <div class="w-64 border-r border-[var(--color-border)] flex flex-col bg-[var(--color-bg-secondary)] rounded-l-xl">
                 {/* Search */}
-                <div class="p-3 border-b border-[var(--color-border)]">
+                <div class="p-3 border-b border-[var(--color-border)] rounded-tl-xl">
                   <Input
                     type="text"
                     placeholder={t("config.searchPlaceholder")}
