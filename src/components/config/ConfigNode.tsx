@@ -34,6 +34,8 @@ interface ConfigNodeProps {
   hints: ConfigUiHints;
   level?: number;
   showLabel?: boolean;
+  /** When true, renders for the detail panel (no outer card wrapper) */
+  isDetailView?: boolean;
 }
 
 export function ConfigNode({
@@ -43,6 +45,7 @@ export function ConfigNode({
   hints,
   level = 0,
   showLabel = true,
+  isDetailView = false,
 }: ConfigNodeProps) {
   const type = schemaType(schema);
   const hint = hintForPath(path, hints) ?? {};
@@ -78,6 +81,7 @@ export function ConfigNode({
           level={level}
           label={label}
           help={help}
+          isDetailView={isDetailView}
         />
       );
 
@@ -226,6 +230,7 @@ function ObjectNode({
   level,
   label,
   help,
+  isDetailView = false,
 }: {
   schema: JsonSchema;
   value: Record<string, unknown> | null;
@@ -234,11 +239,31 @@ function ObjectNode({
   level: number;
   label: string;
   help?: string;
+  isDetailView?: boolean;
 }) {
-  const [isExpanded, setIsExpanded] = useState(level < 2);
+  const [isExpanded, setIsExpanded] = useState(level < 2 || isDetailView);
   const properties = schema.properties ?? {};
   const propertyKeys = Object.keys(properties);
   const actualValue = value ?? {};
+
+  // In detail view, render fields directly (no card wrapper)
+  if (isDetailView && level === 0) {
+    return (
+      <div class="space-y-6">
+        {help && <p class="text-sm text-[var(--color-text-muted)] mb-4">{help}</p>}
+        {propertyKeys.map((key) => (
+          <ConfigNode
+            key={key}
+            schema={properties[key]}
+            value={actualValue[key]}
+            path={[...path, key]}
+            hints={hints}
+            level={level + 1}
+          />
+        ))}
+      </div>
+    );
+  }
 
   // For top-level (level 0), render as a card
   if (level === 0) {
