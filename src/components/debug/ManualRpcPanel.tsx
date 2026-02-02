@@ -270,7 +270,7 @@ export function ManualRpcPanel() {
             <div class="flex items-center justify-between mb-2">
               <span class="text-sm font-medium">{t("debug.result")}</span>
               <Badge variant={rpcResult.value.ok ? "success" : "error"}>
-                {rpcResult.value.ok ? "OK" : "Error"}
+                {rpcResult.value.ok ? t("debug.ok") : t("debug.error")}
               </Badge>
             </div>
             <pre class="text-xs font-mono bg-[var(--color-bg-tertiary)] p-3 rounded-lg overflow-x-auto max-h-64">
