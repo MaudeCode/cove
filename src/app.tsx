@@ -31,7 +31,7 @@ import { CronView } from "@/views/CronView";
 import { ConfigView } from "@/views/ConfigView";
 import { SettingsView } from "@/views/SettingsView";
 import { DebugView } from "@/views/DebugView";
-import { LogsView } from "@/views/PlaceholderView";
+import { LogsView } from "@/views/LogsView";
 import { DevicesView } from "@/views/DevicesView";
 import { SkillsView } from "@/views/SkillsView";
 import { ServerStatsView } from "@/views/ServerStatsView";
