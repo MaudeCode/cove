@@ -130,7 +130,7 @@ const pendingRequests = new Map<
 >();
 
 // Event subscribers
-type EventHandler = (event: GatewayEvent) => void;
+export type EventHandler = (event: GatewayEvent) => void;
 const eventHandlers = new Set<EventHandler>();
 
 // ============================================
@@ -578,7 +578,7 @@ function clearPendingRequests(error: Error): void {
 /**
  * Subscribe to gateway events
  */
-function subscribe(handler: EventHandler): () => void {
+export function subscribe(handler: EventHandler): () => void {
   eventHandlers.add(handler);
   return () => eventHandlers.delete(handler);
 }
