@@ -541,6 +541,36 @@
     }
   },
 
+  "debug": {
+    "subtitle": "Connection diagnostics and event logging.",
+    "connection": "Connection",
+    "server": "Server",
+    "client": "Client",
+    "paths": "Paths",
+    "eventLog": "Event Log",
+    "state": "State",
+    "url": "URL",
+    "sessionKey": "Session Key",
+    "reconnectAttempts": "Reconnect Attempts",
+    "connectedAt": "Connected At",
+    "version": "Version",
+    "host": "Host",
+    "commit": "Commit",
+    "uptime": "Uptime",
+    "tickInterval": "Tick Interval",
+    "configPath": "Config Path",
+    "stateDir": "State Directory",
+    "appVersion": "App Version",
+    "platform": "Platform",
+    "userAgent": "User Agent",
+    "presenceCount": "Connected Clients",
+    "clear": "Clear",
+    "paused": "Paused",
+    "recording": "Recording",
+    "noEvents": "No events recorded",
+    "noEventsHint": "Events will appear here as they occur."
+  },
+
   "channels": {
     "title": "Channels",
     "description": "Messaging platform integrations and status.",
