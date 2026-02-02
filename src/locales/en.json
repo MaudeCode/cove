@@ -581,7 +581,12 @@
     "manualRpc": "Manual RPC",
     "manualRpcDesc": "Send a raw gateway method with JSON params.",
     "method": "Method",
+    "params": "Params",
     "paramsJson": "Params (JSON)",
+    "addParam": "Add",
+    "noParams": "No params — click Add to add one",
+    "formMode": "Form",
+    "jsonMode": "JSON",
     "call": "Call",
     "result": "Result"
   },

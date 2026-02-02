@@ -2,9 +2,10 @@
  * ManualRpcPanel
  *
  * Send raw gateway method calls with custom JSON params.
+ * Supports both form builder and raw JSON modes.
  */
 
-import { signal } from "@preact/signals";
+import { signal, computed } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { isConnected, send } from "@/lib/gateway";
 import { Card } from "@/components/ui/Card";
@@ -12,7 +13,18 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { Send, Play } from "lucide-preact";
+import { IconButton } from "@/components/ui/IconButton";
+import { Send, Play, Plus, Trash2, Code, FormInput } from "lucide-preact";
+
+// ============================================
+// Types
+// ============================================
+
+interface ParamField {
+  id: string;
+  key: string;
+  value: string;
+}
 
 // ============================================
 // State
@@ -23,6 +35,15 @@ const rpcParams = signal("{}");
 const rpcResult = signal<{ ok: boolean; data: unknown } | null>(null);
 const rpcLoading = signal(false);
 const rpcError = signal<string | null>(null);
+
+/** Form vs JSON mode */
+const isFormMode = signal(true);
+
+/** Form fields for form mode */
+const formFields = signal<ParamField[]>([]);
+
+/** Counter for unique field IDs */
+let fieldCounter = 0;
 
 // ============================================
 // Helpers
@@ -36,6 +57,73 @@ function formatPayload(payload: unknown): string {
   }
 }
 
+/** Build params object from form fields */
+const formParams = computed(() => {
+  const params: Record<string, string> = {};
+  for (const field of formFields.value) {
+    if (field.key.trim()) {
+      params[field.key.trim()] = field.value;
+    }
+  }
+  return params;
+});
+
+/** Get the effective params (from form or JSON depending on mode) */
+function getEffectiveParams(): unknown {
+  if (isFormMode.value) {
+    const params = formParams.value;
+    return Object.keys(params).length > 0 ? params : undefined;
+  }
+  const paramsStr = rpcParams.value.trim();
+  if (!paramsStr || paramsStr === "{}") return undefined;
+  return JSON.parse(paramsStr);
+}
+
+function addField() {
+  formFields.value = [...formFields.value, { id: `field_${++fieldCounter}`, key: "", value: "" }];
+}
+
+function removeField(id: string) {
+  formFields.value = formFields.value.filter((f) => f.id !== id);
+}
+
+function updateField(id: string, updates: Partial<ParamField>) {
+  formFields.value = formFields.value.map((f) => (f.id === id ? { ...f, ...updates } : f));
+}
+
+/** Sync form fields to JSON when switching modes */
+function syncFormToJson() {
+  const params = formParams.value;
+  rpcParams.value = Object.keys(params).length > 0 ? JSON.stringify(params, null, 2) : "{}";
+}
+
+/** Sync JSON to form fields when switching modes */
+function syncJsonToForm() {
+  try {
+    const parsed = JSON.parse(rpcParams.value || "{}");
+    if (typeof parsed === "object" && parsed !== null && !Array.isArray(parsed)) {
+      formFields.value = Object.entries(parsed).map(([key, value]) => ({
+        id: `field_${++fieldCounter}`,
+        key,
+        value: typeof value === "string" ? value : JSON.stringify(value),
+      }));
+    }
+  } catch {
+    // Invalid JSON, keep existing fields
+  }
+}
+
+function toggleMode() {
+  if (isFormMode.value) {
+    // Switching to JSON mode - sync form to JSON
+    syncFormToJson();
+  } else {
+    // Switching to Form mode - sync JSON to form
+    syncJsonToForm();
+  }
+  isFormMode.value = !isFormMode.value;
+}
+
 async function callRpc() {
   if (!isConnected.value) return;
 
@@ -44,12 +132,7 @@ async function callRpc() {
   rpcResult.value = null;
 
   try {
-    let params: unknown = undefined;
-    const paramsStr = rpcParams.value.trim();
-    if (paramsStr && paramsStr !== "{}") {
-      params = JSON.parse(paramsStr);
-    }
-
+    const params = getEffectiveParams();
     const result = await send<unknown>(rpcMethod.value, params);
     rpcResult.value = { ok: true, data: result };
   } catch (err) {
@@ -69,9 +152,19 @@ export function ManualRpcPanel() {
 
   return (
     <Card>
-      <div class="flex items-center gap-2 mb-4">
-        <Send size={18} class="text-[var(--color-warning)]" />
-        <h2 class="font-medium">{t("debug.manualRpc")}</h2>
+      <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center gap-2">
+          <Send size={18} class="text-[var(--color-warning)]" />
+          <h2 class="font-medium">{t("debug.manualRpc")}</h2>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleMode}
+          icon={isFormMode.value ? <Code size={14} /> : <FormInput size={14} />}
+        >
+          {isFormMode.value ? t("debug.jsonMode") : t("debug.formMode")}
+        </Button>
       </div>
 
       <p class="text-sm text-[var(--color-text-muted)] mb-4">{t("debug.manualRpcDesc")}</p>
@@ -85,26 +178,73 @@ export function ManualRpcPanel() {
             onInput={(e) => {
               rpcMethod.value = (e.target as HTMLInputElement).value;
             }}
-            placeholder="e.g., system-presence, status, health.check"
+            placeholder="e.g., system-presence, status, health"
             class="font-mono"
             fullWidth
           />
         </div>
 
-        {/* Params */}
-        <div>
-          <label class="block text-sm font-medium mb-1">{t("debug.paramsJson")}</label>
-          <Textarea
-            value={rpcParams.value}
-            onInput={(e) => {
-              rpcParams.value = (e.target as HTMLTextAreaElement).value;
-            }}
-            placeholder="{}"
-            rows={3}
-            class="font-mono text-sm"
-            fullWidth
-          />
-        </div>
+        {/* Params - Form Mode */}
+        {isFormMode.value ? (
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-sm font-medium">{t("debug.params")}</label>
+              <Button variant="ghost" size="sm" onClick={addField} icon={<Plus size={14} />}>
+                {t("debug.addParam")}
+              </Button>
+            </div>
+            {formFields.value.length === 0 ? (
+              <p class="text-sm text-[var(--color-text-muted)] py-3 text-center">
+                {t("debug.noParams")}
+              </p>
+            ) : (
+              <div class="space-y-2">
+                {formFields.value.map((field) => (
+                  <div key={field.id} class="flex items-center gap-2">
+                    <Input
+                      value={field.key}
+                      onInput={(e) =>
+                        updateField(field.id, { key: (e.target as HTMLInputElement).value })
+                      }
+                      placeholder="key"
+                      class="font-mono flex-1"
+                    />
+                    <Input
+                      value={field.value}
+                      onInput={(e) =>
+                        updateField(field.id, { value: (e.target as HTMLInputElement).value })
+                      }
+                      placeholder="value"
+                      class="font-mono flex-1"
+                    />
+                    <IconButton
+                      icon={Trash2}
+                      size="sm"
+                      variant="ghost"
+                      label={t("actions.delete")}
+                      onClick={() => removeField(field.id)}
+                    />
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Params - JSON Mode */
+          <div>
+            <label class="block text-sm font-medium mb-1">{t("debug.paramsJson")}</label>
+            <Textarea
+              value={rpcParams.value}
+              onInput={(e) => {
+                rpcParams.value = (e.target as HTMLTextAreaElement).value;
+              }}
+              placeholder="{}"
+              rows={4}
+              class="font-mono text-sm"
+              fullWidth
+            />
+          </div>
+        )}
 
         {/* Call button */}
         <Button
