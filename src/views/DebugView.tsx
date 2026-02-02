@@ -52,6 +52,8 @@ import {
 } from "lucide-preact";
 import type { RouteProps } from "@/types/routes";
 import type { GatewayEvent } from "@/types/gateway";
+import { SnapshotsPanel } from "@/components/debug/SnapshotsPanel";
+import { ManualRpcPanel } from "@/components/debug/ManualRpcPanel";
 
 // ============================================
 // Types
@@ -483,6 +485,12 @@ export function DebugView(_props: RouteProps) {
               </div>
             )}
           </Card>
+
+          {/* Snapshots & Manual RPC - Side by side on larger screens */}
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <SnapshotsPanel />
+            <ManualRpcPanel />
+          </div>
         </div>
       </div>
     </div>
