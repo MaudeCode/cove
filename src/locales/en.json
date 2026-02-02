@@ -694,6 +694,57 @@
     }
   },
 
+  "nodes": {
+    "title": "Nodes",
+    "description": "Manage paired mobile devices and nodes.",
+    "emptyTitle": "No Nodes",
+    "emptyDescription": "Pair a mobile device or node to get started.",
+    "noResults": "No matching nodes",
+    "count": "{count} node",
+    "count_plural": "{count} nodes",
+    "filteredCount": "Showing {filtered} of {total}",
+    "searchPlaceholder": "Search nodes...",
+    "pendingRequests": "Pending Pairing Requests",
+    "requestedAt": "Requested",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveSuccess": "Pairing approved",
+    "rejectSuccess": "Pairing rejected",
+    "connected": "Connected",
+    "nodeId": "Node ID",
+    "version": "Version",
+    "ipAddress": "IP Address",
+    "commands": "Commands",
+    "actions": "Actions",
+    "actionsRequireConnection": "Actions require an active connection",
+    "notify": "Notify",
+    "notifyTitle": "Send Notification to {name}",
+    "notifyTitleLabel": "Title",
+    "notifyTitlePlaceholder": "Notification title",
+    "notifyBodyLabel": "Message",
+    "notifyBodyPlaceholder": "Notification message...",
+    "sendNotification": "Send",
+    "notifySuccess": "Notification sent to {name}",
+    "cameraFront": "Front Camera",
+    "cameraBack": "Back Camera",
+    "cameraRequested": "Requesting photo...",
+    "cameraSuccess": "Photo captured",
+    "location": "Location",
+    "locationSuccess": "Location retrieved",
+    "screenRecord": "Screen Record",
+    "screenRecordHint": "Record the device screen",
+    "stats": {
+      "total": "Total",
+      "connected": "Connected",
+      "paired": "Offline",
+      "pending": "Pending"
+    },
+    "status": {
+      "connected": "Connected",
+      "paired": "Offline"
+    }
+  },
+
   "stats": {
     "title": "Server Stats",
     "description": "Gateway metrics and usage statistics",
