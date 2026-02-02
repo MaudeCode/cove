@@ -261,15 +261,19 @@ function SettingRow({ label, description, error, inline, children }: SettingRowP
   // For inline layout: label+description left, control right
   if (inline && label) {
     return (
-      <div class="py-3 grid grid-cols-[1fr,auto] gap-x-6 gap-y-1 items-start">
-        <div class="min-w-0">
-          <label class="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
-          {description && (
-            <p class="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">{description}</p>
-          )}
+      <div class="py-3">
+        <div class="flex items-start justify-between gap-8">
+          <div class="min-w-0 max-w-sm">
+            <label class="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
+            {description && (
+              <p class="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
+                {description}
+              </p>
+            )}
+          </div>
+          <div class="flex-shrink-0">{children}</div>
         </div>
-        <div class="flex-shrink-0 pt-0.5">{children}</div>
-        {error && <p class="col-span-2 text-xs text-[var(--color-error)] mt-1">{error}</p>}
+        {error && <p class="text-xs text-[var(--color-error)] mt-1">{error}</p>}
       </div>
     );
   }
@@ -283,7 +287,9 @@ function SettingRow({ label, description, error, inline, children }: SettingRowP
         </label>
       )}
       {description && (
-        <p class="text-xs text-[var(--color-text-muted)] mb-2 leading-relaxed">{description}</p>
+        <p class="text-xs text-[var(--color-text-muted)] mb-2 leading-relaxed max-w-lg">
+          {description}
+        </p>
       )}
       {children}
       {error && <p class="text-xs text-[var(--color-error)] mt-1">{error}</p>}
@@ -426,7 +432,7 @@ function ArrayNode({
             {t("config.field.addItem")}
           </Button>
         </div>
-        <div class="space-y-2">
+        <div class="space-y-2 max-w-md">
           {items.map((item, index) => (
             <div key={index} class="flex items-center gap-2">
               <Input
