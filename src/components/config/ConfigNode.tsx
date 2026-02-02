@@ -483,6 +483,7 @@ function ArrayNode({
           type="button"
           class="flex items-center gap-2 group"
           onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
         >
           <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
             {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
@@ -626,6 +627,7 @@ function ArrayItemCard({
           type="button"
           class="flex-1 flex items-center gap-2 text-left group"
           onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
         >
           <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
             {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
@@ -785,7 +787,7 @@ function JsonEditor({ value, onChange }: { value: unknown; onChange: (value: unk
       onChange(parsed);
       setParseError(null);
     } catch {
-      setParseError("Invalid JSON");
+      setParseError(t("config.field.invalidJson"));
     }
   };
 
