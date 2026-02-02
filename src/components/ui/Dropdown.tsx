@@ -173,6 +173,7 @@ export function Dropdown({
           style={{
             position: "fixed",
             top: `${triggerRef.current.getBoundingClientRect().bottom + 4}px`,
+            minWidth: `${triggerRef.current.offsetWidth}px`,
             ...(align === "right"
               ? {
                   right: `${window.innerWidth - triggerRef.current.getBoundingClientRect().right}px`,
