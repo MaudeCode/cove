@@ -985,6 +985,29 @@ export const navigation: NavSection[] = [
 - [ ] Cron job execution history
 - [ ] Channel message volume by channel type
 
+### 3.13 Exec Approval Modal
+**Priority**: High (security feature)
+
+Interactive approval for shell commands when `exec.ask` is enabled.
+
+- [ ] Listen for `exec.approval` gateway events
+- [ ] Modal overlay with command details:
+  - Command being requested
+  - Host, agent, session, working directory
+  - Resolved path, security mode, ask mode
+  - Expiration countdown timer
+  - Queue count (if multiple pending)
+- [ ] Action buttons:
+  - **Allow once** — approve this execution
+  - **Always allow** — add to permanent allowlist
+  - **Deny** — reject the command
+- [ ] Send `exec.approve` / `exec.deny` response to gateway
+- [ ] Handle expiration (auto-dismiss expired requests)
+- [ ] Queue management (process one at a time, show pending count)
+- [ ] Error state handling
+
+**Reference**: `openclaw/ui/src/ui/views/exec-approval.ts`
+
 ---
 
 ## Phase 4: Nice to Have
