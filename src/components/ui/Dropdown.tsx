@@ -173,7 +173,6 @@ export function Dropdown({
           style={{
             position: "fixed",
             top: `${triggerRef.current.getBoundingClientRect().bottom + 4}px`,
-            width: "max-content",
             ...(align === "right"
               ? {
                   right: `${window.innerWidth - triggerRef.current.getBoundingClientRect().right}px`,
@@ -181,7 +180,7 @@ export function Dropdown({
               : { left: `${triggerRef.current.getBoundingClientRect().left}px` }),
           }}
           class={`
-            z-[100]
+            z-[100] inline-flex flex-col
             rounded-lg border border-[var(--color-border)]
             bg-[var(--color-bg-surface)] shadow-lg
             overflow-hidden
@@ -198,7 +197,7 @@ export function Dropdown({
               onClick={() => !option.disabled && selectOption(option.value)}
               onMouseEnter={() => setFocusedIndex(index)}
               class={`
-                w-full text-left whitespace-nowrap transition-colors
+                text-left whitespace-nowrap transition-colors
                 ${styles.option}
                 ${option.disabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}
                 ${option.value === value ? "text-[var(--color-accent)] font-medium" : "text-[var(--color-text-primary)]"}
