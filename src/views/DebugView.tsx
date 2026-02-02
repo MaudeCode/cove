@@ -55,6 +55,7 @@ import type { RouteProps } from "@/types/routes";
 import type { GatewayEvent } from "@/types/gateway";
 import { SnapshotsPanel } from "@/components/debug/SnapshotsPanel";
 import { ManualRpcPanel } from "@/components/debug/ManualRpcPanel";
+import { JsonBlock } from "@/components/debug/JsonBlock";
 
 // ============================================
 // Types
@@ -225,7 +226,6 @@ function EventEntry({ entry, expanded, onToggle }: EventEntryProps) {
   const hasPayload = entry.payload != null && Object.keys(entry.payload as object).length > 0;
   const payloadStr = formatJson(entry.payload);
   const itemId = `event-${entry.id}`;
-  const isCopied = copiedItem.value === itemId;
 
   return (
     <div class="border-b border-[var(--color-border)] last:border-0">
@@ -256,22 +256,7 @@ function EventEntry({ entry, expanded, onToggle }: EventEntryProps) {
 
       {expanded && hasPayload && (
         <div class="px-3 pb-3">
-          <div class="relative">
-            <pre class="text-xs font-mono bg-[var(--color-bg-tertiary)] p-3 rounded-lg overflow-x-auto max-h-48">
-              {payloadStr}
-            </pre>
-            <IconButton
-              icon={isCopied ? <Check size={14} /> : <Copy size={14} />}
-              size="sm"
-              variant="ghost"
-              label={t("actions.copy")}
-              class="absolute top-2 right-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                copyToClipboard(payloadStr, itemId);
-              }}
-            />
-          </div>
+          <JsonBlock value={payloadStr} id={itemId} />
         </div>
       )}
     </div>
