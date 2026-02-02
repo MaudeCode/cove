@@ -16,6 +16,7 @@ import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
 import { IconButton } from "@/components/ui/IconButton";
 import { Send, Play, Plus, Trash2, Code, FormInput } from "lucide-preact";
+import { JsonBlock } from "./JsonBlock";
 
 // ============================================
 // Types
@@ -272,9 +273,11 @@ export function ManualRpcPanel() {
                 {rpcResult.value.ok ? t("debug.ok") : t("debug.error")}
               </Badge>
             </div>
-            <pre class="text-xs font-mono bg-[var(--color-bg-tertiary)] p-3 rounded-lg overflow-x-auto max-h-64">
-              {formatJson(rpcResult.value.data)}
-            </pre>
+            <JsonBlock
+              value={formatJson(rpcResult.value.data)}
+              maxHeight="max-h-64"
+              id="rpc-result"
+            />
           </div>
         )}
       </div>
