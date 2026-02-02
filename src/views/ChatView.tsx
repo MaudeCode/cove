@@ -35,7 +35,6 @@ import { isSingleChatMode } from "@/signals/settings";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ConnectionBanner } from "@/components/chat/ConnectionBanner";
-import { ExecApprovalCard } from "@/components/chat/ExecApprovalCard";
 import { CompactionBanner } from "@/components/chat/CompactionBanner";
 
 interface ChatViewProps {
@@ -172,9 +171,6 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         userAvatar={userAvatar.value ?? undefined}
         queuedCount={messageQueue.value.length}
       />
-
-      {/* Exec approval card (above input) */}
-      <ExecApprovalCard />
 
       <ChatInput
         onSend={handleSend}

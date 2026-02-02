@@ -3,27 +3,91 @@
  *
  * Compact, inline tool call with expandable details.
  * Designed to feel native to chat, not like a separate UI element.
+ *
+ * For exec tools pending approval, shows inline approval buttons.
  */
 
 import type { ComponentChildren } from "preact";
-import { useState } from "preact/hooks";
+import { useState, useEffect } from "preact/hooks";
+import { Clock } from "lucide-preact";
 import type { ToolCall as ToolCallType } from "@/types/messages";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/Spinner";
+import { Button } from "@/components/ui/Button";
 import { JsonBlock } from "@/components/debug/JsonBlock";
+import { t } from "@/lib/i18n";
+import {
+  execApprovalQueue,
+  execApprovalBusy,
+  execApprovalError,
+  handleExecApprovalDecision,
+} from "@/signals/exec";
 
 interface ToolCallProps {
   toolCall: ToolCallType;
 }
 
+/**
+ * Extract approval info from tool result if present
+ */
+function getApprovalInfo(result: unknown): { approvalId: string; expiresAtMs?: number } | null {
+  if (!result || typeof result !== "object") return null;
+  const details = (result as Record<string, unknown>).details;
+  if (!details || typeof details !== "object") return null;
+  const d = details as Record<string, unknown>;
+  if (d.status !== "approval-pending") return null;
+  const approvalId = d.approvalId ?? d.approvalSlug;
+  if (typeof approvalId !== "string") return null;
+  const expiresAtMs = typeof d.expiresAtMs === "number" ? d.expiresAtMs : undefined;
+  return { approvalId, expiresAtMs };
+}
+
+/**
+ * Format remaining time until expiration
+ */
+function formatRemaining(ms: number): string {
+  const remaining = Math.max(0, ms);
+  const totalSeconds = Math.floor(remaining / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+  const minutes = Math.floor(totalSeconds / 60);
+  return `${minutes}m ${totalSeconds % 60}s`;
+}
+
 export function ToolCall({ toolCall }: ToolCallProps) {
   // Always start collapsed - user can click to expand
   const [expanded, setExpanded] = useState(false);
+  const [remainingMs, setRemainingMs] = useState(0);
 
   const duration =
     toolCall.completedAt && toolCall.startedAt ? toolCall.completedAt - toolCall.startedAt : null;
 
-  const statusConfig = getStatusConfig(toolCall.status);
+  // Check if this is an exec tool pending approval
+  const approvalInfo = getApprovalInfo(toolCall.result);
+  const pendingApproval = approvalInfo
+    ? execApprovalQueue.value.find(
+        (item) =>
+          item.request.requestId === approvalInfo.approvalId ||
+          item.request.requestId.startsWith(approvalInfo.approvalId),
+      )
+    : null;
+  const isApprovalPending = !!pendingApproval;
+  const busy = execApprovalBusy.value;
+  const error = execApprovalError.value;
+
+  // Update countdown for approval expiration
+  useEffect(() => {
+    if (!pendingApproval) return;
+
+    const update = () => {
+      setRemainingMs(pendingApproval.expiresAtMs - Date.now());
+    };
+
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [pendingApproval]);
+
+  const statusConfig = getStatusConfig(toolCall.status, isApprovalPending);
 
   return (
     <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden">
@@ -47,10 +111,18 @@ export function ToolCall({ toolCall }: ToolCallProps) {
           {getToolSummary(toolCall)}
         </span>
 
-        {/* Duration badge */}
-        {duration !== null && (
+        {/* Duration badge (only when not pending approval) */}
+        {duration !== null && !isApprovalPending && (
           <span class="text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)] px-1.5 py-0.5 rounded flex-shrink-0">
             {formatDuration(duration)}
+          </span>
+        )}
+
+        {/* Approval timer (when pending) */}
+        {isApprovalPending && (
+          <span class="flex items-center gap-1 text-[10px] text-[var(--color-warning)] flex-shrink-0">
+            <Clock class="w-3 h-3" />
+            {remainingMs <= 0 ? t("exec.expired") : formatRemaining(remainingMs)}
           </span>
         )}
 
@@ -60,6 +132,38 @@ export function ToolCall({ toolCall }: ToolCallProps) {
           open={expanded}
         />
       </button>
+
+      {/* Approval action buttons (when pending) */}
+      {isApprovalPending && (
+        <div class="flex items-center justify-end gap-2 px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-warning)]/5">
+          {error && <span class="text-xs text-[var(--color-error)] mr-auto">{error}</span>}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => handleExecApprovalDecision("deny")}
+            disabled={busy || remainingMs <= 0}
+          >
+            {t("exec.deny")}
+          </Button>
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => handleExecApprovalDecision("allow-always")}
+            disabled={busy || remainingMs <= 0}
+          >
+            {t("exec.allowAlways")}
+          </Button>
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => handleExecApprovalDecision("allow-once")}
+            disabled={busy || remainingMs <= 0}
+            loading={busy}
+          >
+            {t("exec.allowOnce")}
+          </Button>
+        </div>
+      )}
 
       {/* Expanded details */}
       {expanded && (
@@ -72,7 +176,7 @@ export function ToolCall({ toolCall }: ToolCallProps) {
           )}
 
           {/* Result */}
-          {toolCall.result !== undefined && (
+          {toolCall.result !== undefined && !isApprovalPending && (
             <ToolSection label="Output">
               <CodeBlock
                 content={toolCall.result}
@@ -166,7 +270,12 @@ interface StatusConfig {
   color: string;
 }
 
-function getStatusConfig(status: string): StatusConfig {
+function getStatusConfig(status: string, isApprovalPending = false): StatusConfig {
+  // Approval pending takes precedence
+  if (isApprovalPending) {
+    return { icon: "⏳", color: "text-[var(--color-warning)]" };
+  }
+
   switch (status) {
     case "pending":
       return { icon: "○", color: "text-[var(--color-text-muted)]" };
