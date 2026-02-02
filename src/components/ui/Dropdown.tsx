@@ -214,7 +214,7 @@ export function Dropdown({
           class={`
             z-[100] inline-flex flex-col
             rounded-lg border border-[var(--color-border)]
-            bg-[var(--color-bg-surface)] shadow-lg
+            bg-[var(--color-bg-primary)] shadow-lg
             overflow-hidden
             ${styles.menu}
           `}
