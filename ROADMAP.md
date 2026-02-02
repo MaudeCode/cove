@@ -918,16 +918,14 @@ export const navigation: NavSection[] = [
 - [x] **ClawHub integration** — Browse, search, and install skills from clawhub.ai
 - [ ] View SKILL.md contents (deferred - needs gateway API)
 
-### 3.7 Nodes Management ✅
-- [x] List paired nodes (mobile devices)
-- [x] Node status (online/offline, last seen)
-- [x] Send notification
-- [x] Trigger camera snap (front/back)
-- [x] Request location
-- [x] Screen recording button (UI only, needs testing)
-- [x] Approve/reject pending pairing requests
-- [x] Search/filter nodes
-- [x] Stat cards (total, connected, offline, pending)
+### 3.7 Devices Management ✅
+- [x] List all paired devices (operators + nodes)
+- [x] Pending pairing requests with approve/reject
+- [x] Role filtering (All/Operators/Nodes)
+- [x] Token management (rotate/revoke)
+- [x] Search by name, ID, IP, platform
+- [x] Stat cards with quick filters
+- [x] Expandable device details (ID, scopes, tokens)
 
 ### 3.8 Configuration Editor
 - [ ] View current config (formatted JSON)
