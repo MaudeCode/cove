@@ -518,6 +518,7 @@
       "enabled": "Enabled",
       "schedule": "Schedule",
       "timezonePlaceholder": "Timezone (e.g., America/New_York)",
+      "cronPlaceholder": "*/5 * * * *",
       "intervalPlaceholder": "Interval in milliseconds",
       "timestampPlaceholder": "Unix timestamp in milliseconds",
       "sessionTarget": "Session Target",
@@ -603,6 +604,15 @@
     "jsonMode": "JSON",
     "call": "Call",
     "result": "Result"
+  },
+
+  "overview": {
+    "serverInfo": "Server Information",
+    "version": "Version",
+    "commit": "Commit",
+    "host": "Host",
+    "capabilities": "Capabilities",
+    "capabilitiesCount": "{count} methods"
   },
 
   "logs": {
