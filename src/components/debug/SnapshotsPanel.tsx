@@ -132,7 +132,7 @@ async function fetchSnapshots() {
 
 function StatItem({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div class="text-center">
+    <div class="text-center" role="group" aria-label={label}>
       <div class="text-lg font-semibold text-[var(--color-text-primary)]">{value}</div>
       <div class="text-xs text-[var(--color-text-muted)]">{label}</div>
       {sub && <div class="text-xs text-[var(--color-text-muted)] opacity-70">{sub}</div>}
@@ -150,7 +150,11 @@ function ChannelStatus({
   data: ChannelHealth;
 }) {
   const status = data.linked ? "success" : data.configured ? "warning" : "default";
-  const statusLabel = data.linked ? "Linked" : data.configured ? "Configured" : "Off";
+  const statusLabel = data.linked
+    ? t("debug.linked")
+    : data.configured
+      ? t("debug.configured")
+      : t("debug.off");
 
   return (
     <div class="flex items-center justify-between py-1.5">
@@ -215,11 +219,20 @@ export function SnapshotsPanel() {
                 )}
               </div>
               <div class="grid grid-cols-4 gap-2 p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
-                <StatItem label="Input" value={formatTokens(recentSession.inputTokens)} />
-                <StatItem label="Output" value={formatTokens(recentSession.outputTokens)} />
-                <StatItem label="Total" value={formatTokens(recentSession.totalTokens)} />
                 <StatItem
-                  label="Used"
+                  label={t("debug.input")}
+                  value={formatTokens(recentSession.inputTokens)}
+                />
+                <StatItem
+                  label={t("debug.output")}
+                  value={formatTokens(recentSession.outputTokens)}
+                />
+                <StatItem
+                  label={t("debug.total")}
+                  value={formatTokens(recentSession.totalTokens)}
+                />
+                <StatItem
+                  label={t("debug.used")}
                   value={formatPercent(recentSession.percentUsed)}
                   sub={`of ${formatTokens(recentSession.contextTokens)}`}
                 />
@@ -234,7 +247,7 @@ export function SnapshotsPanel() {
                 <Heart size={14} class="text-[var(--color-text-muted)]" />
                 <span class="text-sm font-medium">{t("debug.health")}</span>
                 <Badge variant={health.ok ? "success" : "error"} size="sm">
-                  {health.ok ? "Healthy" : "Unhealthy"}
+                  {health.ok ? t("debug.healthy") : t("debug.unhealthy")}
                 </Badge>
                 {health.durationMs != null && (
                   <span class="text-xs text-[var(--color-text-muted)]">
@@ -277,7 +290,7 @@ export function SnapshotsPanel() {
                         <span class="text-xs text-[var(--color-text-muted)]">{agent.every}</span>
                       )}
                       <Badge variant={agent.enabled ? "success" : "default"} size="sm">
-                        {agent.enabled ? "On" : "Off"}
+                        {agent.enabled ? t("debug.on") : t("debug.off")}
                       </Badge>
                     </div>
                   </div>
@@ -292,6 +305,7 @@ export function SnapshotsPanel() {
             onClick={() => {
               showRawJson.value = !showRawJson.value;
             }}
+            aria-expanded={showRawJson.value}
             class="flex items-center gap-1 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
           >
             {showRawJson.value ? <ChevronDown size={12} /> : <ChevronRight size={12} />}

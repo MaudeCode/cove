@@ -206,7 +206,7 @@ function InfoRow({ icon: Icon, label, value, copyable, mono }: InfoRowProps) {
         <span class={mono ? "font-mono text-sm" : ""}>{displayValue}</span>
         {copyable && value && (
           <IconButton
-            icon={isCopied ? Check : Copy}
+            icon={isCopied ? <Check size={14} /> : <Copy size={14} />}
             size="sm"
             variant="ghost"
             label={t("actions.copy")}
@@ -242,7 +242,7 @@ function EventEntry({ entry, expanded, onToggle }: EventEntryProps) {
         onClick={onToggle}
         disabled={!hasPayload}
         aria-expanded={expanded}
-        aria-label={`${entry.event} event, ${hasPayload ? "click to expand" : "no payload"}`}
+        aria-label={`${entry.event} event, ${hasPayload ? t("debug.clickToExpand") : t("debug.noPayload")}`}
       >
         {hasPayload ? (
           expanded ? (
@@ -268,7 +268,7 @@ function EventEntry({ entry, expanded, onToggle }: EventEntryProps) {
               {payloadStr}
             </pre>
             <IconButton
-              icon={isCopied ? Check : Copy}
+              icon={isCopied ? <Check size={14} /> : <Copy size={14} />}
               size="sm"
               variant="ghost"
               label={t("actions.copy")}
