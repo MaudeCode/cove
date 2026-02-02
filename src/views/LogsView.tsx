@@ -414,13 +414,25 @@ function LogLine({
       </button>
 
       {expanded && hasFields && (
-        <div class="pb-3 px-3 ml-7 space-y-1">
-          {Object.entries(fields!).map(([key, value]) => (
-            <div key={key} class="flex gap-2 text-xs font-mono">
-              <span class="text-[var(--color-accent)] flex-shrink-0">{key}</span>
-              <span class="text-[var(--color-text-secondary)] break-all">{value}</span>
+        <div class="pb-3 px-3 ml-7 space-y-2">
+          {/* Full message */}
+          {mainMessage && (
+            <div class="text-xs font-mono">
+              <span class="text-[var(--color-accent)]">message</span>
+              <div class="text-[var(--color-text-primary)] mt-1 whitespace-pre-wrap break-all">
+                {mainMessage}
+              </div>
             </div>
-          ))}
+          )}
+          {/* Fields */}
+          <div class="space-y-1 pt-1 border-t border-[var(--color-border)]/30">
+            {Object.entries(fields!).map(([key, value]) => (
+              <div key={key} class="flex gap-2 text-xs font-mono">
+                <span class="text-[var(--color-accent)] flex-shrink-0">{key}</span>
+                <span class="text-[var(--color-text-secondary)] break-all">{value}</span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
     </div>
