@@ -23,10 +23,10 @@ import {
   error,
   isSaving,
   schema,
-  sections,
+  uiHints,
+  draftConfig,
   searchQuery,
   showAdvanced,
-  expandedSections,
   isDirty,
   canSave,
   schemaVersion,
@@ -34,9 +34,8 @@ import {
   loadConfig,
   resetDraft,
   saveConfig,
-  toggleSection,
 } from "@/signals/config";
-import { ConfigSection } from "@/components/config/ConfigSection";
+import { ConfigNode } from "@/components/config/ConfigNode";
 
 // ============================================
 // Main View
@@ -64,11 +63,47 @@ export function ConfigView(_props: RouteProps) {
     toast.success(t("config.reset"));
   };
 
-  const sectionList = sections.value;
+  const schemaValue = schema.value;
+  const hintsValue = uiHints.value;
+  const configValue = draftConfig.value;
+
+  // Get top-level properties to render
+  const topLevelKeys = schemaValue?.properties ? Object.keys(schemaValue.properties) : [];
+
+  // Filter by search if needed
+  const query = searchQuery.value.toLowerCase().trim();
+  const filteredKeys = query
+    ? topLevelKeys.filter((key) => {
+        const prop = schemaValue?.properties?.[key];
+        const hint = hintsValue[key];
+        const label = hint?.label ?? prop?.title ?? key;
+        const help = hint?.help ?? prop?.description ?? "";
+        return (
+          key.toLowerCase().includes(query) ||
+          label.toLowerCase().includes(query) ||
+          help.toLowerCase().includes(query)
+        );
+      })
+    : topLevelKeys;
+
+  // Filter advanced if needed
+  const displayKeys = showAdvanced.value
+    ? filteredKeys
+    : filteredKeys.filter((key) => {
+        const hint = hintsValue[key];
+        return !hint?.advanced;
+      });
+
+  // Sort by order hint
+  displayKeys.sort((a, b) => {
+    const orderA = hintsValue[a]?.order ?? 100;
+    const orderB = hintsValue[b]?.order ?? 100;
+    return orderA - orderB;
+  });
 
   return (
     <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-5xl mx-auto space-y-6">
+      <div class="max-w-4xl mx-auto space-y-6">
         {/* Header */}
         <div class="flex items-center justify-between gap-4">
           <div>
@@ -96,14 +131,14 @@ export function ConfigView(_props: RouteProps) {
         {error.value && <HintBox variant="error">{error.value}</HintBox>}
 
         {/* Loading */}
-        {isLoading.value && !schema.value && (
+        {isLoading.value && !schemaValue && (
           <div class="flex items-center justify-center py-12">
             <Spinner size="lg" />
           </div>
         )}
 
         {/* Content */}
-        {!isLoading.value && schema.value && (
+        {!isLoading.value && schemaValue && (
           <>
             {/* Toolbar */}
             <Card>
@@ -161,24 +196,31 @@ export function ConfigView(_props: RouteProps) {
               )}
             </Card>
 
-            {/* Sections */}
-            {sectionList.length === 0 ? (
+            {/* Config Sections */}
+            {displayKeys.length === 0 ? (
               <Card>
                 <div class="text-center py-8 text-[var(--color-text-muted)]">
                   <Settings2 class="w-12 h-12 mx-auto mb-4 opacity-50" />
-                  <p>{searchQuery.value ? t("config.noResults") : t("config.noFields")}</p>
+                  <p>{query ? t("config.noResults") : t("config.noFields")}</p>
                 </div>
               </Card>
             ) : (
               <div class="space-y-4">
-                {sectionList.map((section) => (
-                  <ConfigSection
-                    key={section.id}
-                    section={section}
-                    isExpanded={expandedSections.value.has(section.id)}
-                    onToggle={() => toggleSection(section.id)}
-                  />
-                ))}
+                {displayKeys.map((key) => {
+                  const propSchema = schemaValue.properties?.[key];
+                  if (!propSchema) return null;
+
+                  return (
+                    <ConfigNode
+                      key={key}
+                      schema={propSchema}
+                      value={configValue[key]}
+                      path={[key]}
+                      hints={hintsValue}
+                      level={0}
+                    />
+                  );
+                })}
               </div>
             )}
 
