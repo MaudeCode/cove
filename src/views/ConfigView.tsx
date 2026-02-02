@@ -228,16 +228,21 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
     expandedNav.value = next;
   };
 
+  // Exact match for selection (not just prefix)
+  const isExactSelected = selectedPath.value.join(".") === pathKey;
+
   return (
     <div>
       <button
         type="button"
         class={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-left transition-colors ${
-          isSelected
+          isExactSelected
             ? "bg-[var(--color-accent)] text-white"
-            : "hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)]"
-        }`}
-        style={{ paddingLeft: `${depth * 12 + 8}px` }}
+            : isSelected
+              ? "text-[var(--color-accent)]"
+              : "hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-primary)]"
+        } ${depth > 0 ? "text-[var(--color-text-secondary)]" : "font-medium"}`}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={handleClick}
       >
         {/* Expand/collapse toggle */}
@@ -248,14 +253,18 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
             onClick={handleToggle}
             aria-label={isExpanded ? "Collapse" : "Expand"}
           >
-            {isExpanded ? <ChevronDown class="w-3 h-3" /> : <ChevronRight class="w-3 h-3" />}
+            {isExpanded ? (
+              <ChevronDown class="w-3.5 h-3.5" />
+            ) : (
+              <ChevronRight class="w-3.5 h-3.5" />
+            )}
           </button>
         ) : (
           <span class="w-4" />
         )}
 
         {/* Icon for top-level items */}
-        {Icon && <Icon class="w-4 h-4 flex-shrink-0" />}
+        {Icon && <Icon class="w-4 h-4 flex-shrink-0 opacity-70" />}
 
         {/* Label */}
         <span class="truncate">{item.label}</span>
@@ -263,7 +272,11 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
 
       {/* Children */}
       {hasChildren && isExpanded && (
-        <div>
+        <div class="relative">
+          <div
+            class="absolute left-0 top-0 bottom-0 w-px bg-[var(--color-border)]"
+            style={{ marginLeft: `${depth * 16 + 18}px` }}
+          />
           {item.children!.map((child) => (
             <NavTreeItem key={child.key} item={child} depth={depth + 1} />
           ))}
@@ -339,30 +352,32 @@ function DetailPanel() {
   const SectionIcon = SECTION_ICONS[topLevelKey];
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
+    <div class="flex-1 overflow-y-auto">
       {/* Header */}
-      <div class="mb-6">
+      <div class="px-8 pt-6 pb-4 border-b border-[var(--color-border)] bg-[var(--color-bg-primary)]">
         {/* Parent breadcrumb (if nested) */}
         {parentPath.length > 0 && (
-          <div class="text-xs text-[var(--color-text-muted)] mb-1">{parentPath.join(" › ")}</div>
+          <div class="text-xs text-[var(--color-text-muted)] mb-1.5">{parentPath.join(" › ")}</div>
         )}
 
         {/* Section title */}
         <div class="flex items-center gap-3">
           {SectionIcon && path.length === 1 && (
-            <SectionIcon class="w-6 h-6 text-[var(--color-text-muted)]" />
+            <SectionIcon class="w-6 h-6 text-[var(--color-accent)] opacity-80" />
           )}
           <h2 class="text-xl font-semibold text-[var(--color-text-primary)]">{sectionTitle}</h2>
         </div>
 
         {/* Section description */}
         {sectionHelp && (
-          <p class="text-sm text-[var(--color-text-muted)] mt-2 max-w-xl">{sectionHelp}</p>
+          <p class="text-sm text-[var(--color-text-muted)] mt-2 max-w-2xl leading-relaxed">
+            {sectionHelp}
+          </p>
         )}
       </div>
 
       {/* Content */}
-      <div class="max-w-2xl">
+      <div class="px-8 py-6 max-w-3xl">
         <ConfigNode
           schema={currentSchema}
           value={currentValue}
