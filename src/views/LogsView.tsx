@@ -70,36 +70,81 @@ let lineIdCounter = 0;
 function parseLogLine(raw: string): ParsedLogLine {
   const id = ++lineIdCounter;
 
-  // Try to parse structured log: [TIMESTAMP] LEVEL: message
-  // or JSON logs: {"level":"info","time":"...","msg":"..."}
   let timestamp: string | undefined;
   let level: ParsedLogLine["level"];
   let message = raw;
 
-  // Try JSON format first
+  // Try JSON format first: {"level":"info","time":"...","msg":"..."}
   if (raw.startsWith("{")) {
     try {
       const parsed = JSON.parse(raw);
       timestamp = parsed.time || parsed.timestamp || parsed.ts;
-      level = parsed.level?.toLowerCase() as ParsedLogLine["level"];
-      message = parsed.msg || parsed.message || raw;
+      const jsonLevel = (parsed.level || parsed.lvl || "")?.toLowerCase();
+      if (["debug", "info", "warn", "warning", "error", "err"].includes(jsonLevel)) {
+        level =
+          jsonLevel === "warning"
+            ? "warn"
+            : jsonLevel === "err"
+              ? "error"
+              : (jsonLevel as ParsedLogLine["level"]);
+      }
+      message = parsed.msg || parsed.message || parsed.error || raw;
     } catch {
       // Not valid JSON, continue with text parsing
     }
   }
 
-  // Try text format: [2024-01-01T12:00:00.000Z] INFO: message
-  if (!level) {
-    const textMatch = raw.match(/^\[([^\]]+)\]\s*(DEBUG|INFO|WARN|ERROR):?\s*(.*)$/i);
-    if (textMatch) {
-      timestamp = textMatch[1];
-      level = textMatch[2].toLowerCase() as ParsedLogLine["level"];
-      message = textMatch[3];
+  // Try OpenClaw text format: 2024-01-01T12:00:00.000Z [category] message
+  if (!timestamp) {
+    const openclawMatch = raw.match(/^(\d{4}-\d{2}-\d{2}T[\d:.]+Z)\s+\[([^\]]+)\]\s*(.*)$/);
+    if (openclawMatch) {
+      timestamp = openclawMatch[1];
+      message = `[${openclawMatch[2]}] ${openclawMatch[3]}`;
+
+      // Infer level from message content or category
+      const fullText = raw.toLowerCase();
+      if (fullText.includes("error") || fullText.includes("err ") || fullText.includes("✗")) {
+        level = "error";
+      } else if (fullText.includes("warn") || fullText.includes("warning")) {
+        level = "warn";
+      } else if (fullText.includes("debug")) {
+        level = "debug";
+      } else {
+        level = "info";
+      }
     }
   }
 
-  // Try simpler format: INFO message or INFO: message
-  if (!level) {
+  // Try bracketed format: [2024-01-01T12:00:00.000Z] INFO: message
+  if (!timestamp) {
+    const bracketMatch = raw.match(/^\[([^\]]+)\]\s*(DEBUG|INFO|WARN|ERROR):?\s*(.*)$/i);
+    if (bracketMatch) {
+      timestamp = bracketMatch[1];
+      level = bracketMatch[2].toLowerCase() as ParsedLogLine["level"];
+      message = bracketMatch[3];
+    }
+  }
+
+  // Try cloudflared format: 2024-01-01T12:00:00Z ERR message
+  if (!timestamp) {
+    const cfMatch = raw.match(/^(\d{4}-\d{2}-\d{2}T[\d:]+Z)\s+(ERR|INF|WRN|DBG)\s+(.*)$/);
+    if (cfMatch) {
+      timestamp = cfMatch[1];
+      const cfLevel = cfMatch[2];
+      level =
+        cfLevel === "ERR"
+          ? "error"
+          : cfLevel === "WRN"
+            ? "warn"
+            : cfLevel === "DBG"
+              ? "debug"
+              : "info";
+      message = cfMatch[3];
+    }
+  }
+
+  // Try simple format: INFO message or INFO: message
+  if (!level && !timestamp) {
     const simpleMatch = raw.match(/^(DEBUG|INFO|WARN|ERROR):?\s+(.*)$/i);
     if (simpleMatch) {
       level = simpleMatch[1].toLowerCase() as ParsedLogLine["level"];
