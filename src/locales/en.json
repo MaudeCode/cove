@@ -161,6 +161,7 @@
     "askMode": "Ask Mode",
     "expiresIn": "Expires in {time}",
     "expired": "Expired",
+    "approved": "Approved",
     "pendingCount": "{count} pending",
     "allowOnce": "Allow Once",
     "allowAlways": "Always Allow",

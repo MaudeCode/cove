@@ -17,9 +17,6 @@ import type { ExecApprovalItem, ExecApprovalRequest, ExecApprovalDecision } from
 /** Queue of pending exec approval requests */
 export const execApprovalQueue = signal<ExecApprovalItem[]>([]);
 
-/** Currently active (first in queue) approval request */
-export const activeApproval = computed(() => execApprovalQueue.value[0] ?? null);
-
 /** Number of pending approvals */
 export const pendingCount = computed(() => execApprovalQueue.value.length);
 
@@ -74,32 +71,31 @@ function pruneExpired(): void {
 // ============================================
 
 /**
- * Handle user's decision on an exec approval request
+ * Handle user's decision on an exec approval request (direct ID)
+ * Used when approval info comes from tool result rather than queue
  */
-export async function handleExecApprovalDecision(decision: ExecApprovalDecision): Promise<void> {
-  const active = activeApproval.value;
-  if (!active) {
-    log.exec.warn("No active approval to decide on");
-    return;
-  }
-
+export async function handleExecApprovalDecisionDirect(
+  approvalId: string,
+  decision: ExecApprovalDecision,
+): Promise<void> {
   execApprovalBusy.value = true;
   execApprovalError.value = null;
 
   try {
     // Gateway method is exec.approval.resolve with { id, decision }
     await send("exec.approval.resolve", {
-      id: active.request.requestId,
+      id: approvalId,
       decision,
     });
 
-    // Remove from queue on success
-    dequeueApproval(active.request.requestId);
-    log.exec.info(`Exec ${decision}: ${active.request.command}`);
+    // Also remove from queue if it's there
+    dequeueApproval(approvalId);
+    log.exec.info(`Exec ${decision} (direct): id=${approvalId}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to send decision";
     execApprovalError.value = message;
     log.exec.error(`Exec approval error: ${message}`);
+    throw err;
   } finally {
     execApprovalBusy.value = false;
   }
