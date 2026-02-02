@@ -878,5 +878,59 @@
     "closeDialog": "Close dialog",
     "expandSection": "Expand section",
     "collapseSection": "Collapse section"
+  },
+
+  "config": {
+    "title": "Configuration",
+    "description": "Manage OpenClaw settings",
+    "searchPlaceholder": "Search settings...",
+    "save": "Save Changes",
+    "saving": "Saving...",
+    "reset": "Reset",
+    "unsavedChanges": "You have unsaved changes",
+    "discardChanges": "Discard changes?",
+    "saveSuccess": "Configuration saved. Gateway will restart.",
+    "saveError": "Failed to save configuration",
+    "hashMismatch": "Configuration was modified externally. Reload and try again.",
+    "reload": "Reload",
+    "showAdvanced": "Show advanced settings",
+    "hideAdvanced": "Hide advanced settings",
+    "restartRequired": "Gateway will restart to apply changes",
+    "noFields": "No settings found",
+    "noResults": "No matching settings",
+    "emptyConfig": "Configuration is empty",
+    "loadError": "Failed to load configuration",
+    "version": "OpenClaw {version}",
+    "configPath": "Config: {path}",
+    "expandAll": "Expand all",
+    "collapseAll": "Collapse all",
+    "sections": {
+      "gateway": "Gateway",
+      "agents": "Agents",
+      "channels": "Channels",
+      "tools": "Tools",
+      "models": "Models",
+      "auth": "Authentication",
+      "commands": "Commands",
+      "session": "Session",
+      "cron": "Cron",
+      "skills": "Skills",
+      "plugins": "Plugins",
+      "other": "Other"
+    },
+    "validation": {
+      "required": "This field is required",
+      "invalidUrl": "Invalid URL format",
+      "invalidNumber": "Must be a number",
+      "invalidFormat": "Invalid format"
+    },
+    "field": {
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "addItem": "Add item",
+      "removeItem": "Remove item",
+      "noItems": "No items",
+      "editJson": "Edit as JSON"
+    }
   }
 }
