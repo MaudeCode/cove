@@ -60,19 +60,20 @@ interface StatusData {
   queuedSystemEvents?: number;
 }
 
+interface ChannelHealth {
+  configured?: boolean;
+  linked?: boolean;
+  accountId?: string;
+  accounts?: Record<string, { configured?: boolean; linked?: boolean }>;
+}
+
 interface HealthData {
   ok?: boolean;
   ts?: number;
   durationMs?: number;
-  channels?: Record<
-    string,
-    {
-      configured?: boolean;
-      running?: boolean;
-      lastError?: string | null;
-      accounts?: Record<string, { configured?: boolean; running?: boolean }>;
-    }
-  >;
+  channels?: Record<string, ChannelHealth>;
+  channelOrder?: string[];
+  channelLabels?: Record<string, string>;
 }
 
 // ============================================
@@ -113,7 +114,7 @@ async function fetchSnapshots() {
   try {
     const [status, health] = await Promise.all([
       send<StatusData>("status").catch(() => null),
-      send<HealthData>("health.check").catch(() => null),
+      send<HealthData>("health").catch(() => null),
     ]);
     statusData.value = status;
     healthData.value = health;
@@ -140,19 +141,21 @@ function StatItem({ label, value, sub }: { label: string; value: string; sub?: s
 
 function ChannelStatus({
   name,
+  label,
   data,
 }: {
   name: string;
-  data: { configured?: boolean; running?: boolean; lastError?: string | null };
+  label?: string;
+  data: ChannelHealth;
 }) {
-  const status = data.running ? "success" : data.configured ? "warning" : "default";
-  const label = data.running ? "Running" : data.configured ? "Configured" : "Off";
+  const status = data.linked ? "success" : data.configured ? "warning" : "default";
+  const statusLabel = data.linked ? "Linked" : data.configured ? "Configured" : "Off";
 
   return (
     <div class="flex items-center justify-between py-1.5">
-      <span class="text-sm capitalize">{name}</span>
+      <span class="text-sm">{label || name}</span>
       <Badge variant={status} size="sm">
-        {label}
+        {statusLabel}
       </Badge>
     </div>
   );
@@ -233,9 +236,18 @@ export function SnapshotsPanel() {
               </div>
               {health.channels && Object.keys(health.channels).length > 0 && (
                 <div class="p-3 bg-[var(--color-bg-tertiary)] rounded-lg divide-y divide-[var(--color-border)]">
-                  {Object.entries(health.channels).map(([name, data]) => (
-                    <ChannelStatus key={name} name={name} data={data} />
-                  ))}
+                  {(health.channelOrder ?? Object.keys(health.channels)).map((name) => {
+                    const data = health.channels?.[name];
+                    if (!data) return null;
+                    return (
+                      <ChannelStatus
+                        key={name}
+                        name={name}
+                        label={health.channelLabels?.[name]}
+                        data={data}
+                      />
+                    );
+                  })}
                 </div>
               )}
             </div>
