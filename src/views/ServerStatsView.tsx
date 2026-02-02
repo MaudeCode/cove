@@ -349,8 +349,6 @@ export function ServerStatsView(_props: RouteProps) {
         <PageHeader
           title={t("stats.title")}
           subtitle={t("stats.description")}
-          border={false}
-          padded={false}
           actions={
             <IconButton
               icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}

@@ -544,8 +544,6 @@ export function DevicesView(_props: RouteProps) {
         <PageHeader
           title={t("devices.title")}
           subtitle={t("devices.description")}
-          border={false}
-          padded={false}
           actions={
             <IconButton
               icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}

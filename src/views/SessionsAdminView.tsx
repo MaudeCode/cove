@@ -621,8 +621,6 @@ export function SessionsAdminView(_props: RouteProps) {
         <PageHeader
           title={t("sessions.admin.title")}
           subtitle={t("sessions.admin.description")}
-          border={false}
-          padded={false}
           actions={
             <>
               {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (

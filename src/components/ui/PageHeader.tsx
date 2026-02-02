@@ -13,9 +13,7 @@ interface PageHeaderProps {
   subtitle?: ComponentChildren;
   /** Optional actions (buttons, badges, etc.) rendered on the right */
   actions?: ComponentChildren;
-  /** Show bottom border (default: true for sticky, false for inline) */
-  border?: boolean;
-  /** Include padding (default: true for sticky headers, false for inline) */
+  /** Include padding (default: false) */
   padded?: boolean;
   /** Additional CSS classes */
   class?: string;
@@ -25,8 +23,7 @@ export function PageHeader({
   title,
   subtitle,
   actions,
-  border = true,
-  padded = true,
+  padded = false,
   class: className,
 }: PageHeaderProps) {
   // Wrap string subtitles in standard styling, pass through custom content as-is
@@ -38,9 +35,7 @@ export function PageHeader({
     );
 
   return (
-    <div
-      class={`flex items-start justify-between gap-4 ${padded ? "p-6" : ""} ${border ? "border-b border-[var(--color-border)]" : ""} ${className ?? ""}`}
-    >
+    <div class={`flex items-start justify-between gap-4 ${padded ? "p-6" : ""} ${className ?? ""}`}>
       <div class="flex-1 min-w-0">
         <h1 class="text-xl font-semibold text-[var(--color-text-primary)]">{title}</h1>
         {subtitleContent}
