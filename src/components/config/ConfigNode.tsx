@@ -135,7 +135,7 @@ export function ConfigNode({
             }}
             min={schema.minimum}
             max={schema.maximum}
-            class="w-48"
+            class="w-28"
           />
         </SettingRow>
       );
@@ -164,7 +164,7 @@ export function ConfigNode({
         );
       }
 
-      // Sensitive field
+      // Sensitive field (tokens, passwords, secrets)
       if (hint.sensitive) {
         return (
           <SettingRow
@@ -180,6 +180,7 @@ export function ConfigNode({
                 updateField(path, v);
                 setValidationError(key, validateValue(v, schema));
               }}
+              wide
             />
           </SettingRow>
         );
@@ -204,6 +205,14 @@ export function ConfigNode({
         );
       }
 
+      // Determine input width based on format/content type
+      const isUrl = schema.format === "uri" || schema.format === "url";
+      const isPath =
+        key.toLowerCase().includes("path") ||
+        key.toLowerCase().includes("dir") ||
+        key.toLowerCase().includes("file");
+      const inputWidth = isUrl || isPath ? "w-72" : "w-48";
+
       // Regular string
       return (
         <SettingRow
@@ -213,7 +222,7 @@ export function ConfigNode({
           inline
         >
           <Input
-            type={schema.format === "uri" ? "url" : "text"}
+            type={isUrl ? "url" : "text"}
             value={String(value ?? "")}
             placeholder={hint.placeholder}
             onInput={(e) => {
@@ -221,7 +230,7 @@ export function ConfigNode({
               updateField(path, v);
               setValidationError(key, validateValue(v, schema));
             }}
-            class="w-64"
+            class={inputWidth}
           />
         </SettingRow>
       );
@@ -337,24 +346,24 @@ function ObjectNode({
 
   // Nested object: collapsible section with subtle styling
   return (
-    <div class="py-2">
+    <div class="pt-4 first:pt-2">
       <button
         type="button"
-        class="w-full flex items-center gap-2 py-2 text-left group"
+        class="w-full flex items-center gap-2 py-2 text-left group border-t border-[var(--color-border)] -mx-0"
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
       >
         <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
           {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
         </span>
-        <span class="text-sm font-medium text-[var(--color-text-primary)]">{label}</span>
+        <span class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</span>
         <Badge variant="default" class="ml-1">
           {propertyKeys.length}
         </Badge>
       </button>
 
       {isExpanded && (
-        <div class="ml-6 pl-4 border-l border-[var(--color-border)] space-y-1">
+        <div class="ml-6 pl-4 border-l-2 border-[var(--color-border)] space-y-1 pb-2">
           {help && <p class="text-xs text-[var(--color-text-muted)] py-1">{help}</p>}
           {propertyKeys.map((key) => (
             <ConfigNode
@@ -650,10 +659,12 @@ function PasswordInput({
   value,
   placeholder,
   onChange,
+  wide,
 }: {
   value: string;
   placeholder?: string;
   onChange: (value: string) => void;
+  wide?: boolean;
 }) {
   const [show, setShow] = useState(false);
 
@@ -664,7 +675,7 @@ function PasswordInput({
         value={value}
         placeholder={placeholder}
         onInput={(e) => onChange((e.target as HTMLInputElement).value)}
-        class="pr-10 w-64"
+        class={`pr-10 ${wide ? "w-72" : "w-48"}`}
       />
       <button
         type="button"
