@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { HintBox } from "@/components/ui/HintBox";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   RefreshCw,
   Search,
@@ -540,19 +541,20 @@ export function DevicesView(_props: RouteProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold">{t("devices.title")}</h1>
-            <p class="text-[var(--color-text-muted)]">{t("devices.description")}</p>
-          </div>
-          <IconButton
-            icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-            onClick={loadDevices}
-            disabled={isLoading.value}
-            label={t("actions.refresh")}
-          />
-        </div>
+        <PageHeader
+          title={t("devices.title")}
+          subtitle={t("devices.description")}
+          border={false}
+          padded={false}
+          actions={
+            <IconButton
+              icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+              onClick={loadDevices}
+              disabled={isLoading.value}
+              label={t("actions.refresh")}
+            />
+          }
+        />
 
         {/* Error */}
         {error.value && <HintBox variant="error">{error.value}</HintBox>}

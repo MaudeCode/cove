@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Toggle } from "@/components/ui/Toggle";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { ThemeSettings } from "@/components/settings/ThemeSettings";
 import { gatewayVersion, gatewayUrl, isConnected } from "@/lib/gateway";
 import { formatVersion } from "@/lib/session-utils";
@@ -104,11 +105,12 @@ export function SettingsView(_props: SettingsViewProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div>
-          <h1 class="text-2xl font-bold text-[var(--color-text-primary)]">{t("nav.settings")}</h1>
-          <p class="text-[var(--color-text-muted)] mt-1">{t("settings.description")}</p>
-        </div>
+        <PageHeader
+          title={t("nav.settings")}
+          subtitle={t("settings.description")}
+          border={false}
+          padded={false}
+        />
 
         {/* Appearance Section */}
         <SettingsSection titleKey="settings.appearance.title">

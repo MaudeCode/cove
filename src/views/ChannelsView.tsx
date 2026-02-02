@@ -19,6 +19,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
 import { Modal } from "@/components/ui/Modal";
 import { ChannelIcon } from "@/components/ui/ChannelIcon";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   RefreshCw,
   MessageSquare,
@@ -304,31 +305,32 @@ export function ChannelsView(_props: RouteProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex-1">
-            <h1 class="text-2xl font-bold">{t("channels.title")}</h1>
-            <p class="text-[var(--color-text-muted)] mt-1">{t("channels.description")}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => loadChannels(true)}
-              disabled={isProbing.value || isLoading.value || !isConnected.value}
-              icon={<Activity class={`w-4 h-4 ${isProbing.value ? "animate-pulse" : ""}`} />}
-            >
-              {isProbing.value ? t("channels.probing") : t("channels.probe")}
-            </Button>
-            <IconButton
-              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-              label={t("actions.refresh")}
-              onClick={() => loadChannels()}
-              disabled={isLoading.value || !isConnected.value}
-              variant="ghost"
-            />
-          </div>
-        </div>
+        <PageHeader
+          title={t("channels.title")}
+          subtitle={t("channels.description")}
+          border={false}
+          padded={false}
+          actions={
+            <>
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => loadChannels(true)}
+                disabled={isProbing.value || isLoading.value || !isConnected.value}
+                icon={<Activity class={`w-4 h-4 ${isProbing.value ? "animate-pulse" : ""}`} />}
+              >
+                {isProbing.value ? t("channels.probing") : t("channels.probe")}
+              </Button>
+              <IconButton
+                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                label={t("actions.refresh")}
+                onClick={() => loadChannels()}
+                disabled={isLoading.value || !isConnected.value}
+                variant="ghost"
+              />
+            </>
+          }
+        />
 
         {/* Stats Cards */}
         {isConnected.value && !isLoading.value && (
