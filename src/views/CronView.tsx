@@ -630,7 +630,7 @@ function JobEditForm() {
                 <Input
                   value={editScheduleExpr.value}
                   onInput={(e) => (editScheduleExpr.value = (e.target as HTMLInputElement).value)}
-                  placeholder="*/5 * * * *"
+                  placeholder={t("cron.form.cronPlaceholder")}
                   fullWidth
                 />
                 <Input
