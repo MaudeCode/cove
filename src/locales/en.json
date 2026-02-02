@@ -149,6 +149,24 @@
     "invalid": "Invalid value"
   },
 
+  "exec": {
+    "approvalNeeded": "Exec Approval Needed",
+    "command": "Command",
+    "host": "Host",
+    "agent": "Agent",
+    "session": "Session",
+    "cwd": "Working Directory",
+    "resolved": "Resolved Path",
+    "security": "Security Mode",
+    "askMode": "Ask Mode",
+    "expiresIn": "Expires in {time}",
+    "expired": "Expired",
+    "pendingCount": "{count} pending",
+    "allowOnce": "Allow Once",
+    "allowAlways": "Always Allow",
+    "deny": "Deny"
+  },
+
   "status": {
     "connected": "Healthy",
     "disconnected": "Disconnected",
