@@ -4,6 +4,7 @@
  * Helpers for working with JSON Schema and UI hints.
  */
 
+import { t } from "@/lib/i18n";
 import type { JsonSchema, ConfigUiHint, ConfigUiHints } from "@/types/config";
 
 // ============================================
@@ -208,55 +209,56 @@ export function validateValue(value: unknown, schema: JsonSchema): string | null
   // Type check
   switch (type) {
     case "string":
-      if (typeof value !== "string") return "Must be a string";
+      if (typeof value !== "string") return t("config.validation.mustBeString");
       if (schema.minLength && value.length < schema.minLength) {
-        return `Must be at least ${schema.minLength} characters`;
+        return t("config.validation.minLength", { min: schema.minLength });
       }
       if (schema.maxLength && value.length > schema.maxLength) {
-        return `Must be at most ${schema.maxLength} characters`;
+        return t("config.validation.maxLength", { max: schema.maxLength });
       }
       if (schema.pattern) {
         const regex = new RegExp(schema.pattern);
-        if (!regex.test(value)) return "Invalid format";
+        if (!regex.test(value)) return t("config.validation.invalidFormat");
       }
       break;
 
     case "number":
     case "integer":
-      if (typeof value !== "number") return "Must be a number";
+      if (typeof value !== "number") return t("config.validation.mustBeNumber");
       if (schema.minimum !== undefined && value < schema.minimum) {
-        return `Must be at least ${schema.minimum}`;
+        return t("config.validation.minimum", { min: schema.minimum });
       }
       if (schema.maximum !== undefined && value > schema.maximum) {
-        return `Must be at most ${schema.maximum}`;
+        return t("config.validation.maximum", { max: schema.maximum });
       }
       if (type === "integer" && !Number.isInteger(value)) {
-        return "Must be an integer";
+        return t("config.validation.mustBeInteger");
       }
       break;
 
     case "boolean":
-      if (typeof value !== "boolean") return "Must be true or false";
+      if (typeof value !== "boolean") return t("config.validation.mustBeBoolean");
       break;
 
     case "array":
-      if (!Array.isArray(value)) return "Must be an array";
+      if (!Array.isArray(value)) return t("config.validation.mustBeArray");
       if (schema.minItems && value.length < schema.minItems) {
-        return `Must have at least ${schema.minItems} items`;
+        return t("config.validation.minItems", { min: schema.minItems });
       }
       if (schema.maxItems && value.length > schema.maxItems) {
-        return `Must have at most ${schema.maxItems} items`;
+        return t("config.validation.maxItems", { max: schema.maxItems });
       }
       break;
 
     case "object":
-      if (typeof value !== "object" || Array.isArray(value)) return "Must be an object";
+      if (typeof value !== "object" || Array.isArray(value))
+        return t("config.validation.mustBeObject");
       break;
   }
 
   // Enum check
   if (schema.enum && !schema.enum.includes(value)) {
-    return "Invalid option";
+    return t("config.validation.invalidOption");
   }
 
   return null;
