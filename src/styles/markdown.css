@@ -142,6 +142,7 @@
   transition:
     opacity 0.15s,
     background 0.15s;
+  user-select: none;
 }
 
 .message-content pre.code-block:hover .copy-button {
