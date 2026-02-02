@@ -323,14 +323,25 @@ export function LogsView(_props: RouteProps) {
             </button>
             <button
               type="button"
-              onClick={() => (levelFilter.value = levelFilter.value === "error" ? "all" : "error")}
+              onClick={() => (levelFilter.value = levelFilter.value === "debug" ? "all" : "debug")}
               class={`px-3 py-1 text-sm rounded-full transition-colors ${
-                levelFilter.value === "error"
-                  ? "bg-[var(--color-error)]/20 text-[var(--color-error)]"
+                levelFilter.value === "debug"
+                  ? "bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)]"
                   : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
               }`}
             >
-              {t("logs.errors")} ({counts.error})
+              {t("logs.debug")} ({counts.debug})
+            </button>
+            <button
+              type="button"
+              onClick={() => (levelFilter.value = levelFilter.value === "info" ? "all" : "info")}
+              class={`px-3 py-1 text-sm rounded-full transition-colors ${
+                levelFilter.value === "info"
+                  ? "bg-[var(--color-info)]/20 text-[var(--color-info)]"
+                  : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
+              }`}
+            >
+              {t("logs.info")} ({counts.info})
             </button>
             <button
               type="button"
@@ -342,6 +353,17 @@ export function LogsView(_props: RouteProps) {
               }`}
             >
               {t("logs.warnings")} ({counts.warn})
+            </button>
+            <button
+              type="button"
+              onClick={() => (levelFilter.value = levelFilter.value === "error" ? "all" : "error")}
+              class={`px-3 py-1 text-sm rounded-full transition-colors ${
+                levelFilter.value === "error"
+                  ? "bg-[var(--color-error)]/20 text-[var(--color-error)]"
+                  : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
+              }`}
+            >
+              {t("logs.errors")} ({counts.error})
             </button>
           </div>
           <div class="flex items-center gap-2">
