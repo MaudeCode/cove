@@ -292,6 +292,10 @@ const levelCounts = computed(() => {
 // Log Line Component
 // ============================================
 
+interface ParsedFields {
+  [key: string]: unknown;
+}
+
 function LogLine({ line }: { line: ParsedLogLine }) {
   const levelColors: Record<string, string> = {
     debug: "text-[var(--color-text-muted)]",
@@ -308,21 +312,76 @@ function LogLine({ line }: { line: ParsedLogLine }) {
   };
 
   const Icon = line.level ? levelIcons[line.level] : undefined;
-  const colorClass = line.level ? levelColors[line.level] : "text-[var(--color-text-secondary)]";
+  const iconColor = line.level ? levelColors[line.level] : "text-[var(--color-text-muted)]";
 
   // Format timestamp for display
   const displayTime = line.timestamp
     ? line.timestamp.split("T")[1]?.slice(0, 12) || line.timestamp.slice(0, 12)
     : null;
 
+  // Try to parse fields from JSON for structured display
+  let fields: ParsedFields | null = null;
+  let mainMessage = line.message;
+
+  if (line.raw.startsWith("{")) {
+    try {
+      const parsed = JSON.parse(line.raw);
+      const skipKeys = [
+        "time",
+        "timestamp",
+        "ts",
+        "level",
+        "lvl",
+        "pid",
+        "hostname",
+        "v",
+        "msg",
+        "message",
+      ];
+      fields = {};
+      for (const [key, value] of Object.entries(parsed)) {
+        if (!skipKeys.includes(key)) {
+          fields[key] = value;
+        }
+      }
+      mainMessage = parsed.msg || parsed.message || "";
+      if (Object.keys(fields).length === 0) fields = null;
+    } catch {
+      // Not JSON
+    }
+  }
+
   return (
-    <div class="flex items-start gap-2 py-1.5 px-3 hover:bg-[var(--color-bg-hover)] font-mono text-xs border-b border-[var(--color-border)]/50 last:border-0">
-      {Icon && <Icon size={14} class={`mt-0.5 flex-shrink-0 ${colorClass}`} />}
-      {!Icon && <span class="w-[14px] flex-shrink-0" />}
-      {displayTime && (
-        <span class="text-[var(--color-text-muted)] flex-shrink-0 w-20">{displayTime}</span>
+    <div class="py-2 px-3 hover:bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]/50 last:border-0">
+      {/* Header row: icon, time, main message */}
+      <div class="flex items-start gap-2 font-mono text-xs">
+        {Icon && <Icon size={14} class={`mt-0.5 flex-shrink-0 ${iconColor}`} />}
+        {!Icon && <span class="w-[14px] flex-shrink-0" />}
+        {displayTime && (
+          <span class="text-[var(--color-text-muted)] flex-shrink-0">{displayTime}</span>
+        )}
+        <span class="flex-1 break-all whitespace-pre-wrap text-[var(--color-text-primary)]">
+          {mainMessage || (fields ? "" : line.message)}
+        </span>
+      </div>
+
+      {/* Fields */}
+      {fields && Object.keys(fields).length > 0 && (
+        <div class="mt-1.5 ml-6 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+          {Object.entries(fields).map(([key, value]) => (
+            <span key={key} class="inline-flex gap-1">
+              <span class="text-[var(--color-text-muted)]">{key}:</span>
+              <span class="text-[var(--color-text-secondary)] font-mono">
+                {typeof value === "string"
+                  ? value.length > 60
+                    ? value.slice(0, 60) + "…"
+                    : value
+                  : JSON.stringify(value)}
+              </span>
+            </span>
+          ))}
+        </div>
       )}
-      <span class={`flex-1 break-all whitespace-pre-wrap ${colorClass}`}>{line.message}</span>
     </div>
   );
 }
