@@ -25,6 +25,20 @@ import {
 // Types
 // ============================================
 
+interface SessionStatus {
+  agentId?: string;
+  key?: string;
+  kind?: string;
+  model?: string;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokens?: number;
+  remainingTokens?: number;
+  percentUsed?: number;
+  contextTokens?: number;
+  updatedAt?: number;
+}
+
 interface StatusData {
   heartbeat?: {
     defaultAgentId?: string;
@@ -35,19 +49,15 @@ interface StatusData {
       everyMs?: number;
     }>;
   };
-  recent?: Array<{
-    agentId?: string;
-    key?: string;
-    kind?: string;
-    model?: string;
-    inputTokens?: number;
-    outputTokens?: number;
-    totalTokens?: number;
-    remainingTokens?: number;
-    percentUsed?: number;
-    contextTokens?: number;
-    updatedAt?: number;
-  }>;
+  sessions?: {
+    count?: number;
+    defaults?: {
+      model?: string;
+      contextTokens?: number;
+    };
+    recent?: SessionStatus[];
+  };
+  queuedSystemEvents?: number;
 }
 
 interface HealthData {
@@ -156,7 +166,7 @@ export function SnapshotsPanel() {
   const connected = isConnected.value;
   const status = statusData.value;
   const health = healthData.value;
-  const recentSession = status?.recent?.[0];
+  const recentSession = status?.sessions?.recent?.[0];
 
   return (
     <Card>
