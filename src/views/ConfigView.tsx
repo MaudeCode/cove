@@ -272,10 +272,10 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
 
       {/* Children */}
       {hasChildren && isExpanded && (
-        <div class="relative">
+        <div class="relative ml-2">
           <div
-            class="absolute left-0 top-0 bottom-0 w-px bg-[var(--color-border)]"
-            style={{ marginLeft: `${depth * 16 + 18}px` }}
+            class="absolute top-0 bottom-1 w-px bg-[var(--color-border)] opacity-50"
+            style={{ left: `${(depth + 1) * 16 + 4}px` }}
           />
           {item.children!.map((child) => (
             <NavTreeItem key={child.key} item={child} depth={depth + 1} />
