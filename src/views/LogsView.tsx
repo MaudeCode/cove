@@ -59,7 +59,7 @@ const isLoading = signal(false);
 const error = signal<string | null>(null);
 const isLive = signal(true);
 const searchQuery = signal("");
-const levelFilter = signal<"all" | "debug" | "info" | "warn" | "error">("all");
+const selectedLevels = signal<Set<"debug" | "info" | "warn" | "error">>(new Set());
 
 let lineIdCounter = 0;
 
@@ -168,9 +168,10 @@ function downloadLogs() {
 const filteredLines = computed(() => {
   let lines = logLines.value;
 
-  // Filter by level
-  if (levelFilter.value !== "all") {
-    lines = lines.filter((l) => l.level === levelFilter.value);
+  // Filter by level (if any selected)
+  const levels = selectedLevels.value;
+  if (levels.size > 0) {
+    lines = lines.filter((l) => l.level && levels.has(l.level));
   }
 
   // Filter by search
@@ -181,6 +182,20 @@ const filteredLines = computed(() => {
 
   return lines;
 });
+
+function toggleLevel(level: "debug" | "info" | "warn" | "error") {
+  const current = new Set(selectedLevels.value);
+  if (current.has(level)) {
+    current.delete(level);
+  } else {
+    current.add(level);
+  }
+  selectedLevels.value = current;
+}
+
+function clearLevelFilters() {
+  selectedLevels.value = new Set();
+}
 
 const levelCounts = computed(() => {
   const counts = { debug: 0, info: 0, warn: 0, error: 0 };
@@ -312,9 +327,9 @@ export function LogsView(_props: RouteProps) {
           <div class="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => (levelFilter.value = "all")}
+              onClick={clearLevelFilters}
               class={`px-3 py-1 text-sm rounded-full transition-colors ${
-                levelFilter.value === "all"
+                selectedLevels.value.size === 0
                   ? "bg-[var(--color-accent)] text-white"
                   : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
               }`}
@@ -323,10 +338,10 @@ export function LogsView(_props: RouteProps) {
             </button>
             <button
               type="button"
-              onClick={() => (levelFilter.value = levelFilter.value === "debug" ? "all" : "debug")}
+              onClick={() => toggleLevel("debug")}
               class={`px-3 py-1 text-sm rounded-full transition-colors ${
-                levelFilter.value === "debug"
-                  ? "bg-[var(--color-text-muted)]/20 text-[var(--color-text-muted)]"
+                selectedLevels.value.has("debug")
+                  ? "bg-[var(--color-text-muted)]/30 text-[var(--color-text-primary)] ring-1 ring-[var(--color-text-muted)]"
                   : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
               }`}
             >
@@ -334,10 +349,10 @@ export function LogsView(_props: RouteProps) {
             </button>
             <button
               type="button"
-              onClick={() => (levelFilter.value = levelFilter.value === "info" ? "all" : "info")}
+              onClick={() => toggleLevel("info")}
               class={`px-3 py-1 text-sm rounded-full transition-colors ${
-                levelFilter.value === "info"
-                  ? "bg-[var(--color-info)]/20 text-[var(--color-info)]"
+                selectedLevels.value.has("info")
+                  ? "bg-[var(--color-info)]/20 text-[var(--color-info)] ring-1 ring-[var(--color-info)]"
                   : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
               }`}
             >
@@ -345,10 +360,10 @@ export function LogsView(_props: RouteProps) {
             </button>
             <button
               type="button"
-              onClick={() => (levelFilter.value = levelFilter.value === "warn" ? "all" : "warn")}
+              onClick={() => toggleLevel("warn")}
               class={`px-3 py-1 text-sm rounded-full transition-colors ${
-                levelFilter.value === "warn"
-                  ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)]"
+                selectedLevels.value.has("warn")
+                  ? "bg-[var(--color-warning)]/20 text-[var(--color-warning)] ring-1 ring-[var(--color-warning)]"
                   : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
               }`}
             >
@@ -356,10 +371,10 @@ export function LogsView(_props: RouteProps) {
             </button>
             <button
               type="button"
-              onClick={() => (levelFilter.value = levelFilter.value === "error" ? "all" : "error")}
+              onClick={() => toggleLevel("error")}
               class={`px-3 py-1 text-sm rounded-full transition-colors ${
-                levelFilter.value === "error"
-                  ? "bg-[var(--color-error)]/20 text-[var(--color-error)]"
+                selectedLevels.value.has("error")
+                  ? "bg-[var(--color-error)]/20 text-[var(--color-error)] ring-1 ring-[var(--color-error)]"
                   : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
               }`}
             >
