@@ -99,7 +99,10 @@ function SkillCard({ skill }: { skill: ClawHubSkill }) {
             <h3 class="font-semibold truncate">{skill.displayName}</h3>
             <Badge variant="default">{version}</Badge>
           </div>
-          <p class="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-3">
+          <p
+            class="text-sm text-[var(--color-text-muted)] line-clamp-2 mb-3"
+            title={skill.summary || undefined}
+          >
             {skill.summary || t("skills.clawhub.noDescription")}
           </p>
           <div class="flex items-center gap-4 text-xs text-[var(--color-text-muted)]">

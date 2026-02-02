@@ -169,6 +169,8 @@ function TabButton({ tab, label, active }: { tab: SkillsTab; label: string; acti
   return (
     <button
       type="button"
+      role="tab"
+      aria-selected={active}
       onClick={() => {
         activeTab.value = tab;
       }}
@@ -243,7 +245,7 @@ export function SkillsView(_props: RouteProps) {
         </div>
 
         {/* Tabs */}
-        <div class="flex gap-2">
+        <div class="flex gap-2" role="tablist">
           <TabButton
             tab="installed"
             label={t("skills.tabs.installed")}
