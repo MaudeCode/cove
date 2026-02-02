@@ -447,6 +447,7 @@
     "title": "Cron Jobs",
     "description": "Schedule and manage automated tasks.",
     "createJob": "Create Job",
+    "editJob": "Edit {name}",
     "editJob": "Edit Job",
     "deleteJob": "Delete Job",
     "confirmDelete": "Delete this job?",
