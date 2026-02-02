@@ -296,8 +296,6 @@ export function DebugView(_props: RouteProps) {
         <PageHeader
           title={t("nav.debug")}
           subtitle={t("debug.subtitle")}
-          border={false}
-          padded={false}
           actions={
             <Badge variant={connectionBadgeVariant.value}>
               {connected ? <Wifi size={14} class="mr-1" /> : <WifiOff size={14} class="mr-1" />}
