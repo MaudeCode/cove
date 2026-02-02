@@ -308,8 +308,6 @@ export function ChannelsView(_props: RouteProps) {
         <PageHeader
           title={t("channels.title")}
           subtitle={t("channels.description")}
-          border={false}
-          padded={false}
           actions={
             <>
               <Button

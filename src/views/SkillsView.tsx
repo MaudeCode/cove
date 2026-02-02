@@ -232,8 +232,6 @@ export function SkillsView(_props: RouteProps) {
         <PageHeader
           title={t("skills.title")}
           subtitle={t("skills.description")}
-          border={false}
-          padded={false}
           actions={
             tab === "installed" ? (
               <IconButton

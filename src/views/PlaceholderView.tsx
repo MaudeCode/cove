@@ -19,7 +19,7 @@ export function PlaceholderView({ titleKey, icon, descriptionKey }: PlaceholderV
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-6">
-        <PageHeader title={t(titleKey)} border={false} padded={false} />
+        <PageHeader title={t(titleKey)} />
 
         {/* Content */}
         <div class="flex items-center justify-center py-12">

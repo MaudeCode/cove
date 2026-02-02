@@ -942,8 +942,6 @@ export function CronView(_props: RouteProps) {
         <PageHeader
           title={t("cron.title")}
           subtitle={t("cron.description")}
-          border={false}
-          padded={false}
           actions={
             <>
               {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
