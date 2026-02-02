@@ -318,17 +318,48 @@ function DetailPanel() {
     );
   }
 
-  // Build breadcrumb
-  const breadcrumb = path.map((segment, i) => {
+  // Build breadcrumb parts
+  const breadcrumbParts = path.map((segment, i) => {
     const subPath = path.slice(0, i + 1);
     const hint = hintsValue[subPath.join(".")];
     return hint?.label ?? humanize(segment);
   });
 
+  // Get the section title (last part) and parent path
+  const sectionTitle = breadcrumbParts[breadcrumbParts.length - 1];
+  const parentPath = breadcrumbParts.slice(0, -1);
+
+  // Get section description from hint or schema
+  const pathKey = path.join(".");
+  const sectionHint = hintsValue[pathKey];
+  const sectionHelp = sectionHint?.help ?? currentSchema.description;
+
+  // Get icon for top-level sections
+  const topLevelKey = String(path[0]);
+  const SectionIcon = SECTION_ICONS[topLevelKey];
+
   return (
     <div class="flex-1 overflow-y-auto p-6">
-      {/* Breadcrumb */}
-      <div class="text-sm text-[var(--color-text-muted)] mb-4">{breadcrumb.join(" › ")}</div>
+      {/* Header */}
+      <div class="mb-6">
+        {/* Parent breadcrumb (if nested) */}
+        {parentPath.length > 0 && (
+          <div class="text-xs text-[var(--color-text-muted)] mb-1">{parentPath.join(" › ")}</div>
+        )}
+
+        {/* Section title */}
+        <div class="flex items-center gap-3">
+          {SectionIcon && path.length === 1 && (
+            <SectionIcon class="w-6 h-6 text-[var(--color-text-muted)]" />
+          )}
+          <h2 class="text-xl font-semibold text-[var(--color-text-primary)]">{sectionTitle}</h2>
+        </div>
+
+        {/* Section description */}
+        {sectionHelp && (
+          <p class="text-sm text-[var(--color-text-muted)] mt-2 max-w-xl">{sectionHelp}</p>
+        )}
+      </div>
 
       {/* Content */}
       <div class="max-w-2xl">
