@@ -61,14 +61,56 @@ import { ConfigNode } from "@/components/config/ConfigNode";
 import { humanize } from "@/lib/config/schema-utils";
 
 // ============================================
-// Navigation State
+// Navigation State (persisted to localStorage)
 // ============================================
 
+const STORAGE_KEY_PATH = "cove:config:selectedPath";
+const STORAGE_KEY_EXPANDED = "cove:config:expandedNav";
+
+/** Load persisted path from localStorage */
+function loadPersistedPath(): (string | number)[] {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_PATH);
+    if (stored) return JSON.parse(stored);
+  } catch {
+    // Ignore parse errors
+  }
+  return [];
+}
+
+/** Load persisted expanded nav from localStorage */
+function loadPersistedExpanded(): Set<string> {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY_EXPANDED);
+    if (stored) return new Set(JSON.parse(stored));
+  } catch {
+    // Ignore parse errors
+  }
+  return new Set(["gateway", "agents", "channels"]);
+}
+
 /** Currently selected path in the nav tree */
-const selectedPath = signal<(string | number)[]>([]);
+const selectedPath = signal<(string | number)[]>(loadPersistedPath());
 
 /** Expanded nav items */
-const expandedNav = signal<Set<string>>(new Set(["gateway", "agents", "channels"]));
+const expandedNav = signal<Set<string>>(loadPersistedExpanded());
+
+// Persist changes to localStorage
+selectedPath.subscribe((path) => {
+  try {
+    localStorage.setItem(STORAGE_KEY_PATH, JSON.stringify(path));
+  } catch {
+    // Ignore storage errors
+  }
+});
+
+expandedNav.subscribe((expanded) => {
+  try {
+    localStorage.setItem(STORAGE_KEY_EXPANDED, JSON.stringify([...expanded]));
+  } catch {
+    // Ignore storage errors
+  }
+});
 
 // ============================================
 // Section Icons
@@ -404,9 +446,25 @@ export function ConfigView(_props: RouteProps) {
     }
   }, [isConnected.value]);
 
-  // Auto-select first section when loaded
+  // Auto-select first section when loaded, or validate persisted path
   useEffect(() => {
-    if (schema.value && selectedPath.value.length === 0) {
+    if (!schema.value) return;
+
+    const path = selectedPath.value;
+
+    // If no path selected, select first section
+    if (path.length === 0) {
+      const firstKey = Object.keys(schema.value.properties ?? {})[0];
+      if (firstKey) {
+        selectedPath.value = [firstKey];
+      }
+      return;
+    }
+
+    // Validate persisted path still exists in schema
+    const topLevel = String(path[0]);
+    if (!schema.value.properties?.[topLevel]) {
+      // Path no longer valid, select first section
       const firstKey = Object.keys(schema.value.properties ?? {})[0];
       if (firstKey) {
         selectedPath.value = [firstKey];
