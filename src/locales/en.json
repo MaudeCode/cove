@@ -931,7 +931,8 @@
       "addItem": "Add item",
       "removeItem": "Remove item",
       "noItems": "No items",
-      "editJson": "Edit as JSON"
+      "editJson": "Edit as JSON",
+      "dragToReorder": "Drag to reorder"
     }
   }
 }

@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Textarea } from "@/components/ui/Textarea";
-import { ChevronDown, ChevronRight, Plus, Trash2, Eye, EyeOff } from "lucide-preact";
+import { ChevronDown, ChevronRight, Plus, Trash2, Eye, EyeOff, GripVertical } from "lucide-preact";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
 import { updateField, validationErrors, setValidationError } from "@/signals/config";
 import {
@@ -434,7 +434,17 @@ function ArrayNode({
         </div>
         <div class="space-y-2 max-w-md">
           {items.map((item, index) => (
-            <div key={index} class="flex items-center gap-2">
+            <DraggableArrayItem
+              key={index}
+              index={index}
+              path={path}
+              onReorder={(from, to) => {
+                const next = [...items];
+                const [moved] = next.splice(from, 1);
+                next.splice(to, 0, moved);
+                updateField(path, next);
+              }}
+            >
               <Input
                 type={itemType === "number" ? "number" : "text"}
                 value={String(item ?? "")}
@@ -453,7 +463,7 @@ function ArrayNode({
                 size="sm"
                 variant="ghost"
               />
-            </div>
+            </DraggableArrayItem>
           ))}
           {items.length === 0 && (
             <p class="text-sm text-[var(--color-text-muted)] py-4 text-center border border-dashed border-[var(--color-border)] rounded-lg">
@@ -500,10 +510,18 @@ function ArrayNode({
                 schema={itemSchema}
                 value={item}
                 path={[...path, index]}
+                parentPath={path}
                 hints={hints}
                 level={level + 1}
                 index={index}
+                totalItems={items.length}
                 onRemove={() => removeItem(index)}
+                onReorder={(from, to) => {
+                  const next = [...items];
+                  const [moved] = next.splice(from, 1);
+                  next.splice(to, 0, moved);
+                  updateField(path, next);
+                }}
               />
             ))
           )}
@@ -517,20 +535,28 @@ function ArrayItemCard({
   schema,
   value,
   path,
+  parentPath,
   hints,
   level,
   index,
+  totalItems,
   onRemove,
+  onReorder,
 }: {
   schema: JsonSchema;
   value: unknown;
   path: (string | number)[];
+  parentPath: (string | number)[];
   hints: ConfigUiHints;
   level: number;
   index: number;
+  totalItems: number;
   onRemove: () => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const objValue = (value ?? {}) as Record<string, unknown>;
 
   // Try to get a display name from the item
@@ -539,9 +565,63 @@ function ArrayItemCard({
   const identity = objValue.identity as Record<string, unknown> | undefined;
   const emoji = identity?.emoji ?? "";
 
+  const handleDragStart = (e: DragEvent) => {
+    setIsDragging(true);
+    e.dataTransfer!.effectAllowed = "move";
+    e.dataTransfer!.setData("text/plain", JSON.stringify({ path: parentPath.join("."), index }));
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = "move";
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      const data = JSON.parse(e.dataTransfer!.getData("text/plain"));
+      if (data.path === parentPath.join(".") && data.index !== index) {
+        onReorder(data.index, index);
+      }
+    } catch {
+      // Invalid drop data
+    }
+  };
+
   return (
-    <Card padding="none" class="overflow-hidden">
-      <div class="flex items-center gap-2 px-4 py-3">
+    <Card
+      padding="none"
+      class={`overflow-hidden transition-all ${isDragging ? "opacity-50" : ""} ${
+        isDragOver ? "ring-2 ring-[var(--color-accent)]" : ""
+      }`}
+      draggable={totalItems > 1}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div class="flex items-center gap-2 px-3 py-3">
+        {/* Drag handle */}
+        {totalItems > 1 && (
+          <div
+            class="p-1 cursor-grab text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] active:cursor-grabbing"
+            title={t("config.field.dragToReorder")}
+          >
+            <GripVertical class="w-4 h-4" />
+          </div>
+        )}
         <button
           type="button"
           class="flex-1 flex items-center gap-2 text-left group"
@@ -719,6 +799,79 @@ function JsonEditor({ value, onChange }: { value: unknown; onChange: (value: unk
         class="font-mono text-sm w-full"
       />
       {parseError && <p class="text-xs text-[var(--color-error)]">{parseError}</p>}
+    </div>
+  );
+}
+
+/** Draggable array item wrapper with grip handle */
+function DraggableArrayItem({
+  index,
+  path,
+  onReorder,
+  children,
+}: {
+  index: number;
+  path: (string | number)[];
+  onReorder: (fromIndex: number, toIndex: number) => void;
+  children: preact.ComponentChildren;
+}) {
+  const [isDragging, setIsDragging] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+
+  const handleDragStart = (e: DragEvent) => {
+    setIsDragging(true);
+    e.dataTransfer!.effectAllowed = "move";
+    e.dataTransfer!.setData("text/plain", JSON.stringify({ path: path.join("."), index }));
+  };
+
+  const handleDragEnd = () => {
+    setIsDragging(false);
+  };
+
+  const handleDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer!.dropEffect = "move";
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setIsDragOver(false);
+
+    try {
+      const data = JSON.parse(e.dataTransfer!.getData("text/plain"));
+      // Only allow reorder within the same array
+      if (data.path === path.join(".") && data.index !== index) {
+        onReorder(data.index, index);
+      }
+    } catch {
+      // Invalid drop data
+    }
+  };
+
+  return (
+    <div
+      class={`flex items-center gap-1 rounded-md transition-colors ${
+        isDragging ? "opacity-50" : ""
+      } ${isDragOver ? "bg-[var(--color-accent)]/10 ring-1 ring-[var(--color-accent)]" : ""}`}
+      draggable
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div
+        class="p-1 cursor-grab text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] active:cursor-grabbing"
+        title={t("config.field.dragToReorder")}
+      >
+        <GripVertical class="w-4 h-4" />
+      </div>
+      {children}
     </div>
   );
 }
