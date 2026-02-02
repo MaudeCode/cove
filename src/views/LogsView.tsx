@@ -101,7 +101,7 @@ function parseLogLine(raw: string): ParsedLogLine {
         const skipKeys = ["time", "timestamp", "ts", "level", "lvl", "pid", "hostname", "v"];
         const parts: string[] = [];
         for (const [key, value] of Object.entries(parsed)) {
-          if (skipKeys.includes(key)) continue;
+          if (skipKeys.includes(key) || /^\d+$/.test(key)) continue;
           if (typeof value === "string") {
             parts.push(`${key}=${value}`);
           } else if (value !== null && value !== undefined) {
@@ -294,13 +294,19 @@ const levelCounts = computed(() => {
 // Log Line Component
 // ============================================
 
-/** Flatten nested objects into dot-notation keys */
+/** Flatten nested objects into dot-notation keys (arrays are stringified, not indexed) */
 function flattenObject(obj: Record<string, unknown>, prefix = ""): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(obj)) {
+    // Skip numeric keys (array indices)
+    if (/^\d+$/.test(key)) continue;
+
     const fullKey = prefix ? `${prefix}.${key}` : key;
     if (value === null || value === undefined) continue;
-    if (typeof value === "object" && !Array.isArray(value)) {
+    if (Array.isArray(value)) {
+      // Stringify arrays instead of flattening with indices
+      result[fullKey] = JSON.stringify(value);
+    } else if (typeof value === "object") {
       Object.assign(result, flattenObject(value as Record<string, unknown>, fullKey));
     } else if (typeof value === "string") {
       result[fullKey] = value;
@@ -610,7 +616,11 @@ export function LogsView(_props: RouteProps) {
 
           {/* Log lines */}
           {lines.length > 0 && (
-            <div ref={containerRef} class="max-h-[600px] overflow-y-auto" onScroll={handleScroll}>
+            <div
+              ref={containerRef}
+              class="max-h-[calc(100vh-320px)] overflow-y-auto"
+              onScroll={handleScroll}
+            >
               {lines.map((line) => (
                 <LogLine
                   key={line.id}
