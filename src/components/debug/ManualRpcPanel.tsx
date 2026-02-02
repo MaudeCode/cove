@@ -218,7 +218,7 @@ export function ManualRpcPanel() {
                       class="font-mono flex-1"
                     />
                     <IconButton
-                      icon={Trash2}
+                      icon={<Trash2 size={14} />}
                       size="sm"
                       variant="ghost"
                       label={t("actions.delete")}
