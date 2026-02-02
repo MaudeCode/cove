@@ -867,6 +867,7 @@ export const navigation: NavSection[] = [
 - [x] Links to docs for each channel
 - [ ] Enable/disable toggles (deferred to Config Editor)
 - [ ] Channel-specific actions like QR login (deferred)
+- [ ] **"Configure" button** → deep link to Config Editor `#channels`
 
 ### 3.3 Instances View ✅
 - [x] List connected clients/services (presence beacons)
@@ -926,6 +927,7 @@ export const navigation: NavSection[] = [
 - [x] Search by name, ID, IP, platform
 - [x] Stat cards with quick filters
 - [x] Expandable device details (ID, scopes, tokens)
+- [ ] **"Configure" button** → deep link to Config Editor `#exec` (exec approvals, node bindings)
 
 ### 3.8 Configuration Editor
 - [ ] View current config (formatted JSON)
@@ -934,6 +936,12 @@ export const navigation: NavSection[] = [
 - [ ] Diff view before applying
 - [ ] Apply config (with restart)
 - [ ] Config backup before changes
+- [ ] **Deep linking to sections** (e.g., `/config#channels.telegram`, `/config#exec`)
+  - Allows other views to link directly to relevant config
+
+**Views needing "Configure" button → Config Editor:**
+- ChannelsView: Link to `#channels` for enable/disable toggles
+- DevicesView: Link to `#exec` for exec approvals & node bindings
 
 ### 3.9 Debug View
 - [ ] Raw snapshots display (status, health, heartbeat JSON)
