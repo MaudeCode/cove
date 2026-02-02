@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/Button";
 import {
   execApprovalBusy,
   execApprovalError,
+  resolvedApprovalIds,
   handleExecApprovalDecisionDirect,
 } from "@/signals/exec";
 import { t } from "@/lib/i18n";
@@ -152,8 +153,10 @@ interface ExecApprovalButtonsProps {
 function ExecApprovalButtons({ approvalId, expiresAtMs }: ExecApprovalButtonsProps) {
   const busy = execApprovalBusy.value;
   const error = execApprovalError.value;
+  const alreadyResolved = resolvedApprovalIds.value.has(approvalId);
   const [timeLeft, setTimeLeft] = useState<number>(Math.max(0, expiresAtMs - Date.now()));
-  const [resolved, setResolved] = useState(false);
+  const [localResolved, setLocalResolved] = useState(false);
+  const resolved = alreadyResolved || localResolved;
 
   // Countdown timer
   useEffect(() => {
@@ -171,7 +174,7 @@ function ExecApprovalButtons({ approvalId, expiresAtMs }: ExecApprovalButtonsPro
   const handleDecision = async (decision: "allow-once" | "allow-always" | "deny") => {
     try {
       await handleExecApprovalDecisionDirect(approvalId, decision);
-      setResolved(true);
+      setLocalResolved(true);
     } catch {
       // Error is handled by the signal
     }
