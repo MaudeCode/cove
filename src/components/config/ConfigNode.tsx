@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Textarea } from "@/components/ui/Textarea";
-import { Badge } from "@/components/ui/Badge";
 import { ChevronDown, ChevronRight, Plus, Trash2, Eye, EyeOff } from "lucide-preact";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
 import { updateField, validationErrors, setValidationError } from "@/signals/config";
@@ -135,7 +134,7 @@ export function ConfigNode({
             }}
             min={schema.minimum}
             max={schema.maximum}
-            class="w-28"
+            class="w-24 text-right"
           />
         </SettingRow>
       );
@@ -158,7 +157,7 @@ export function ConfigNode({
               }))}
               onChange={(v) => updateField(path, v)}
               size="sm"
-              width="180px"
+              width="160px"
             />
           </SettingRow>
         );
@@ -262,34 +261,29 @@ function SettingRow({ label, description, error, inline, children }: SettingRowP
   // For inline layout: label+description left, control right
   if (inline && label) {
     return (
-      <div class="py-2">
-        <div class="flex items-center justify-between gap-4">
-          <div class="flex-1 min-w-0">
-            <label class="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
-            {description && (
-              <p class="text-xs text-[var(--color-text-muted)] mt-0.5">{description}</p>
-            )}
-          </div>
-          <div class="flex-shrink-0">{children}</div>
+      <div class="py-3 grid grid-cols-[1fr,auto] gap-x-6 gap-y-1 items-start">
+        <div class="min-w-0">
+          <label class="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
+          {description && (
+            <p class="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">{description}</p>
+          )}
         </div>
-        {error && <p class="text-xs text-[var(--color-error)] mt-1">{error}</p>}
+        <div class="flex-shrink-0 pt-0.5">{children}</div>
+        {error && <p class="col-span-2 text-xs text-[var(--color-error)] mt-1">{error}</p>}
       </div>
     );
   }
 
   // For block layout (textareas, JSON editors, or label-less)
   return (
-    <div class="py-2">
+    <div class="py-3">
       {label && (
-        <label class="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
+        <label class="block text-sm font-medium text-[var(--color-text-primary)] mb-1.5">
           {label}
         </label>
       )}
-      {description && !label && (
-        <p class="text-xs text-[var(--color-text-muted)] mb-2">{description}</p>
-      )}
-      {description && label && (
-        <p class="text-xs text-[var(--color-text-muted)] mb-2">{description}</p>
+      {description && (
+        <p class="text-xs text-[var(--color-text-muted)] mb-2 leading-relaxed">{description}</p>
       )}
       {children}
       {error && <p class="text-xs text-[var(--color-error)] mt-1">{error}</p>}
@@ -346,10 +340,10 @@ function ObjectNode({
 
   // Nested object: collapsible section with subtle styling
   return (
-    <div class="pt-4 first:pt-2">
+    <div class="mt-6 first:mt-3">
       <button
         type="button"
-        class="w-full flex items-center gap-2 py-2 text-left group border-t border-[var(--color-border)] -mx-0"
+        class="flex items-center gap-2 py-2 text-left group"
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
       >
@@ -357,14 +351,14 @@ function ObjectNode({
           {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
         </span>
         <span class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</span>
-        <Badge variant="default" class="ml-1">
-          {propertyKeys.length}
-        </Badge>
+        <span class="text-xs text-[var(--color-text-muted)]">({propertyKeys.length})</span>
       </button>
 
       {isExpanded && (
-        <div class="ml-6 pl-4 border-l-2 border-[var(--color-border)] space-y-1 pb-2">
-          {help && <p class="text-xs text-[var(--color-text-muted)] py-1">{help}</p>}
+        <div class="ml-6 pl-4 border-l border-[var(--color-border)] mt-1">
+          {help && (
+            <p class="text-xs text-[var(--color-text-muted)] pb-2 leading-relaxed">{help}</p>
+          )}
           {propertyKeys.map((key) => (
             <ConfigNode
               key={key}
@@ -420,11 +414,13 @@ function ArrayNode({
   // Simple array of primitives
   if (itemType === "string" || itemType === "number") {
     return (
-      <div class="py-2">
-        <div class="flex items-center justify-between mb-2">
+      <div class="mt-6 first:mt-3">
+        <div class="flex items-center justify-between mb-3">
           <div>
-            <label class="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
-            {help && <p class="text-xs text-[var(--color-text-muted)] mt-0.5">{help}</p>}
+            <label class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</label>
+            {help && (
+              <p class="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">{help}</p>
+            )}
           </div>
           <Button variant="secondary" size="sm" icon={Plus} onClick={addItem}>
             {t("config.field.addItem")}
@@ -454,7 +450,9 @@ function ArrayNode({
             </div>
           ))}
           {items.length === 0 && (
-            <p class="text-sm text-[var(--color-text-muted)] py-2">{t("config.field.noItems")}</p>
+            <p class="text-sm text-[var(--color-text-muted)] py-4 text-center border border-dashed border-[var(--color-border)] rounded-lg">
+              {t("config.field.noItems")}
+            </p>
           )}
         </div>
       </div>
@@ -463,8 +461,8 @@ function ArrayNode({
 
   // Array of objects
   return (
-    <div class="py-2">
-      <div class="flex items-center justify-between mb-2">
+    <div class="mt-6 first:mt-3">
+      <div class="flex items-center justify-between mb-3">
         <button
           type="button"
           class="flex items-center gap-2 group"
@@ -473,20 +471,22 @@ function ArrayNode({
           <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
             {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
           </span>
-          <span class="text-sm font-medium text-[var(--color-text-primary)]">{label}</span>
-          <Badge variant="default">{items.length}</Badge>
+          <span class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</span>
+          <span class="text-xs text-[var(--color-text-muted)]">({items.length})</span>
         </button>
         <Button variant="secondary" size="sm" icon={Plus} onClick={addItem}>
           {t("config.field.addItem")}
         </Button>
       </div>
 
-      {help && <p class="text-xs text-[var(--color-text-muted)] mb-2">{help}</p>}
+      {help && <p class="text-xs text-[var(--color-text-muted)] mb-3 leading-relaxed">{help}</p>}
 
       {isExpanded && (
-        <div class="space-y-2">
+        <div class="space-y-3">
           {items.length === 0 ? (
-            <p class="text-sm text-[var(--color-text-muted)] py-2">{t("config.field.noItems")}</p>
+            <p class="text-sm text-[var(--color-text-muted)] py-4 text-center border border-dashed border-[var(--color-border)] rounded-lg">
+              {t("config.field.noItems")}
+            </p>
           ) : (
             items.map((item, index) => (
               <ArrayItemCard
@@ -637,7 +637,7 @@ function UnionNode({
           options={options}
           onChange={(v) => updateField(path, v)}
           size="sm"
-          width="180px"
+          width="160px"
         />
       </SettingRow>
     );
