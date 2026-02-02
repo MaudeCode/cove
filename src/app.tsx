@@ -31,7 +31,7 @@ import { CronView } from "@/views/CronView";
 import { ConfigView } from "@/views/ConfigView";
 import { SettingsView } from "@/views/SettingsView";
 import { DebugView, LogsView } from "@/views/PlaceholderView";
-import { NodesView } from "@/views/NodesView";
+import { DevicesView } from "@/views/DevicesView";
 import { SkillsView } from "@/views/SkillsView";
 import { ServerStatsView } from "@/views/ServerStatsView";
 import { ChannelsView } from "@/views/ChannelsView";
@@ -158,7 +158,7 @@ function MainRouter() {
 
       {/* Agent */}
       <SkillsView path="/skills" />
-      <NodesView path="/nodes" />
+      <DevicesView path="/devices" />
 
       {/* Settings */}
       <SettingsView path="/settings" />
