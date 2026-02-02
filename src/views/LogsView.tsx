@@ -88,7 +88,26 @@ function parseLogLine(raw: string): ParsedLogLine {
               ? "error"
               : (jsonLevel as ParsedLogLine["level"]);
       }
-      message = parsed.msg || parsed.message || parsed.error || raw;
+
+      // Try to get a meaningful message
+      if (parsed.msg || parsed.message) {
+        message = parsed.msg || parsed.message;
+      } else if (parsed.error && typeof parsed.error === "string") {
+        message = parsed.error;
+      } else {
+        // Format key fields into a readable message
+        const skipKeys = ["time", "timestamp", "ts", "level", "lvl", "pid", "hostname", "v"];
+        const parts: string[] = [];
+        for (const [key, value] of Object.entries(parsed)) {
+          if (skipKeys.includes(key)) continue;
+          if (typeof value === "string") {
+            parts.push(`${key}=${value}`);
+          } else if (value !== null && value !== undefined) {
+            parts.push(`${key}=${JSON.stringify(value)}`);
+          }
+        }
+        message = parts.length > 0 ? parts.join("  ") : raw;
+      }
     } catch {
       // Not valid JSON, continue with text parsing
     }
