@@ -9,8 +9,8 @@ import type { ComponentChildren } from "preact";
 interface PageHeaderProps {
   /** Page title */
   title: string;
-  /** Optional subtitle/description */
-  subtitle?: string;
+  /** Optional subtitle/description (string or custom content) */
+  subtitle?: ComponentChildren;
   /** Optional actions (buttons, badges, etc.) rendered on the right */
   actions?: ComponentChildren;
   /** Show bottom border (default: true for sticky, false for inline) */
@@ -29,13 +29,21 @@ export function PageHeader({
   padded = true,
   class: className,
 }: PageHeaderProps) {
+  // Wrap string subtitles in standard styling, pass through custom content as-is
+  const subtitleContent =
+    typeof subtitle === "string" ? (
+      <p class="text-sm text-[var(--color-text-muted)] mt-1">{subtitle}</p>
+    ) : (
+      subtitle
+    );
+
   return (
     <div
       class={`flex items-start justify-between gap-4 ${padded ? "p-6" : ""} ${border ? "border-b border-[var(--color-border)]" : ""} ${className ?? ""}`}
     >
       <div class="flex-1 min-w-0">
         <h1 class="text-xl font-semibold text-[var(--color-text-primary)]">{title}</h1>
-        {subtitle && <p class="text-sm text-[var(--color-text-muted)] mt-1">{subtitle}</p>}
+        {subtitleContent}
       </div>
       {actions && <div class="flex items-center gap-2 flex-shrink-0">{actions}</div>}
     </div>
