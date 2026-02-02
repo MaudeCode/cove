@@ -97,18 +97,24 @@ function parseLogLine(raw: string): ParsedLogLine {
       } else if (parsed.error && typeof parsed.error === "string") {
         message = parsed.error;
       } else {
-        // Format key fields into a readable message
-        const skipKeys = ["time", "timestamp", "ts", "level", "lvl", "pid", "hostname", "v"];
-        const parts: string[] = [];
-        for (const [key, value] of Object.entries(parsed)) {
-          if (skipKeys.includes(key) || /^\d+$/.test(key)) continue;
-          if (typeof value === "string") {
-            parts.push(`${key}=${value}`);
-          } else if (value !== null && value !== undefined) {
-            parts.push(`${key}=${JSON.stringify(value)}`);
+        // Check if there's a numeric key (like "0") that holds the main message
+        const numericKey = Object.keys(parsed).find((k) => /^\d+$/.test(k));
+        if (numericKey && typeof parsed[numericKey] === "string") {
+          message = parsed[numericKey];
+        } else {
+          // Format key fields into a readable message
+          const skipKeys = ["time", "timestamp", "ts", "level", "lvl", "pid", "hostname", "v"];
+          const parts: string[] = [];
+          for (const [key, value] of Object.entries(parsed)) {
+            if (skipKeys.includes(key)) continue;
+            if (typeof value === "string") {
+              parts.push(`${key}=${value}`);
+            } else if (value !== null && value !== undefined) {
+              parts.push(`${key}=${JSON.stringify(value)}`);
+            }
           }
+          message = parts.length > 0 ? parts.join("  ") : raw;
         }
-        message = parts.length > 0 ? parts.join("  ") : raw;
       }
     } catch {
       // Not valid JSON, continue with text parsing
@@ -618,7 +624,7 @@ export function LogsView(_props: RouteProps) {
           {lines.length > 0 && (
             <div
               ref={containerRef}
-              class="max-h-[calc(100vh-320px)] overflow-y-auto"
+              class="max-h-[calc(100vh-280px)] overflow-y-auto"
               onScroll={handleScroll}
             >
               {lines.map((line) => (
