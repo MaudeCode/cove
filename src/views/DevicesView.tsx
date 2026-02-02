@@ -265,6 +265,9 @@ function DeviceRow({ device }: { device: PairedDevice }) {
         class="w-full flex items-center gap-4 px-4 py-3 hover:bg-[var(--color-bg-tertiary)] text-left"
         onClick={() => toggleExpanded(device.deviceId)}
         aria-expanded={isExpanded}
+        aria-label={t("devices.toggleDetails", {
+          name: device.displayName || formatDeviceId(device.deviceId),
+        })}
       >
         {/* Expand chevron */}
         <span class="text-[var(--color-text-muted)]">
@@ -377,76 +380,81 @@ function DetailRow({ label, children }: { label: string; children: preact.Compon
   );
 }
 
-interface TokenCardProps {
-  token: DeviceTokenSummary;
-  device: PairedDevice;
-  variant: "compact" | "full";
-  /** For compact variant: callback to open token modal */
-  onRotate?: () => void;
-  /** For full variant: disable buttons while rotating */
-  disabled?: boolean;
-}
+type TokenCardProps =
+  | {
+      token: DeviceTokenSummary;
+      device: PairedDevice;
+      variant: "compact";
+      /** Callback to open token modal */
+      onRotate: () => void;
+    }
+  | {
+      token: DeviceTokenSummary;
+      device: PairedDevice;
+      variant: "full";
+      /** Disable buttons while rotating */
+      disabled?: boolean;
+    };
 
-function TokenCard({ token, device, variant, onRotate, disabled }: TokenCardProps) {
-  const isCompact = variant === "compact";
+function TokenCard(props: TokenCardProps) {
+  const { token, device, variant } = props;
 
-  return (
-    <div
-      class={`flex items-center justify-between rounded-lg ${
-        isCompact ? "p-2 bg-[var(--color-bg-primary)]" : "p-3 bg-[var(--color-bg-tertiary)]"
-      }`}
-    >
-      <div>
-        <div class={`font-medium ${isCompact ? "text-sm" : ""}`}>{token.role}</div>
-        <div class="text-xs text-[var(--color-text-muted)]">
-          {isCompact ? (
-            token.revokedAtMs ? (
-              t("devices.tokenRevoked")
-            ) : (
-              t("devices.tokenActive")
-            )
-          ) : (
-            <>
-              {t("devices.tokenCreated")}: {formatTimestamp(token.createdAtMs)}
-              {token.rotatedAtMs && (
-                <>
-                  {" "}
-                  • {t("devices.tokenRotatedAt")}: {formatTimestamp(token.rotatedAtMs)}
-                </>
-              )}
-            </>
-          )}
+  if (variant === "compact") {
+    const { onRotate } = props;
+    return (
+      <div class="flex items-center justify-between rounded-lg p-2 bg-[var(--color-bg-primary)]">
+        <div>
+          <div class="font-medium text-sm">{token.role}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">
+            {token.revokedAtMs ? t("devices.tokenRevoked") : t("devices.tokenActive")}
+          </div>
         </div>
-      </div>
-      <div class={`flex ${isCompact ? "gap-1" : "gap-2"}`}>
-        {isCompact ? (
+        <div class="flex gap-1">
           <IconButton
             icon={<RotateCcw class="w-4 h-4" />}
             label={t("devices.rotateToken")}
             onClick={onRotate}
             size="sm"
           />
-        ) : (
-          <>
-            <Button
-              variant="secondary"
-              size="sm"
-              icon={RotateCcw}
-              onClick={() => rotateToken(device, token.role)}
-              disabled={disabled}
-            >
-              {t("devices.rotate")}
-            </Button>
-            <Button
-              variant="danger"
-              size="sm"
-              icon={Trash2}
-              onClick={() => revokeToken(device, token.role)}
-            >
-              {t("devices.revoke")}
-            </Button>
-          </>
-        )}
+        </div>
+      </div>
+    );
+  }
+
+  // variant === "full"
+  const { disabled } = props;
+  return (
+    <div class="flex items-center justify-between rounded-lg p-3 bg-[var(--color-bg-tertiary)]">
+      <div>
+        <div class="font-medium">{token.role}</div>
+        <div class="text-xs text-[var(--color-text-muted)]">
+          {t("devices.tokenCreated")}: {formatTimestamp(token.createdAtMs)}
+          {token.rotatedAtMs && (
+            <>
+              {" "}
+              • {t("devices.tokenRotatedAt")}: {formatTimestamp(token.rotatedAtMs)}
+            </>
+          )}
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={RotateCcw}
+          onClick={() => rotateToken(device, token.role)}
+          disabled={disabled}
+        >
+          {t("devices.rotate")}
+        </Button>
+        <Button
+          variant="danger"
+          size="sm"
+          icon={Trash2}
+          onClick={() => revokeToken(device, token.role)}
+        >
+          {t("devices.revoke")}
+        </Button>
       </div>
     </div>
   );
