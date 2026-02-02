@@ -9,6 +9,7 @@
 import { signal, computed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
+import { formatJson } from "@/lib/utils";
 import {
   isConnected,
   connectionState,
@@ -171,14 +172,6 @@ async function copyToClipboard(text: string, itemId: string) {
   }
 }
 
-function formatPayload(payload: unknown): string {
-  try {
-    return JSON.stringify(payload, null, 2);
-  } catch {
-    return String(payload);
-  }
-}
-
 // ============================================
 // Info Row Component
 // ============================================
@@ -230,7 +223,7 @@ interface EventEntryProps {
 
 function EventEntry({ entry, expanded, onToggle }: EventEntryProps) {
   const hasPayload = entry.payload != null && Object.keys(entry.payload as object).length > 0;
-  const payloadStr = formatPayload(entry.payload);
+  const payloadStr = formatJson(entry.payload);
   const itemId = `event-${entry.id}`;
   const isCopied = copiedItem.value === itemId;
 

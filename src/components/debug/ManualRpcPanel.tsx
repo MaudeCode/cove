@@ -7,6 +7,7 @@
 
 import { signal, computed } from "@preact/signals";
 import { t } from "@/lib/i18n";
+import { formatJson } from "@/lib/utils";
 import { isConnected, send } from "@/lib/gateway";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -48,14 +49,6 @@ let fieldCounter = 0;
 // ============================================
 // Helpers
 // ============================================
-
-function formatPayload(payload: unknown): string {
-  try {
-    return JSON.stringify(payload, null, 2);
-  } catch {
-    return String(payload);
-  }
-}
 
 /** Build params object from form fields */
 const formParams = computed(() => {
@@ -172,8 +165,11 @@ export function ManualRpcPanel() {
       <div class="space-y-4">
         {/* Method */}
         <div>
-          <label class="block text-sm font-medium mb-1">{t("debug.method")}</label>
+          <label htmlFor="rpc-method" class="block text-sm font-medium mb-1">
+            {t("debug.method")}
+          </label>
           <Input
+            id="rpc-method"
             value={rpcMethod.value}
             onInput={(e) => {
               rpcMethod.value = (e.target as HTMLInputElement).value;
@@ -188,7 +184,7 @@ export function ManualRpcPanel() {
         {isFormMode.value ? (
           <div>
             <div class="flex items-center justify-between mb-2">
-              <label class="text-sm font-medium">{t("debug.params")}</label>
+              <span class="text-sm font-medium">{t("debug.params")}</span>
               <Button variant="ghost" size="sm" onClick={addField} icon={<Plus size={14} />}>
                 {t("debug.addParam")}
               </Button>
@@ -232,8 +228,11 @@ export function ManualRpcPanel() {
         ) : (
           /* Params - JSON Mode */
           <div>
-            <label class="block text-sm font-medium mb-1">{t("debug.paramsJson")}</label>
+            <label htmlFor="rpc-params" class="block text-sm font-medium mb-1">
+              {t("debug.paramsJson")}
+            </label>
             <Textarea
+              id="rpc-params"
               value={rpcParams.value}
               onInput={(e) => {
                 rpcParams.value = (e.target as HTMLTextAreaElement).value;
@@ -274,7 +273,7 @@ export function ManualRpcPanel() {
               </Badge>
             </div>
             <pre class="text-xs font-mono bg-[var(--color-bg-tertiary)] p-3 rounded-lg overflow-x-auto max-h-64">
-              {formatPayload(rpcResult.value.data)}
+              {formatJson(rpcResult.value.data)}
             </pre>
           </div>
         )}

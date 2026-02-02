@@ -29,6 +29,18 @@ export function hasContent(s?: string | null): s is string {
 }
 
 /**
+ * Format a value as pretty-printed JSON string.
+ * Falls back to String() if JSON.stringify fails.
+ */
+export function formatJson(value: unknown): string {
+  try {
+    return JSON.stringify(value, null, 2);
+  } catch {
+    return String(value);
+  }
+}
+
+/**
  * Strip markdown formatting from text, returning plain text.
  * Useful for copying "formatted" content without markdown syntax.
  */
