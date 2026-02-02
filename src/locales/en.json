@@ -620,7 +620,10 @@
     "clear": "Clear",
     "noLogs": "No logs available",
     "noLogsHint": "Logs will appear here when the gateway writes them.",
-    "noMatches": "No logs match your filter"
+    "noMatches": "No logs match your filter",
+    "fetchError": "Failed to fetch logs",
+    "expandLine": "Expand log details",
+    "filterByLevel": "Filter by {level} level"
   },
 
   "channels": {
