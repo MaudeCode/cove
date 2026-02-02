@@ -17,6 +17,9 @@ import type { ExecApprovalItem, ExecApprovalRequest, ExecApprovalDecision } from
 /** Queue of pending exec approval requests */
 export const execApprovalQueue = signal<ExecApprovalItem[]>([]);
 
+/** Set of resolved approval IDs (to prevent re-showing after approval) */
+export const resolvedApprovalIds = signal<Set<string>>(new Set());
+
 /** Number of pending approvals */
 export const pendingCount = computed(() => execApprovalQueue.value.length);
 
@@ -90,6 +93,10 @@ export async function handleExecApprovalDecisionDirect(
 
     // Also remove from queue if it's there
     dequeueApproval(approvalId);
+
+    // Track as resolved to prevent re-showing on re-render
+    resolvedApprovalIds.value = new Set([...resolvedApprovalIds.value, approvalId]);
+
     log.exec.info(`Exec ${decision} (direct): id=${approvalId}`);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Failed to send decision";
