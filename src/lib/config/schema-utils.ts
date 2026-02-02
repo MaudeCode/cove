@@ -130,6 +130,45 @@ export function hintForPath(
   return undefined;
 }
 
+/** Common acronyms that should stay uppercase */
+const ACRONYMS = new Set([
+  "ui",
+  "url",
+  "api",
+  "id",
+  "ip",
+  "http",
+  "https",
+  "ssl",
+  "tls",
+  "ssh",
+  "dns",
+  "smtp",
+  "imap",
+  "json",
+  "xml",
+  "html",
+  "css",
+  "jwt",
+  "oauth",
+  "mfa",
+  "2fa",
+  "cli",
+  "gui",
+  "cpu",
+  "gpu",
+  "ram",
+  "ssd",
+  "hdd",
+  "aws",
+  "gcp",
+  "ai",
+  "ml",
+  "llm",
+  "pty",
+  "tty",
+]);
+
 /** Humanize a path segment into a label */
 export function humanize(key: string | number): string {
   if (typeof key === "number") return `#${key + 1}`;
@@ -137,7 +176,15 @@ export function humanize(key: string | number): string {
   return key
     .replace(/([a-z])([A-Z])/g, "$1 $2") // camelCase → Camel Case
     .replace(/[_-]/g, " ") // snake_case/kebab-case → spaces
-    .replace(/\b\w/g, (c) => c.toUpperCase()); // Capitalize words
+    .split(" ")
+    .map((word) => {
+      const lower = word.toLowerCase();
+      // Keep acronyms uppercase
+      if (ACRONYMS.has(lower)) return word.toUpperCase();
+      // Capitalize first letter of regular words
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    })
+    .join(" ");
 }
 
 // ============================================
