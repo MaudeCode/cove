@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { Toggle } from "@/components/ui/Toggle";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   Wifi,
   WifiOff,
@@ -291,21 +292,16 @@ export function DebugView(_props: RouteProps) {
 
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div class="p-6 border-b border-[var(--color-border)]">
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-xl font-semibold">{t("nav.debug")}</h1>
-            <p class="text-sm text-[var(--color-text-muted)] mt-1">{t("debug.subtitle")}</p>
-          </div>
-          <div class="flex items-center gap-2">
-            <Badge variant={connectionBadgeVariant.value}>
-              {connected ? <Wifi size={14} class="mr-1" /> : <WifiOff size={14} class="mr-1" />}
-              {state}
-            </Badge>
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        title={t("nav.debug")}
+        subtitle={t("debug.subtitle")}
+        actions={
+          <Badge variant={connectionBadgeVariant.value}>
+            {connected ? <Wifi size={14} class="mr-1" /> : <WifiOff size={14} class="mr-1" />}
+            {state}
+          </Badge>
+        }
+      />
 
       {/* Content */}
       <div class="flex-1 overflow-y-auto p-6">

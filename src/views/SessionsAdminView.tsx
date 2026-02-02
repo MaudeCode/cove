@@ -23,6 +23,7 @@ import { Modal } from "@/components/ui/Modal";
 import { IconButton } from "@/components/ui/IconButton";
 import { FormField } from "@/components/ui/FormField";
 import { StatCard } from "@/components/ui/StatCard";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   RefreshCw,
   Search,
@@ -617,34 +618,35 @@ export function SessionsAdminView(_props: RouteProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-6">
-        {/* Header with Search */}
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex-1">
-            <h1 class="text-2xl font-bold">{t("sessions.admin.title")}</h1>
-            <p class="text-[var(--color-text-muted)] mt-1">{t("sessions.admin.description")}</p>
-          </div>
-          <div class="flex items-center gap-3">
-            {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
-              <div class="relative">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                <Input
-                  type="text"
-                  value={searchQuery.value}
-                  onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-                  placeholder={t("sessions.admin.searchPlaceholder")}
-                  class="pl-10 w-64"
-                />
-              </div>
-            )}
-            <IconButton
-              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-              label={t("actions.refresh")}
-              onClick={loadAdminSessions}
-              disabled={isLoading.value || !isConnected.value}
-              variant="ghost"
-            />
-          </div>
-        </div>
+        <PageHeader
+          title={t("sessions.admin.title")}
+          subtitle={t("sessions.admin.description")}
+          border={false}
+          padded={false}
+          actions={
+            <>
+              {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
+                <div class="relative">
+                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                  <Input
+                    type="text"
+                    value={searchQuery.value}
+                    onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                    placeholder={t("sessions.admin.searchPlaceholder")}
+                    class="pl-10 w-64"
+                  />
+                </div>
+              )}
+              <IconButton
+                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                label={t("actions.refresh")}
+                onClick={loadAdminSessions}
+                disabled={isLoading.value || !isConnected.value}
+                variant="ghost"
+              />
+            </>
+          }
+        />
 
         {/* Stats Cards */}
         {isConnected.value && !isLoading.value && (

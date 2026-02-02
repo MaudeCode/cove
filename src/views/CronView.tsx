@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/Textarea";
 import { StatCard } from "@/components/ui/StatCard";
 import { ChipButtonGroup } from "@/components/ui/ChipButton";
 import { MiniStat } from "@/components/ui/MiniStat";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   RefreshCw,
   Search,
@@ -938,41 +939,42 @@ export function CronView(_props: RouteProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex-1">
-            <h1 class="text-2xl font-bold">{t("cron.title")}</h1>
-            <p class="text-[var(--color-text-muted)] mt-1">{t("cron.description")}</p>
-          </div>
-          <div class="flex items-center gap-3">
-            {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
-              <div class="relative">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                <Input
-                  type="text"
-                  value={searchQuery.value}
-                  onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-                  placeholder={t("cron.searchPlaceholder")}
-                  class="pl-10 w-64"
-                />
-              </div>
-            )}
-            <Button
-              icon={<Plus class="w-4 h-4" />}
-              onClick={() => openJobModal("create")}
-              disabled={!isConnected.value}
-            >
-              {t("cron.createJob")}
-            </Button>
-            <IconButton
-              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-              label={t("actions.refresh")}
-              onClick={loadCronJobs}
-              disabled={isLoading.value || !isConnected.value}
-              variant="ghost"
-            />
-          </div>
-        </div>
+        <PageHeader
+          title={t("cron.title")}
+          subtitle={t("cron.description")}
+          border={false}
+          padded={false}
+          actions={
+            <>
+              {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
+                <div class="relative">
+                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                  <Input
+                    type="text"
+                    value={searchQuery.value}
+                    onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                    placeholder={t("cron.searchPlaceholder")}
+                    class="pl-10 w-64"
+                  />
+                </div>
+              )}
+              <Button
+                icon={<Plus class="w-4 h-4" />}
+                onClick={() => openJobModal("create")}
+                disabled={!isConnected.value}
+              >
+                {t("cron.createJob")}
+              </Button>
+              <IconButton
+                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                label={t("actions.refresh")}
+                onClick={loadCronJobs}
+                disabled={isLoading.value || !isConnected.value}
+                variant="ghost"
+              />
+            </>
+          }
+        />
 
         {/* Stats Cards */}
         {isConnected.value && !isLoading.value && (

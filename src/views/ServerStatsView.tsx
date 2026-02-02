@@ -24,6 +24,7 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
+import { PageHeader } from "@/components/ui/PageHeader";
 import {
   RefreshCw,
   Server,
@@ -345,20 +346,21 @@ export function ServerStatsView(_props: RouteProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex-1">
-            <h1 class="text-2xl font-bold">{t("stats.title")}</h1>
-            <p class="text-[var(--color-text-muted)] mt-1">{t("stats.description")}</p>
-          </div>
-          <IconButton
-            icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-            label={t("actions.refresh")}
-            onClick={() => loadAll()}
-            disabled={isLoading.value || !isConnected.value}
-            variant="ghost"
-          />
-        </div>
+        <PageHeader
+          title={t("stats.title")}
+          subtitle={t("stats.description")}
+          border={false}
+          padded={false}
+          actions={
+            <IconButton
+              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+              label={t("actions.refresh")}
+              onClick={() => loadAll()}
+              disabled={isLoading.value || !isConnected.value}
+              variant="ghost"
+            />
+          }
+        />
 
         {/* Error */}
         {error.value && (
