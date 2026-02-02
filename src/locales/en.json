@@ -568,7 +568,19 @@
     "paused": "Paused",
     "recording": "Recording",
     "noEvents": "No events recorded",
-    "noEventsHint": "Events will appear here as they occur."
+    "noEventsHint": "Events will appear here as they occur.",
+    "snapshots": "Snapshots",
+    "snapshotsDesc": "Status, health, and heartbeat data.",
+    "status": "Status",
+    "health": "Health",
+    "lastHeartbeat": "Last Heartbeat",
+    "noData": "No data — click Refresh",
+    "manualRpc": "Manual RPC",
+    "manualRpcDesc": "Send a raw gateway method with JSON params.",
+    "method": "Method",
+    "paramsJson": "Params (JSON)",
+    "call": "Call",
+    "result": "Result"
   },
 
   "channels": {
