@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
 import { Textarea } from "@/components/ui/Textarea";
-import { Spinner } from "@/components/ui/Spinner";
 import { Send, Play } from "lucide-preact";
 
 // ============================================
@@ -88,6 +87,7 @@ export function ManualRpcPanel() {
             }}
             placeholder="e.g., system-presence, status, health.check"
             class="font-mono"
+            fullWidth
           />
         </div>
 
@@ -102,16 +102,18 @@ export function ManualRpcPanel() {
             placeholder="{}"
             rows={3}
             class="font-mono text-sm"
+            fullWidth
           />
         </div>
 
         {/* Call button */}
         <Button
+          variant="secondary"
           onClick={callRpc}
-          disabled={!connected || rpcLoading.value || !rpcMethod.value.trim()}
-          class="w-full"
+          disabled={!connected || !rpcMethod.value.trim()}
+          loading={rpcLoading.value}
+          icon={<Play size={14} />}
         >
-          {rpcLoading.value ? <Spinner size="sm" class="mr-2" /> : <Play size={14} class="mr-2" />}
           {t("debug.call")}
         </Button>
 

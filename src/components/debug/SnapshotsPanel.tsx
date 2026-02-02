@@ -9,7 +9,6 @@ import { t } from "@/lib/i18n";
 import { isConnected, send } from "@/lib/gateway";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { Spinner } from "@/components/ui/Spinner";
 import { Database, RefreshCw, Activity, Heart, Zap } from "lucide-preact";
 
 // ============================================
@@ -70,13 +69,10 @@ export function SnapshotsPanel() {
           variant="ghost"
           size="sm"
           onClick={fetchSnapshots}
-          disabled={!connected || isLoading.value}
+          disabled={!connected}
+          loading={isLoading.value}
+          icon={<RefreshCw size={14} />}
         >
-          {isLoading.value ? (
-            <Spinner size="sm" class="mr-1" />
-          ) : (
-            <RefreshCw size={14} class="mr-1" />
-          )}
           {t("actions.refresh")}
         </Button>
       </div>
