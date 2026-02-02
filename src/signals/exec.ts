@@ -87,17 +87,11 @@ export async function handleExecApprovalDecision(decision: ExecApprovalDecision)
   execApprovalError.value = null;
 
   try {
-    const method = decision === "deny" ? "exec.deny" : "exec.approve";
-    const params: Record<string, unknown> = {
-      requestId: active.request.requestId,
-    };
-
-    // For allow-always, include the allowlist flag
-    if (decision === "allow-always") {
-      params.allowlist = true;
-    }
-
-    await send(method, params);
+    // Gateway method is exec.approval.resolve with { id, decision }
+    await send("exec.approval.resolve", {
+      id: active.request.requestId,
+      decision,
+    });
 
     // Remove from queue on success
     dequeueApproval(active.request.requestId);
