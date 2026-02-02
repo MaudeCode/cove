@@ -179,7 +179,7 @@ export function SnapshotsPanel() {
 
   // Auto-fetch on mount when connected
   useEffect(() => {
-    if (connected && !status && !health) {
+    if (connected && !statusData.value && !healthData.value) {
       fetchSnapshots();
     }
   }, [connected]);
