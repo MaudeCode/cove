@@ -291,181 +291,179 @@ export function DebugView(_props: RouteProps) {
   const state = connectionState.value;
 
   return (
-    <div class="flex-1 flex flex-col overflow-hidden">
-      <PageHeader
-        title={t("nav.debug")}
-        subtitle={t("debug.subtitle")}
-        actions={
-          <Badge variant={connectionBadgeVariant.value}>
-            {connected ? <Wifi size={14} class="mr-1" /> : <WifiOff size={14} class="mr-1" />}
-            {state}
-          </Badge>
-        }
-      />
-
-      {/* Content */}
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
-          {/* Connection & Server Info */}
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Connection Info */}
-            <Card>
-              <div class="flex items-center gap-2 mb-4">
-                <Wifi
-                  size={18}
-                  class={connected ? "text-[var(--color-success)]" : "text-[var(--color-error)]"}
-                />
-                <h2 class="font-medium">{t("debug.connection")}</h2>
-              </div>
-              <div class="space-y-0">
-                <InfoRow icon={Activity} label={t("debug.state")} value={state} />
-                <InfoRow icon={Zap} label={t("debug.url")} value={gatewayUrl.value} copyable mono />
-                <InfoRow
-                  icon={Key}
-                  label={t("debug.sessionKey")}
-                  value={mainSessionKey.value}
-                  copyable
-                  mono
-                />
-                <InfoRow
-                  icon={RefreshCw}
-                  label={t("debug.reconnectAttempts")}
-                  value={String(reconnectAttempt.value)}
-                />
-                <InfoRow
-                  icon={Clock}
-                  label={t("debug.connectedAt")}
-                  value={connectedAt.value ? formatTimestamp(connectedAt.value) : null}
-                />
-              </div>
-            </Card>
-
-            {/* Server Info */}
-            <Card>
-              <div class="flex items-center gap-2 mb-4">
-                <Server size={18} class="text-[var(--color-primary)]" />
-                <h2 class="font-medium">{t("debug.server")}</h2>
-              </div>
-              <div class="space-y-0">
-                <InfoRow icon={Server} label={t("debug.version")} value={gatewayVersion.value} />
-                <InfoRow icon={Monitor} label={t("debug.host")} value={gatewayHost.value} />
-                <InfoRow
-                  icon={FileText}
-                  label={t("debug.commit")}
-                  value={gatewayCommit.value?.slice(0, 8)}
-                  copyable
-                  mono
-                />
-                <InfoRow icon={Clock} label={t("debug.uptime")} value={formattedUptime.value} />
-                <InfoRow
-                  icon={Clock}
-                  label={t("debug.tickInterval")}
-                  value={tickIntervalMs.value ? `${tickIntervalMs.value}ms` : null}
-                />
-              </div>
-            </Card>
-
-            {/* Paths Info */}
-            <Card>
-              <div class="flex items-center gap-2 mb-4">
-                <Folder size={18} class="text-[var(--color-warning)]" />
-                <h2 class="font-medium">{t("debug.paths")}</h2>
-              </div>
-              <div class="space-y-0">
-                <InfoRow
-                  icon={FileText}
-                  label={t("debug.configPath")}
-                  value={gatewayConfigPath.value}
-                  copyable
-                  mono
-                />
-                <InfoRow
-                  icon={Folder}
-                  label={t("debug.stateDir")}
-                  value={gatewayStateDir.value}
-                  copyable
-                  mono
-                />
-              </div>
-            </Card>
-
-            {/* Client Info */}
-            <Card>
-              <div class="flex items-center gap-2 mb-4">
-                <Monitor size={18} class="text-[var(--color-info)]" />
-                <h2 class="font-medium">{t("debug.client")}</h2>
-              </div>
-              <div class="space-y-0">
-                <InfoRow icon={Monitor} label={t("debug.appVersion")} value={__APP_VERSION__} />
-                <InfoRow icon={Monitor} label={t("debug.platform")} value={navigator.platform} />
-                <InfoRow
-                  icon={Monitor}
-                  label={t("debug.userAgent")}
-                  value={navigator.userAgent.slice(0, 60) + "..."}
-                />
-                <InfoRow
-                  icon={Users}
-                  label={t("debug.presenceCount")}
-                  value={String(presence.value.length)}
-                />
-              </div>
-            </Card>
-          </div>
-
-          {/* Snapshots & Manual RPC - Side by side on larger screens */}
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <SnapshotsPanel />
-            <ManualRpcPanel />
-          </div>
-
-          {/* Event Log - at bottom so it doesn't push other cards around */}
+    <div class="flex-1 overflow-y-auto p-6">
+      <div class="max-w-5xl mx-auto space-y-6">
+        <PageHeader
+          title={t("nav.debug")}
+          subtitle={t("debug.subtitle")}
+          border={false}
+          padded={false}
+          actions={
+            <Badge variant={connectionBadgeVariant.value}>
+              {connected ? <Wifi size={14} class="mr-1" /> : <WifiOff size={14} class="mr-1" />}
+              {state}
+            </Badge>
+          }
+        />
+        {/* Connection & Server Info */}
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Connection Info */}
           <Card>
-            <div class="flex items-center justify-between mb-4">
-              <div class="flex items-center gap-2">
-                <Activity size={18} class="text-[var(--color-accent)]" />
-                <h2 class="font-medium">{t("debug.eventLog")}</h2>
-                <Badge variant="default">{eventLog.value.length}</Badge>
-              </div>
-              <div class="flex items-center gap-2">
-                <Toggle
-                  checked={!isPaused.value}
-                  onChange={(checked) => {
-                    isPaused.value = !checked;
-                  }}
-                  label={isPaused.value ? t("debug.paused") : t("debug.recording")}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearLog}
-                  disabled={eventLog.value.length === 0}
-                  icon={<Trash2 size={14} />}
-                >
-                  {t("debug.clear")}
-                </Button>
-              </div>
+            <div class="flex items-center gap-2 mb-4">
+              <Wifi
+                size={18}
+                class={connected ? "text-[var(--color-success)]" : "text-[var(--color-error)]"}
+              />
+              <h2 class="font-medium">{t("debug.connection")}</h2>
             </div>
+            <div class="space-y-0">
+              <InfoRow icon={Activity} label={t("debug.state")} value={state} />
+              <InfoRow icon={Zap} label={t("debug.url")} value={gatewayUrl.value} copyable mono />
+              <InfoRow
+                icon={Key}
+                label={t("debug.sessionKey")}
+                value={mainSessionKey.value}
+                copyable
+                mono
+              />
+              <InfoRow
+                icon={RefreshCw}
+                label={t("debug.reconnectAttempts")}
+                value={String(reconnectAttempt.value)}
+              />
+              <InfoRow
+                icon={Clock}
+                label={t("debug.connectedAt")}
+                value={connectedAt.value ? formatTimestamp(connectedAt.value) : null}
+              />
+            </div>
+          </Card>
 
-            {eventLog.value.length === 0 ? (
-              <div class="text-center py-8 text-[var(--color-text-muted)]">
-                <Activity size={32} class="mx-auto mb-2 opacity-50" />
-                <p>{t("debug.noEvents")}</p>
-                <p class="text-sm mt-1">{t("debug.noEventsHint")}</p>
-              </div>
-            ) : (
-              <div class="max-h-96 overflow-y-auto border border-[var(--color-border)] rounded-lg">
-                {eventLog.value.map((entry) => (
-                  <EventEntry
-                    key={entry.id}
-                    entry={entry}
-                    expanded={expandedEvents.value.has(entry.id)}
-                    onToggle={() => toggleEventExpanded(entry.id)}
-                  />
-                ))}
-              </div>
-            )}
+          {/* Server Info */}
+          <Card>
+            <div class="flex items-center gap-2 mb-4">
+              <Server size={18} class="text-[var(--color-primary)]" />
+              <h2 class="font-medium">{t("debug.server")}</h2>
+            </div>
+            <div class="space-y-0">
+              <InfoRow icon={Server} label={t("debug.version")} value={gatewayVersion.value} />
+              <InfoRow icon={Monitor} label={t("debug.host")} value={gatewayHost.value} />
+              <InfoRow
+                icon={FileText}
+                label={t("debug.commit")}
+                value={gatewayCommit.value?.slice(0, 8)}
+                copyable
+                mono
+              />
+              <InfoRow icon={Clock} label={t("debug.uptime")} value={formattedUptime.value} />
+              <InfoRow
+                icon={Clock}
+                label={t("debug.tickInterval")}
+                value={tickIntervalMs.value ? `${tickIntervalMs.value}ms` : null}
+              />
+            </div>
+          </Card>
+
+          {/* Paths Info */}
+          <Card>
+            <div class="flex items-center gap-2 mb-4">
+              <Folder size={18} class="text-[var(--color-warning)]" />
+              <h2 class="font-medium">{t("debug.paths")}</h2>
+            </div>
+            <div class="space-y-0">
+              <InfoRow
+                icon={FileText}
+                label={t("debug.configPath")}
+                value={gatewayConfigPath.value}
+                copyable
+                mono
+              />
+              <InfoRow
+                icon={Folder}
+                label={t("debug.stateDir")}
+                value={gatewayStateDir.value}
+                copyable
+                mono
+              />
+            </div>
+          </Card>
+
+          {/* Client Info */}
+          <Card>
+            <div class="flex items-center gap-2 mb-4">
+              <Monitor size={18} class="text-[var(--color-info)]" />
+              <h2 class="font-medium">{t("debug.client")}</h2>
+            </div>
+            <div class="space-y-0">
+              <InfoRow icon={Monitor} label={t("debug.appVersion")} value={__APP_VERSION__} />
+              <InfoRow icon={Monitor} label={t("debug.platform")} value={navigator.platform} />
+              <InfoRow
+                icon={Monitor}
+                label={t("debug.userAgent")}
+                value={navigator.userAgent.slice(0, 60) + "..."}
+              />
+              <InfoRow
+                icon={Users}
+                label={t("debug.presenceCount")}
+                value={String(presence.value.length)}
+              />
+            </div>
           </Card>
         </div>
+
+        {/* Snapshots & Manual RPC - Side by side on larger screens */}
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <SnapshotsPanel />
+          <ManualRpcPanel />
+        </div>
+
+        {/* Event Log - at bottom so it doesn't push other cards around */}
+        <Card>
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2">
+              <Activity size={18} class="text-[var(--color-accent)]" />
+              <h2 class="font-medium">{t("debug.eventLog")}</h2>
+              <Badge variant="default">{eventLog.value.length}</Badge>
+            </div>
+            <div class="flex items-center gap-2">
+              <Toggle
+                checked={!isPaused.value}
+                onChange={(checked) => {
+                  isPaused.value = !checked;
+                }}
+                label={isPaused.value ? t("debug.paused") : t("debug.recording")}
+              />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearLog}
+                disabled={eventLog.value.length === 0}
+                icon={<Trash2 size={14} />}
+              >
+                {t("debug.clear")}
+              </Button>
+            </div>
+          </div>
+
+          {eventLog.value.length === 0 ? (
+            <div class="text-center py-8 text-[var(--color-text-muted)]">
+              <Activity size={32} class="mx-auto mb-2 opacity-50" />
+              <p>{t("debug.noEvents")}</p>
+              <p class="text-sm mt-1">{t("debug.noEventsHint")}</p>
+            </div>
+          ) : (
+            <div class="max-h-96 overflow-y-auto border border-[var(--color-border)] rounded-lg">
+              {eventLog.value.map((entry) => (
+                <EventEntry
+                  key={entry.id}
+                  entry={entry}
+                  expanded={expandedEvents.value.has(entry.id)}
+                  onToggle={() => toggleEventExpanded(entry.id)}
+                />
+              ))}
+            </div>
+          )}
+        </Card>
       </div>
     </div>
   );
