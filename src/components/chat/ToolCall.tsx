@@ -153,10 +153,10 @@ interface ExecApprovalButtonsProps {
 function ExecApprovalButtons({ approvalId, expiresAtMs }: ExecApprovalButtonsProps) {
   const busy = execApprovalBusy.value;
   const error = execApprovalError.value;
-  const alreadyResolved = resolvedApprovalIds.value.has(approvalId);
+  const alreadyResolved = resolvedApprovalIds.value.get(approvalId);
   const [timeLeft, setTimeLeft] = useState<number>(Math.max(0, expiresAtMs - Date.now()));
-  const [localResolved, setLocalResolved] = useState(false);
-  const resolved = alreadyResolved || localResolved;
+  const [localDecision, setLocalDecision] = useState<string | null>(null);
+  const resolvedDecision = alreadyResolved ?? localDecision;
 
   // Countdown timer
   useEffect(() => {
@@ -174,15 +174,24 @@ function ExecApprovalButtons({ approvalId, expiresAtMs }: ExecApprovalButtonsPro
   const handleDecision = async (decision: "allow-once" | "allow-always" | "deny") => {
     try {
       await handleExecApprovalDecisionDirect(approvalId, decision);
-      setLocalResolved(true);
+      setLocalDecision(decision);
     } catch {
       // Error is handled by the signal
     }
   };
 
-  // Already resolved
-  if (resolved) {
-    return <div class="text-xs text-[var(--color-success)] italic">{t("exec.approved")}</div>;
+  // Already resolved - show which decision was made
+  if (resolvedDecision) {
+    const isDenied = resolvedDecision === "deny";
+    return (
+      <div
+        class={`text-xs italic ${isDenied ? "text-[var(--color-error)]" : "text-[var(--color-success)]"}`}
+        role="status"
+        aria-live="polite"
+      >
+        {isDenied ? t("exec.denied") : t("exec.approved")}
+      </div>
+    );
   }
 
   const expired = timeLeft <= 0;
@@ -193,19 +202,26 @@ function ExecApprovalButtons({ approvalId, expiresAtMs }: ExecApprovalButtonsPro
   }
 
   return (
-    <div class="space-y-2">
+    <div class="space-y-2" role="region" aria-label={t("exec.approvalNeeded")} aria-live="polite">
       {/* Status line with timer */}
       <div class="flex items-center justify-between">
         <span class="text-xs font-medium text-[var(--color-warning)]">
           {t("exec.approvalNeeded")}
         </span>
-        <span class="text-[10px] text-[var(--color-text-muted)]">
+        <span
+          class="text-[10px] text-[var(--color-text-muted)]"
+          aria-label={t("exec.expiresIn", { time: `${Math.ceil(timeLeft / 1000)}s` })}
+        >
           {Math.ceil(timeLeft / 1000)}s
         </span>
       </div>
 
       {/* Error message */}
-      {error && <div class="text-xs text-[var(--color-error)]">{error}</div>}
+      {error && (
+        <div class="text-xs text-[var(--color-error)]" role="alert">
+          {error}
+        </div>
+      )}
 
       {/* Action buttons */}
       <div class="flex gap-2">

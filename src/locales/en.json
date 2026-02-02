@@ -162,6 +162,7 @@
     "expiresIn": "Expires in {time}",
     "expired": "Expired",
     "approved": "Approved",
+    "denied": "Denied",
     "pendingCount": "{count} pending",
     "allowOnce": "Allow Once",
     "allowAlways": "Always Allow",
