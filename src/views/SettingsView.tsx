@@ -130,7 +130,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   label: t(opt.labelKey),
                 }))}
                 size="sm"
-                class="min-w-[180px]"
+                width="180px"
               />
             </SettingRow>
 
@@ -148,7 +148,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   label: t(opt.labelKey),
                 }))}
                 size="sm"
-                class="min-w-[180px]"
+                width="180px"
               />
             </SettingRow>
           </div>
@@ -171,7 +171,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   label: t(opt.labelKey),
                 }))}
                 size="sm"
-                class="min-w-[180px]"
+                width="180px"
               />
             </SettingRow>
           </div>
@@ -219,7 +219,7 @@ export function SettingsView(_props: SettingsViewProps) {
                   }}
                   options={agentOptions.value}
                   size="sm"
-                  class="min-w-[180px]"
+                  width="180px"
                 />
               </SettingRow>
             </div>
