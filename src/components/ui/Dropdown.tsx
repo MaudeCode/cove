@@ -5,7 +5,7 @@
  * for full styling control (unlike native <select>).
  */
 
-import { useState, useRef, useCallback } from "preact/hooks";
+import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
 import { ChevronDown } from "lucide-preact";
 import { useClickOutside } from "@/hooks/useClickOutside";
 
@@ -69,12 +69,21 @@ export function Dropdown({
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
+  const [minWidth, setMinWidth] = useState<number | undefined>(undefined);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const sizerRef = useRef<HTMLDivElement>(null);
 
   const styles = sizeStyles[size];
   const selectedOption = options.find((o) => o.value === value);
   const displayLabel = selectedOption?.label ?? placeholder;
+
+  // Measure the width of the longest option
+  useLayoutEffect(() => {
+    if (sizerRef.current) {
+      setMinWidth(sizerRef.current.offsetWidth);
+    }
+  }, [options]);
 
   // Close dropdown
   const close = useCallback(() => {
@@ -138,6 +147,24 @@ export function Dropdown({
 
   return (
     <div class={`relative w-fit ${className || ""}`}>
+      {/* Hidden sizer to measure longest option */}
+      <div
+        ref={sizerRef}
+        aria-hidden="true"
+        class={`
+          invisible absolute flex items-center gap-2
+          ${styles.trigger}
+        `}
+      >
+        <span>
+          {options.reduce(
+            (longest, opt) => (opt.label.length > longest.length ? opt.label : longest),
+            placeholder,
+          )}
+        </span>
+        <ChevronDown class="w-4 h-4 flex-shrink-0" />
+      </div>
+
       {/* Trigger button */}
       <button
         ref={triggerRef}
@@ -148,6 +175,7 @@ export function Dropdown({
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        style={minWidth ? { minWidth: `${minWidth}px` } : undefined}
         class={`
           flex items-center justify-between gap-2 rounded-md cursor-pointer
           bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]
