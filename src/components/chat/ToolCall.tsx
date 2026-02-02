@@ -15,12 +15,10 @@ import { Spinner } from "@/components/ui/Spinner";
 import { JsonBlock } from "@/components/debug/JsonBlock";
 import { Button } from "@/components/ui/Button";
 import {
-  execApprovalQueue,
   execApprovalBusy,
   execApprovalError,
-  handleExecApprovalDecision,
+  handleExecApprovalDecisionDirect,
 } from "@/signals/exec";
-import type { ExecApprovalItem } from "@/types/exec";
 import { t } from "@/lib/i18n";
 
 interface ToolCallProps {
@@ -117,6 +115,7 @@ export function ToolCall({ toolCall }: ToolCallProps) {
           {approvalPending && (
             <ExecApprovalButtons
               approvalId={(toolCall.result as ApprovalPendingResult).details.approvalId}
+              expiresAtMs={(toolCall.result as ApprovalPendingResult).details.expiresAtMs}
             />
           )}
 
@@ -147,40 +146,48 @@ export function ToolCall({ toolCall }: ToolCallProps) {
 
 interface ExecApprovalButtonsProps {
   approvalId: string;
+  expiresAtMs: number;
 }
 
-function ExecApprovalButtons({ approvalId }: ExecApprovalButtonsProps) {
-  const queue = execApprovalQueue.value;
+function ExecApprovalButtons({ approvalId, expiresAtMs }: ExecApprovalButtonsProps) {
   const busy = execApprovalBusy.value;
   const error = execApprovalError.value;
-  const [timeLeft, setTimeLeft] = useState<number | null>(null);
-
-  // Find matching approval in queue
-  const approval = queue.find((item: ExecApprovalItem) => item.request.requestId === approvalId);
+  const [timeLeft, setTimeLeft] = useState<number>(Math.max(0, expiresAtMs - Date.now()));
+  const [resolved, setResolved] = useState(false);
 
   // Countdown timer
   useEffect(() => {
-    if (!approval) {
-      setTimeLeft(null);
-      return;
-    }
-
     const updateTimer = () => {
-      const remaining = Math.max(0, approval.expiresAtMs - Date.now());
+      const remaining = Math.max(0, expiresAtMs - Date.now());
       setTimeLeft(remaining);
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, [approval]);
+  }, [expiresAtMs]);
 
-  // If no matching approval in queue, it may have been resolved or expired
-  if (!approval) {
-    return <div class="text-xs text-[var(--color-text-muted)] italic">{t("exec.expired")}</div>;
+  // Handle decision directly with the approvalId
+  const handleDecision = async (decision: "allow-once" | "allow-always" | "deny") => {
+    try {
+      await handleExecApprovalDecisionDirect(approvalId, decision);
+      setResolved(true);
+    } catch {
+      // Error is handled by the signal
+    }
+  };
+
+  // Already resolved
+  if (resolved) {
+    return <div class="text-xs text-[var(--color-success)] italic">{t("exec.approved")}</div>;
   }
 
-  const expired = timeLeft !== null && timeLeft <= 0;
+  const expired = timeLeft <= 0;
+
+  // Show expired if time ran out
+  if (expired) {
+    return <div class="text-xs text-[var(--color-text-muted)] italic">{t("exec.expired")}</div>;
+  }
 
   return (
     <div class="space-y-2">
@@ -189,47 +196,36 @@ function ExecApprovalButtons({ approvalId }: ExecApprovalButtonsProps) {
         <span class="text-xs font-medium text-[var(--color-warning)]">
           {t("exec.approvalNeeded")}
         </span>
-        {timeLeft !== null && !expired && (
-          <span class="text-[10px] text-[var(--color-text-muted)]">
-            {Math.ceil(timeLeft / 1000)}s
-          </span>
-        )}
+        <span class="text-[10px] text-[var(--color-text-muted)]">
+          {Math.ceil(timeLeft / 1000)}s
+        </span>
       </div>
 
       {/* Error message */}
       {error && <div class="text-xs text-[var(--color-error)]">{error}</div>}
 
       {/* Action buttons */}
-      {!expired && (
-        <div class="flex gap-2">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={() => handleExecApprovalDecision("allow-once")}
-            disabled={busy}
-          >
-            {t("exec.allowOnce")}
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => handleExecApprovalDecision("allow-always")}
-            disabled={busy}
-          >
-            {t("exec.allowAlways")}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleExecApprovalDecision("deny")}
-            disabled={busy}
-          >
-            {t("exec.deny")}
-          </Button>
-        </div>
-      )}
-
-      {expired && <div class="text-xs text-[var(--color-error)]">{t("exec.expired")}</div>}
+      <div class="flex gap-2">
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={() => handleDecision("allow-once")}
+          disabled={busy}
+        >
+          {t("exec.allowOnce")}
+        </Button>
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={() => handleDecision("allow-always")}
+          disabled={busy}
+        >
+          {t("exec.allowAlways")}
+        </Button>
+        <Button variant="ghost" size="sm" onClick={() => handleDecision("deny")} disabled={busy}>
+          {t("exec.deny")}
+        </Button>
+      </div>
     </div>
   );
 }
