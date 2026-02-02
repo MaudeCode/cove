@@ -932,7 +932,8 @@
       "removeItem": "Remove item",
       "noItems": "No items",
       "editJson": "Edit as JSON",
-      "dragToReorder": "Drag to reorder"
+      "dragToReorder": "Drag to reorder",
+      "invalidJson": "Invalid JSON"
     }
   }
 }
