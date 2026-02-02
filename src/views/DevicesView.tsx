@@ -318,9 +318,9 @@ function DeviceDetails({ device }: { device: PairedDevice }) {
 
   return (
     <div class="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]">
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
         {/* Left column: Metadata */}
-        <div class="space-y-2 text-sm">
+        <div class="space-y-2 text-sm min-w-0">
           <DetailRow label={t("devices.deviceId")}>
             <code class="text-xs bg-[var(--color-bg-primary)] px-1 py-0.5 rounded break-all">
               {device.deviceId}
@@ -340,7 +340,7 @@ function DeviceDetails({ device }: { device: PairedDevice }) {
         </div>
 
         {/* Right column: Tokens */}
-        <div class="space-y-2">
+        <div class="space-y-2 w-48 shrink-0">
           <h4 class="text-sm font-medium flex items-center gap-2">
             <Shield class="w-4 h-4" />
             {t("devices.tokens")}
