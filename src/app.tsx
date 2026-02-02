@@ -24,6 +24,8 @@ import { previousRoute } from "@/signals/ui";
 import { ToastContainer, toast } from "@/components/ui/Toast";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { ExecApprovalModal } from "@/components/exec/ExecApprovalModal";
+import { initExecApproval } from "@/signals/exec";
 import { ChatView } from "@/views/ChatView";
 import { LoginView } from "@/views/LoginView";
 import { StatusView as OverviewView } from "@/views/StatusView";
@@ -115,6 +117,9 @@ export function App() {
       >
         {/* Always render AppShell - just change content inside */}
         <AppShell>{content}</AppShell>
+
+        {/* Exec approval modal - renders when approval needed */}
+        <ExecApprovalModal />
       </ErrorBoundary>
       <ToastContainer position="top-right" />
 
@@ -207,6 +212,9 @@ async function tryAutoConnect() {
 
     // Load available models
     loadModels();
+
+    // Initialize exec approval listener
+    initExecApproval();
   } catch {
     // User will see the login form
   }
