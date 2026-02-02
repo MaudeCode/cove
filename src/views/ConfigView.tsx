@@ -11,7 +11,6 @@ import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { toast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
-import { Card } from "@/components/ui/Card";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
@@ -246,44 +245,44 @@ export function ConfigView(_props: RouteProps) {
 
         {/* Content */}
         {!isLoading.value && schemaValue && (
-          <Card class="overflow-hidden">
-            <div class="flex min-h-[600px]">
-              {/* Sidebar */}
-              <div class="w-64 border-r border-[var(--color-border)] flex flex-col bg-[var(--color-bg-secondary)] rounded-l-xl">
-                {/* Search */}
-                <div class="p-3 border-b border-[var(--color-border)] rounded-tl-xl">
-                  <Input
-                    type="text"
-                    placeholder={t("config.searchPlaceholder")}
-                    value={searchQuery.value}
-                    onInput={(e) => {
-                      searchQuery.value = (e.target as HTMLInputElement).value;
-                    }}
-                    leftElement={<Search class="w-4 h-4" />}
-                    class="text-sm"
-                  />
-                </div>
-
-                {/* Nav tree */}
-                <div class="flex-1 overflow-y-auto p-2">
-                  {filteredTree.length === 0 ? (
-                    <p class="text-sm text-[var(--color-text-muted)] p-2">
-                      {query ? t("config.noResults") : t("config.noFields")}
-                    </p>
-                  ) : (
-                    filteredTree.map((item) => (
-                      <ConfigNavItem
-                        key={item.key}
-                        item={item}
-                        selectedPath={selectedPath}
-                        expandedNav={expandedNav}
-                      />
-                    ))
-                  )}
-                </div>
+          <div class="flex min-h-[500px] rounded-xl overflow-hidden border border-[var(--color-border)]">
+            {/* Sidebar */}
+            <div class="w-64 flex flex-col bg-[var(--color-bg-tertiary)]">
+              {/* Search */}
+              <div class="p-3">
+                <Input
+                  type="text"
+                  placeholder={t("config.searchPlaceholder")}
+                  value={searchQuery.value}
+                  onInput={(e) => {
+                    searchQuery.value = (e.target as HTMLInputElement).value;
+                  }}
+                  leftElement={<Search class="w-4 h-4" />}
+                  class="text-sm"
+                />
               </div>
 
-              {/* Detail panel */}
+              {/* Nav tree */}
+              <div class="flex-1 overflow-y-auto p-2">
+                {filteredTree.length === 0 ? (
+                  <p class="text-sm text-[var(--color-text-muted)] p-2">
+                    {query ? t("config.noResults") : t("config.noFields")}
+                  </p>
+                ) : (
+                  filteredTree.map((item) => (
+                    <ConfigNavItem
+                      key={item.key}
+                      item={item}
+                      selectedPath={selectedPath}
+                      expandedNav={expandedNav}
+                    />
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Detail panel */}
+            <div class="flex-1 bg-[var(--color-bg-surface)]">
               <ConfigDetailPanel
                 selectedPath={selectedPath}
                 schema={schema}
@@ -291,7 +290,7 @@ export function ConfigView(_props: RouteProps) {
                 uiHints={uiHints}
               />
             </div>
-          </Card>
+          </div>
         )}
       </div>
     </div>
