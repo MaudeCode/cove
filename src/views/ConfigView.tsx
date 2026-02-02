@@ -15,6 +15,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { HintBox } from "@/components/ui/HintBox";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { RefreshCw, Search, Save, RotateCcw } from "lucide-preact";
 import type { RouteProps } from "@/types/routes";
 import {
@@ -194,47 +195,47 @@ export function ConfigView(_props: RouteProps) {
 
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div class="flex items-center justify-between gap-4 px-6 py-4 border-b border-[var(--color-border)]">
-        <div>
-          <h1 class="text-xl font-bold">{t("config.title")}</h1>
-          {schemaVersion.value && (
-            <p class="text-xs text-[var(--color-text-muted)]">
+      <PageHeader
+        title={t("config.title")}
+        subtitle={
+          schemaVersion.value && (
+            <p class="text-xs text-[var(--color-text-muted)] mt-1">
               {t("config.version", { version: schemaVersion.value })}
             </p>
-          )}
-        </div>
-
-        <div class="flex items-center gap-2">
-          {isDirty.value && (
-            <span class="text-sm text-[var(--color-warning)]">{t("config.unsavedChanges")}</span>
-          )}
-          <Button
-            variant="secondary"
-            size="sm"
-            icon={RotateCcw}
-            onClick={handleReset}
-            disabled={!isDirty.value}
-          >
-            {t("config.reset")}
-          </Button>
-          <Button
-            variant="primary"
-            size="sm"
-            icon={Save}
-            onClick={handleSave}
-            disabled={!canSave.value}
-          >
-            {isSaving.value ? t("config.saving") : t("config.save")}
-          </Button>
-          <IconButton
-            icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-            onClick={loadConfig}
-            disabled={isLoading.value}
-            label={t("actions.refresh")}
-          />
-        </div>
-      </div>
+          )
+        }
+        actions={
+          <>
+            {isDirty.value && (
+              <span class="text-sm text-[var(--color-warning)]">{t("config.unsavedChanges")}</span>
+            )}
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={RotateCcw}
+              onClick={handleReset}
+              disabled={!isDirty.value}
+            >
+              {t("config.reset")}
+            </Button>
+            <Button
+              variant="primary"
+              size="sm"
+              icon={Save}
+              onClick={handleSave}
+              disabled={!canSave.value}
+            >
+              {isSaving.value ? t("config.saving") : t("config.save")}
+            </Button>
+            <IconButton
+              icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+              onClick={loadConfig}
+              disabled={isLoading.value}
+              label={t("actions.refresh")}
+            />
+          </>
+        }
+      />
 
       {/* Error */}
       {error.value && (
