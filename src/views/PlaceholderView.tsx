@@ -42,10 +42,6 @@ export function PlaceholderView({ titleKey, icon, descriptionKey }: PlaceholderV
 
 // Note: RouteProps accepted but unused - required by preact-router
 
-export function NodesView(_props: RouteProps) {
-  return <PlaceholderView titleKey="nav.nodes" icon="📱" />;
-}
-
 export function DebugView(_props: RouteProps) {
   return <PlaceholderView titleKey="nav.debug" icon="🔧" />;
 }
