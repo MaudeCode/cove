@@ -13,10 +13,8 @@ import type {
   ConfigGetResponse,
   ConfigSchemaResponse,
   ConfigSaveResponse,
-  ConfigSection,
 } from "@/types/config";
-import { CONFIG_GROUPS } from "@/types/config";
-import { extractFields, groupFieldsIntoSections, setValueAtPath } from "@/lib/config/schema-utils";
+import { setValueAtPath } from "@/lib/config/schema-utils";
 
 // ============================================
 // Core State
@@ -68,9 +66,6 @@ export const searchQuery = signal("");
 /** Show advanced settings */
 export const showAdvanced = signal(false);
 
-/** Expanded section IDs */
-export const expandedSections = signal<Set<string>>(new Set(["gateway", "agents", "channels"]));
-
 /** Validation errors by path */
 export const validationErrors = signal<Record<string, string>>({});
 
@@ -81,41 +76,6 @@ export const validationErrors = signal<Record<string, string>>({});
 /** Whether there are unsaved changes */
 export const isDirty = computed(() => {
   return JSON.stringify(originalConfig.value) !== JSON.stringify(draftConfig.value);
-});
-
-/** All fields extracted from schema */
-export const allFields = computed(() => {
-  if (!schema.value) return [];
-  return extractFields(schema.value, draftConfig.value, uiHints.value);
-});
-
-/** Fields grouped into sections */
-export const sections = computed((): ConfigSection[] => {
-  const fields = allFields.value;
-  if (fields.length === 0) return [];
-
-  // Filter by search query
-  const query = searchQuery.value.toLowerCase().trim();
-  let filtered = fields;
-
-  if (query) {
-    filtered = fields.filter((f) => {
-      const label = f.hint.label ?? f.key;
-      const help = f.hint.help ?? "";
-      return (
-        f.key.toLowerCase().includes(query) ||
-        label.toLowerCase().includes(query) ||
-        help.toLowerCase().includes(query)
-      );
-    });
-  }
-
-  // Filter by advanced
-  if (!showAdvanced.value) {
-    filtered = filtered.filter((f) => !f.hint.advanced);
-  }
-
-  return groupFieldsIntoSections(filtered, CONFIG_GROUPS);
 });
 
 /** Whether we can save */
@@ -181,17 +141,6 @@ export function setValidationError(path: string, message: string | null): void {
     delete next[path];
   }
   validationErrors.value = next;
-}
-
-/** Toggle section expansion */
-export function toggleSection(sectionId: string): void {
-  const next = new Set(expandedSections.value);
-  if (next.has(sectionId)) {
-    next.delete(sectionId);
-  } else {
-    next.add(sectionId);
-  }
-  expandedSections.value = next;
 }
 
 /** Save config to gateway */
