@@ -1058,7 +1058,7 @@ export const navigation: NavSection[] = [
 - [ ] Notifications (desktop/browser)
 - [ ] Sound toggle for notifications
 
-### 4.13 Command Palette
+### 4.14 Command Palette
 - [ ] Cmd/Ctrl+K to open command palette
 - [ ] Fuzzy search across commands
 - [ ] Navigation commands (go to view, switch session)
@@ -1068,13 +1068,26 @@ export const navigation: NavSection[] = [
 - [ ] Keyboard navigation (arrow keys, enter to select)
 - [ ] Recent commands history
 
-### 4.11 PWA Support
+### 4.11 Device Pairing for Cove
+- [ ] Generate keypair in browser (persist in localStorage)
+- [ ] Use device token instead of gateway token after pairing
+- [ ] Show pairing status in Settings
+- [ ] Enable per-browser revocation from DevicesView
+
+**Why:** Currently Cove uses gateway token directly. Device pairing would allow:
+- Revoke one browser without changing gateway token
+- Per-device audit trail
+- Future: scoped permissions (read-only mode)
+
+**Not urgent:** Gateway token auth works fine for single-user setups.
+
+### 4.12 PWA Support
 - [ ] manifest.json (app name, icons, theme colors, display mode)
 - [ ] Service worker for install prompt
 - [ ] Offline caching (optional)
 - [ ] iOS/Android home screen install support
 
-### 4.12 Custom Theming
+### 4.13 Custom Theming
 - [ ] Theme schema (colors, code theme, fonts, spacing)
 - [ ] Built-in theme presets (light, dark, etc.)
 - [ ] Theme editor UI (color pickers, live preview)
