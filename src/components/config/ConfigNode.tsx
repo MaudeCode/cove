@@ -2,7 +2,7 @@
  * ConfigNode
  *
  * Recursively renders config nodes based on their schema type.
- * This is the core rendering engine for the config editor.
+ * Follows Cove's SettingsView patterns: horizontal rows, clean cards.
  */
 
 import { useState } from "preact/hooks";
@@ -65,6 +65,7 @@ export function ConfigNode({
         level={level}
         label={label}
         help={help}
+        showLabel={showLabel}
       />
     );
   }
@@ -99,21 +100,29 @@ export function ConfigNode({
       );
 
     case "boolean":
+      // Toggle uses horizontal layout with label/description built-in
       return (
-        <FieldWrapper label={showLabel ? label : undefined} help={help} error={errorMsg}>
+        <SettingRow error={errorMsg}>
           <Toggle
             checked={Boolean(value ?? schema.default)}
             onChange={(checked) => {
               updateField(path, checked);
             }}
+            label={showLabel ? label : undefined}
+            description={help}
           />
-        </FieldWrapper>
+        </SettingRow>
       );
 
     case "number":
     case "integer":
       return (
-        <FieldWrapper label={showLabel ? label : undefined} help={help} error={errorMsg}>
+        <SettingRow
+          label={showLabel ? label : undefined}
+          description={help}
+          error={errorMsg}
+          inline
+        >
           <Input
             type="number"
             value={value === undefined || value === null ? "" : String(value)}
@@ -126,42 +135,44 @@ export function ConfigNode({
             }}
             min={schema.minimum}
             max={schema.maximum}
+            class="w-48"
           />
-        </FieldWrapper>
+        </SettingRow>
       );
 
     case "string":
       // Check for enum
       if (schema.enum) {
         return (
-          <FieldWrapper label={showLabel ? label : undefined} help={help} error={errorMsg}>
-            {schema.enum.length <= 5 ? (
-              <SegmentedControl
-                value={value}
-                options={schema.enum.map((v) => ({
-                  value: String(v),
-                  label: humanize(String(v)),
-                }))}
-                onChange={(v) => updateField(path, v)}
-              />
-            ) : (
-              <Dropdown
-                value={String(value ?? "")}
-                options={schema.enum.map((v) => ({
-                  value: String(v),
-                  label: humanize(String(v)),
-                }))}
-                onChange={(v) => updateField(path, v)}
-              />
-            )}
-          </FieldWrapper>
+          <SettingRow
+            label={showLabel ? label : undefined}
+            description={help}
+            error={errorMsg}
+            inline
+          >
+            <Dropdown
+              value={String(value ?? "")}
+              options={schema.enum.map((v) => ({
+                value: String(v),
+                label: humanize(String(v)),
+              }))}
+              onChange={(v) => updateField(path, v)}
+              size="sm"
+              width="180px"
+            />
+          </SettingRow>
         );
       }
 
       // Sensitive field
       if (hint.sensitive) {
         return (
-          <FieldWrapper label={showLabel ? label : undefined} help={help} error={errorMsg}>
+          <SettingRow
+            label={showLabel ? label : undefined}
+            description={help}
+            error={errorMsg}
+            inline
+          >
             <PasswordInput
               value={String(value ?? "")}
               placeholder={hint.placeholder}
@@ -170,14 +181,14 @@ export function ConfigNode({
                 setValidationError(key, validateValue(v, schema));
               }}
             />
-          </FieldWrapper>
+          </SettingRow>
         );
       }
 
-      // Long text
+      // Long text - full width below label
       if ((schema.maxLength ?? 0) > 200) {
         return (
-          <FieldWrapper label={showLabel ? label : undefined} help={help} error={errorMsg}>
+          <SettingRow label={showLabel ? label : undefined} description={help} error={errorMsg}>
             <Textarea
               value={String(value ?? "")}
               placeholder={hint.placeholder}
@@ -187,14 +198,20 @@ export function ConfigNode({
                 setValidationError(key, validateValue(v, schema));
               }}
               rows={4}
+              class="w-full"
             />
-          </FieldWrapper>
+          </SettingRow>
         );
       }
 
       // Regular string
       return (
-        <FieldWrapper label={showLabel ? label : undefined} help={help} error={errorMsg}>
+        <SettingRow
+          label={showLabel ? label : undefined}
+          description={help}
+          error={errorMsg}
+          inline
+        >
           <Input
             type={schema.format === "uri" ? "url" : "text"}
             value={String(value ?? "")}
@@ -204,18 +221,71 @@ export function ConfigNode({
               updateField(path, v);
               setValidationError(key, validateValue(v, schema));
             }}
+            class="w-64"
           />
-        </FieldWrapper>
+        </SettingRow>
       );
 
     default:
       // Fallback to JSON editor
       return (
-        <FieldWrapper label={showLabel ? label : undefined} help={help} error={errorMsg}>
+        <SettingRow label={showLabel ? label : undefined} description={help} error={errorMsg}>
           <JsonEditor value={value} onChange={(v) => updateField(path, v)} />
-        </FieldWrapper>
+        </SettingRow>
       );
   }
+}
+
+// ============================================
+// Setting Row (matches SettingsView pattern)
+// ============================================
+
+interface SettingRowProps {
+  label?: string;
+  description?: string;
+  error?: string;
+  /** If true, render label left and control right inline */
+  inline?: boolean;
+  children: preact.ComponentChildren;
+}
+
+function SettingRow({ label, description, error, inline, children }: SettingRowProps) {
+  // For inline layout: label+description left, control right
+  if (inline && label) {
+    return (
+      <div class="py-2">
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex-1 min-w-0">
+            <label class="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
+            {description && (
+              <p class="text-xs text-[var(--color-text-muted)] mt-0.5">{description}</p>
+            )}
+          </div>
+          <div class="flex-shrink-0">{children}</div>
+        </div>
+        {error && <p class="text-xs text-[var(--color-error)] mt-1">{error}</p>}
+      </div>
+    );
+  }
+
+  // For block layout (textareas, JSON editors, or label-less)
+  return (
+    <div class="py-2">
+      {label && (
+        <label class="block text-sm font-medium text-[var(--color-text-primary)] mb-1">
+          {label}
+        </label>
+      )}
+      {description && !label && (
+        <p class="text-xs text-[var(--color-text-muted)] mb-2">{description}</p>
+      )}
+      {description && label && (
+        <p class="text-xs text-[var(--color-text-muted)] mb-2">{description}</p>
+      )}
+      {children}
+      {error && <p class="text-xs text-[var(--color-error)] mt-1">{error}</p>}
+    </div>
+  );
 }
 
 // ============================================
@@ -246,10 +316,10 @@ function ObjectNode({
   const propertyKeys = Object.keys(properties);
   const actualValue = value ?? {};
 
-  // In detail view, render fields directly (no card wrapper)
+  // In detail view at level 0, render fields directly (no wrapper)
   if (isDetailView && level === 0) {
     return (
-      <div class="space-y-6">
+      <div class="space-y-2">
         {help && <p class="text-sm text-[var(--color-text-muted)] mb-4">{help}</p>}
         {propertyKeys.map((key) => (
           <ConfigNode
@@ -265,62 +335,27 @@ function ObjectNode({
     );
   }
 
-  // For top-level (level 0), render as a card
-  if (level === 0) {
-    return (
-      <Card padding="none" class="overflow-hidden">
-        <button
-          type="button"
-          class="w-full flex items-center gap-3 px-4 py-3 hover:bg-[var(--color-bg-tertiary)] text-left font-medium"
-          onClick={() => setIsExpanded(!isExpanded)}
-          aria-expanded={isExpanded}
-        >
-          <span class="text-[var(--color-text-muted)]">
-            {isExpanded ? <ChevronDown class="w-5 h-5" /> : <ChevronRight class="w-5 h-5" />}
-          </span>
-          <span>{label}</span>
-          <Badge variant="default" class="ml-auto">
-            {propertyKeys.length}
-          </Badge>
-        </button>
-
-        {isExpanded && (
-          <div class="border-t border-[var(--color-border)] px-4 py-4 space-y-4">
-            {help && <p class="text-sm text-[var(--color-text-muted)]">{help}</p>}
-            {propertyKeys.map((key) => (
-              <ConfigNode
-                key={key}
-                schema={properties[key]}
-                value={actualValue[key]}
-                path={[...path, key]}
-                hints={hints}
-                level={level + 1}
-              />
-            ))}
-          </div>
-        )}
-      </Card>
-    );
-  }
-
-  // For nested objects, render as collapsible section
+  // Nested object: collapsible section with subtle styling
   return (
-    <div class="border border-[var(--color-border)] rounded-lg overflow-hidden">
+    <div class="py-2">
       <button
         type="button"
-        class="w-full flex items-center gap-2 px-3 py-2 bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] text-left text-sm font-medium"
+        class="w-full flex items-center gap-2 py-2 text-left group"
         onClick={() => setIsExpanded(!isExpanded)}
         aria-expanded={isExpanded}
       >
-        <span class="text-[var(--color-text-muted)]">
+        <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
           {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
         </span>
-        <span>{label}</span>
+        <span class="text-sm font-medium text-[var(--color-text-primary)]">{label}</span>
+        <Badge variant="default" class="ml-1">
+          {propertyKeys.length}
+        </Badge>
       </button>
 
       {isExpanded && (
-        <div class="px-3 py-3 space-y-3 bg-[var(--color-bg-primary)]">
-          {help && <p class="text-xs text-[var(--color-text-muted)]">{help}</p>}
+        <div class="ml-6 pl-4 border-l border-[var(--color-border)] space-y-1">
+          {help && <p class="text-xs text-[var(--color-text-muted)] py-1">{help}</p>}
           {propertyKeys.map((key) => (
             <ConfigNode
               key={key}
@@ -376,7 +411,16 @@ function ArrayNode({
   // Simple array of primitives
   if (itemType === "string" || itemType === "number") {
     return (
-      <FieldWrapper label={label} help={help}>
+      <div class="py-2">
+        <div class="flex items-center justify-between mb-2">
+          <div>
+            <label class="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
+            {help && <p class="text-xs text-[var(--color-text-muted)] mt-0.5">{help}</p>}
+          </div>
+          <Button variant="secondary" size="sm" icon={Plus} onClick={addItem}>
+            {t("config.field.addItem")}
+          </Button>
+        </div>
         <div class="space-y-2">
           {items.map((item, index) => (
             <div key={index} class="flex items-center gap-2">
@@ -400,27 +444,27 @@ function ArrayNode({
               />
             </div>
           ))}
-          <Button variant="secondary" size="sm" icon={Plus} onClick={addItem}>
-            {t("config.field.addItem")}
-          </Button>
+          {items.length === 0 && (
+            <p class="text-sm text-[var(--color-text-muted)] py-2">{t("config.field.noItems")}</p>
+          )}
         </div>
-      </FieldWrapper>
+      </div>
     );
   }
 
   // Array of objects
   return (
-    <div class="space-y-2">
-      <div class="flex items-center justify-between">
+    <div class="py-2">
+      <div class="flex items-center justify-between mb-2">
         <button
           type="button"
-          class="flex items-center gap-2 text-sm font-medium"
+          class="flex items-center gap-2 group"
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <span class="text-[var(--color-text-muted)]">
+          <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
             {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
           </span>
-          {label}
+          <span class="text-sm font-medium text-[var(--color-text-primary)]">{label}</span>
           <Badge variant="default">{items.length}</Badge>
         </button>
         <Button variant="secondary" size="sm" icon={Plus} onClick={addItem}>
@@ -428,10 +472,10 @@ function ArrayNode({
         </Button>
       </div>
 
-      {help && <p class="text-xs text-[var(--color-text-muted)]">{help}</p>}
+      {help && <p class="text-xs text-[var(--color-text-muted)] mb-2">{help}</p>}
 
       {isExpanded && (
-        <div class="space-y-2 pl-4 border-l-2 border-[var(--color-border)]">
+        <div class="space-y-2">
           {items.length === 0 ? (
             <p class="text-sm text-[var(--color-text-muted)] py-2">{t("config.field.noItems")}</p>
           ) : (
@@ -482,17 +526,17 @@ function ArrayItemCard({
 
   return (
     <Card padding="none" class="overflow-hidden">
-      <div class="flex items-center gap-2 px-3 py-2 bg-[var(--color-bg-secondary)]">
+      <div class="flex items-center gap-2 px-4 py-3">
         <button
           type="button"
-          class="flex-1 flex items-center gap-2 text-left text-sm font-medium"
+          class="flex-1 flex items-center gap-2 text-left group"
           onClick={() => setIsExpanded(!isExpanded)}
         >
-          <span class="text-[var(--color-text-muted)]">
+          <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
             {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
           </span>
           {emoji && <span>{emoji}</span>}
-          <span>{String(displayName)}</span>
+          <span class="text-sm font-medium">{String(displayName)}</span>
         </button>
         <IconButton
           icon={<Trash2 class="w-4 h-4" />}
@@ -504,7 +548,7 @@ function ArrayItemCard({
       </div>
 
       {isExpanded && (
-        <div class="px-3 py-3 space-y-3">
+        <div class="px-4 pb-4 border-t border-[var(--color-border)]">
           <ConfigNode
             schema={schema}
             value={value}
@@ -512,6 +556,7 @@ function ArrayItemCard({
             hints={hints}
             level={level}
             showLabel={false}
+            isDetailView
           />
         </div>
       )}
@@ -531,6 +576,7 @@ function UnionNode({
   level,
   label,
   help,
+  showLabel,
 }: {
   schema: JsonSchema;
   value: unknown;
@@ -539,6 +585,7 @@ function UnionNode({
   level: number;
   label: string;
   help?: string;
+  showLabel?: boolean;
 }) {
   const variants = schema.anyOf ?? schema.oneOf ?? [];
   const nonNull = variants.filter(
@@ -547,7 +594,16 @@ function UnionNode({
 
   // Single non-null variant - just render it
   if (nonNull.length === 1) {
-    return <ConfigNode schema={nonNull[0]} value={value} path={path} hints={hints} level={level} />;
+    return (
+      <ConfigNode
+        schema={nonNull[0]}
+        value={value}
+        path={path}
+        hints={hints}
+        level={level}
+        showLabel={showLabel}
+      />
+    );
   }
 
   // Check if it's enum-like (all const values)
@@ -562,56 +618,33 @@ function UnionNode({
     }));
 
     return (
-      <FieldWrapper label={label} help={help}>
-        {options.length <= 5 ? (
-          <SegmentedControl
-            value={value}
-            options={options}
-            onChange={(v) => updateField(path, v)}
-          />
-        ) : (
-          <Dropdown
-            value={String(value ?? "")}
-            options={options}
-            onChange={(v) => updateField(path, v)}
-          />
-        )}
-      </FieldWrapper>
+      <SettingRow
+        label={showLabel !== false ? label : undefined}
+        description={help}
+        inline={showLabel !== false}
+      >
+        <Dropdown
+          value={String(value ?? "")}
+          options={options}
+          onChange={(v) => updateField(path, v)}
+          size="sm"
+          width="180px"
+        />
+      </SettingRow>
     );
   }
 
   // Complex union - fall back to JSON
   return (
-    <FieldWrapper label={label} help={help}>
+    <SettingRow label={showLabel !== false ? label : undefined} description={help}>
       <JsonEditor value={value} onChange={(v) => updateField(path, v)} />
-    </FieldWrapper>
+    </SettingRow>
   );
 }
 
 // ============================================
 // Helper Components
 // ============================================
-
-function FieldWrapper({
-  label,
-  help,
-  error,
-  children,
-}: {
-  label?: string;
-  help?: string;
-  error?: string;
-  children: preact.ComponentChildren;
-}) {
-  return (
-    <div class="space-y-1">
-      {label && <label class="block text-sm font-medium">{label}</label>}
-      {help && <p class="text-xs text-[var(--color-text-muted)]">{help}</p>}
-      <div class="mt-1">{children}</div>
-      {error && <p class="text-xs text-[var(--color-error)]">{error}</p>}
-    </div>
-  );
-}
 
 function PasswordInput({
   value,
@@ -631,7 +664,7 @@ function PasswordInput({
         value={value}
         placeholder={placeholder}
         onInput={(e) => onChange((e.target as HTMLInputElement).value)}
-        class="pr-10"
+        class="pr-10 w-64"
       />
       <button
         type="button"
@@ -641,43 +674,6 @@ function PasswordInput({
       >
         {show ? <EyeOff class="w-4 h-4" /> : <Eye class="w-4 h-4" />}
       </button>
-    </div>
-  );
-}
-
-function SegmentedControl({
-  value,
-  options,
-  onChange,
-}: {
-  value: unknown;
-  options: { value: string; label: string }[];
-  onChange: (value: unknown) => void;
-}) {
-  return (
-    <div class="inline-flex rounded-lg border border-[var(--color-border)] overflow-hidden">
-      {options.map((opt) => (
-        <button
-          key={opt.value}
-          type="button"
-          class={`px-3 py-1.5 text-sm font-medium transition-colors ${
-            String(value) === opt.value
-              ? "bg-[var(--color-accent)] text-white"
-              : "bg-[var(--color-bg-secondary)] text-[var(--color-text-primary)] hover:bg-[var(--color-bg-tertiary)]"
-          }`}
-          onClick={() => {
-            if (typeof value === "boolean") {
-              onChange(opt.value === "true");
-            } else if (typeof value === "number") {
-              onChange(Number(opt.value));
-            } else {
-              onChange(opt.value);
-            }
-          }}
-        >
-          {opt.label}
-        </button>
-      ))}
     </div>
   );
 }
@@ -703,7 +699,7 @@ function JsonEditor({ value, onChange }: { value: unknown; onChange: (value: unk
         onInput={(e) => setText((e.target as HTMLTextAreaElement).value)}
         onBlur={handleBlur}
         rows={6}
-        class="font-mono text-sm"
+        class="font-mono text-sm w-full"
       />
       {parseError && <p class="text-xs text-[var(--color-error)]">{parseError}</p>}
     </div>
