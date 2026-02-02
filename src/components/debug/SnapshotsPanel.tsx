@@ -21,6 +21,7 @@ import {
   ChevronDown,
   ChevronRight,
 } from "lucide-preact";
+import { JsonBlock } from "./JsonBlock";
 
 // ============================================
 // Types
@@ -313,9 +314,10 @@ export function SnapshotsPanel() {
           </button>
 
           {showRawJson.value && (
-            <pre class="text-xs font-mono bg-[var(--color-bg-tertiary)] p-3 rounded-lg overflow-x-auto max-h-48">
-              {JSON.stringify({ status, health }, null, 2)}
-            </pre>
+            <JsonBlock
+              value={JSON.stringify({ status, health }, null, 2)}
+              id="snapshots-raw-json"
+            />
           )}
         </div>
       )}
