@@ -126,9 +126,38 @@ export function initExecApproval(): void {
   cleanupExecApproval();
 
   // Subscribe to gateway events
+  // Gateway sends: { id, request: { command, cwd, ... }, createdAtMs, expiresAtMs }
   unsubscribe = subscribe((event) => {
-    if (event.event === "exec.approval" && event.payload) {
-      const request = event.payload as ExecApprovalRequest;
+    if (event.event === "exec.approval.requested" && event.payload) {
+      const payload = event.payload as {
+        id: string;
+        request: {
+          command: string;
+          cwd?: string | null;
+          host?: string | null;
+          security?: string | null;
+          ask?: string | null;
+          agentId?: string | null;
+          resolvedPath?: string | null;
+          sessionKey?: string | null;
+        };
+        createdAtMs: number;
+        expiresAtMs: number;
+      };
+
+      // Flatten the payload into our request format
+      const request: ExecApprovalRequest = {
+        requestId: payload.id,
+        command: payload.request.command,
+        cwd: payload.request.cwd ?? undefined,
+        host: payload.request.host ?? undefined,
+        security: payload.request.security ?? undefined,
+        ask: payload.request.ask ?? undefined,
+        agentId: payload.request.agentId ?? undefined,
+        resolvedPath: payload.request.resolvedPath ?? undefined,
+        sessionKey: payload.request.sessionKey ?? undefined,
+        expiresAtMs: payload.expiresAtMs,
+      };
 
       // Only queue if not expired
       if (request.expiresAtMs > Date.now()) {
