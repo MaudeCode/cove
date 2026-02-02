@@ -637,6 +637,7 @@
     "account": "account",
     "accounts": "accounts",
     "docs": "Docs",
+    "configure": "Configure",
     "probe": "Health Check",
     "probing": "Checking...",
     "probeOk": "Healthy",

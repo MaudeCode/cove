@@ -29,6 +29,7 @@ import {
   Activity,
   Zap,
   ExternalLink,
+  Settings,
 } from "lucide-preact";
 import type {
   ChannelsStatusResponse,
@@ -38,6 +39,7 @@ import type {
 } from "@/types/channels";
 import { transformChannelsResponse, getChannelLastActivity } from "@/types/channels";
 import type { RouteProps } from "@/types/routes";
+import { route } from "preact-router";
 
 // ============================================
 // Local State
@@ -223,6 +225,14 @@ function ChannelCard({ channel }: { channel: ChannelDisplayData }) {
                 {formatTimestamp(lastActivity, { relative: true })}
               </span>
             )}
+            <button
+              type="button"
+              onClick={() => route(`/config#channels.${channel.id}`)}
+              class="flex items-center gap-1 hover:text-[var(--color-accent)] transition-colors"
+            >
+              <Settings class="w-3.5 h-3.5" />
+              {t("channels.configure")}
+            </button>
             <a
               href={`https://docs.openclaw.ai/channels/${channel.id}`}
               target="_blank"
