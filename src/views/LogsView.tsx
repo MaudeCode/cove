@@ -24,6 +24,7 @@ import {
   Info,
   AlertTriangle,
   Bug,
+  ChevronRight,
 } from "lucide-preact";
 import type { RouteProps } from "@/types/routes";
 
@@ -60,6 +61,7 @@ const error = signal<string | null>(null);
 const isLive = signal(true);
 const searchQuery = signal("");
 const selectedLevels = signal<Set<"debug" | "info" | "warn" | "error">>(new Set());
+const expandedLogs = signal<Set<number>>(new Set());
 
 let lineIdCounter = 0;
 
@@ -292,11 +294,32 @@ const levelCounts = computed(() => {
 // Log Line Component
 // ============================================
 
-interface ParsedFields {
-  [key: string]: unknown;
+/** Flatten nested objects into dot-notation keys */
+function flattenObject(obj: Record<string, unknown>, prefix = ""): Record<string, string> {
+  const result: Record<string, string> = {};
+  for (const [key, value] of Object.entries(obj)) {
+    const fullKey = prefix ? `${prefix}.${key}` : key;
+    if (value === null || value === undefined) continue;
+    if (typeof value === "object" && !Array.isArray(value)) {
+      Object.assign(result, flattenObject(value as Record<string, unknown>, fullKey));
+    } else if (typeof value === "string") {
+      result[fullKey] = value;
+    } else {
+      result[fullKey] = JSON.stringify(value);
+    }
+  }
+  return result;
 }
 
-function LogLine({ line }: { line: ParsedLogLine }) {
+function LogLine({
+  line,
+  expanded,
+  onToggle,
+}: {
+  line: ParsedLogLine;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
   const levelColors: Record<string, string> = {
     debug: "text-[var(--color-text-muted)]",
     info: "text-[var(--color-info)]",
@@ -319,13 +342,14 @@ function LogLine({ line }: { line: ParsedLogLine }) {
     ? line.timestamp.split("T")[1]?.slice(0, 12) || line.timestamp.slice(0, 12)
     : null;
 
-  // Try to parse fields from JSON for structured display
-  let fields: ParsedFields | null = null;
+  // Parse fields from JSON
+  let fields: Record<string, string> | null = null;
   let mainMessage = line.message;
 
   if (line.raw.startsWith("{")) {
     try {
       const parsed = JSON.parse(line.raw);
+      mainMessage = parsed.msg || parsed.message || "";
       const skipKeys = [
         "time",
         "timestamp",
@@ -338,47 +362,52 @@ function LogLine({ line }: { line: ParsedLogLine }) {
         "msg",
         "message",
       ];
-      fields = {};
+      const filtered: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(parsed)) {
-        if (!skipKeys.includes(key)) {
-          fields[key] = value;
-        }
+        if (!skipKeys.includes(key)) filtered[key] = value;
       }
-      mainMessage = parsed.msg || parsed.message || "";
-      if (Object.keys(fields).length === 0) fields = null;
+      if (Object.keys(filtered).length > 0) {
+        fields = flattenObject(filtered);
+      }
     } catch {
       // Not JSON
     }
   }
 
+  const hasFields = fields && Object.keys(fields).length > 0;
+
   return (
-    <div class="py-2 px-3 hover:bg-[var(--color-bg-hover)] border-b border-[var(--color-border)]/50 last:border-0">
-      {/* Header row: icon, time, main message */}
-      <div class="flex items-start gap-2 font-mono text-xs">
+    <div class="border-b border-[var(--color-border)]/50 last:border-0">
+      <button
+        type="button"
+        onClick={onToggle}
+        disabled={!hasFields}
+        class="w-full text-left py-2 px-3 hover:bg-[var(--color-bg-hover)] flex items-start gap-2 font-mono text-xs disabled:cursor-default"
+      >
+        {hasFields ? (
+          <ChevronRight
+            size={12}
+            class={`mt-0.5 flex-shrink-0 text-[var(--color-text-muted)] transition-transform ${expanded ? "rotate-90" : ""}`}
+          />
+        ) : (
+          <span class="w-3 flex-shrink-0" />
+        )}
         {Icon && <Icon size={14} class={`mt-0.5 flex-shrink-0 ${iconColor}`} />}
-        {!Icon && <span class="w-[14px] flex-shrink-0" />}
         {displayTime && (
           <span class="text-[var(--color-text-muted)] flex-shrink-0">{displayTime}</span>
         )}
-        <span class="flex-1 break-all whitespace-pre-wrap text-[var(--color-text-primary)]">
-          {mainMessage || (fields ? "" : line.message)}
+        <span class="flex-1 text-[var(--color-text-primary)] truncate">
+          {mainMessage || line.message}
         </span>
-      </div>
+      </button>
 
-      {/* Fields */}
-      {fields && Object.keys(fields).length > 0 && (
-        <div class="mt-1.5 ml-6 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-          {Object.entries(fields).map(([key, value]) => (
-            <span key={key} class="inline-flex gap-1">
-              <span class="text-[var(--color-text-muted)]">{key}:</span>
-              <span class="text-[var(--color-text-secondary)] font-mono">
-                {typeof value === "string"
-                  ? value.length > 60
-                    ? value.slice(0, 60) + "…"
-                    : value
-                  : JSON.stringify(value)}
-              </span>
-            </span>
+      {expanded && hasFields && (
+        <div class="pb-3 px-3 ml-7 space-y-1">
+          {Object.entries(fields!).map(([key, value]) => (
+            <div key={key} class="flex gap-2 text-xs font-mono">
+              <span class="text-[var(--color-accent)] flex-shrink-0">{key}</span>
+              <span class="text-[var(--color-text-secondary)] break-all">{value}</span>
+            </div>
           ))}
         </div>
       )}
@@ -583,7 +612,20 @@ export function LogsView(_props: RouteProps) {
           {lines.length > 0 && (
             <div ref={containerRef} class="max-h-[600px] overflow-y-auto" onScroll={handleScroll}>
               {lines.map((line) => (
-                <LogLine key={line.id} line={line} />
+                <LogLine
+                  key={line.id}
+                  line={line}
+                  expanded={expandedLogs.value.has(line.id)}
+                  onToggle={() => {
+                    const current = new Set(expandedLogs.value);
+                    if (current.has(line.id)) {
+                      current.delete(line.id);
+                    } else {
+                      current.add(line.id);
+                    }
+                    expandedLogs.value = current;
+                  }}
+                />
               ))}
             </div>
           )}
