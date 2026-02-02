@@ -45,7 +45,7 @@ export interface PairedDevice {
   roles?: string[];
   scopes?: string[];
   remoteIp?: string;
-  tokens?: Record<string, DeviceTokenSummary>;
+  tokens?: DeviceTokenSummary[];
   createdAtMs: number;
   approvedAtMs: number;
 }

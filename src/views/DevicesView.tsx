@@ -254,7 +254,7 @@ function PendingRequestCard({ request }: { request: DevicePendingRequest }) {
 function DeviceRow({ device }: { device: PairedDevice }) {
   const isExpanded = expandedDevices.value.has(device.deviceId);
   const role = getDeviceRole(device);
-  const tokenCount = device.tokens ? Object.keys(device.tokens).length : 0;
+  const tokenCount = device.tokens?.length ?? 0;
 
   return (
     <div class="border-b border-[var(--color-border)] last:border-b-0">
@@ -314,7 +314,7 @@ function DeviceRow({ device }: { device: PairedDevice }) {
 }
 
 function DeviceDetails({ device }: { device: PairedDevice }) {
-  const tokens = device.tokens ? Object.entries(device.tokens) : [];
+  const tokens = device.tokens ?? [];
 
   return (
     <div class="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]">
@@ -349,13 +349,13 @@ function DeviceDetails({ device }: { device: PairedDevice }) {
             <p class="text-sm text-[var(--color-text-muted)]">{t("devices.noTokens")}</p>
           ) : (
             <div class="space-y-2">
-              {tokens.map(([role, token]) => (
+              {tokens.map((token) => (
                 <div
-                  key={role}
+                  key={token.role}
                   class="flex items-center justify-between p-2 bg-[var(--color-bg-primary)] rounded-lg"
                 >
                   <div>
-                    <span class="font-medium text-sm">{role}</span>
+                    <span class="font-medium text-sm">{token.role}</span>
                     <div class="text-xs text-[var(--color-text-muted)]">
                       {token.revokedAtMs ? t("devices.tokenRevoked") : t("devices.tokenActive")}
                     </div>
@@ -392,7 +392,7 @@ function TokenModal() {
   const device = tokenModal.value;
   if (!device) return null;
 
-  const tokens = device.tokens ? Object.entries(device.tokens) : [];
+  const tokens = device.tokens ?? [];
 
   return (
     <Modal
@@ -413,13 +413,13 @@ function TokenModal() {
           <p class="text-sm">{t("devices.noTokens")}</p>
         ) : (
           <div class="space-y-3">
-            {tokens.map(([tokenRole, token]) => (
+            {tokens.map((token) => (
               <div
-                key={tokenRole}
+                key={token.role}
                 class="flex items-center justify-between p-3 bg-[var(--color-bg-tertiary)] rounded-lg"
               >
                 <div>
-                  <div class="font-medium">{tokenRole}</div>
+                  <div class="font-medium">{token.role}</div>
                   <div class="text-xs text-[var(--color-text-muted)]">
                     {t("devices.tokenCreated")}: {formatTimestamp(token.createdAtMs)}
                     {token.rotatedAtMs && (
@@ -435,7 +435,7 @@ function TokenModal() {
                     variant="secondary"
                     size="sm"
                     icon={RotateCcw}
-                    onClick={() => rotateToken(device, tokenRole)}
+                    onClick={() => rotateToken(device, token.role)}
                     disabled={rotatingToken.value}
                   >
                     {t("devices.rotate")}
@@ -444,7 +444,7 @@ function TokenModal() {
                     variant="danger"
                     size="sm"
                     icon={Trash2}
-                    onClick={() => revokeToken(device, tokenRole)}
+                    onClick={() => revokeToken(device, token.role)}
                   >
                     {t("devices.revoke")}
                   </Button>
