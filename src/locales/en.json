@@ -923,7 +923,20 @@
       "required": "This field is required",
       "invalidUrl": "Invalid URL format",
       "invalidNumber": "Must be a number",
-      "invalidFormat": "Invalid format"
+      "invalidFormat": "Invalid format",
+      "mustBeString": "Must be a string",
+      "mustBeNumber": "Must be a number",
+      "mustBeInteger": "Must be an integer",
+      "mustBeBoolean": "Must be true or false",
+      "mustBeArray": "Must be an array",
+      "mustBeObject": "Must be an object",
+      "invalidOption": "Invalid option",
+      "minLength": "Must be at least {min} characters",
+      "maxLength": "Must be at most {max} characters",
+      "minimum": "Must be at least {min}",
+      "maximum": "Must be at most {max}",
+      "minItems": "Must have at least {min} items",
+      "maxItems": "Must have at most {max} items"
     },
     "field": {
       "showPassword": "Show password",
