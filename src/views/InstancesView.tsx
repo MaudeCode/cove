@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { RefreshCw, Monitor, Server, Smartphone, Globe, Clock } from "lucide-preact";
 import type { SystemPresence } from "@/types/presence";
 import type { RouteProps } from "@/types/routes";
@@ -176,20 +177,21 @@ export function InstancesView(_props: RouteProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div class="flex items-start justify-between gap-4">
-          <div class="flex-1">
-            <h1 class="text-2xl font-bold">{t("instances.title")}</h1>
-            <p class="text-[var(--color-text-muted)] mt-1">{t("instances.description")}</p>
-          </div>
-          <IconButton
-            icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-            label={t("actions.refresh")}
-            onClick={loadInstances}
-            disabled={isLoading.value || !isConnected.value}
-            variant="ghost"
-          />
-        </div>
+        <PageHeader
+          title={t("instances.title")}
+          subtitle={t("instances.description")}
+          border={false}
+          padded={false}
+          actions={
+            <IconButton
+              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+              label={t("actions.refresh")}
+              onClick={loadInstances}
+              disabled={isLoading.value || !isConnected.value}
+              variant="ghost"
+            />
+          }
+        />
 
         {/* Stats Cards */}
         {isConnected.value && !isLoading.value && (

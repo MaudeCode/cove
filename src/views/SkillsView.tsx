@@ -18,6 +18,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { HintBox } from "@/components/ui/HintBox";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { RefreshCw, Search, Puzzle, CheckCircle, XCircle, AlertTriangle } from "lucide-preact";
 import type { SkillStatusReport, SkillStatusEntry, SkillStatus, SkillSource } from "@/types/skills";
 import { getSkillStatus } from "@/types/skills";
@@ -228,21 +229,22 @@ export function SkillsView(_props: RouteProps) {
   return (
     <div class="flex-1 overflow-y-auto p-6">
       <div class="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
-        <div class="flex items-center justify-between">
-          <div>
-            <h1 class="text-2xl font-bold">{t("skills.title")}</h1>
-            <p class="text-[var(--color-text-muted)]">{t("skills.description")}</p>
-          </div>
-          {tab === "installed" && (
-            <IconButton
-              icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-              onClick={loadSkills}
-              disabled={isLoading.value}
-              label={t("actions.refresh")}
-            />
-          )}
-        </div>
+        <PageHeader
+          title={t("skills.title")}
+          subtitle={t("skills.description")}
+          border={false}
+          padded={false}
+          actions={
+            tab === "installed" ? (
+              <IconButton
+                icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+                onClick={loadSkills}
+                disabled={isLoading.value}
+                label={t("actions.refresh")}
+              />
+            ) : undefined
+          }
+        />
 
         {/* Tabs */}
         <div class="flex gap-2" role="tablist">

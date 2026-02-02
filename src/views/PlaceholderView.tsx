@@ -6,6 +6,7 @@
 
 import { t } from "@/lib/i18n";
 import { Card } from "@/components/ui/Card";
+import { PageHeader } from "@/components/ui/PageHeader";
 import type { RouteProps } from "@/types/routes";
 
 interface PlaceholderViewProps {
@@ -17,10 +18,7 @@ interface PlaceholderViewProps {
 export function PlaceholderView({ titleKey, icon, descriptionKey }: PlaceholderViewProps) {
   return (
     <div class="flex-1 flex flex-col overflow-hidden">
-      {/* Header */}
-      <div class="p-6 border-b border-[var(--color-border)]">
-        <h1 class="text-xl font-semibold">{t(titleKey)}</h1>
-      </div>
+      <PageHeader title={t(titleKey)} />
 
       {/* Content */}
       <div class="flex-1 flex items-center justify-center p-8">
