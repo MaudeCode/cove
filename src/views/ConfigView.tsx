@@ -126,6 +126,14 @@ expandedNav.subscribe((expanded) => {
 // ============================================
 
 export function ConfigView(_props: RouteProps) {
+  // Sync URL hash to selectedPath on mount (handles navigation from other pages)
+  useEffect(() => {
+    const hashPath = parseHashToPath();
+    if (hashPath.length > 0) {
+      selectedPath.value = hashPath;
+    }
+  }, []);
+
   // Load config on mount
   useEffect(() => {
     if (isConnected.value && !schema.value) {
