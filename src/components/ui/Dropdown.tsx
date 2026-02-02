@@ -36,6 +36,8 @@ export interface DropdownProps {
   disabled?: boolean;
   /** Menu alignment (default: left) */
   align?: "left" | "right";
+  /** Fixed width (overrides auto-sizing). Use Tailwind class like "w-48" or pixel value like "200px" */
+  width?: string;
 }
 
 const sizeStyles: Record<DropdownSize, { trigger: string; menu: string; option: string }> = {
@@ -66,6 +68,7 @@ export function Dropdown({
   class: className,
   disabled = false,
   align = "left",
+  width,
 }: DropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
@@ -78,12 +81,12 @@ export function Dropdown({
   const selectedOption = options.find((o) => o.value === value);
   const displayLabel = selectedOption?.label ?? placeholder;
 
-  // Measure the width of the longest option
+  // Measure the width of the longest option (skip if explicit width provided)
   useLayoutEffect(() => {
-    if (sizerRef.current) {
+    if (!width && sizerRef.current) {
       setMinWidth(sizerRef.current.offsetWidth);
     }
-  }, [options]);
+  }, [options, width]);
 
   // Close dropdown
   const close = useCallback(() => {
@@ -175,7 +178,7 @@ export function Dropdown({
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        style={minWidth ? { minWidth: `${minWidth}px` } : undefined}
+        style={width ? { width } : minWidth ? { minWidth: `${minWidth}px` } : undefined}
         class={`
           flex items-center justify-between gap-2 rounded-md cursor-pointer
           bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]
