@@ -63,9 +63,6 @@ export const schemaVersion = signal<string | null>(null);
 /** Search query for filtering */
 export const searchQuery = signal("");
 
-/** Show advanced settings */
-export const showAdvanced = signal(false);
-
 /** Validation errors by path */
 export const validationErrors = signal<Record<string, string>>({});
 

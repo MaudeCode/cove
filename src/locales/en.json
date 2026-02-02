@@ -898,6 +898,7 @@
     "restartRequired": "Gateway will restart to apply changes",
     "noFields": "No settings found",
     "noResults": "No matching settings",
+    "selectSection": "Select a section to configure",
     "emptyConfig": "Configuration is empty",
     "loadError": "Failed to load configuration",
     "version": "OpenClaw {version}",
