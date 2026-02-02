@@ -111,7 +111,7 @@ export function ConfigDetailPanel({
       </div>
 
       {/* Content */}
-      <div class="px-8 py-6">
+      <div class="px-8 py-6 max-w-4xl">
         <ConfigNode
           schema={currentSchema}
           value={currentValue}
