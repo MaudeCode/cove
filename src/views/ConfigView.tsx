@@ -28,7 +28,6 @@ import {
   searchQuery,
   isDirty,
   canSave,
-  schemaVersion,
   loadConfig,
   resetDraft,
   saveConfig,
@@ -197,13 +196,7 @@ export function ConfigView(_props: RouteProps) {
     <div class="flex-1 flex flex-col overflow-hidden">
       <PageHeader
         title={t("config.title")}
-        subtitle={
-          schemaVersion.value && (
-            <p class="text-xs text-[var(--color-text-muted)] mt-1">
-              {t("config.version", { version: schemaVersion.value })}
-            </p>
-          )
-        }
+        subtitle={t("config.description")}
         actions={
           <>
             {isDirty.value && (
