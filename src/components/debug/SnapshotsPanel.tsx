@@ -6,6 +6,7 @@
  */
 
 import { signal } from "@preact/signals";
+import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { isConnected, send } from "@/lib/gateway";
 import { Card } from "@/components/ui/Card";
@@ -170,6 +171,13 @@ export function SnapshotsPanel() {
   const status = statusData.value;
   const health = healthData.value;
   const recentSession = status?.sessions?.recent?.[0];
+
+  // Auto-fetch on mount when connected
+  useEffect(() => {
+    if (connected && !status && !health) {
+      fetchSnapshots();
+    }
+  }, [connected]);
 
   return (
     <Card>

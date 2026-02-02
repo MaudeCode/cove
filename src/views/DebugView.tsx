@@ -438,7 +438,13 @@ export function DebugView(_props: RouteProps) {
             </Card>
           </div>
 
-          {/* Event Log */}
+          {/* Snapshots & Manual RPC - Side by side on larger screens */}
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+            <SnapshotsPanel />
+            <ManualRpcPanel />
+          </div>
+
+          {/* Event Log - at bottom so it doesn't push other cards around */}
           <Card>
             <div class="flex items-center justify-between mb-4">
               <div class="flex items-center gap-2">
@@ -459,8 +465,8 @@ export function DebugView(_props: RouteProps) {
                   size="sm"
                   onClick={clearLog}
                   disabled={eventLog.value.length === 0}
+                  icon={<Trash2 size={14} />}
                 >
-                  <Trash2 size={14} class="mr-1" />
                   {t("debug.clear")}
                 </Button>
               </div>
@@ -485,12 +491,6 @@ export function DebugView(_props: RouteProps) {
               </div>
             )}
           </Card>
-
-          {/* Snapshots & Manual RPC - Side by side on larger screens */}
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-            <SnapshotsPanel />
-            <ManualRpcPanel />
-          </div>
         </div>
       </div>
     </div>
