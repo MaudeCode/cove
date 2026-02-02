@@ -197,6 +197,7 @@ export function ConfigView(_props: RouteProps) {
       <PageHeader
         title={t("config.title")}
         subtitle={t("config.description")}
+        border={false}
         actions={
           <>
             {isDirty.value && (
