@@ -39,6 +39,22 @@ import {
   Download,
   Activity,
   Server,
+  Volume2,
+  MessageSquare,
+  Link,
+  Layout,
+  Monitor,
+  Webhook,
+  Shield,
+  Bell,
+  Image,
+  Cpu,
+  HardDrive,
+  Network,
+  Key,
+  Layers,
+  Zap,
+  Circle,
 } from "lucide-preact";
 import type { RouteProps } from "@/types/routes";
 import type { JsonSchema } from "@/types/config";
@@ -151,6 +167,7 @@ expandedNav.subscribe((expanded) => {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SECTION_ICONS: Record<string, any> = {
+  // Core
   gateway: Globe,
   agents: Bot,
   channels: Radio,
@@ -167,7 +184,42 @@ const SECTION_ICONS: Record<string, any> = {
   update: Download,
   diagnostics: Activity,
   nodeHost: Server,
+  // Additional sections
+  audio: Volume2,
+  messages: MessageSquare,
+  bindings: Link,
+  ui: Layout,
+  browser: Monitor,
+  hooks: Webhook,
+  web: Globe,
+  canvas: Image,
+  canvasHost: Image,
+  approvals: Shield,
+  notifications: Bell,
+  meta: FileText,
+  env: HardDrive,
+  nodes: Server,
+  broadcast: Radio,
+  media: Image,
+  network: Network,
+  secrets: Key,
+  memory: Cpu,
+  memorySearch: Cpu,
+  storage: HardDrive,
+  tls: Lock,
+  remote: Network,
+  reload: RefreshCw,
+  tailscale: Network,
+  sandbox: Box,
+  context: Layers,
+  contextPruning: Layers,
+  compaction: Zap,
+  heartbeat: Activity,
+  defaults: Settings2,
 };
+
+/** Default icon for unknown sections */
+const DEFAULT_SECTION_ICON = Circle;
 
 // ============================================
 // Nav Tree Types
@@ -286,7 +338,7 @@ function NavTreeItem({ item, depth = 0 }: { item: NavItem; depth?: number }) {
     selectedPath.value.join(".").startsWith(pathKey + ".");
   const hasChildren = item.children && item.children.length > 0;
 
-  const Icon = depth === 0 ? SECTION_ICONS[item.key] : undefined;
+  const Icon = depth === 0 ? (SECTION_ICONS[item.key] ?? DEFAULT_SECTION_ICON) : undefined;
 
   const handleClick = () => {
     selectedPath.value = item.path;
