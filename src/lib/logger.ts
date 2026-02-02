@@ -106,6 +106,7 @@ export const log = {
   gateway: createLogger("gateway"),
   auth: createLogger("auth"),
   chat: createLogger("chat"),
+  exec: createLogger("exec"),
   i18n: createLogger("i18n"),
   ui: createLogger("ui"),
   usage: createLogger("usage"),
