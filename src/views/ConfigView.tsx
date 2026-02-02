@@ -485,11 +485,14 @@ export function ConfigView(_props: RouteProps) {
 
     const path = selectedPath.value;
 
-    // If no path selected, select first section
+    // Build nav tree to get sorted first item
+    const tree = buildNavTree(schema.value, draftConfig.value);
+    const firstPath = tree[0]?.path;
+
+    // If no path selected, select first section (using sorted order)
     if (path.length === 0) {
-      const firstKey = Object.keys(schema.value.properties ?? {})[0];
-      if (firstKey) {
-        selectedPath.value = [firstKey];
+      if (firstPath) {
+        selectedPath.value = firstPath;
       }
       return;
     }
@@ -498,9 +501,8 @@ export function ConfigView(_props: RouteProps) {
     const topLevel = String(path[0]);
     if (!schema.value.properties?.[topLevel]) {
       // Path no longer valid, select first section
-      const firstKey = Object.keys(schema.value.properties ?? {})[0];
-      if (firstKey) {
-        selectedPath.value = [firstKey];
+      if (firstPath) {
+        selectedPath.value = firstPath;
       }
     }
   }, [schema.value]);
