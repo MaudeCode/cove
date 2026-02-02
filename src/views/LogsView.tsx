@@ -361,7 +361,15 @@ function LogLine({
   if (line.raw.startsWith("{")) {
     try {
       const parsed = JSON.parse(line.raw);
-      mainMessage = parsed.msg || parsed.message || "";
+
+      // Get main message from msg, message, or numeric key
+      const numericKey = Object.keys(parsed).find((k) => /^\d+$/.test(k));
+      if (parsed.msg || parsed.message) {
+        mainMessage = parsed.msg || parsed.message;
+      } else if (numericKey && typeof parsed[numericKey] === "string") {
+        mainMessage = parsed[numericKey];
+      }
+
       const skipKeys = [
         "time",
         "timestamp",
@@ -376,7 +384,10 @@ function LogLine({
       ];
       const filtered: Record<string, unknown> = {};
       for (const [key, value] of Object.entries(parsed)) {
-        if (!skipKeys.includes(key)) filtered[key] = value;
+        // Skip metadata keys and numeric keys (message already extracted)
+        if (!skipKeys.includes(key) && !/^\d+$/.test(key)) {
+          filtered[key] = value;
+        }
       }
       if (Object.keys(filtered).length > 0) {
         fields = flattenObject(filtered);
