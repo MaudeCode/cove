@@ -5,6 +5,7 @@
  */
 
 import { send } from "@/lib/gateway";
+import { log } from "@/lib/logger";
 import { DEFAULT_HISTORY_LIMIT, SAME_TURN_THRESHOLD_MS } from "@/lib/constants";
 import {
   isLoadingHistory,
@@ -16,6 +17,9 @@ import {
 import type { Message } from "@/types/messages";
 import type { ChatHistoryResult } from "@/types/chat";
 import { normalizeMessage } from "@/types/chat";
+
+/** Track in-flight history loads to prevent concurrent loads for the same session */
+const pendingLoads = new Map<string, Promise<void>>();
 
 /**
  * Collect tool results from raw messages into a lookup map.
@@ -101,11 +105,31 @@ function mergeIntoMessage(prev: Message, curr: Message): void {
 
 /**
  * Load chat history for a session.
+ * Guards against concurrent loads for the same session.
  */
 export async function loadHistory(
   sessionKey: string,
   limit = DEFAULT_HISTORY_LIMIT,
 ): Promise<void> {
+  // If already loading this session, wait for the existing load
+  const pending = pendingLoads.get(sessionKey);
+  if (pending) {
+    log.chat.debug("History load already in progress for session, waiting:", sessionKey);
+    return pending;
+  }
+
+  const loadPromise = doLoadHistory(sessionKey, limit);
+  pendingLoads.set(sessionKey, loadPromise);
+
+  try {
+    await loadPromise;
+  } finally {
+    pendingLoads.delete(sessionKey);
+  }
+}
+
+/** Internal history load implementation */
+async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
   isLoadingHistory.value = true;
   historyError.value = null;
 

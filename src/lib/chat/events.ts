@@ -24,13 +24,14 @@ import { processNextQueuedMessage } from "./send";
 import { loadHistory } from "./history";
 
 let chatEventUnsubscribe: (() => void) | null = null;
+let agentEventUnsubscribe: (() => void) | null = null;
 
 /**
  * Subscribe to chat events from the gateway.
  */
 export function subscribeToChatEvents(): () => void {
-  if (chatEventUnsubscribe) {
-    return chatEventUnsubscribe;
+  if (chatEventUnsubscribe && agentEventUnsubscribe) {
+    return unsubscribeFromChatEvents;
   }
 
   log.chat.info("Subscribing to chat events");
@@ -39,7 +40,7 @@ export function subscribeToChatEvents(): () => void {
     handleChatEvent(payload as ChatEvent);
   });
 
-  on("agent", (payload) => {
+  agentEventUnsubscribe = on("agent", (payload) => {
     const evt = payload as AgentEvent;
     if (evt.stream === "tool") {
       handleToolEvent(evt);
@@ -54,7 +55,7 @@ export function subscribeToChatEvents(): () => void {
     }
   });
 
-  return chatEventUnsubscribe;
+  return unsubscribeFromChatEvents;
 }
 
 /**
@@ -64,6 +65,10 @@ export function unsubscribeFromChatEvents(): void {
   if (chatEventUnsubscribe) {
     chatEventUnsubscribe();
     chatEventUnsubscribe = null;
+  }
+  if (agentEventUnsubscribe) {
+    agentEventUnsubscribe();
+    agentEventUnsubscribe = null;
   }
 }
 

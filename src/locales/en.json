@@ -146,7 +146,8 @@
     "unknown": "An unknown error occurred",
     "retry": "Please try again",
     "required": "This field is required",
-    "invalid": "Invalid value"
+    "invalid": "Invalid value",
+    "viewFailed": "Failed to load {view}"
   },
 
   "exec": {

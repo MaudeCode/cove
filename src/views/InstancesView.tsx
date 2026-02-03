@@ -18,6 +18,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RefreshCw, Monitor, Server, Smartphone, Globe, Clock } from "lucide-preact";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { SystemPresence } from "@/types/presence";
 import type { RouteProps } from "@/types/routes";
 
@@ -175,97 +176,104 @@ export function InstancesView(_props: RouteProps) {
   const clientCount = instances.value.filter((i) => i.mode !== "gateway").length;
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-5xl mx-auto space-y-6">
-        <PageHeader
-          title={t("instances.title")}
-          subtitle={t("instances.description")}
-          actions={
-            <IconButton
-              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-              label={t("actions.refresh")}
-              onClick={loadInstances}
-              disabled={isLoading.value || !isConnected.value}
-              variant="ghost"
-            />
-          }
-        />
+    <ViewErrorBoundary viewName={t("nav.instances")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <PageHeader
+            title={t("instances.title")}
+            subtitle={t("instances.description")}
+            actions={
+              <IconButton
+                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                label={t("actions.refresh")}
+                onClick={loadInstances}
+                disabled={isLoading.value || !isConnected.value}
+                variant="ghost"
+              />
+            }
+          />
 
-        {/* Stats Cards */}
-        {isConnected.value && !isLoading.value && (
-          <div class="grid grid-cols-3 gap-3">
-            <StatCard
-              icon={Globe}
-              label={t("instances.stats.total")}
-              value={instances.value.length}
-            />
-            <StatCard icon={Server} label={t("instances.stats.gateways")} value={gatewayCount} />
-            <StatCard icon={Monitor} label={t("instances.stats.clients")} value={clientCount} />
-          </div>
-        )}
-
-        {/* Error */}
-        {error.value && (
-          <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
-            {error.value}
-          </div>
-        )}
-
-        {/* Loading / Connecting */}
-        {(isLoading.value || !isConnected.value) && (
-          <div class="flex justify-center py-16">
-            <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
-          </div>
-        )}
-
-        {/* Instances Table */}
-        {isConnected.value && !isLoading.value && instances.value.length > 0 && (
-          <Card padding="none">
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                    <th class="py-3 px-4 font-medium">{t("instances.columns.instance")}</th>
-                    <th class="py-3 px-4 font-medium w-24">{t("instances.columns.mode")}</th>
-                    <th class="py-3 px-4 font-medium w-40">{t("instances.columns.platform")}</th>
-                    <th class="py-3 px-4 font-medium w-28">{t("instances.columns.lastSeen")}</th>
-                    <th class="py-3 px-4 font-medium w-20">{t("instances.columns.idle")}</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--color-border)]">
-                  {instances.value.map((presence, i) => (
-                    <InstanceRow
-                      key={presence.instanceId || presence.host || i}
-                      presence={presence}
-                    />
-                  ))}
-                </tbody>
-              </table>
+          {/* Stats Cards */}
+          {isConnected.value && !isLoading.value && (
+            <div class="grid grid-cols-3 gap-3">
+              <StatCard
+                icon={Globe}
+                label={t("instances.stats.total")}
+                value={instances.value.length}
+              />
+              <StatCard icon={Server} label={t("instances.stats.gateways")} value={gatewayCount} />
+              <StatCard icon={Monitor} label={t("instances.stats.clients")} value={clientCount} />
             </div>
-          </Card>
-        )}
+          )}
 
-        {/* Empty state */}
-        {isConnected.value && !isLoading.value && instances.value.length === 0 && !error.value && (
-          <Card>
-            <div class="p-16 text-center">
-              <Globe class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-              <h3 class="text-lg font-medium mb-2">{t("instances.emptyTitle")}</h3>
-              <p class="text-[var(--color-text-muted)] mb-4">{t("instances.emptyDescription")}</p>
-              <Button variant="secondary" onClick={loadInstances}>
-                {t("actions.refresh")}
-              </Button>
+          {/* Error */}
+          {error.value && (
+            <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+              {error.value}
             </div>
-          </Card>
-        )}
+          )}
 
-        {/* Footer count */}
-        {isConnected.value && !isLoading.value && instances.value.length > 0 && (
-          <p class="text-sm text-[var(--color-text-muted)] text-center">
-            {t("instances.count", { count: instances.value.length })}
-          </p>
-        )}
+          {/* Loading / Connecting */}
+          {(isLoading.value || !isConnected.value) && (
+            <div class="flex justify-center py-16">
+              <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
+            </div>
+          )}
+
+          {/* Instances Table */}
+          {isConnected.value && !isLoading.value && instances.value.length > 0 && (
+            <Card padding="none">
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
+                      <th class="py-3 px-4 font-medium">{t("instances.columns.instance")}</th>
+                      <th class="py-3 px-4 font-medium w-24">{t("instances.columns.mode")}</th>
+                      <th class="py-3 px-4 font-medium w-40">{t("instances.columns.platform")}</th>
+                      <th class="py-3 px-4 font-medium w-28">{t("instances.columns.lastSeen")}</th>
+                      <th class="py-3 px-4 font-medium w-20">{t("instances.columns.idle")}</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[var(--color-border)]">
+                    {instances.value.map((presence, i) => (
+                      <InstanceRow
+                        key={presence.instanceId || presence.host || i}
+                        presence={presence}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          {/* Empty state */}
+          {isConnected.value &&
+            !isLoading.value &&
+            instances.value.length === 0 &&
+            !error.value && (
+              <Card>
+                <div class="p-16 text-center">
+                  <Globe class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                  <h3 class="text-lg font-medium mb-2">{t("instances.emptyTitle")}</h3>
+                  <p class="text-[var(--color-text-muted)] mb-4">
+                    {t("instances.emptyDescription")}
+                  </p>
+                  <Button variant="secondary" onClick={loadInstances}>
+                    {t("actions.refresh")}
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+          {/* Footer count */}
+          {isConnected.value && !isLoading.value && instances.value.length > 0 && (
+            <p class="text-sm text-[var(--color-text-muted)] text-center">
+              {t("instances.count", { count: instances.value.length })}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+    </ViewErrorBoundary>
   );
 }

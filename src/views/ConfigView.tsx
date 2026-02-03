@@ -8,6 +8,7 @@
 import { useEffect } from "preact/hooks";
 import { signal } from "@preact/signals";
 import { t } from "@/lib/i18n";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import { isConnected } from "@/lib/gateway";
 import { toast } from "@/components/ui/Toast";
 import { Button } from "@/components/ui/Button";
@@ -201,106 +202,108 @@ export function ConfigView(_props: RouteProps) {
     : navTree;
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-6xl mx-auto space-y-6">
-        <PageHeader
-          title={t("config.title")}
-          subtitle={t("config.description")}
-          actions={
-            <>
-              {isDirty.value && (
-                <span class="text-sm text-[var(--color-warning)]">
-                  {t("config.unsavedChanges")}
-                </span>
-              )}
-              <Button
-                variant="secondary"
-                size="sm"
-                icon={RotateCcw}
-                onClick={handleReset}
-                disabled={!isDirty.value}
-              >
-                {t("config.reset")}
-              </Button>
-              <Button
-                variant="primary"
-                size="sm"
-                icon={Save}
-                onClick={handleSave}
-                disabled={!canSave.value}
-              >
-                {isSaving.value ? t("config.saving") : t("config.save")}
-              </Button>
-              <IconButton
-                icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-                onClick={loadConfig}
-                disabled={isLoading.value}
-                label={t("actions.refresh")}
-              />
-            </>
-          }
-        />
+    <ViewErrorBoundary viewName={t("config.title")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-6xl mx-auto space-y-6">
+          <PageHeader
+            title={t("config.title")}
+            subtitle={t("config.description")}
+            actions={
+              <>
+                {isDirty.value && (
+                  <span class="text-sm text-[var(--color-warning)]">
+                    {t("config.unsavedChanges")}
+                  </span>
+                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  icon={RotateCcw}
+                  onClick={handleReset}
+                  disabled={!isDirty.value}
+                >
+                  {t("config.reset")}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={Save}
+                  onClick={handleSave}
+                  disabled={!canSave.value}
+                >
+                  {isSaving.value ? t("config.saving") : t("config.save")}
+                </Button>
+                <IconButton
+                  icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+                  onClick={loadConfig}
+                  disabled={isLoading.value}
+                  label={t("actions.refresh")}
+                />
+              </>
+            }
+          />
 
-        {/* Error */}
-        {error.value && <HintBox variant="error">{error.value}</HintBox>}
+          {/* Error */}
+          {error.value && <HintBox variant="error">{error.value}</HintBox>}
 
-        {/* Loading */}
-        {isLoading.value && !schemaValue && (
-          <div class="flex items-center justify-center py-12">
-            <Spinner size="lg" />
-          </div>
-        )}
+          {/* Loading */}
+          {isLoading.value && !schemaValue && (
+            <div class="flex items-center justify-center py-12">
+              <Spinner size="lg" />
+            </div>
+          )}
 
-        {/* Content */}
-        {!isLoading.value && schemaValue && (
-          <div class="flex min-h-[500px] rounded-xl overflow-hidden border border-[var(--color-border)]">
-            {/* Sidebar */}
-            <div class="w-64 flex flex-col bg-[var(--color-bg-tertiary)]">
-              {/* Search */}
-              <div class="p-3">
-                <Input
-                  type="text"
-                  placeholder={t("config.searchPlaceholder")}
-                  value={searchQuery.value}
-                  onInput={(e) => {
-                    searchQuery.value = (e.target as HTMLInputElement).value;
-                  }}
-                  leftElement={<Search class="w-4 h-4" />}
-                  class="text-sm"
+          {/* Content */}
+          {!isLoading.value && schemaValue && (
+            <div class="flex min-h-[500px] rounded-xl overflow-hidden border border-[var(--color-border)]">
+              {/* Sidebar */}
+              <div class="w-64 flex flex-col bg-[var(--color-bg-tertiary)]">
+                {/* Search */}
+                <div class="p-3">
+                  <Input
+                    type="text"
+                    placeholder={t("config.searchPlaceholder")}
+                    value={searchQuery.value}
+                    onInput={(e) => {
+                      searchQuery.value = (e.target as HTMLInputElement).value;
+                    }}
+                    leftElement={<Search class="w-4 h-4" />}
+                    class="text-sm"
+                  />
+                </div>
+
+                {/* Nav tree */}
+                <div class="flex-1 overflow-y-auto p-2">
+                  {filteredTree.length === 0 ? (
+                    <p class="text-sm text-[var(--color-text-muted)] p-2">
+                      {query ? t("config.noResults") : t("config.noFields")}
+                    </p>
+                  ) : (
+                    filteredTree.map((item) => (
+                      <ConfigNavItem
+                        key={item.key}
+                        item={item}
+                        selectedPath={selectedPath}
+                        expandedNav={expandedNav}
+                      />
+                    ))
+                  )}
+                </div>
+              </div>
+
+              {/* Detail panel */}
+              <div class="flex-1 bg-[var(--color-bg-surface)]">
+                <ConfigDetailPanel
+                  selectedPath={selectedPath}
+                  schema={schema}
+                  draftConfig={draftConfig}
+                  uiHints={uiHints}
                 />
               </div>
-
-              {/* Nav tree */}
-              <div class="flex-1 overflow-y-auto p-2">
-                {filteredTree.length === 0 ? (
-                  <p class="text-sm text-[var(--color-text-muted)] p-2">
-                    {query ? t("config.noResults") : t("config.noFields")}
-                  </p>
-                ) : (
-                  filteredTree.map((item) => (
-                    <ConfigNavItem
-                      key={item.key}
-                      item={item}
-                      selectedPath={selectedPath}
-                      expandedNav={expandedNav}
-                    />
-                  ))
-                )}
-              </div>
             </div>
-
-            {/* Detail panel */}
-            <div class="flex-1 bg-[var(--color-bg-surface)]">
-              <ConfigDetailPanel
-                selectedPath={selectedPath}
-                schema={schema}
-                draftConfig={draftConfig}
-                uiHints={uiHints}
-              />
-            </div>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-    </div>
+    </ViewErrorBoundary>
   );
 }

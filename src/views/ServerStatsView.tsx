@@ -37,6 +37,7 @@ import {
   FileText,
   FolderOpen,
 } from "lucide-preact";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { CostUsageSummary, HealthSummary } from "@/types/server-stats";
 import { formatUptime, formatTokenCount, formatCost } from "@/types/server-stats";
 
@@ -344,71 +345,73 @@ export function ServerStatsView(_props: RouteProps) {
   }, [isConnected.value]);
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-4xl mx-auto space-y-6">
-        <PageHeader
-          title={t("stats.title")}
-          subtitle={t("stats.description")}
-          actions={
-            <IconButton
-              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-              label={t("actions.refresh")}
-              onClick={() => loadAll()}
-              disabled={isLoading.value || !isConnected.value}
-              variant="ghost"
-            />
-          }
-        />
+    <ViewErrorBoundary viewName={t("nav.stats")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-4xl mx-auto space-y-6">
+          <PageHeader
+            title={t("stats.title")}
+            subtitle={t("stats.description")}
+            actions={
+              <IconButton
+                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                label={t("actions.refresh")}
+                onClick={() => loadAll()}
+                disabled={isLoading.value || !isConnected.value}
+                variant="ghost"
+              />
+            }
+          />
 
-        {/* Error */}
-        {error.value && (
-          <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
-            {error.value}
-          </div>
-        )}
-
-        {/* Loading / Connecting */}
-        {(isLoading.value && !healthData.value) || !isConnected.value ? (
-          <div class="flex justify-center py-16">
-            <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
-          </div>
-        ) : (
-          <div class="grid gap-6 md:grid-cols-2">
-            {/* Gateway Info */}
-            <GatewayInfoCard />
-
-            {/* Usage Summary */}
-            <UsageSummaryCard />
-
-            {/* Daily Usage Chart */}
-            <div class="md:col-span-2">
-              <DailyUsageChart />
+          {/* Error */}
+          {error.value && (
+            <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+              {error.value}
             </div>
+          )}
 
-            {/* Agents */}
-            <div class="md:col-span-2">
-              <AgentsCard />
+          {/* Loading / Connecting */}
+          {(isLoading.value && !healthData.value) || !isConnected.value ? (
+            <div class="flex justify-center py-16">
+              <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
             </div>
-          </div>
-        )}
+          ) : (
+            <div class="grid gap-6 md:grid-cols-2">
+              {/* Gateway Info */}
+              <GatewayInfoCard />
 
-        {/* Usage Period Selector */}
-        {usageData.value && (
-          <div class="flex justify-center gap-2">
-            {[7, 14, 30, 90].map((days) => (
-              <Button
-                key={days}
-                variant={usageDays.value === days ? "primary" : "ghost"}
-                size="sm"
-                onClick={() => loadUsage(days)}
-                disabled={isLoadingUsage.value}
-              >
-                {days}d
-              </Button>
-            ))}
-          </div>
-        )}
+              {/* Usage Summary */}
+              <UsageSummaryCard />
+
+              {/* Daily Usage Chart */}
+              <div class="md:col-span-2">
+                <DailyUsageChart />
+              </div>
+
+              {/* Agents */}
+              <div class="md:col-span-2">
+                <AgentsCard />
+              </div>
+            </div>
+          )}
+
+          {/* Usage Period Selector */}
+          {usageData.value && (
+            <div class="flex justify-center gap-2">
+              {[7, 14, 30, 90].map((days) => (
+                <Button
+                  key={days}
+                  variant={usageDays.value === days ? "primary" : "ghost"}
+                  size="sm"
+                  onClick={() => loadUsage(days)}
+                  disabled={isLoadingUsage.value}
+                >
+                  {days}d
+                </Button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </ViewErrorBoundary>
   );
 }
