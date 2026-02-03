@@ -2,6 +2,24 @@
 <html lang="en" style="background:#0a0a0b">
   <head>
     <meta charset="UTF-8" />
+
+    <!-- Security Headers -->
+    <!-- CSP: 'unsafe-inline' is needed for theme script to prevent FOUC. In production, use a hash or nonce. -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob: https:;
+      font-src 'self' data:;
+      connect-src 'self' ws: wss: https:;
+      frame-ancestors 'none';
+      form-action 'self';
+      base-uri 'self';
+    " />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />

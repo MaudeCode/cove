@@ -62,23 +62,94 @@ function remove(key: string): void {
 // Auth
 // ============================================
 
+/**
+ * Stored auth preferences (URL and mode only - NEVER credentials)
+ * Credentials are stored in sessionStorage only for the current session
+ */
 export interface StoredAuth {
   url: string;
   authMode: "token" | "password";
+  /** @deprecated - credentials are no longer stored in localStorage for security */
   credential?: string;
   rememberMe: boolean;
 }
 
+/**
+ * Session-only auth (includes credential for current session)
+ * Cleared when browser tab/window closes
+ */
+interface SessionAuth {
+  credential: string;
+}
+
+const SESSION_AUTH_KEY = "cove:session-auth";
+
 export function getAuth(): StoredAuth | null {
-  return getRaw<StoredAuth>("auth");
+  const stored = getRaw<StoredAuth>("auth");
+  if (!stored) return null;
+
+  // Migrate: if old stored auth has credential, clear it
+  if (stored.credential) {
+    saveAuth({ ...stored, credential: undefined });
+    // Move credential to session storage for this session only
+    setSessionCredential(stored.credential);
+  }
+
+  return stored;
 }
 
 export function saveAuth(auth: StoredAuth): void {
-  setRaw("auth", auth);
+  // SECURITY: Never store credentials in localStorage
+  // Only store URL and auth mode
+  const safeAuth: StoredAuth = {
+    url: auth.url,
+    authMode: auth.authMode,
+    rememberMe: auth.rememberMe,
+    // credential is intentionally NOT stored
+  };
+  setRaw("auth", safeAuth);
 }
 
 export function clearAuth(): void {
   remove("auth");
+  clearSessionCredential();
+}
+
+/**
+ * Store credential in sessionStorage (current session only)
+ * Automatically cleared when tab/window closes
+ */
+export function setSessionCredential(credential: string): void {
+  try {
+    sessionStorage.setItem(SESSION_AUTH_KEY, JSON.stringify({ credential }));
+  } catch {
+    // Quota exceeded or other error
+  }
+}
+
+/**
+ * Get credential from sessionStorage (current session only)
+ */
+export function getSessionCredential(): string | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_AUTH_KEY);
+    if (!raw) return null;
+    const data = JSON.parse(raw) as SessionAuth;
+    return data.credential || null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Clear credential from sessionStorage
+ */
+export function clearSessionCredential(): void {
+  try {
+    sessionStorage.removeItem(SESSION_AUTH_KEY);
+  } catch {
+    // Ignore errors
+  }
 }
 
 // ============================================

@@ -8,6 +8,7 @@ import { signal } from "@preact/signals";
 import Prism from "prismjs";
 import "prismjs/components/prism-json";
 import { t } from "@/lib/i18n";
+import { sanitizeCodeHtml } from "@/lib/sanitize";
 import { IconButton } from "@/components/ui/IconButton";
 import { Copy, Check } from "lucide-preact";
 
@@ -43,9 +44,12 @@ async function copyToClipboard(text: string, id: string) {
 
 function highlightJson(json: string): string {
   try {
-    return Prism.highlight(json, Prism.languages.json, "json");
+    const highlighted = Prism.highlight(json, Prism.languages.json, "json");
+    // Sanitize output to prevent XSS via malformed JSON strings
+    return sanitizeCodeHtml(highlighted);
   } catch {
-    return json;
+    // Fallback: escape any HTML in raw JSON
+    return sanitizeCodeHtml(json);
   }
 }
 
