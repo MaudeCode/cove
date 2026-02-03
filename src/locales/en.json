@@ -118,6 +118,17 @@
     "download": "Download"
   },
 
+  "common": {
+    "confirmDelete": "Are you sure?",
+    "deleting": "Deleting...",
+    "saving": "Saving...",
+    "loading": "Loading...",
+    "noData": "No data",
+    "noResults": "No results found",
+    "tryAgain": "Try again",
+    "dismiss": "Dismiss"
+  },
+
   "auth": {
     "title": "Connect to Gateway",
     "gatewayUrl": "Gateway URL",
