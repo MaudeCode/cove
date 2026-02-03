@@ -14,7 +14,7 @@ import { loadAgents } from "@/signals/agents";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
-import { getAuth, saveAuth } from "@/lib/storage";
+import { getAuth, saveAuth, setSessionCredential, getSessionCredential } from "@/lib/storage";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -72,14 +72,18 @@ export function LoginView() {
         autoReconnect: true,
       });
 
-      // Save credentials if remember me is checked
+      // Save URL and auth mode if remember me is checked (NOT credentials)
       if (rememberMe.value) {
         saveAuth({
           url: url.value,
           authMode: authMode.value,
-          credential: token.value || undefined,
           rememberMe: true,
         });
+      }
+
+      // Store credential in session storage (cleared on tab close)
+      if (token.value) {
+        setSessionCredential(token.value);
       }
 
       // Load sessions list for sidebar
@@ -114,14 +118,16 @@ export function LoginView() {
     }
   };
 
-  // Load saved credentials on mount
+  // Load saved preferences on mount (URL and auth mode only)
   if (!url.value) {
     const saved = getAuth();
     if (saved) {
       url.value = saved.url;
       authMode.value = saved.authMode;
-      if (saved.credential) token.value = saved.credential;
       rememberMe.value = saved.rememberMe;
+      // Credential comes from session storage only (if still valid)
+      const sessionCred = getSessionCredential();
+      if (sessionCred) token.value = sessionCred;
     }
   }
 

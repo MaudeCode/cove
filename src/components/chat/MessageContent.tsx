@@ -4,11 +4,12 @@
  * Renders markdown content with syntax highlighting and search highlighting.
  */
 
-import { useRef, useEffect } from "preact/hooks";
+import { useRef, useEffect, useMemo } from "preact/hooks";
 import { renderMarkdown } from "@/lib/markdown";
+import { sanitizeHtml } from "@/lib/sanitize";
 import { BouncingDots } from "@/components/ui/BouncingDots";
 import { t } from "@/lib/i18n";
-import { searchQuery } from "@/signals/chat";
+import { debouncedSearchQuery } from "@/signals/chat";
 
 interface MessageContentProps {
   content: string;
@@ -94,12 +95,16 @@ function highlightSearchMatches(container: HTMLElement, query: string) {
 export function MessageContent({ content, isStreaming = false }: MessageContentProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Render markdown - NO useMemo to ensure updates always render
-  // useMemo was potentially causing stale renders during rapid streaming
-  const html = content ? renderMarkdown(content) : "";
+  // Render and sanitize markdown
+  // useMemo prevents expensive re-renders; content dependency ensures streaming updates
+  const html = useMemo(() => {
+    if (!content) return "";
+    const rendered = renderMarkdown(content);
+    return sanitizeHtml(rendered);
+  }, [content]);
 
-  // Get current search query (access .value for reactivity)
-  const query = searchQuery.value.trim();
+  // Get debounced search query for highlighting (access .value for reactivity)
+  const query = debouncedSearchQuery.value.trim();
 
   // Add copy buttons to code blocks after render
   useEffect(() => {
@@ -148,6 +153,7 @@ export function MessageContent({ content, isStreaming = false }: MessageContentP
     if (!containerRef.current || !query) return;
 
     // Need to re-render the markdown first (remove old highlights)
+    // html is already sanitized via useMemo above
     containerRef.current.innerHTML = html;
 
     // Then apply highlighting
@@ -167,7 +173,7 @@ export function MessageContent({ content, isStreaming = false }: MessageContentP
     <div
       ref={containerRef}
       class="message-content prose prose-sm max-w-none"
-      // biome-ignore lint/security/noDangerouslySetInnerHtml: markdown rendering requires innerHTML
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: content is sanitized via DOMPurify in useMemo above
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

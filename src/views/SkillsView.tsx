@@ -20,6 +20,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { HintBox } from "@/components/ui/HintBox";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RefreshCw, Search, Puzzle, CheckCircle, XCircle, AlertTriangle } from "lucide-preact";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { SkillStatusReport, SkillStatusEntry, SkillStatus, SkillSource } from "@/types/skills";
 import { getSkillStatus } from "@/types/skills";
 import { ClawHubBrowser, SkillRow, InstallDepsModal } from "@/components/skills";
@@ -227,171 +228,173 @@ export function SkillsView(_props: RouteProps) {
     !!searchQuery.value || sourceFilter.value !== "all" || statusFilter.value !== "all";
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-5xl mx-auto space-y-6">
-        <PageHeader
-          title={t("skills.title")}
-          subtitle={t("skills.description")}
-          actions={
-            tab === "installed" ? (
-              <IconButton
-                icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-                onClick={loadSkills}
-                disabled={isLoading.value}
-                label={t("actions.refresh")}
-              />
-            ) : undefined
-          }
-        />
-
-        {/* Tabs */}
-        <div class="flex gap-2" role="tablist">
-          <TabButton
-            tab="installed"
-            label={t("skills.tabs.installed")}
-            active={tab === "installed"}
+    <ViewErrorBoundary viewName={t("nav.skills")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <PageHeader
+            title={t("skills.title")}
+            subtitle={t("skills.description")}
+            actions={
+              tab === "installed" ? (
+                <IconButton
+                  icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+                  onClick={loadSkills}
+                  disabled={isLoading.value}
+                  label={t("actions.refresh")}
+                />
+              ) : undefined
+            }
           />
-          <TabButton tab="clawhub" label={t("skills.tabs.clawhub")} active={tab === "clawhub"} />
-        </div>
 
-        {/* ClawHub Tab */}
-        {tab === "clawhub" && <ClawHubBrowser />}
+          {/* Tabs */}
+          <div class="flex gap-2" role="tablist">
+            <TabButton
+              tab="installed"
+              label={t("skills.tabs.installed")}
+              active={tab === "installed"}
+            />
+            <TabButton tab="clawhub" label={t("skills.tabs.clawhub")} active={tab === "clawhub"} />
+          </div>
 
-        {/* Installed Tab */}
-        {tab === "installed" && (
-          <>
-            {/* Error */}
-            {error.value && <HintBox variant="error">{error.value}</HintBox>}
+          {/* ClawHub Tab */}
+          {tab === "clawhub" && <ClawHubBrowser />}
 
-            {/* Loading */}
-            {isLoading.value && skills.value.length === 0 && (
-              <div class="flex items-center justify-center py-12">
-                <Spinner size="lg" />
-              </div>
-            )}
+          {/* Installed Tab */}
+          {tab === "installed" && (
+            <>
+              {/* Error */}
+              {error.value && <HintBox variant="error">{error.value}</HintBox>}
 
-            {/* Content */}
-            {!isLoading.value && !error.value && (
-              <>
-                {/* Stats */}
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <StatCard
-                    icon={Puzzle}
-                    label={t("skills.stats.total")}
-                    value={s.total}
-                    active={statusFilter.value === "all"}
-                    onClick={() => {
-                      statusFilter.value = "all";
-                    }}
-                  />
-                  <StatCard
-                    icon={CheckCircle}
-                    label={t("skills.stats.eligible")}
-                    value={s.eligible}
-                    active={statusFilter.value === "eligible"}
-                    onClick={() => {
-                      statusFilter.value = "eligible";
-                    }}
-                  />
-                  <StatCard
-                    icon={XCircle}
-                    label={t("skills.stats.disabled")}
-                    value={s.disabled}
-                    active={statusFilter.value === "disabled"}
-                    onClick={() => {
-                      statusFilter.value = "disabled";
-                    }}
-                  />
-                  <StatCard
-                    icon={AlertTriangle}
-                    label={t("skills.stats.missingReqs")}
-                    value={s.missingReqs}
-                    active={statusFilter.value === "missing-reqs"}
-                    highlight={s.missingReqs > 0}
-                    onClick={() => {
-                      statusFilter.value = "missing-reqs";
-                    }}
-                  />
+              {/* Loading */}
+              {isLoading.value && skills.value.length === 0 && (
+                <div class="flex items-center justify-center py-12">
+                  <Spinner size="lg" />
                 </div>
+              )}
 
-                {/* Filters */}
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div class="flex-1 flex items-center gap-3">
-                    <Input
-                      type="text"
-                      placeholder={t("skills.searchPlaceholder")}
-                      value={searchQuery.value}
-                      onInput={(e) => {
-                        searchQuery.value = (e.target as HTMLInputElement).value;
+              {/* Content */}
+              {!isLoading.value && !error.value && (
+                <>
+                  {/* Stats */}
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <StatCard
+                      icon={Puzzle}
+                      label={t("skills.stats.total")}
+                      value={s.total}
+                      active={statusFilter.value === "all"}
+                      onClick={() => {
+                        statusFilter.value = "all";
                       }}
-                      leftElement={<Search class="w-4 h-4" />}
-                      class="flex-1"
                     />
-                    <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-                      {filtered.length !== s.total
-                        ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
-                        : t("skills.count", { count: s.total })}
-                    </span>
+                    <StatCard
+                      icon={CheckCircle}
+                      label={t("skills.stats.eligible")}
+                      value={s.eligible}
+                      active={statusFilter.value === "eligible"}
+                      onClick={() => {
+                        statusFilter.value = "eligible";
+                      }}
+                    />
+                    <StatCard
+                      icon={XCircle}
+                      label={t("skills.stats.disabled")}
+                      value={s.disabled}
+                      active={statusFilter.value === "disabled"}
+                      onClick={() => {
+                        statusFilter.value = "disabled";
+                      }}
+                    />
+                    <StatCard
+                      icon={AlertTriangle}
+                      label={t("skills.stats.missingReqs")}
+                      value={s.missingReqs}
+                      active={statusFilter.value === "missing-reqs"}
+                      highlight={s.missingReqs > 0}
+                      onClick={() => {
+                        statusFilter.value = "missing-reqs";
+                      }}
+                    />
                   </div>
-                  <Dropdown
-                    value={sourceFilter.value}
-                    onChange={(v) => {
-                      sourceFilter.value = v as SkillSource | "all";
-                    }}
-                    options={SOURCE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
-                    size="sm"
-                    align="right"
-                    aria-label={t("skills.filters.allSources")}
-                  />
-                </div>
 
-                {/* Skills list */}
-                <Card padding="none">
-                  {filtered.length === 0 ? (
-                    <EmptyState hasFilters={hasFilters} />
-                  ) : (
-                    <div>
-                      {filtered.map((skill) => (
-                        <SkillRow
-                          key={skill.skillKey}
-                          skill={skill}
-                          isExpanded={expandedSkills.value.has(skill.skillKey)}
-                          onToggleExpand={() => toggleExpanded(skill.skillKey)}
-                          onToggleEnabled={() => toggleSkillEnabled(skill)}
-                          onInstall={(s) => {
-                            installModal.value = s;
-                          }}
-                        />
-                      ))}
+                  {/* Filters */}
+                  <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <div class="flex-1 flex items-center gap-3">
+                      <Input
+                        type="text"
+                        placeholder={t("skills.searchPlaceholder")}
+                        value={searchQuery.value}
+                        onInput={(e) => {
+                          searchQuery.value = (e.target as HTMLInputElement).value;
+                        }}
+                        leftElement={<Search class="w-4 h-4" />}
+                        class="flex-1"
+                      />
+                      <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
+                        {filtered.length !== s.total
+                          ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
+                          : t("skills.count", { count: s.total })}
+                      </span>
+                    </div>
+                    <Dropdown
+                      value={sourceFilter.value}
+                      onChange={(v) => {
+                        sourceFilter.value = v as SkillSource | "all";
+                      }}
+                      options={SOURCE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
+                      size="sm"
+                      align="right"
+                      aria-label={t("skills.filters.allSources")}
+                    />
+                  </div>
+
+                  {/* Skills list */}
+                  <Card padding="none">
+                    {filtered.length === 0 ? (
+                      <EmptyState hasFilters={hasFilters} />
+                    ) : (
+                      <div>
+                        {filtered.map((skill) => (
+                          <SkillRow
+                            key={skill.skillKey}
+                            skill={skill}
+                            isExpanded={expandedSkills.value.has(skill.skillKey)}
+                            onToggleExpand={() => toggleExpanded(skill.skillKey)}
+                            onToggleEnabled={() => toggleSkillEnabled(skill)}
+                            onInstall={(s) => {
+                              installModal.value = s;
+                            }}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </Card>
+
+                  {/* Workspace info */}
+                  {workspaceDir.value && (
+                    <div class="text-xs text-[var(--color-text-muted)] space-y-1">
+                      <div>
+                        {t("skills.workspaceDir")}: <code>{workspaceDir.value}</code>
+                      </div>
+                      <div>
+                        {t("skills.managedDir")}: <code>{managedSkillsDir.value}</code>
+                      </div>
                     </div>
                   )}
-                </Card>
+                </>
+              )}
+            </>
+          )}
 
-                {/* Workspace info */}
-                {workspaceDir.value && (
-                  <div class="text-xs text-[var(--color-text-muted)] space-y-1">
-                    <div>
-                      {t("skills.workspaceDir")}: <code>{workspaceDir.value}</code>
-                    </div>
-                    <div>
-                      {t("skills.managedDir")}: <code>{managedSkillsDir.value}</code>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-
-        {/* Install modal */}
-        <InstallDepsModal
-          skill={installModal.value}
-          onClose={() => {
-            installModal.value = null;
-          }}
-          onSuccess={loadSkills}
-        />
+          {/* Install modal */}
+          <InstallDepsModal
+            skill={installModal.value}
+            onClose={() => {
+              installModal.value = null;
+            }}
+            onSuccess={loadSkills}
+          />
+        </div>
       </div>
-    </div>
+    </ViewErrorBoundary>
   );
 }

@@ -4,7 +4,7 @@
  * A draggable handle for resizing panels.
  */
 
-import { useCallback, useRef } from "preact/hooks";
+import { useCallback, useRef, useEffect } from "preact/hooks";
 
 export interface ResizeHandleProps {
   /** Direction of resize */
@@ -32,6 +32,28 @@ export function ResizeHandle({
 }: ResizeHandleProps) {
   const startPosRef = useRef<number>(0);
   const isDraggingRef = useRef<boolean>(false);
+  // Store handlers in refs for cleanup on unmount
+  const handlersRef = useRef<{
+    move: ((e: MouseEvent) => void) | null;
+    up: (() => void) | null;
+  }>({ move: null, up: null });
+
+  // Cleanup on unmount - remove any lingering event listeners
+  useEffect(() => {
+    return () => {
+      if (handlersRef.current.move) {
+        document.removeEventListener("mousemove", handlersRef.current.move);
+      }
+      if (handlersRef.current.up) {
+        document.removeEventListener("mouseup", handlersRef.current.up);
+      }
+      // Reset cursor/selection if dragging when unmounted
+      if (isDraggingRef.current) {
+        document.body.style.cursor = "";
+        document.body.style.userSelect = "";
+      }
+    };
+  }, []);
 
   const handleMouseDown = useCallback(
     (e: MouseEvent) => {
@@ -55,11 +77,18 @@ export function ResizeHandle({
         isDraggingRef.current = false;
         document.removeEventListener("mousemove", handleMouseMove);
         document.removeEventListener("mouseup", handleMouseUp);
+        // Clear refs since listeners are removed
+        handlersRef.current.move = null;
+        handlersRef.current.up = null;
         document.body.style.cursor = "";
         document.body.style.userSelect = "";
 
         onResizeEnd?.();
       };
+
+      // Store handlers in ref for cleanup
+      handlersRef.current.move = handleMouseMove;
+      handlersRef.current.up = handleMouseUp;
 
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
@@ -82,7 +111,7 @@ export function ResizeHandle({
         ${className}
       `}
       role="separator"
-      aria-orientation={isHorizontal ? "vertical" : "horizontal"}
+      aria-orientation={isHorizontal ? "horizontal" : "vertical"}
       aria-label="Resize handle"
     />
   );

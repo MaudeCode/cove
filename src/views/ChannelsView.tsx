@@ -31,6 +31,7 @@ import {
   ExternalLink,
   Settings,
 } from "lucide-preact";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type {
   ChannelsStatusResponse,
   ChannelDisplayData,
@@ -313,104 +314,106 @@ export function ChannelsView(_props: RouteProps) {
   const statValues = stats.value;
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-4xl mx-auto space-y-6">
-        <PageHeader
-          title={t("channels.title")}
-          subtitle={t("channels.description")}
-          actions={
-            <>
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => loadChannels(true)}
-                disabled={isProbing.value || isLoading.value || !isConnected.value}
-                icon={<Activity class={`w-4 h-4 ${isProbing.value ? "animate-pulse" : ""}`} />}
-              >
-                {isProbing.value ? t("channels.probing") : t("channels.probe")}
-              </Button>
-              <IconButton
-                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-                label={t("actions.refresh")}
-                onClick={() => loadChannels()}
-                disabled={isLoading.value || !isConnected.value}
-                variant="ghost"
+    <ViewErrorBoundary viewName={t("nav.channels")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-4xl mx-auto space-y-6">
+          <PageHeader
+            title={t("channels.title")}
+            subtitle={t("channels.description")}
+            actions={
+              <>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => loadChannels(true)}
+                  disabled={isProbing.value || isLoading.value || !isConnected.value}
+                  icon={<Activity class={`w-4 h-4 ${isProbing.value ? "animate-pulse" : ""}`} />}
+                >
+                  {isProbing.value ? t("channels.probing") : t("channels.probe")}
+                </Button>
+                <IconButton
+                  icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                  label={t("actions.refresh")}
+                  onClick={() => loadChannels()}
+                  disabled={isLoading.value || !isConnected.value}
+                  variant="ghost"
+                />
+              </>
+            }
+          />
+
+          {/* Stats Cards */}
+          {isConnected.value && !isLoading.value && (
+            <div class="grid grid-cols-3 gap-3">
+              <StatCard
+                icon={MessageSquare}
+                label={t("channels.stats.total")}
+                value={statValues.total}
               />
-            </>
-          }
-        />
-
-        {/* Stats Cards */}
-        {isConnected.value && !isLoading.value && (
-          <div class="grid grid-cols-3 gap-3">
-            <StatCard
-              icon={MessageSquare}
-              label={t("channels.stats.total")}
-              value={statValues.total}
-            />
-            <StatCard icon={Zap} label={t("channels.stats.active")} value={statValues.active} />
-            <StatCard
-              icon={AlertCircle}
-              label={t("channels.stats.errors")}
-              value={statValues.errors}
-              highlight={statValues.errors > 0}
-            />
-          </div>
-        )}
-
-        {/* Error */}
-        {error.value && (
-          <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
-            {error.value}
-          </div>
-        )}
-
-        {/* Loading / Connecting */}
-        {(isLoading.value || !isConnected.value) && (
-          <div class="flex justify-center py-16">
-            <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
-          </div>
-        )}
-
-        {/* Channel Cards */}
-        {isConnected.value && !isLoading.value && channels.value.length > 0 && (
-          <div class="grid gap-4 sm:grid-cols-2">
-            {channels.value.map((channel) => (
-              <ChannelCard key={channel.id} channel={channel} />
-            ))}
-          </div>
-        )}
-
-        {/* Empty state */}
-        {isConnected.value && !isLoading.value && channels.value.length === 0 && !error.value && (
-          <Card>
-            <div class="p-16 text-center">
-              <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-              <h3 class="text-lg font-medium mb-2">{t("channels.emptyTitle")}</h3>
-              <p class="text-[var(--color-text-muted)] mb-4">{t("channels.emptyDescription")}</p>
-              <a
-                href="https://docs.openclaw.ai/channels"
-                target="_blank"
-                rel="noopener noreferrer"
-                class="inline-flex items-center gap-2 text-[var(--color-accent)] hover:underline"
-              >
-                {t("channels.learnMore")}
-                <ExternalLink class="w-4 h-4" />
-              </a>
+              <StatCard icon={Zap} label={t("channels.stats.active")} value={statValues.active} />
+              <StatCard
+                icon={AlertCircle}
+                label={t("channels.stats.errors")}
+                value={statValues.errors}
+                highlight={statValues.errors > 0}
+              />
             </div>
-          </Card>
-        )}
+          )}
 
-        {/* Footer count */}
-        {isConnected.value && !isLoading.value && channels.value.length > 0 && (
-          <p class="text-sm text-[var(--color-text-muted)] text-center">
-            {t("channels.count", { count: channels.value.length })}
-          </p>
-        )}
+          {/* Error */}
+          {error.value && (
+            <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+              {error.value}
+            </div>
+          )}
+
+          {/* Loading / Connecting */}
+          {(isLoading.value || !isConnected.value) && (
+            <div class="flex justify-center py-16">
+              <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
+            </div>
+          )}
+
+          {/* Channel Cards */}
+          {isConnected.value && !isLoading.value && channels.value.length > 0 && (
+            <div class="grid gap-4 sm:grid-cols-2">
+              {channels.value.map((channel) => (
+                <ChannelCard key={channel.id} channel={channel} />
+              ))}
+            </div>
+          )}
+
+          {/* Empty state */}
+          {isConnected.value && !isLoading.value && channels.value.length === 0 && !error.value && (
+            <Card>
+              <div class="p-16 text-center">
+                <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                <h3 class="text-lg font-medium mb-2">{t("channels.emptyTitle")}</h3>
+                <p class="text-[var(--color-text-muted)] mb-4">{t("channels.emptyDescription")}</p>
+                <a
+                  href="https://docs.openclaw.ai/channels"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="inline-flex items-center gap-2 text-[var(--color-accent)] hover:underline"
+                >
+                  {t("channels.learnMore")}
+                  <ExternalLink class="w-4 h-4" />
+                </a>
+              </div>
+            </Card>
+          )}
+
+          {/* Footer count */}
+          {isConnected.value && !isLoading.value && channels.value.length > 0 && (
+            <p class="text-sm text-[var(--color-text-muted)] text-center">
+              {t("channels.count", { count: channels.value.length })}
+            </p>
+          )}
+        </div>
+
+        {/* Logout Modal */}
+        <LogoutModal />
       </div>
-
-      {/* Logout Modal */}
-      <LogoutModal />
-    </div>
+    </ViewErrorBoundary>
   );
 }

@@ -80,8 +80,24 @@ export const heartbeatCount = computed(() => heartbeatMessages.value.length);
 // Search & Filter
 // ============================================
 
-/** Current search query */
+/** Current search query (raw input) */
 export const searchQuery = signal<string>("");
+
+/** Debounced search query for filtering (300ms delay) */
+export const debouncedSearchQuery = signal<string>("");
+
+/** Debounce timer for search */
+let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Update debounced search query with delay */
+searchQuery.subscribe((value) => {
+  if (searchDebounceTimer) {
+    clearTimeout(searchDebounceTimer);
+  }
+  searchDebounceTimer = setTimeout(() => {
+    debouncedSearchQuery.value = value;
+  }, 300);
+});
 
 /** Whether search is active (panel open) */
 export const isSearchOpen = signal<boolean>(false);
@@ -128,8 +144,8 @@ export const filteredMessages = computed(() => {
     });
   }
 
-  // Filter by search query
-  const query = searchQuery.value.trim().toLowerCase();
+  // Filter by search query (use debounced query for performance during typing)
+  const query = debouncedSearchQuery.value.trim().toLowerCase();
   if (query) {
     result = result.filter((msg) => msg.content.toLowerCase().includes(query));
   }
@@ -139,7 +155,7 @@ export const filteredMessages = computed(() => {
 
 /** Number of search matches (after date filter) */
 export const searchMatchCount = computed(() => {
-  const query = searchQuery.value.trim().toLowerCase();
+  const query = debouncedSearchQuery.value.trim().toLowerCase();
   if (!query && !hasDateFilter.value) {
     return 0;
   }

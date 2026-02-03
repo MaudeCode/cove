@@ -118,6 +118,17 @@
     "download": "Download"
   },
 
+  "common": {
+    "confirmDelete": "Are you sure?",
+    "deleting": "Deleting...",
+    "saving": "Saving...",
+    "loading": "Loading...",
+    "noData": "No data",
+    "noResults": "No results found",
+    "tryAgain": "Try again",
+    "dismiss": "Dismiss"
+  },
+
   "auth": {
     "title": "Connect to Gateway",
     "gatewayUrl": "Gateway URL",
@@ -146,7 +157,8 @@
     "unknown": "An unknown error occurred",
     "retry": "Please try again",
     "required": "This field is required",
-    "invalid": "Invalid value"
+    "invalid": "Invalid value",
+    "viewFailed": "Failed to load {view}"
   },
 
   "exec": {
@@ -467,8 +479,8 @@
     "title": "Cron Jobs",
     "description": "Schedule and manage automated tasks.",
     "createJob": "Create Job",
-    "editJob": "Edit {name}",
     "editJob": "Edit Job",
+    "editJobNamed": "Edit {name}",
     "deleteJob": "Delete Job",
     "confirmDelete": "Delete this job?",
     "runNow": "Run Now",
@@ -665,8 +677,8 @@
     "learnMore": "Learn how to set up channels",
     "count": "{count} channel",
     "count_plural": "{count} channels",
-    "account": "account",
-    "accounts": "accounts",
+    "accountSingular": "account",
+    "accountPlural": "accounts",
     "docs": "Docs",
     "configure": "Configure",
     "probe": "Health Check",
@@ -743,8 +755,6 @@
     "count_plural": "{count} skills",
     "noResultsDescription": "Try adjusting your search or filters.",
     "clearFilters": "Clear Filters",
-    "count": "{count} skill",
-    "count_plural": "{count} skills",
     "filteredCount": "Showing {filtered} of {total} skills",
     "searchPlaceholder": "Search skills...",
     "enable": "Enable",
@@ -939,22 +949,6 @@
       "title": "Agents",
       "default": "Default",
       "sessions": "sessions"
-    }
-  },
-
-  "config": {
-    "title": "Configuration",
-    "comingSoon": "Configuration editor coming in Phase 3.3",
-    "editor": "Config Editor",
-    "apply": "Apply Changes",
-    "applyConfirm": "Apply configuration changes? This will restart the gateway.",
-    "reset": "Reset",
-    "resetConfirm": "Reset to default configuration?",
-    "backup": "Backup",
-    "restore": "Restore",
-    "validation": {
-      "valid": "Configuration is valid",
-      "invalid": "Configuration has errors"
     }
   },
 
