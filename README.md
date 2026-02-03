@@ -1,8 +1,6 @@
 <p align="center">
-  <img src="./docs/logo.png" alt="Cove" width="128" height="128">
+  <img src="./docs/banner.png" alt="Cove" width="640">
 </p>
-
-<h1 align="center">Cove</h1>
 
 <p align="center">
   A beautiful, full-featured WebUI for <a href="https://github.com/openclaw/openclaw">OpenClaw</a>
@@ -16,8 +14,6 @@
 </p>
 
 ---
-
-<!-- ![Cove Screenshot](./docs/screenshot.png) -->
 
 ## ✨ Features
 
