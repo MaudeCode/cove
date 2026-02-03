@@ -15,8 +15,8 @@
 <p align="center">
   <a href="#-features">Features</a> •
   <a href="#-quick-start">Quick Start</a> •
-  <a href="#-deployment">Deployment</a> •
-  <a href="#-development">Development</a>
+  <a href="#-development">Development</a> •
+  <a href="#-contributing">Contributing</a>
 </p>
 
 ---
@@ -127,7 +127,7 @@ The built files will be in `dist/`.
 
 **First time?** The onboarding wizard will guide you through setup.
 
-## 🏗️ Development
+## 💻 Development
 
 ```bash
 # Install dependencies
