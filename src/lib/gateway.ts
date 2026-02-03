@@ -599,26 +599,28 @@ export function on(eventType: string, handler: (payload: unknown) => void): () =
 // Heartbeat
 // ============================================
 
-let consecutivePingFailures = 0;
-const MAX_PING_FAILURES = 3;
+let consecutiveHeartbeatFailures = 0;
+const MAX_HEARTBEAT_FAILURES = 3;
 
 function startHeartbeat(): void {
   stopHeartbeat();
-  consecutivePingFailures = 0;
+  consecutiveHeartbeatFailures = 0;
   heartbeatTimer = setInterval(() => {
     if (ws?.readyState === WebSocket.OPEN) {
-      send("ping")
+      send("health")
         .then(() => {
-          consecutivePingFailures = 0;
+          consecutiveHeartbeatFailures = 0;
         })
         .catch((err) => {
-          consecutivePingFailures++;
+          consecutiveHeartbeatFailures++;
           log.gateway.warn(
-            `Heartbeat ping failed (${consecutivePingFailures}/${MAX_PING_FAILURES}):`,
+            `Heartbeat failed (${consecutiveHeartbeatFailures}/${MAX_HEARTBEAT_FAILURES}):`,
             err instanceof Error ? err.message : String(err),
           );
-          if (consecutivePingFailures >= MAX_PING_FAILURES) {
-            log.gateway.error("Too many consecutive ping failures, connection may be unhealthy");
+          if (consecutiveHeartbeatFailures >= MAX_HEARTBEAT_FAILURES) {
+            log.gateway.error(
+              "Too many consecutive heartbeat failures, connection may be unhealthy",
+            );
           }
         });
     }
