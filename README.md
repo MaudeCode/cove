@@ -1,8 +1,23 @@
-# 🏖️ Cove
+<p align="center">
+  <img src="./docs/logo.png" alt="Cove" width="128" height="128">
+</p>
 
-A beautiful, full-featured WebUI for [OpenClaw](https://github.com/openclaw/openclaw).
+<h1 align="center">Cove</h1>
 
-![Cove Screenshot](./docs/screenshot.png)
+<p align="center">
+  A beautiful, full-featured WebUI for <a href="https://github.com/openclaw/openclaw">OpenClaw</a>
+</p>
+
+<p align="center">
+  <a href="#-features">Features</a> •
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-deployment">Deployment</a> •
+  <a href="#-development">Development</a>
+</p>
+
+---
+
+<!-- ![Cove Screenshot](./docs/screenshot.png) -->
 
 ## ✨ Features
 
