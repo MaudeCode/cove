@@ -1,145 +1,166 @@
 # 🏖️ Cove
 
-A cozy WebUI for [OpenClaw](https://github.com/openclaw/openclaw).
+A beautiful, full-featured WebUI for [OpenClaw](https://github.com/openclaw/openclaw).
 
-Built with [Preact](https://preactjs.com/) + [Vite](https://vitejs.dev/) + [Tailwind CSS](https://tailwindcss.com/).
+![Cove Screenshot](./docs/screenshot.png)
 
-## Philosophy
+## ✨ Features
 
-**Keep it minimal.** Resist the urge to add dependencies. Preact is chosen specifically because it's tiny (~3KB). Every addition should be justified.
+### 💬 Chat
+- **Real-time streaming** — Watch responses flow in with live markdown rendering
+- **Tool call visualization** — See what your assistant is doing with expandable tool details
+- **Syntax highlighting** — Beautiful code blocks with one-click copy
+- **File upload** — Drag & drop or paste images directly into chat
+- **Message search** — Find anything with text search and date filters
+- **Session management** — Create, rename, delete, and organize conversations
 
-## Features
+### 🎛️ Operations Dashboard
+- **Cron Jobs** — Create and manage scheduled tasks with visual editors
+- **Config Editor** — Full configuration editing with schema validation and diff view
+- **Sessions Admin** — View all sessions with stats, filters, and bulk actions
+- **Channels** — Monitor all messaging channels (Telegram, Discord, Signal, etc.)
+- **Skills Browser** — Browse local and [ClawHub](https://clawhub.ai) skills, install with one click
+- **Devices** — Manage paired devices, approve pairing requests
+- **Logs** — Real-time log viewer with level filtering and search
+- **Debug** — RPC tester, event stream, connection diagnostics
 
-- 🔌 Full OpenClaw gateway WebSocket protocol support
-- 💬 Real-time chat with streaming responses
-- 🛠️ Tool call visualization with expandable details
-- 🎨 6 built-in themes (light, dark, nord, dracula, solarized variants)
-- 🌙 System preference auto-switching
-- 🌍 i18n ready with formatting utilities
-- ⚡ Zero FOUC (Flash of Unstyled Content)
-- 📱 Responsive design (mobile drawer, tablet collapsible, desktop always-visible)
-- 🧩 Component-based architecture with reusable UI primitives
+### 🎨 Customization
+- **6 themes** — Light, Dark, Nord, Dracula, Solarized Light/Dark
+- **System sync** — Automatically switches with your OS preference
+- **Font options** — System, Geist, Inter, JetBrains Mono, OpenDyslexic
+- **Adjustable sizing** — Small, medium, or large text
 
-## Screenshots
+### 🔒 Security
+- **Exec approval** — Interactive modal for shell command approvals
+- **Secure storage** — Credentials stored in browser localStorage
+- **No telemetry** — Your data stays on your gateway
 
-*Coming soon*
+## 🚀 Quick Start
 
-## Quick Start
+### Option 1: Docker (Recommended)
+
+```bash
+docker run -d -p 8080:80 ghcr.io/maudecode/cove:latest
+```
+
+Then open http://localhost:8080 and connect to your OpenClaw gateway.
+
+### Option 2: Static Hosting
+
+Download the latest release and serve the `dist/` folder with any static file server:
+
+```bash
+# Using Python
+cd dist && python -m http.server 8080
+
+# Using Node
+npx serve dist -p 8080
+
+# Using Caddy
+caddy file-server --root dist --listen :8080
+```
+
+### Option 3: Build from Source
+
+```bash
+git clone https://github.com/MaudeCode/cove.git
+cd cove
+bun install
+bun run build
+```
+
+The built files will be in `dist/`.
+
+## 📱 Connecting to Your Gateway
+
+1. Open Cove in your browser
+2. Enter your OpenClaw gateway URL (e.g., `wss://your-gateway.example.com`)
+3. Choose authentication method:
+   - **Token** — Use your gateway token
+   - **Password** — Use the configured password
+4. Click Connect
+
+**First time?** The onboarding wizard will guide you through setup.
+
+## 🏗️ Development
 
 ```bash
 # Install dependencies
 bun install
 
-# Start dev server (accessible via tunnel at cove.maudeco.de)
-bun run dev -- --host 0.0.0.0
+# Start dev server
+bun run dev
+
+# Run all checks (lint, format, typecheck, unused exports)
+bun run check
 
 # Build for production
 bun run build
 ```
 
-## Architecture
+### Project Structure
 
 ```
 src/
 ├── components/
-│   ├── ui/           # Reusable primitives (Button, Input, Card, Modal, etc.)
-│   ├── chat/         # Chat-specific (MessageList, ChatInput, ToolCall, etc.)
-│   └── layout/       # App structure (AppShell, TopBar, Sidebar)
-├── views/            # Page components (ChatView, LoginView, CronView, etc.)
-├── lib/
-│   ├── gateway.ts    # WebSocket client with auto-reconnect
-│   ├── navigation.tsx # Centralized navigation config
-│   ├── theme.ts      # Theme management
-│   ├── i18n.ts       # Internationalization
-│   └── ...
-├── signals/          # Preact Signals for state (auth, sessions, ui)
-├── types/            # TypeScript type definitions
-└── locales/          # i18n translation files
+│   ├── ui/           # Reusable primitives (Button, Modal, Card, etc.)
+│   ├── chat/         # Chat interface components
+│   └── layout/       # App shell, sidebar, navigation
+├── views/            # Page components (ChatView, CronView, etc.)
+├── lib/              # Core utilities (gateway client, i18n, theme)
+├── signals/          # Preact Signals state management
+├── hooks/            # Custom Preact hooks
+├── types/            # TypeScript definitions
+└── locales/          # Translation files
 ```
 
-### Navigation System
+### Tech Stack
 
-All pages are defined in `src/lib/navigation.tsx`:
+| Technology | Purpose |
+|------------|---------|
+| [Preact](https://preactjs.com/) | UI framework (~3KB) |
+| [Preact Signals](https://preactjs.com/guide/v10/signals/) | Reactive state |
+| [Tailwind CSS v4](https://tailwindcss.com/) | Styling |
+| [Vite](https://vitejs.dev/) | Build tooling |
+| [TypeScript](https://www.typescriptlang.org/) | Type safety |
+| [marked](https://marked.js.org/) | Markdown rendering |
+| [Prism](https://prismjs.com/) | Syntax highlighting |
 
-```tsx
-// Add a new page:
-{
-  id: "mypage",           // View identifier
-  labelKey: "nav.mypage", // i18n key
-  icon: MyPageIcon,       // Icon component
-  requiresConnection: true, // Hide when disconnected
-  external: "https://...", // Optional: external link
-}
-```
+## 🤝 Contributing
 
-The sidebar automatically renders from this config with collapsible sections.
+Contributions are welcome! Please:
 
-### UI Components
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feat/amazing-feature`)
+3. Make your changes
+4. Run checks (`bun run check`)
+5. Commit with conventional commits (`feat:`, `fix:`, `docs:`, etc.)
+6. Open a Pull Request
 
-Located in `src/components/ui/`:
+See [ROADMAP.md](./ROADMAP.md) for planned features and areas needing help.
 
-| Component | Description |
-|-----------|-------------|
-| `Button` | Primary, secondary, ghost, danger variants |
-| `IconButton` | Icon-only accessible button |
-| `Input` | Text input with error state |
-| `Select` | Dropdown with options |
-| `Toggle` | iOS-style switch |
-| `Checkbox` | Traditional checkbox |
-| `Card` | Surface container with title/subtitle |
-| `FormField` | Label + input + error wrapper |
-| `Modal` | Dialog with focus trap |
-| `Toast` | Notification system |
-| `Badge` | Status indicators |
-| `Spinner` | Loading state |
-| `Skeleton` | Loading placeholder |
+## 📋 Requirements
 
-## Pages
+- **OpenClaw gateway** v0.9+ running and accessible
+- **Modern browser** with WebSocket support (Chrome, Firefox, Safari, Edge)
 
-### Implemented
-- ✅ **Chat** — Real-time conversation with streaming, markdown, tool calls
-- ✅ **Login** — Gateway auth (token/password), remember me
+## 🐛 Known Limitations
 
-### Placeholders (UI ready, awaiting implementation)
-- 📋 **Overview** — Gateway health, quick stats
-- 📋 **Channels** — Messaging channel status/config
-- 📋 **Instances** — Connected clients
-- 📋 **Sessions** — Session management
-- 📋 **Cron Jobs** — Scheduled task management
-- 📋 **Skills** — Available skills browser
-- 📋 **Nodes** — Paired device management
-- 📋 **Config** — Configuration editor
-- 📋 **Debug** — Raw snapshots, RPC tester
-- 📋 **Logs** — Gateway log viewer
+- File uploads are image-only (PDF, text files coming soon)
+- Multi-tab sync for user messages requires page refresh
+- Assistant-generated images display as file paths (gateway enhancement planned)
 
-## Development
+## 📄 License
 
-```bash
-bun run dev          # Start dev server
-bun run build        # Production build
-bun run typecheck    # TypeScript check
-bun run lint         # oxlint
-bun run format       # oxfmt
-bun run check        # All checks
-```
+MIT — see [LICENSE](./LICENSE) for details.
 
-## Tech Stack
+## 🔗 Links
 
-| Choice | Reason |
-|--------|--------|
-| Preact + Signals | Tiny (~3KB), fine-grained reactivity |
-| Tailwind CSS v4 | Utility-first, CSS variables for theming |
-| Vite | Fast builds, great DX |
-| TypeScript | Type safety |
-| markdown-it + Prism | Markdown rendering with syntax highlighting |
-| oxlint + oxfmt | Fast Rust-based linting/formatting |
+- [OpenClaw Documentation](https://docs.openclaw.ai)
+- [OpenClaw GitHub](https://github.com/openclaw/openclaw)
+- [ClawHub Skills](https://clawhub.ai)
+- [Discord Community](https://discord.com/invite/clawd)
 
-## Roadmap
+---
 
-See [ROADMAP.md](./ROADMAP.md) for detailed progress.
-
-**Current Phase:** 1 (Core Features) ✅ → Phase 2 (Session & History) next
-
-## License
-
-MIT
+Built with 🐄 by [Maude](https://github.com/MaudeCode) and [Kilian](https://github.com/kiliantyler)
