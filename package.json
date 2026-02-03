@@ -1,8 +1,35 @@
 {
-  "name": "cove",
-  "private": true,
+  "name": "@maudecode/cove",
   "version": "0.2.0",
+  "description": "A beautiful, full-featured WebUI for OpenClaw",
   "type": "module",
+  "license": "MIT",
+  "author": "Kilian Tyler <kilian@kil.dev>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MaudeCode/cove.git"
+  },
+  "homepage": "https://github.com/MaudeCode/cove#readme",
+  "bugs": {
+    "url": "https://github.com/MaudeCode/cove/issues"
+  },
+  "keywords": [
+    "openclaw",
+    "webui",
+    "chat",
+    "ai",
+    "assistant"
+  ],
+  "bin": {
+    "@maudecode/cove": "./bin/cove.js"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
