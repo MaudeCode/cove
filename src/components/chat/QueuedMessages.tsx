@@ -11,6 +11,7 @@ import { t } from "@/lib/i18n";
 import { compressImage } from "@/hooks/useAttachments";
 import { isSupportedImage } from "@/types/attachments";
 import { Modal } from "@/components/ui/Modal";
+import { ModalFooter } from "@/components/ui/ModalFooter";
 import { Button } from "@/components/ui/Button";
 import {
   XIcon,
@@ -192,18 +193,12 @@ export function QueuedMessages() {
         title={t("chat.editQueuedMessage")}
         size="lg"
         footer={
-          <div class="flex justify-end gap-2">
-            <Button variant="ghost" onClick={handleCancelEdit}>
-              {t("actions.cancel")}
-            </Button>
-            <Button
-              variant="primary"
-              onClick={handleSaveEdit}
-              disabled={!editContent.trim() && editImages.length === 0}
-            >
-              {t("actions.save")}
-            </Button>
-          </div>
+          <ModalFooter
+            onCancel={handleCancelEdit}
+            onConfirm={handleSaveEdit}
+            confirmLabel={t("actions.save")}
+            confirmDisabled={!editContent.trim() && editImages.length === 0}
+          />
         }
       >
         <div class="space-y-4">
