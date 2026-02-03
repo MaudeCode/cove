@@ -129,11 +129,21 @@ export function startUsagePolling(): void {
 
 /**
  * Stop polling for usage updates
+ * Exported so it can be called on disconnect/logout
  */
-function stopUsagePolling(): void {
+export function stopUsagePolling(): void {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
     log.usage.debug("Usage polling stopped");
   }
 }
+
+// Auto-stop polling when disconnected
+let prevConnected = false;
+isConnected.subscribe((connected) => {
+  if (prevConnected && !connected) {
+    stopUsagePolling();
+  }
+  prevConnected = connected;
+});

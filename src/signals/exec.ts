@@ -14,8 +14,8 @@ import type { ExecApprovalItem, ExecApprovalRequest, ExecApprovalDecision } from
 // Signals
 // ============================================
 
-/** Queue of pending exec approval requests */
-const execApprovalQueue = signal<ExecApprovalItem[]>([]);
+/** Queue of pending exec approval requests (exported for debugging/UI access) */
+export const execApprovalQueue = signal<ExecApprovalItem[]>([]);
 
 /** Map of resolved approval IDs to their decisions (to prevent re-showing after approval) */
 export const resolvedApprovalIds = signal<Map<string, string>>(new Map());
