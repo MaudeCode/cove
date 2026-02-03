@@ -117,6 +117,24 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           generate_release_notes: true
+          body: |
+            ## Installation
+
+            **npm:**
+            ```bash
+            npx @maudecode/cove
+            ```
+
+            **Docker:**
+            ```bash
+            docker run -d -p 8080:8080 ghcr.io/maudecode/cove:${{ github.ref_name }}
+            ```
+
+            **Static files:** Download `cove-dist.zip` or `cove-dist.tar.gz` below.
+
+            ---
+
+            📦 [npm](https://www.npmjs.com/package/@maudecode/cove) · 🐳 [Docker](https://ghcr.io/maudecode/cove) · 📖 [Docs](https://docs.openclaw.ai)
           files: |
             cove-dist.zip
             cove-dist.tar.gz
