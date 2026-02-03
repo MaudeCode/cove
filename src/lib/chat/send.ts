@@ -133,8 +133,10 @@ export async function sendMessage(
       const session = sessions.value.find((s) => s.key === sessionKey);
       const newChatLabel = t("newChatModal.title");
       if (session?.label === newChatLabel) {
-        // Fire and forget - don't block on rename
-        autoRenameSession(sessionKey, message).catch(() => {});
+        // Fire and forget - don't block on rename, but log failures
+        autoRenameSession(sessionKey, message).catch((err) => {
+          log.chat.warn("Auto-rename failed:", err instanceof Error ? err.message : String(err));
+        });
       }
     }
 

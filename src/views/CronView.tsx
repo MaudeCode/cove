@@ -19,6 +19,7 @@ import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { CronJobRow, CronJobModal, isValidCronExpr } from "@/components/cron";
 import { RefreshCw, Search, Plus, Clock, CheckCircle, XCircle, Zap } from "lucide-preact";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type {
   CronJob,
   CronSchedule,
@@ -116,18 +117,34 @@ async function loadCronJobs(): Promise<void> {
   isLoading.value = true;
   error.value = null;
 
-  try {
-    const [statusResult, listResult] = await Promise.all([
-      send<CronStatusResult>("cron.status", {}),
-      send<CronListResult>("cron.list", { includeDisabled: true }),
-    ]);
-    cronStatus.value = statusResult;
-    cronJobs.value = listResult.jobs ?? [];
-  } catch (err) {
-    error.value = getErrorMessage(err);
-  } finally {
-    isLoading.value = false;
+  const [statusResult, listResult] = await Promise.allSettled([
+    send<CronStatusResult>("cron.status", {}),
+    send<CronListResult>("cron.list", { includeDisabled: true }),
+  ]);
+
+  // Handle status result
+  if (statusResult.status === "fulfilled") {
+    cronStatus.value = statusResult.value;
   }
+
+  // Handle list result
+  if (listResult.status === "fulfilled") {
+    cronJobs.value = listResult.value.jobs ?? [];
+  }
+
+  // Show error if both failed, or partial error if one failed
+  const errors: string[] = [];
+  if (statusResult.status === "rejected") {
+    errors.push(`Status: ${getErrorMessage(statusResult.reason)}`);
+  }
+  if (listResult.status === "rejected") {
+    errors.push(`Jobs: ${getErrorMessage(listResult.reason)}`);
+  }
+  if (errors.length > 0) {
+    error.value = errors.join("; ");
+  }
+
+  isLoading.value = false;
 }
 
 async function loadJobRuns(jobId: string): Promise<void> {
@@ -363,210 +380,214 @@ export function CronView(_props: RouteProps) {
   const counts = jobCounts.value;
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-5xl mx-auto space-y-6">
-        <PageHeader
-          title={t("cron.title")}
-          subtitle={t("cron.description")}
-          actions={
-            <>
-              {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
-                <div class="relative">
-                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                  <Input
-                    type="text"
-                    value={searchQuery.value}
-                    onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-                    placeholder={t("cron.searchPlaceholder")}
-                    aria-label={t("cron.searchPlaceholder")}
-                    class="pl-10 w-64"
-                  />
-                </div>
-              )}
-              <Button
-                icon={<Plus class="w-4 h-4" />}
-                onClick={() => openJobModal("create")}
-                disabled={!isConnected.value}
-              >
-                {t("cron.createJob")}
-              </Button>
-              <IconButton
-                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-                label={t("actions.refresh")}
-                onClick={loadCronJobs}
-                disabled={isLoading.value || !isConnected.value}
-                variant="ghost"
-              />
-            </>
-          }
-        />
-
-        {/* Stats Cards */}
-        {isConnected.value && !isLoading.value && (
-          <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-            <StatCard
-              icon={Clock}
-              label={t("cron.stats.total")}
-              value={counts.total}
-              active={statusFilter.value === "all"}
-              onClick={() => (statusFilter.value = "all")}
-            />
-            <StatCard
-              icon={CheckCircle}
-              label={t("cron.stats.enabled")}
-              value={counts.enabled}
-              active={statusFilter.value === "enabled"}
-              onClick={() => (statusFilter.value = "enabled")}
-            />
-            <StatCard
-              icon={XCircle}
-              label={t("cron.stats.disabled")}
-              value={counts.disabled}
-              active={statusFilter.value === "disabled"}
-              onClick={() => (statusFilter.value = "disabled")}
-            />
-            <StatCard
-              icon={Zap}
-              label={t("cron.stats.nextWake")}
-              value={
-                cronStatus.value?.nextWakeAtMs
-                  ? formatTimestamp(cronStatus.value.nextWakeAtMs, { relative: true })
-                  : "—"
-              }
-            />
-          </div>
-        )}
-
-        {/* Error */}
-        {error.value && (
-          <div
-            class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]"
-            role="alert"
-          >
-            {error.value}
-          </div>
-        )}
-
-        {/* Loading / Connecting */}
-        {(isLoading.value || !isConnected.value) && (
-          <div class="flex justify-center py-16">
-            <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
-          </div>
-        )}
-
-        {/* Jobs Table */}
-        {isConnected.value && !isLoading.value && filteredJobs.value.length > 0 && (
-          <Card padding="none">
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                    <th class="py-3 px-4 font-medium">{t("cron.columns.job")}</th>
-                    <th class="py-3 px-4 font-medium w-40">{t("cron.columns.schedule")}</th>
-                    <th class="py-3 px-4 font-medium w-24">{t("cron.columns.target")}</th>
-                    <th class="py-3 px-4 font-medium w-32">{t("cron.columns.nextRun")}</th>
-                    <th class="py-3 px-4 font-medium w-24">{t("cron.columns.status")}</th>
-                    <th class="py-3 px-4 font-medium w-20"></th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--color-border)]">
-                  {filteredJobs.value.map((job) => (
-                    <CronJobRow
-                      key={job.id}
-                      job={job}
-                      onEdit={openJobModal.bind(null, "edit")}
-                      onRun={runJobNow}
-                      onToggleEnabled={toggleJobEnabled}
-                      isRunning={isRunning.value}
+    <ViewErrorBoundary viewName={t("nav.cron")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <PageHeader
+            title={t("cron.title")}
+            subtitle={t("cron.description")}
+            actions={
+              <>
+                {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
+                  <div class="relative">
+                    <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                    <Input
+                      type="text"
+                      value={searchQuery.value}
+                      onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                      placeholder={t("cron.searchPlaceholder")}
+                      aria-label={t("cron.searchPlaceholder")}
+                      class="pl-10 w-64"
                     />
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </Card>
-        )}
-
-        {/* Empty state */}
-        {isConnected.value && !isLoading.value && cronJobs.value.length === 0 && !error.value && (
-          <Card>
-            <div class="p-16 text-center">
-              <Clock class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-              <h3 class="text-lg font-medium mb-2">{t("cron.emptyTitle")}</h3>
-              <p class="text-[var(--color-text-muted)] mb-4">{t("cron.emptyDescription")}</p>
-              <Button icon={<Plus class="w-4 h-4" />} onClick={() => openJobModal("create")}>
-                {t("cron.createJob")}
-              </Button>
-            </div>
-          </Card>
-        )}
-
-        {/* No results from filter */}
-        {isConnected.value &&
-          !isLoading.value &&
-          cronJobs.value.length > 0 &&
-          filteredJobs.value.length === 0 && (
-            <Card>
-              <div class="p-12 text-center">
-                <Search class="w-10 h-10 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-                <h3 class="text-lg font-medium mb-2">{t("cron.noResults")}</h3>
-                <p class="text-[var(--color-text-muted)] mb-4">{t("cron.noResultsDescription")}</p>
+                  </div>
+                )}
                 <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    searchQuery.value = "";
-                    statusFilter.value = "all";
-                  }}
+                  icon={<Plus class="w-4 h-4" />}
+                  onClick={() => openJobModal("create")}
+                  disabled={!isConnected.value}
                 >
-                  {t("cron.clearFilters")}
+                  {t("cron.createJob")}
+                </Button>
+                <IconButton
+                  icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                  label={t("actions.refresh")}
+                  onClick={loadCronJobs}
+                  disabled={isLoading.value || !isConnected.value}
+                  variant="ghost"
+                />
+              </>
+            }
+          />
+
+          {/* Stats Cards */}
+          {isConnected.value && !isLoading.value && (
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <StatCard
+                icon={Clock}
+                label={t("cron.stats.total")}
+                value={counts.total}
+                active={statusFilter.value === "all"}
+                onClick={() => (statusFilter.value = "all")}
+              />
+              <StatCard
+                icon={CheckCircle}
+                label={t("cron.stats.enabled")}
+                value={counts.enabled}
+                active={statusFilter.value === "enabled"}
+                onClick={() => (statusFilter.value = "enabled")}
+              />
+              <StatCard
+                icon={XCircle}
+                label={t("cron.stats.disabled")}
+                value={counts.disabled}
+                active={statusFilter.value === "disabled"}
+                onClick={() => (statusFilter.value = "disabled")}
+              />
+              <StatCard
+                icon={Zap}
+                label={t("cron.stats.nextWake")}
+                value={
+                  cronStatus.value?.nextWakeAtMs
+                    ? formatTimestamp(cronStatus.value.nextWakeAtMs, { relative: true })
+                    : "—"
+                }
+              />
+            </div>
+          )}
+
+          {/* Error */}
+          {error.value && (
+            <div
+              class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]"
+              role="alert"
+            >
+              {error.value}
+            </div>
+          )}
+
+          {/* Loading / Connecting */}
+          {(isLoading.value || !isConnected.value) && (
+            <div class="flex justify-center py-16">
+              <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
+            </div>
+          )}
+
+          {/* Jobs Table */}
+          {isConnected.value && !isLoading.value && filteredJobs.value.length > 0 && (
+            <Card padding="none">
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
+                      <th class="py-3 px-4 font-medium">{t("cron.columns.job")}</th>
+                      <th class="py-3 px-4 font-medium w-40">{t("cron.columns.schedule")}</th>
+                      <th class="py-3 px-4 font-medium w-24">{t("cron.columns.target")}</th>
+                      <th class="py-3 px-4 font-medium w-32">{t("cron.columns.nextRun")}</th>
+                      <th class="py-3 px-4 font-medium w-24">{t("cron.columns.status")}</th>
+                      <th class="py-3 px-4 font-medium w-20"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[var(--color-border)]">
+                    {filteredJobs.value.map((job) => (
+                      <CronJobRow
+                        key={job.id}
+                        job={job}
+                        onEdit={openJobModal.bind(null, "edit")}
+                        onRun={runJobNow}
+                        onToggleEnabled={toggleJobEnabled}
+                        isRunning={isRunning.value}
+                      />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+
+          {/* Empty state */}
+          {isConnected.value && !isLoading.value && cronJobs.value.length === 0 && !error.value && (
+            <Card>
+              <div class="p-16 text-center">
+                <Clock class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                <h3 class="text-lg font-medium mb-2">{t("cron.emptyTitle")}</h3>
+                <p class="text-[var(--color-text-muted)] mb-4">{t("cron.emptyDescription")}</p>
+                <Button icon={<Plus class="w-4 h-4" />} onClick={() => openJobModal("create")}>
+                  {t("cron.createJob")}
                 </Button>
               </div>
             </Card>
           )}
 
-        {/* Footer count */}
-        {isConnected.value && !isLoading.value && filteredJobs.value.length > 0 && (
-          <p class="text-sm text-[var(--color-text-muted)] text-center">
-            {filteredJobs.value.length === cronJobs.value.length
-              ? t("cron.count", { count: cronJobs.value.length })
-              : t("cron.filteredCount", {
-                  filtered: filteredJobs.value.length,
-                  total: cronJobs.value.length,
-                })}
-          </p>
-        )}
-      </div>
+          {/* No results from filter */}
+          {isConnected.value &&
+            !isLoading.value &&
+            cronJobs.value.length > 0 &&
+            filteredJobs.value.length === 0 && (
+              <Card>
+                <div class="p-12 text-center">
+                  <Search class="w-10 h-10 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                  <h3 class="text-lg font-medium mb-2">{t("cron.noResults")}</h3>
+                  <p class="text-[var(--color-text-muted)] mb-4">
+                    {t("cron.noResultsDescription")}
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      searchQuery.value = "";
+                      statusFilter.value = "all";
+                    }}
+                  >
+                    {t("cron.clearFilters")}
+                  </Button>
+                </div>
+              </Card>
+            )}
 
-      {/* Modal */}
-      <CronJobModal
-        mode={modalMode.value}
-        job={selectedJob.value}
-        runs={selectedJobRuns.value}
-        isLoadingRuns={isLoadingRuns.value}
-        isDeleting={isDeleting.value}
-        isSaving={isSaving.value}
-        isRunning={isRunning.value}
-        onClose={closeModal}
-        onSave={saveOrCreateJob}
-        onDelete={deleteJob}
-        onRun={runJobNow}
-        onSetDeleting={(v) => (isDeleting.value = v)}
-        editName={editName}
-        editDescription={editDescription}
-        editEnabled={editEnabled}
-        editScheduleKind={editScheduleKind}
-        editScheduleExpr={editScheduleExpr}
-        editScheduleTz={editScheduleTz}
-        editScheduleEveryMs={editScheduleEveryMs}
-        editScheduleAtMs={editScheduleAtMs}
-        editSessionTarget={editSessionTarget}
-        editWakeMode={editWakeMode}
-        editPayloadKind={editPayloadKind}
-        editPayloadText={editPayloadText}
-        editPayloadMessage={editPayloadMessage}
-        editPayloadModel={editPayloadModel}
-        formErrors={formErrors}
-      />
-    </div>
+          {/* Footer count */}
+          {isConnected.value && !isLoading.value && filteredJobs.value.length > 0 && (
+            <p class="text-sm text-[var(--color-text-muted)] text-center">
+              {filteredJobs.value.length === cronJobs.value.length
+                ? t("cron.count", { count: cronJobs.value.length })
+                : t("cron.filteredCount", {
+                    filtered: filteredJobs.value.length,
+                    total: cronJobs.value.length,
+                  })}
+            </p>
+          )}
+        </div>
+
+        {/* Modal */}
+        <CronJobModal
+          mode={modalMode.value}
+          job={selectedJob.value}
+          runs={selectedJobRuns.value}
+          isLoadingRuns={isLoadingRuns.value}
+          isDeleting={isDeleting.value}
+          isSaving={isSaving.value}
+          isRunning={isRunning.value}
+          onClose={closeModal}
+          onSave={saveOrCreateJob}
+          onDelete={deleteJob}
+          onRun={runJobNow}
+          onSetDeleting={(v) => (isDeleting.value = v)}
+          editName={editName}
+          editDescription={editDescription}
+          editEnabled={editEnabled}
+          editScheduleKind={editScheduleKind}
+          editScheduleExpr={editScheduleExpr}
+          editScheduleTz={editScheduleTz}
+          editScheduleEveryMs={editScheduleEveryMs}
+          editScheduleAtMs={editScheduleAtMs}
+          editSessionTarget={editSessionTarget}
+          editWakeMode={editWakeMode}
+          editPayloadKind={editPayloadKind}
+          editPayloadText={editPayloadText}
+          editPayloadMessage={editPayloadMessage}
+          editPayloadModel={editPayloadModel}
+          formErrors={formErrors}
+        />
+      </div>
+    </ViewErrorBoundary>
   );
 }

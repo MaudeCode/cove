@@ -17,6 +17,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { LogLine, parseLogLine, resetLineIdCounter } from "@/components/logs";
 import type { ParsedLogLine, LogLevel } from "@/components/logs";
 import { RefreshCw, Search, Trash2, Download, FileText } from "lucide-preact";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { RouteProps } from "@/types/routes";
 
 // ============================================
@@ -255,165 +256,172 @@ export function LogsView(_props: RouteProps) {
   const counts = levelCounts.value;
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-6xl mx-auto space-y-6">
-        <PageHeader
-          title={t("logs.title")}
-          subtitle={t("logs.description")}
-          actions={
-            <>
-              <div class="relative">
-                <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                <Input
-                  type="text"
-                  value={searchQuery.value}
-                  onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-                  placeholder={t("logs.searchPlaceholder")}
-                  aria-label={t("logs.searchPlaceholder")}
-                  class="pl-10 w-48"
+    <ViewErrorBoundary viewName={t("nav.logs")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-6xl mx-auto space-y-6">
+          <PageHeader
+            title={t("logs.title")}
+            subtitle={t("logs.description")}
+            actions={
+              <>
+                <div class="relative">
+                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                  <Input
+                    type="text"
+                    value={searchQuery.value}
+                    onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                    placeholder={t("logs.searchPlaceholder")}
+                    aria-label={t("logs.searchPlaceholder")}
+                    class="pl-10 w-48"
+                  />
+                </div>
+                <Toggle
+                  checked={isLive.value}
+                  onChange={(checked) => (isLive.value = checked)}
+                  label={isLive.value ? t("logs.live") : t("logs.paused")}
                 />
-              </div>
-              <Toggle
-                checked={isLive.value}
-                onChange={(checked) => (isLive.value = checked)}
-                label={isLive.value ? t("logs.live") : t("logs.paused")}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => fetchLogs(true)}
+                  disabled={isLoading.value}
+                  icon={<RefreshCw size={14} class={isLoading.value ? "animate-spin" : ""} />}
+                >
+                  {t("actions.refresh")}
+                </Button>
+              </>
+            }
+          />
+
+          {/* Stats bar */}
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <div
+              class="flex items-center gap-2"
+              role="group"
+              aria-label={t("logs.filterByLevel", { level: "" })}
+            >
+              <button
+                type="button"
+                onClick={clearLevelFilters}
+                aria-pressed={selectedLevels.value.size === 0}
+                class={`px-3 py-1 text-sm rounded-full transition-colors ${
+                  selectedLevels.value.size === 0
+                    ? "bg-[var(--color-accent)] text-white"
+                    : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
+                }`}
+              >
+                {t("logs.all")} ({logLines.value.length})
+              </button>
+              <LevelFilter
+                level="debug"
+                count={counts.debug}
+                selected={selectedLevels.value.has("debug")}
+                onClick={() => toggleLevel("debug")}
               />
+              <LevelFilter
+                level="info"
+                count={counts.info}
+                selected={selectedLevels.value.has("info")}
+                onClick={() => toggleLevel("info")}
+              />
+              <LevelFilter
+                level="warn"
+                count={counts.warn}
+                selected={selectedLevels.value.has("warn")}
+                onClick={() => toggleLevel("warn")}
+              />
+              <LevelFilter
+                level="error"
+                count={counts.error}
+                selected={selectedLevels.value.has("error")}
+                onClick={() => toggleLevel("error")}
+              />
+            </div>
+            <div class="flex items-center gap-2">
+              {logFile.value && (
+                <span class="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
+                  <FileText size={12} />
+                  {logFile.value.split("/").pop()}
+                </span>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => fetchLogs(true)}
-                disabled={isLoading.value}
-                icon={<RefreshCw size={14} class={isLoading.value ? "animate-spin" : ""} />}
+                onClick={downloadLogs}
+                icon={<Download size={14} />}
               >
-                {t("actions.refresh")}
+                {t("logs.download")}
               </Button>
-            </>
-          }
-        />
-
-        {/* Stats bar */}
-        <div class="flex items-center justify-between flex-wrap gap-2">
-          <div
-            class="flex items-center gap-2"
-            role="group"
-            aria-label={t("logs.filterByLevel", { level: "" })}
-          >
-            <button
-              type="button"
-              onClick={clearLevelFilters}
-              aria-pressed={selectedLevels.value.size === 0}
-              class={`px-3 py-1 text-sm rounded-full transition-colors ${
-                selectedLevels.value.size === 0
-                  ? "bg-[var(--color-accent)] text-white"
-                  : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
-              }`}
-            >
-              {t("logs.all")} ({logLines.value.length})
-            </button>
-            <LevelFilter
-              level="debug"
-              count={counts.debug}
-              selected={selectedLevels.value.has("debug")}
-              onClick={() => toggleLevel("debug")}
-            />
-            <LevelFilter
-              level="info"
-              count={counts.info}
-              selected={selectedLevels.value.has("info")}
-              onClick={() => toggleLevel("info")}
-            />
-            <LevelFilter
-              level="warn"
-              count={counts.warn}
-              selected={selectedLevels.value.has("warn")}
-              onClick={() => toggleLevel("warn")}
-            />
-            <LevelFilter
-              level="error"
-              count={counts.error}
-              selected={selectedLevels.value.has("error")}
-              onClick={() => toggleLevel("error")}
-            />
-          </div>
-          <div class="flex items-center gap-2">
-            {logFile.value && (
-              <span class="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
-                <FileText size={12} />
-                {logFile.value.split("/").pop()}
-              </span>
-            )}
-            <Button variant="ghost" size="sm" onClick={downloadLogs} icon={<Download size={14} />}>
-              {t("logs.download")}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={clearLogs}
-              disabled={logLines.value.length === 0}
-              icon={<Trash2 size={14} />}
-            >
-              {t("logs.clear")}
-            </Button>
-          </div>
-        </div>
-
-        {/* Error */}
-        {error.value && (
-          <div
-            class="p-4 rounded-lg bg-[var(--color-error)]/10 text-[var(--color-error)] text-sm"
-            role="alert"
-          >
-            {error.value}
-          </div>
-        )}
-
-        {/* Log viewer */}
-        <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] overflow-hidden min-h-[calc(100vh-280px)]">
-          {/* Loading state */}
-          {isLoading.value && logLines.value.length === 0 && (
-            <div class="flex items-center justify-center py-12">
-              <Spinner size="lg" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearLogs}
+                disabled={logLines.value.length === 0}
+                icon={<Trash2 size={14} />}
+              >
+                {t("logs.clear")}
+              </Button>
             </div>
-          )}
+          </div>
 
-          {/* Empty state */}
-          {!isLoading.value && logLines.value.length === 0 && (
-            <div class="text-center py-12 text-[var(--color-text-muted)]">
-              <FileText size={32} class="mx-auto mb-2 opacity-50" />
-              <p>{t("logs.noLogs")}</p>
-              <p class="text-sm mt-1">{t("logs.noLogsHint")}</p>
-            </div>
-          )}
-
-          {/* No results after filter */}
-          {logLines.value.length > 0 && lines.length === 0 && (
-            <div class="text-center py-12 text-[var(--color-text-muted)]">
-              <Search size={32} class="mx-auto mb-2 opacity-50" />
-              <p>{t("logs.noMatches")}</p>
-            </div>
-          )}
-
-          {/* Log lines */}
-          {lines.length > 0 && (
+          {/* Error */}
+          {error.value && (
             <div
-              ref={containerRef}
-              class="max-h-[calc(100vh-280px)] overflow-y-auto"
-              onScroll={handleScroll}
-              role="log"
-              aria-live="polite"
+              class="p-4 rounded-lg bg-[var(--color-error)]/10 text-[var(--color-error)] text-sm"
+              role="alert"
             >
-              {lines.map((line) => (
-                <LogLine
-                  key={line.id}
-                  line={line}
-                  expanded={expandedLogs.value.has(line.id)}
-                  onToggle={() => toggleExpanded(line.id)}
-                />
-              ))}
+              {error.value}
             </div>
           )}
+
+          {/* Log viewer */}
+          <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] overflow-hidden min-h-[calc(100vh-280px)]">
+            {/* Loading state */}
+            {isLoading.value && logLines.value.length === 0 && (
+              <div class="flex items-center justify-center py-12">
+                <Spinner size="lg" />
+              </div>
+            )}
+
+            {/* Empty state */}
+            {!isLoading.value && logLines.value.length === 0 && (
+              <div class="text-center py-12 text-[var(--color-text-muted)]">
+                <FileText size={32} class="mx-auto mb-2 opacity-50" />
+                <p>{t("logs.noLogs")}</p>
+                <p class="text-sm mt-1">{t("logs.noLogsHint")}</p>
+              </div>
+            )}
+
+            {/* No results after filter */}
+            {logLines.value.length > 0 && lines.length === 0 && (
+              <div class="text-center py-12 text-[var(--color-text-muted)]">
+                <Search size={32} class="mx-auto mb-2 opacity-50" />
+                <p>{t("logs.noMatches")}</p>
+              </div>
+            )}
+
+            {/* Log lines */}
+            {lines.length > 0 && (
+              <div
+                ref={containerRef}
+                class="max-h-[calc(100vh-280px)] overflow-y-auto"
+                onScroll={handleScroll}
+                role="log"
+                aria-live="polite"
+              >
+                {lines.map((line) => (
+                  <LogLine
+                    key={line.id}
+                    line={line}
+                    expanded={expandedLogs.value.has(line.id)}
+                    onToggle={() => toggleExpanded(line.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </ViewErrorBoundary>
   );
 }

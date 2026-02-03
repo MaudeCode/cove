@@ -6,26 +6,66 @@
 
 import type { Message, ToolCall, MessageImage } from "./messages";
 
-/** Content block in a message */
-export interface ContentBlock {
-  type: "text" | "tool_use" | "tool_result" | "image" | "thinking" | "toolCall";
-  text?: string;
-  id?: string;
-  name?: string;
-  input?: unknown;
-  arguments?: unknown; // OpenClaw history uses "arguments" instead of "input"
+// ============================================
+// Content Block Types (Discriminated Union)
+// ============================================
+
+/** Text content block */
+export interface TextBlock {
+  type: "text";
+  text: string;
+}
+
+/** Tool use content block (Anthropic format) */
+export interface ToolUseBlock {
+  type: "tool_use";
+  id: string;
+  name: string;
+  input?: Record<string, unknown>;
+}
+
+/** Tool call content block (OpenClaw history format) */
+export interface ToolCallBlock {
+  type: "toolCall";
+  id: string;
+  name: string;
+  arguments?: Record<string, unknown>;
+}
+
+/** Tool result content block */
+export interface ToolResultBlock {
+  type: "tool_result";
+  id: string;
   content?: unknown;
-  thinking?: string;
-  // Image fields
+}
+
+/** Image content block (Anthropic format) */
+export interface ImageBlock {
+  type: "image";
   source?: {
     type: "base64";
     media_type: string;
     data: string;
   };
-  // Alternative image format (data URL)
+  /** Alternative format: data URL or base64 */
   data?: string;
   mimeType?: string;
 }
+
+/** Thinking/reasoning content block */
+export interface ThinkingBlock {
+  type: "thinking";
+  thinking?: string;
+}
+
+/** Union type for all content blocks */
+export type ContentBlock =
+  | TextBlock
+  | ToolUseBlock
+  | ToolCallBlock
+  | ToolResultBlock
+  | ImageBlock
+  | ThinkingBlock;
 
 /** Raw message from gateway (before normalization) */
 export interface RawMessage {
@@ -138,14 +178,13 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
 
   for (const block of content) {
     switch (block.type) {
-      case "text":
-        if (block.text) {
-          textParts.push(block.text);
-          currentTextLength += block.text.length;
-        }
+      case "text": {
+        textParts.push(block.text);
+        currentTextLength += block.text.length;
         break;
+      }
 
-      case "image":
+      case "image": {
         // Handle different image formats
         if (block.source?.type === "base64" && block.source.data) {
           // Anthropic format: { type: "base64", media_type: "image/png", data: "..." }
@@ -161,47 +200,45 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
           images.push({ url, alt: "Image" });
         }
         break;
+      }
 
-      case "tool_use":
-        if (block.id && block.name) {
-          toolCalls.push({
-            id: block.id,
-            name: block.name,
-            args: block.input as Record<string, unknown> | undefined,
-            status: "running",
-            startedAt: Date.now(),
-            insertedAtContentLength: currentTextLength,
-          });
-        }
+      case "tool_use": {
+        toolCalls.push({
+          id: block.id,
+          name: block.name,
+          args: block.input,
+          status: "running",
+          startedAt: Date.now(),
+          insertedAtContentLength: currentTextLength,
+        });
         break;
+      }
 
-      case "toolCall":
+      case "toolCall": {
         // OpenClaw history format uses "toolCall" with "arguments"
-        if (block.id && block.name) {
-          toolCalls.push({
-            id: block.id,
-            name: block.name,
-            args: block.arguments as Record<string, unknown> | undefined,
-            status: "pending",
-            insertedAtContentLength: currentTextLength,
-          });
-        }
+        toolCalls.push({
+          id: block.id,
+          name: block.name,
+          args: block.arguments,
+          status: "pending",
+          insertedAtContentLength: currentTextLength,
+        });
         break;
+      }
 
-      case "tool_result":
+      case "tool_result": {
         // Find matching tool call and update its result
-        if (block.id) {
-          const existing = toolCalls.find((tc) => tc.id === block.id);
-          if (existing) {
-            existing.result = block.content;
-            existing.status = "complete";
-            existing.completedAt = Date.now();
-          }
+        const existing = toolCalls.find((tc) => tc.id === block.id);
+        if (existing) {
+          existing.result = block.content;
+          existing.status = "complete";
+          existing.completedAt = Date.now();
         }
         break;
+      }
 
-      // Ignore thinking blocks for now
       case "thinking":
+        // Ignore thinking blocks for now
         break;
     }
   }

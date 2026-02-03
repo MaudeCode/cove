@@ -6,6 +6,7 @@
 
 import { on } from "@/lib/gateway";
 import { log } from "@/lib/logger";
+import { isChatEvent, isAgentEvent } from "@/lib/type-guards";
 import { mergeDeltaText } from "@/lib/streaming";
 import {
   activeRuns,
@@ -24,23 +25,32 @@ import { processNextQueuedMessage } from "./send";
 import { loadHistory } from "./history";
 
 let chatEventUnsubscribe: (() => void) | null = null;
+let agentEventUnsubscribe: (() => void) | null = null;
 
 /**
  * Subscribe to chat events from the gateway.
  */
 export function subscribeToChatEvents(): () => void {
-  if (chatEventUnsubscribe) {
-    return chatEventUnsubscribe;
+  if (chatEventUnsubscribe && agentEventUnsubscribe) {
+    return unsubscribeFromChatEvents;
   }
 
   log.chat.info("Subscribing to chat events");
 
   chatEventUnsubscribe = on("chat", (payload) => {
-    handleChatEvent(payload as ChatEvent);
+    if (!isChatEvent(payload)) {
+      log.chat.warn("Invalid chat event payload:", payload);
+      return;
+    }
+    handleChatEvent(payload);
   });
 
-  on("agent", (payload) => {
-    const evt = payload as AgentEvent;
+  agentEventUnsubscribe = on("agent", (payload) => {
+    if (!isAgentEvent(payload)) {
+      log.chat.warn("Invalid agent event payload:", payload);
+      return;
+    }
+    const evt = payload;
     if (evt.stream === "tool") {
       handleToolEvent(evt);
     } else if (evt.stream === "lifecycle") {
@@ -54,7 +64,7 @@ export function subscribeToChatEvents(): () => void {
     }
   });
 
-  return chatEventUnsubscribe;
+  return unsubscribeFromChatEvents;
 }
 
 /**
@@ -64,6 +74,10 @@ export function unsubscribeFromChatEvents(): void {
   if (chatEventUnsubscribe) {
     chatEventUnsubscribe();
     chatEventUnsubscribe = null;
+  }
+  if (agentEventUnsubscribe) {
+    agentEventUnsubscribe();
+    agentEventUnsubscribe = null;
   }
 }
 

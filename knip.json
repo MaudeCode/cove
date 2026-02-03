@@ -6,6 +6,11 @@
     "src/lib/utils.ts",
     "src/lib/i18n.ts",
     "src/lib/clawhub.ts",
+    "src/lib/type-guards.ts",
+    "src/components/ui/StateRenderer.tsx",
     "src/locales/index.ts"
+  ],
+  "ignoreDependencies": [
+    "@types/dompurify"
   ]
 }
