@@ -76,15 +76,21 @@
 
 ## 🚀 Quick Start
 
-### Option 1: Docker (Recommended)
+### Option 1: npx (Easiest)
+
+```bash
+npx @maudecode/cove
+```
+
+Then open http://localhost:8080 and connect to your OpenClaw gateway.
+
+### Option 2: Docker
 
 ```bash
 docker run -d -p 8080:8080 ghcr.io/maudecode/cove:latest
 ```
 
-Then open http://localhost:8080 and connect to your OpenClaw gateway.
-
-### Option 2: Static Hosting
+### Option 3: Static Hosting
 
 Download the latest release and serve the `dist/` folder with any static file server:
 
