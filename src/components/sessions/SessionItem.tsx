@@ -255,6 +255,8 @@ export function SessionItem({
                   : "opacity-0 group-hover:opacity-100 hover:bg-[var(--color-bg-secondary)] text-[var(--color-text-muted)]"
               }`}
             aria-label="Session actions"
+            aria-haspopup="menu"
+            aria-expanded={menuOpen}
           >
             <MoreIcon class="w-4 h-4" />
           </button>
@@ -262,6 +264,8 @@ export function SessionItem({
           {/* Dropdown menu - opens above if near bottom of viewport */}
           {menuOpen && (
             <div
+              role="menu"
+              aria-label="Session actions"
               class={`absolute right-0 w-36 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-lg shadow-lg z-50 py-1 ${
                 menuAbove ? "bottom-full mb-1" : "top-full mt-1"
               }`}
@@ -269,6 +273,7 @@ export function SessionItem({
               {onRename && (
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={(e) => {
                     e.stopPropagation();
                     setMenuOpen(false);
@@ -283,6 +288,7 @@ export function SessionItem({
               {onDelete && (
                 <button
                   type="button"
+                  role="menuitem"
                   onClick={(e) => {
                     e.stopPropagation();
                     setMenuOpen(false);

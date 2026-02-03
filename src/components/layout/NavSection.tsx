@@ -122,6 +122,8 @@ function CollapsibleNavSection({ section, mode, defaultOpen = false }: Collapsib
       <button
         type="button"
         onClick={handleToggle}
+        aria-expanded={isOpen.value}
+        aria-controls={`nav-section-${section.titleKey}`}
         class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-semibold uppercase tracking-wider hover:bg-[var(--color-bg-hover)] transition-colors text-[var(--color-text-tertiary)] hover:text-[var(--color-accent)]"
       >
         <span>{t(section.titleKey)}</span>
@@ -130,7 +132,7 @@ function CollapsibleNavSection({ section, mode, defaultOpen = false }: Collapsib
 
       {/* Collapsible content */}
       {isOpen.value && (
-        <ul class="px-3 pb-2 space-y-0.5">
+        <ul id={`nav-section-${section.titleKey}`} class="px-3 pb-2 space-y-0.5" role="list">
           {visibleItems.map((item) => (
             <li key={item.id}>
               <NavItemComponent item={item} />
