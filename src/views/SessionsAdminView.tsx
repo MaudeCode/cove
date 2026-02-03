@@ -38,6 +38,7 @@ import {
   Pencil,
   Sparkles,
 } from "lucide-preact";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { Session } from "@/types/sessions";
 import type { RouteProps } from "@/types/routes";
 import type { ComponentType } from "preact";
@@ -616,171 +617,179 @@ export function SessionsAdminView(_props: RouteProps) {
   const counts = sessionCounts.value;
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-5xl mx-auto space-y-6">
-        <PageHeader
-          title={t("sessions.admin.title")}
-          subtitle={t("sessions.admin.description")}
-          actions={
-            <>
-              {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
-                <div class="relative">
-                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                  <Input
-                    type="text"
-                    value={searchQuery.value}
-                    onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-                    placeholder={t("sessions.admin.searchPlaceholder")}
-                    class="pl-10 w-64"
-                  />
-                </div>
-              )}
-              <IconButton
-                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-                label={t("actions.refresh")}
-                onClick={loadAdminSessions}
-                disabled={isLoading.value || !isConnected.value}
-                variant="ghost"
+    <ViewErrorBoundary viewName={t("nav.sessions")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <PageHeader
+            title={t("sessions.admin.title")}
+            subtitle={t("sessions.admin.description")}
+            actions={
+              <>
+                {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
+                  <div class="relative">
+                    <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+                    <Input
+                      type="text"
+                      value={searchQuery.value}
+                      onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                      placeholder={t("sessions.admin.searchPlaceholder")}
+                      class="pl-10 w-64"
+                    />
+                  </div>
+                )}
+                <IconButton
+                  icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                  label={t("actions.refresh")}
+                  onClick={loadAdminSessions}
+                  disabled={isLoading.value || !isConnected.value}
+                  variant="ghost"
+                />
+              </>
+            }
+          />
+
+          {/* Stats Cards */}
+          {isConnected.value && !isLoading.value && (
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+              <StatCard
+                icon={MessageSquare}
+                label={t("sessions.admin.stats.total")}
+                value={counts.total}
+                active={kindFilter.value === "all"}
+                onClick={() => (kindFilter.value = "all")}
               />
-            </>
-          }
-        />
-
-        {/* Stats Cards */}
-        {isConnected.value && !isLoading.value && (
-          <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-            <StatCard
-              icon={MessageSquare}
-              label={t("sessions.admin.stats.total")}
-              value={counts.total}
-              active={kindFilter.value === "all"}
-              onClick={() => (kindFilter.value = "all")}
-            />
-            <StatCard
-              icon={getKindStyle("main").icon}
-              label={t("sessions.admin.kinds.main")}
-              value={counts.main}
-              active={kindFilter.value === "main"}
-              onClick={() => (kindFilter.value = "main")}
-            />
-            <StatCard
-              icon={getKindStyle("channel").icon}
-              label={t("sessions.admin.kinds.channel")}
-              value={counts.channel}
-              active={kindFilter.value === "channel"}
-              onClick={() => (kindFilter.value = "channel")}
-            />
-            <StatCard
-              icon={getKindStyle("cron").icon}
-              label={t("sessions.admin.kinds.cron")}
-              value={counts.cron}
-              active={kindFilter.value === "cron"}
-              onClick={() => (kindFilter.value = "cron")}
-            />
-            <StatCard
-              icon={getKindStyle("isolated").icon}
-              label={t("sessions.admin.kinds.isolated")}
-              value={counts.isolated}
-              active={kindFilter.value === "isolated"}
-              onClick={() => (kindFilter.value = "isolated")}
-            />
-          </div>
-        )}
-
-        {/* Error */}
-        {error.value && (
-          <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
-            {error.value}
-          </div>
-        )}
-
-        {/* Loading / Connecting */}
-        {(isLoading.value || !isConnected.value) && (
-          <div class="flex justify-center py-16">
-            <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
-          </div>
-        )}
-
-        {/* Sessions Table */}
-        {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && (
-          <Card padding="none">
-            <div class="overflow-x-auto">
-              <table class="w-full">
-                <thead>
-                  <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                    <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.session")}</th>
-                    <th class="py-3 px-4 font-medium w-32">{t("sessions.admin.columns.model")}</th>
-                    <th class="py-3 px-4 font-medium w-36">
-                      {t("sessions.admin.columns.lastActive")}
-                    </th>
-                    <th class="py-3 px-4 font-medium w-32">{t("sessions.admin.columns.tokens")}</th>
-                    <th class="py-3 px-4 font-medium w-12"></th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-[var(--color-border)]">
-                  {filteredSessions.value.map((session) => (
-                    <SessionRow key={session.key} session={session} />
-                  ))}
-                </tbody>
-              </table>
+              <StatCard
+                icon={getKindStyle("main").icon}
+                label={t("sessions.admin.kinds.main")}
+                value={counts.main}
+                active={kindFilter.value === "main"}
+                onClick={() => (kindFilter.value = "main")}
+              />
+              <StatCard
+                icon={getKindStyle("channel").icon}
+                label={t("sessions.admin.kinds.channel")}
+                value={counts.channel}
+                active={kindFilter.value === "channel"}
+                onClick={() => (kindFilter.value = "channel")}
+              />
+              <StatCard
+                icon={getKindStyle("cron").icon}
+                label={t("sessions.admin.kinds.cron")}
+                value={counts.cron}
+                active={kindFilter.value === "cron"}
+                onClick={() => (kindFilter.value = "cron")}
+              />
+              <StatCard
+                icon={getKindStyle("isolated").icon}
+                label={t("sessions.admin.kinds.isolated")}
+                value={counts.isolated}
+                active={kindFilter.value === "isolated"}
+                onClick={() => (kindFilter.value = "isolated")}
+              />
             </div>
-          </Card>
-        )}
+          )}
 
-        {/* Empty state */}
-        {isConnected.value &&
-          !isLoading.value &&
-          adminSessions.value.length === 0 &&
-          !error.value && (
-            <Card>
-              <div class="p-16 text-center">
-                <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-                <h3 class="text-lg font-medium mb-2">{t("sessions.admin.emptyTitle")}</h3>
-                <p class="text-[var(--color-text-muted)]">{t("sessions.admin.emptyDescription")}</p>
+          {/* Error */}
+          {error.value && (
+            <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+              {error.value}
+            </div>
+          )}
+
+          {/* Loading / Connecting */}
+          {(isLoading.value || !isConnected.value) && (
+            <div class="flex justify-center py-16">
+              <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
+            </div>
+          )}
+
+          {/* Sessions Table */}
+          {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && (
+            <Card padding="none">
+              <div class="overflow-x-auto">
+                <table class="w-full">
+                  <thead>
+                    <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
+                      <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.session")}</th>
+                      <th class="py-3 px-4 font-medium w-32">
+                        {t("sessions.admin.columns.model")}
+                      </th>
+                      <th class="py-3 px-4 font-medium w-36">
+                        {t("sessions.admin.columns.lastActive")}
+                      </th>
+                      <th class="py-3 px-4 font-medium w-32">
+                        {t("sessions.admin.columns.tokens")}
+                      </th>
+                      <th class="py-3 px-4 font-medium w-12"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-[var(--color-border)]">
+                    {filteredSessions.value.map((session) => (
+                      <SessionRow key={session.key} session={session} />
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </Card>
           )}
 
-        {/* No results from filter */}
-        {isConnected.value &&
-          !isLoading.value &&
-          adminSessions.value.length > 0 &&
-          filteredSessions.value.length === 0 && (
-            <Card>
-              <div class="p-12 text-center">
-                <Search class="w-10 h-10 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-                <h3 class="text-lg font-medium mb-2">{t("sessions.admin.noResults")}</h3>
-                <p class="text-[var(--color-text-muted)] mb-4">
-                  {t("sessions.admin.noResultsDescription")}
-                </p>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    searchQuery.value = "";
-                    kindFilter.value = "all";
-                  }}
-                >
-                  {t("sessions.admin.clearFilters")}
-                </Button>
-              </div>
-            </Card>
-          )}
+          {/* Empty state */}
+          {isConnected.value &&
+            !isLoading.value &&
+            adminSessions.value.length === 0 &&
+            !error.value && (
+              <Card>
+                <div class="p-16 text-center">
+                  <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                  <h3 class="text-lg font-medium mb-2">{t("sessions.admin.emptyTitle")}</h3>
+                  <p class="text-[var(--color-text-muted)]">
+                    {t("sessions.admin.emptyDescription")}
+                  </p>
+                </div>
+              </Card>
+            )}
 
-        {/* Footer count */}
-        {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && (
-          <p class="text-sm text-[var(--color-text-muted)] text-center">
-            {filteredSessions.value.length === adminSessions.value.length
-              ? t("sessions.admin.count", { count: adminSessions.value.length })
-              : t("sessions.admin.filteredCount", {
-                  filtered: filteredSessions.value.length,
-                  total: adminSessions.value.length,
-                })}
-          </p>
-        )}
+          {/* No results from filter */}
+          {isConnected.value &&
+            !isLoading.value &&
+            adminSessions.value.length > 0 &&
+            filteredSessions.value.length === 0 && (
+              <Card>
+                <div class="p-12 text-center">
+                  <Search class="w-10 h-10 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                  <h3 class="text-lg font-medium mb-2">{t("sessions.admin.noResults")}</h3>
+                  <p class="text-[var(--color-text-muted)] mb-4">
+                    {t("sessions.admin.noResultsDescription")}
+                  </p>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      searchQuery.value = "";
+                      kindFilter.value = "all";
+                    }}
+                  >
+                    {t("sessions.admin.clearFilters")}
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+          {/* Footer count */}
+          {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && (
+            <p class="text-sm text-[var(--color-text-muted)] text-center">
+              {filteredSessions.value.length === adminSessions.value.length
+                ? t("sessions.admin.count", { count: adminSessions.value.length })
+                : t("sessions.admin.filteredCount", {
+                    filtered: filteredSessions.value.length,
+                    total: adminSessions.value.length,
+                  })}
+            </p>
+          )}
+        </div>
+
+        <SessionDetailModal />
       </div>
-
-      <SessionDetailModal />
-    </div>
+    </ViewErrorBoundary>
   );
 }
