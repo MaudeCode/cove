@@ -9,7 +9,14 @@ import { signal } from "@preact/signals";
 import Router from "preact-router";
 import { initTheme } from "@/lib/theme";
 import { initI18n } from "@/lib/i18n";
-import { initStorage, getAuth, hasCompletedOnboarding, consumePendingTour } from "@/lib/storage";
+import {
+  initStorage,
+  getAuth,
+  getSessionCredential,
+  setSessionCredential,
+  hasCompletedOnboarding,
+  consumePendingTour,
+} from "@/lib/storage";
 import { isConnected, connect, connectionState } from "@/lib/gateway";
 import { initChat } from "@/lib/chat/init";
 import { setActiveSession, loadSessions } from "@/signals/sessions";
@@ -175,18 +182,25 @@ function MainRouter() {
 }
 
 /**
- * Try to auto-connect using saved credentials
+ * Try to auto-connect using saved URL and session credential
+ * SECURITY: Credentials are only stored in sessionStorage (cleared on tab close)
  */
 async function tryAutoConnect() {
   const saved = getAuth();
-
   if (!saved?.url || !saved.rememberMe) return;
+
+  // Get credential from session storage (only valid for current browser session)
+  const credential = getSessionCredential();
+  if (!credential) {
+    // No session credential - user needs to re-enter on login form
+    return;
+  }
 
   try {
     await connect({
       url: saved.url,
-      token: saved.authMode === "token" ? saved.credential : undefined,
-      password: saved.authMode === "password" ? saved.credential : undefined,
+      token: saved.authMode === "token" ? credential : undefined,
+      password: saved.authMode === "password" ? credential : undefined,
       autoReconnect: true,
     });
 
@@ -212,6 +226,8 @@ async function tryAutoConnect() {
     // Initialize exec approval listener
     initExecApproval();
   } catch {
+    // Clear invalid session credential
+    setSessionCredential("");
     // User will see the login form
   }
 }

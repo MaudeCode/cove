@@ -14,7 +14,7 @@ import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
-import { saveAuth, completeOnboarding, setPendingTour } from "@/lib/storage";
+import { saveAuth, setSessionCredential, completeOnboarding, setPendingTour } from "@/lib/storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -147,14 +147,18 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
         autoReconnect: true,
       });
 
-      // Save credentials
+      // Save URL and auth mode (NOT credentials - for security)
       if (rememberMe.value) {
         saveAuth({
           url: url.value,
           authMode: authMode.value,
-          credential: credential.value || undefined,
           rememberMe: true,
         });
+      }
+
+      // Store credential in session storage (cleared on tab close)
+      if (credential.value) {
+        setSessionCredential(credential.value);
       }
 
       // Mark onboarding complete

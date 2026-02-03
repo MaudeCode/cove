@@ -51,21 +51,44 @@ const TooltipContext = createContext<TooltipContextValue | null>(null);
 export function TooltipProvider({ children }: { children: ComponentChildren }) {
   const [state, setState] = useState<TooltipState | null>(null);
   const [shouldRender, setShouldRender] = useState(false);
+  // Track animation frame and timeout for cleanup
+  const rafRef = useRef<number | null>(null);
+  const hideTimeoutRef = useRef<number | null>(null);
+
+  // Cleanup pending animations/timeouts on unmount
+  useEffect(() => {
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      if (hideTimeoutRef.current) clearTimeout(hideTimeoutRef.current);
+    };
+  }, []);
 
   const show = useCallback((newState: Omit<TooltipState, "isVisible">) => {
+    // Cancel any pending hide
+    if (hideTimeoutRef.current) {
+      clearTimeout(hideTimeoutRef.current);
+      hideTimeoutRef.current = null;
+    }
     setShouldRender(true);
     // Small delay for mount animation
-    requestAnimationFrame(() => {
+    rafRef.current = requestAnimationFrame(() => {
       setState({ ...newState, isVisible: true });
+      rafRef.current = null;
     });
   }, []);
 
   const hide = useCallback(() => {
+    // Cancel any pending show animation
+    if (rafRef.current) {
+      cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    }
     setState((prev) => (prev ? { ...prev, isVisible: false } : null));
     // Wait for fade out
-    setTimeout(() => {
+    hideTimeoutRef.current = window.setTimeout(() => {
       setShouldRender(false);
       setState(null);
+      hideTimeoutRef.current = null;
     }, 150);
   }, []);
 
