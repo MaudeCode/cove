@@ -9,6 +9,7 @@ import type { ComponentChildren } from "preact";
 import { createPortal } from "preact/compat";
 import { useEffect, useRef, useCallback } from "preact/hooks";
 import { t } from "@/lib/i18n";
+import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { IconButton } from "./IconButton";
 import { XIcon } from "./icons";
 
@@ -55,7 +56,12 @@ export function Modal({
   footer,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
-  const previousActiveElement = useRef<HTMLElement | null>(null);
+
+  // Use focus trap hook for proper focus cycling within modal
+  useFocusTrap(modalRef, {
+    enabled: open,
+    autoFocus: true,
+  });
 
   // Handle escape key
   const handleKeyDown = useCallback(
@@ -67,30 +73,18 @@ export function Modal({
     [closeOnEscape, onClose],
   );
 
-  // Focus trap - only run on open change, not on every render
+  // Prevent body scroll when modal is open
   useEffect(() => {
     if (!open) return;
 
-    // Store previously focused element
-    previousActiveElement.current = document.activeElement as HTMLElement;
-
-    // Focus the modal only if focus is not already inside it
-    if (modalRef.current && !modalRef.current.contains(document.activeElement)) {
-      modalRef.current.focus();
-    }
-
-    // Prevent body scroll
     document.body.style.overflow = "hidden";
 
     return () => {
       document.body.style.overflow = "";
-
-      // Restore focus
-      previousActiveElement.current?.focus();
     };
   }, [open]);
 
-  // Escape key listener - separate effect to avoid refocusing on handler change
+  // Escape key listener
   useEffect(() => {
     if (!open) return;
 
