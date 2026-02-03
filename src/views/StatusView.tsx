@@ -8,6 +8,7 @@
 import { signal, computed } from "@preact/signals";
 import { useEffect, useState } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import {
   gateway,
   isConnected,
@@ -315,172 +316,180 @@ export function StatusView(_props: RouteProps) {
   }, [connected]);
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-5xl mx-auto space-y-6">
-        {/* Security Warnings */}
-        {!isSecureContext.value && (
-          <div class="flex items-start gap-3 p-4 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
-            <AlertTriangle class="w-5 h-5 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
-            <div>
-              <div class="font-medium text-[var(--color-warning)]">Insecure Context</div>
-              <p class="text-sm text-[var(--color-text-secondary)] mt-1">
-                This page is not served over HTTPS. Some features may be limited.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {connected && gatewayUrl.value && !gatewayIsSecure.value && (
-          <div class="flex items-start gap-3 p-4 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
-            <Shield class="w-5 h-5 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
-            <div>
-              <div class="font-medium text-[var(--color-warning)]">Insecure WebSocket</div>
-              <p class="text-sm text-[var(--color-text-secondary)] mt-1">
-                Connected via <code class="bg-[var(--color-bg-secondary)] px-1 rounded">ws://</code>{" "}
-                instead of <code class="bg-[var(--color-bg-secondary)] px-1 rounded">wss://</code>.
-                Traffic is not encrypted.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Connection Status Card */}
-        <Card padding="lg">
-          <div class="flex items-center justify-between mb-4">
-            <div class="flex items-center gap-3">
-              {connected ? (
-                <div class="p-2 rounded-lg bg-[var(--color-success)]/10">
-                  <Wifi class="w-6 h-6 text-[var(--color-success)]" />
-                </div>
-              ) : (
-                <div class="p-2 rounded-lg bg-[var(--color-error)]/10">
-                  <WifiOff class="w-6 h-6 text-[var(--color-error)]" />
-                </div>
-              )}
+    <ViewErrorBoundary viewName={t("nav.overview")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-5xl mx-auto space-y-6">
+          {/* Security Warnings */}
+          {!isSecureContext.value && (
+            <div class="flex items-start gap-3 p-4 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
+              <AlertTriangle class="w-5 h-5 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
               <div>
-                <h2 class="text-lg font-semibold">Gateway Connection</h2>
-                <Badge
-                  variant={connected ? "success" : state === "connecting" ? "warning" : "error"}
-                  dot
-                  size="sm"
-                >
-                  {state === "connected"
-                    ? t("status.connected")
-                    : state === "connecting" || state === "authenticating"
-                      ? t("status.connecting")
-                      : state === "reconnecting"
-                        ? t("status.reconnecting")
-                        : t("status.disconnected")}
-                </Badge>
+                <div class="font-medium text-[var(--color-warning)]">Insecure Context</div>
+                <p class="text-sm text-[var(--color-text-secondary)] mt-1">
+                  This page is not served over HTTPS. Some features may be limited.
+                </p>
               </div>
             </div>
+          )}
 
-            {connected && (
-              <Button variant="secondary" size="sm" onClick={() => disconnect()}>
-                Disconnect
-              </Button>
-            )}
-          </div>
-
-          {connected && gatewayUrl.value && (
-            <div class="border-t border-[var(--color-border)] pt-4 mt-4 space-y-1">
-              <CopyableValue label="URL" value={gatewayUrl.value} />
-              {gateway.connectionId.value && (
-                <CopyableValue label="Connection ID" value={gateway.connectionId.value} />
-              )}
+          {connected && gatewayUrl.value && !gatewayIsSecure.value && (
+            <div class="flex items-start gap-3 p-4 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
+              <Shield class="w-5 h-5 text-[var(--color-warning)] flex-shrink-0 mt-0.5" />
+              <div>
+                <div class="font-medium text-[var(--color-warning)]">Insecure WebSocket</div>
+                <p class="text-sm text-[var(--color-text-secondary)] mt-1">
+                  Connected via{" "}
+                  <code class="bg-[var(--color-bg-secondary)] px-1 rounded">ws://</code> instead of{" "}
+                  <code class="bg-[var(--color-bg-secondary)] px-1 rounded">wss://</code>. Traffic
+                  is not encrypted.
+                </p>
+              </div>
             </div>
           )}
-        </Card>
 
-        {/* Quick Stats */}
-        {connected && (
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <StatCard
-              icon={Clock}
-              label="Uptime"
-              value={uptimeFormatted.value ?? "—"}
-              subtext={
-                connectedAt.value ? `Since ${formatTimestamp(connectedAt.value)}` : undefined
-              }
-              href="/stats"
-            />
-            <StatCard
-              icon={Users}
-              label="Instances"
-              value={presence.value.length}
-              subtext="Connected clients"
-              href="/instances"
-            />
-            <StatCard
-              icon={MessageSquare}
-              label="Sessions"
-              value={sessions.value.length}
-              subtext="Active sessions"
-              href="/sessions"
-            />
-          </div>
-        )}
+          {/* Connection Status Card */}
+          <Card padding="lg">
+            <div class="flex items-center justify-between mb-4">
+              <div class="flex items-center gap-3">
+                {connected ? (
+                  <div class="p-2 rounded-lg bg-[var(--color-success)]/10">
+                    <Wifi class="w-6 h-6 text-[var(--color-success)]" />
+                  </div>
+                ) : (
+                  <div class="p-2 rounded-lg bg-[var(--color-error)]/10">
+                    <WifiOff class="w-6 h-6 text-[var(--color-error)]" />
+                  </div>
+                )}
+                <div>
+                  <h2 class="text-lg font-semibold">Gateway Connection</h2>
+                  <Badge
+                    variant={connected ? "success" : state === "connecting" ? "warning" : "error"}
+                    dot
+                    size="sm"
+                  >
+                    {state === "connected"
+                      ? t("status.connected")
+                      : state === "connecting" || state === "authenticating"
+                        ? t("status.connecting")
+                        : state === "reconnecting"
+                          ? t("status.reconnecting")
+                          : t("status.disconnected")}
+                  </Badge>
+                </div>
+              </div>
 
-        {/* Quick Stats - Row 2: Cron & Channels */}
-        {connected && (
-          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
-            <StatCard
-              icon={Zap}
-              label="Cron"
-              value={cronStatus.value?.enabled ? "Enabled" : "Disabled"}
-              subtext={
-                cronStatus.value?.nextWakeMs
-                  ? `Next wake: ${formatNextWake.value}`
-                  : cronStatus.value?.jobCount
-                    ? `${cronStatus.value.jobCount} jobs`
-                    : undefined
-              }
-              href="/cron"
-            />
-            <StatCard
-              icon={Radio}
-              label="Channels"
-              value={channels.value.length > 0 ? connectedChannelCount.value : "—"}
-              subtext={
-                channels.value.length > 0
-                  ? `${connectedChannelCount.value}/${channels.value.length} connected`
-                  : "No channels configured"
-              }
-              href="/channels"
-            />
-            <StatCard
-              icon={Sparkles}
-              label="Skills"
-              value={skillsStatus.value?.eligible ?? "—"}
-              subtext={
-                skillsStatus.value
-                  ? `${skillsStatus.value.eligible}/${skillsStatus.value.total} active`
-                  : undefined
-              }
-              href="/skills"
-            />
-          </div>
-        )}
+              {connected && (
+                <Button variant="secondary" size="sm" onClick={() => disconnect()}>
+                  Disconnect
+                </Button>
+              )}
+            </div>
 
-        {/* Server Info */}
-        {connected && (
-          <Card title={t("overview.serverInfo")} padding="md">
-            <div class="divide-y divide-[var(--color-border)]">
-              <InfoRow label={t("overview.version")} value={gatewayVersion.value} />
-              <InfoRow label={t("overview.commit")} value={gatewayCommit.value?.substring(0, 8)} />
-              <InfoRow label={t("overview.host")} value={gatewayHost.value} />
-              <InfoRow
-                label={t("overview.capabilities")}
-                value={
-                  gateway.capabilities.value.length > 0
-                    ? t("overview.capabilitiesCount", { count: gateway.capabilities.value.length })
-                    : null
+            {connected && gatewayUrl.value && (
+              <div class="border-t border-[var(--color-border)] pt-4 mt-4 space-y-1">
+                <CopyableValue label="URL" value={gatewayUrl.value} />
+                {gateway.connectionId.value && (
+                  <CopyableValue label="Connection ID" value={gateway.connectionId.value} />
+                )}
+              </div>
+            )}
+          </Card>
+
+          {/* Quick Stats */}
+          {connected && (
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <StatCard
+                icon={Clock}
+                label="Uptime"
+                value={uptimeFormatted.value ?? "—"}
+                subtext={
+                  connectedAt.value ? `Since ${formatTimestamp(connectedAt.value)}` : undefined
                 }
+                href="/stats"
+              />
+              <StatCard
+                icon={Users}
+                label="Instances"
+                value={presence.value.length}
+                subtext="Connected clients"
+                href="/instances"
+              />
+              <StatCard
+                icon={MessageSquare}
+                label="Sessions"
+                value={sessions.value.length}
+                subtext="Active sessions"
+                href="/sessions"
               />
             </div>
-          </Card>
-        )}
+          )}
+
+          {/* Quick Stats - Row 2: Cron & Channels */}
+          {connected && (
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <StatCard
+                icon={Zap}
+                label="Cron"
+                value={cronStatus.value?.enabled ? "Enabled" : "Disabled"}
+                subtext={
+                  cronStatus.value?.nextWakeMs
+                    ? `Next wake: ${formatNextWake.value}`
+                    : cronStatus.value?.jobCount
+                      ? `${cronStatus.value.jobCount} jobs`
+                      : undefined
+                }
+                href="/cron"
+              />
+              <StatCard
+                icon={Radio}
+                label="Channels"
+                value={channels.value.length > 0 ? connectedChannelCount.value : "—"}
+                subtext={
+                  channels.value.length > 0
+                    ? `${connectedChannelCount.value}/${channels.value.length} connected`
+                    : "No channels configured"
+                }
+                href="/channels"
+              />
+              <StatCard
+                icon={Sparkles}
+                label="Skills"
+                value={skillsStatus.value?.eligible ?? "—"}
+                subtext={
+                  skillsStatus.value
+                    ? `${skillsStatus.value.eligible}/${skillsStatus.value.total} active`
+                    : undefined
+                }
+                href="/skills"
+              />
+            </div>
+          )}
+
+          {/* Server Info */}
+          {connected && (
+            <Card title={t("overview.serverInfo")} padding="md">
+              <div class="divide-y divide-[var(--color-border)]">
+                <InfoRow label={t("overview.version")} value={gatewayVersion.value} />
+                <InfoRow
+                  label={t("overview.commit")}
+                  value={gatewayCommit.value?.substring(0, 8)}
+                />
+                <InfoRow label={t("overview.host")} value={gatewayHost.value} />
+                <InfoRow
+                  label={t("overview.capabilities")}
+                  value={
+                    gateway.capabilities.value.length > 0
+                      ? t("overview.capabilitiesCount", {
+                          count: gateway.capabilities.value.length,
+                        })
+                      : null
+                  }
+                />
+              </div>
+            </Card>
+          )}
+        </div>
       </div>
-    </div>
+    </ViewErrorBoundary>
   );
 }

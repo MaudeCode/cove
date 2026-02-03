@@ -38,6 +38,7 @@ import {
   Trash2,
   Shield,
 } from "lucide-preact";
+import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { RouteProps } from "@/types/routes";
 import type {
   DeviceListResponse,
@@ -539,138 +540,140 @@ export function DevicesView(_props: RouteProps) {
   const pending = pendingRequests.value;
 
   return (
-    <div class="flex-1 overflow-y-auto p-6">
-      <div class="max-w-5xl mx-auto space-y-6">
-        <PageHeader
-          title={t("devices.title")}
-          subtitle={t("devices.description")}
-          actions={
-            <IconButton
-              icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-              onClick={loadDevices}
-              disabled={isLoading.value}
-              label={t("actions.refresh")}
-            />
-          }
-        />
+    <ViewErrorBoundary viewName={t("nav.devices")}>
+      <div class="flex-1 overflow-y-auto p-6">
+        <div class="max-w-5xl mx-auto space-y-6">
+          <PageHeader
+            title={t("devices.title")}
+            subtitle={t("devices.description")}
+            actions={
+              <IconButton
+                icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
+                onClick={loadDevices}
+                disabled={isLoading.value}
+                label={t("actions.refresh")}
+              />
+            }
+          />
 
-        {/* Error */}
-        {error.value && <HintBox variant="error">{error.value}</HintBox>}
+          {/* Error */}
+          {error.value && <HintBox variant="error">{error.value}</HintBox>}
 
-        {/* Loading */}
-        {isLoading.value && devices.value.length === 0 && (
-          <div class="flex items-center justify-center py-12">
-            <Spinner size="lg" />
-          </div>
-        )}
-
-        {/* Content */}
-        {!isLoading.value && !error.value && (
-          <>
-            {/* Stats */}
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard
-                icon={Smartphone}
-                label={t("devices.stats.total")}
-                value={s.total}
-                active={roleFilter.value === "all"}
-                onClick={() => {
-                  roleFilter.value = "all";
-                }}
-              />
-              <StatCard
-                icon={Globe}
-                label={t("devices.stats.operators")}
-                value={s.operators}
-                active={roleFilter.value === "operator"}
-                onClick={() => {
-                  roleFilter.value = "operator";
-                }}
-              />
-              <StatCard
-                icon={Monitor}
-                label={t("devices.stats.nodes")}
-                value={s.nodes}
-                active={roleFilter.value === "node"}
-                onClick={() => {
-                  roleFilter.value = "node";
-                }}
-              />
-              <StatCard
-                icon={Clock}
-                label={t("devices.stats.pending")}
-                value={s.pending}
-                highlight={s.pending > 0}
-              />
+          {/* Loading */}
+          {isLoading.value && devices.value.length === 0 && (
+            <div class="flex items-center justify-center py-12">
+              <Spinner size="lg" />
             </div>
+          )}
 
-            {/* Pending pairing requests */}
-            {pending.length > 0 && (
-              <div class="space-y-3">
-                <h2 class="text-lg font-semibold">{t("devices.pendingRequests")}</h2>
-                {pending.map((req) => (
-                  <PendingRequestCard key={req.requestId} request={req} />
-                ))}
-              </div>
-            )}
-
-            {/* Filters */}
-            {devices.value.length > 0 && (
-              <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                <div class="flex-1 flex items-center gap-3">
-                  <Input
-                    type="text"
-                    placeholder={t("devices.searchPlaceholder")}
-                    value={searchQuery.value}
-                    onInput={(e) => {
-                      searchQuery.value = (e.target as HTMLInputElement).value;
-                    }}
-                    leftElement={<Search class="w-4 h-4" />}
-                    class="flex-1"
-                  />
-                  <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-                    {filtered.length !== s.total
-                      ? t("devices.filteredCount", { filtered: filtered.length, total: s.total })
-                      : t("devices.count", { count: s.total })}
-                  </span>
-                </div>
-                <Dropdown
-                  value={roleFilter.value}
-                  onChange={(v) => {
-                    roleFilter.value = v as DeviceRole;
+          {/* Content */}
+          {!isLoading.value && !error.value && (
+            <>
+              {/* Stats */}
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard
+                  icon={Smartphone}
+                  label={t("devices.stats.total")}
+                  value={s.total}
+                  active={roleFilter.value === "all"}
+                  onClick={() => {
+                    roleFilter.value = "all";
                   }}
-                  options={ROLE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
-                  size="sm"
-                  align="right"
-                  aria-label={t("devices.filters.allRoles")}
+                />
+                <StatCard
+                  icon={Globe}
+                  label={t("devices.stats.operators")}
+                  value={s.operators}
+                  active={roleFilter.value === "operator"}
+                  onClick={() => {
+                    roleFilter.value = "operator";
+                  }}
+                />
+                <StatCard
+                  icon={Monitor}
+                  label={t("devices.stats.nodes")}
+                  value={s.nodes}
+                  active={roleFilter.value === "node"}
+                  onClick={() => {
+                    roleFilter.value = "node";
+                  }}
+                />
+                <StatCard
+                  icon={Clock}
+                  label={t("devices.stats.pending")}
+                  value={s.pending}
+                  highlight={s.pending > 0}
                 />
               </div>
-            )}
 
-            {/* Devices list */}
-            {devices.value.length > 0 ? (
-              <Card padding="none">
-                {filtered.length === 0 ? (
-                  <div class="text-center py-8 text-[var(--color-text-muted)]">
-                    {t("devices.noResults")}
-                  </div>
-                ) : (
-                  <div>
-                    {filtered.map((device) => (
-                      <DeviceRow key={device.deviceId} device={device} />
-                    ))}
-                  </div>
-                )}
-              </Card>
-            ) : (
-              <EmptyState />
-            )}
-          </>
-        )}
+              {/* Pending pairing requests */}
+              {pending.length > 0 && (
+                <div class="space-y-3">
+                  <h2 class="text-lg font-semibold">{t("devices.pendingRequests")}</h2>
+                  {pending.map((req) => (
+                    <PendingRequestCard key={req.requestId} request={req} />
+                  ))}
+                </div>
+              )}
 
-        {/* Token modal */}
-        <TokenModal />
+              {/* Filters */}
+              {devices.value.length > 0 && (
+                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                  <div class="flex-1 flex items-center gap-3">
+                    <Input
+                      type="text"
+                      placeholder={t("devices.searchPlaceholder")}
+                      value={searchQuery.value}
+                      onInput={(e) => {
+                        searchQuery.value = (e.target as HTMLInputElement).value;
+                      }}
+                      leftElement={<Search class="w-4 h-4" />}
+                      class="flex-1"
+                    />
+                    <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
+                      {filtered.length !== s.total
+                        ? t("devices.filteredCount", { filtered: filtered.length, total: s.total })
+                        : t("devices.count", { count: s.total })}
+                    </span>
+                  </div>
+                  <Dropdown
+                    value={roleFilter.value}
+                    onChange={(v) => {
+                      roleFilter.value = v as DeviceRole;
+                    }}
+                    options={ROLE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
+                    size="sm"
+                    align="right"
+                    aria-label={t("devices.filters.allRoles")}
+                  />
+                </div>
+              )}
+
+              {/* Devices list */}
+              {devices.value.length > 0 ? (
+                <Card padding="none">
+                  {filtered.length === 0 ? (
+                    <div class="text-center py-8 text-[var(--color-text-muted)]">
+                      {t("devices.noResults")}
+                    </div>
+                  ) : (
+                    <div>
+                      {filtered.map((device) => (
+                        <DeviceRow key={device.deviceId} device={device} />
+                      ))}
+                    </div>
+                  )}
+                </Card>
+              ) : (
+                <EmptyState />
+              )}
+            </>
+          )}
+
+          {/* Token modal */}
+          <TokenModal />
+        </div>
       </div>
-    </div>
+    </ViewErrorBoundary>
   );
 }
