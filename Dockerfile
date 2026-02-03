@@ -1,30 +1,36 @@
 # Build stage
-FROM oven/bun:1 AS builder
+FROM oven/bun:1-alpine AS builder
 
 WORKDIR /app
 
-# Install dependencies
+# Install dependencies first (better caching)
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN bun install --frozen-lockfile --production=false
 
 # Copy source and build
 COPY . .
 RUN bun run build
 
-# Production stage - lightweight nginx
-FROM nginx:alpine
+# Production stage - rootless nginx
+FROM nginxinc/nginx-unprivileged:alpine-slim
 
 # Copy built assets
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-# Copy nginx config for SPA routing
+# Copy nginx config
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Expose port
-EXPOSE 80
+# Use non-root user (nginx-unprivileged runs as uid 101)
+USER nginx
+
+# Expose unprivileged port
+EXPOSE 8080
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost/ || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
 
-CMD ["nginx", "-g", "daemon off;"]
+# Labels
+LABEL org.opencontainers.image.source="https://github.com/MaudeCode/cove"
+LABEL org.opencontainers.image.description="A beautiful WebUI for OpenClaw"
+LABEL org.opencontainers.image.licenses="MIT"

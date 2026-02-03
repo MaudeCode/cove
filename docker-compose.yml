@@ -4,10 +4,19 @@ services:
     # Or use pre-built image:
     # image: ghcr.io/maudecode/cove:latest
     ports:
-      - "8080:80"
+      - "8080:8080"
     restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    tmpfs:
+      - /tmp:noexec,nosuid,size=10m
+      - /var/cache/nginx:noexec,nosuid,size=50m
+      - /var/run:noexec,nosuid,size=10m
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -18,9 +27,19 @@ services:
 # services:
 #   cove:
 #     image: ghcr.io/maudecode/cove:latest
+#     read_only: true
+#     security_opt:
+#       - no-new-privileges:true
+#     cap_drop:
+#       - ALL
+#     tmpfs:
+#       - /tmp:noexec,nosuid,size=10m
+#       - /var/cache/nginx:noexec,nosuid,size=50m
+#       - /var/run:noexec,nosuid,size=10m
 #     labels:
 #       - "traefik.enable=true"
 #       - "traefik.http.routers.cove.rule=Host(`cove.example.com`)"
 #       - "traefik.http.routers.cove.entrypoints=websecure"
 #       - "traefik.http.routers.cove.tls.certresolver=letsencrypt"
+#       - "traefik.http.services.cove.loadbalancer.server.port=8080"
 #     restart: unless-stopped

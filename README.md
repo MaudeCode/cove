@@ -51,7 +51,7 @@
 ### Option 1: Docker (Recommended)
 
 ```bash
-docker run -d -p 8080:80 ghcr.io/maudecode/cove:latest
+docker run -d -p 8080:8080 ghcr.io/maudecode/cove:latest
 ```
 
 Then open http://localhost:8080 and connect to your OpenClaw gateway.

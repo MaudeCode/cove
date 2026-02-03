@@ -30,14 +30,16 @@ docker compose up -d
 # Build
 docker build -t cove .
 
-# Run
-docker run -d -p 8080:80 --name cove cove
+# Run (rootless, read-only filesystem)
+docker run -d -p 8080:8080 --read-only --security-opt no-new-privileges:true \
+  --cap-drop ALL --tmpfs /tmp --tmpfs /var/cache/nginx --tmpfs /var/run \
+  --name cove cove
 ```
 
 **Using pre-built image:**
 
 ```bash
-docker run -d -p 8080:80 ghcr.io/maudecode/cove:latest
+docker run -d -p 8080:8080 ghcr.io/maudecode/cove:latest
 ```
 
 ### 2. Static File Hosting
@@ -135,7 +137,22 @@ spec:
         - name: cove
           image: ghcr.io/maudecode/cove:latest
           ports:
-            - containerPort: 80
+            - containerPort: 8080
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 101
+            readOnlyRootFilesystem: true
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: cache
+              mountPath: /var/cache/nginx
+            - name: run
+              mountPath: /var/run
           resources:
             limits:
               memory: "64Mi"
@@ -143,9 +160,16 @@ spec:
           livenessProbe:
             httpGet:
               path: /health
-              port: 80
+              port: 8080
             initialDelaySeconds: 5
             periodSeconds: 30
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: cache
+          emptyDir: {}
+        - name: run
+          emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
@@ -156,7 +180,7 @@ spec:
     app: cove
   ports:
     - port: 80
-      targetPort: 80
+      targetPort: 8080
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
