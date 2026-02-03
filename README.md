@@ -42,7 +42,7 @@
 - **Debug** — RPC tester, event stream, connection diagnostics
 
 ### 🎨 Customization
-- **6 themes** — Light, Dark, Nord, Dracula, Solarized Light/Dark
+- **12 themes** — Light, Dark, Nord, Dracula, Catppuccin, Tokyo Night, and more
 - **System sync** — Automatically switches with your OS preference
 - **Font options** — System, Geist, Inter, JetBrains Mono, OpenDyslexic
 - **Adjustable sizing** — Small, medium, or large text
