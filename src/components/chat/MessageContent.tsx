@@ -9,7 +9,7 @@ import { renderMarkdown } from "@/lib/markdown";
 import { sanitizeHtml } from "@/lib/sanitize";
 import { BouncingDots } from "@/components/ui/BouncingDots";
 import { t } from "@/lib/i18n";
-import { searchQuery } from "@/signals/chat";
+import { debouncedSearchQuery } from "@/signals/chat";
 
 interface MessageContentProps {
   content: string;
@@ -103,8 +103,8 @@ export function MessageContent({ content, isStreaming = false }: MessageContentP
     return sanitizeHtml(rendered);
   }, [content]);
 
-  // Get current search query (access .value for reactivity)
-  const query = searchQuery.value.trim();
+  // Get debounced search query for highlighting (access .value for reactivity)
+  const query = debouncedSearchQuery.value.trim();
 
   // Add copy buttons to code blocks after render
   useEffect(() => {

@@ -34,8 +34,24 @@ export const activeSessionKey = signal<string | null>(null);
 /** Filter by session kind (null = all) */
 export const sessionKindFilter = signal<string | null>(null);
 
-/** Search query for filtering sessions */
+/** Search query for filtering sessions (raw input) */
 export const sessionSearchQuery = signal<string>("");
+
+/** Debounced session search query for filtering (300ms delay) */
+const debouncedSessionSearchQuery = signal<string>("");
+
+/** Debounce timer for session search */
+let sessionSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+/** Update debounced session search query with delay */
+sessionSearchQuery.subscribe((value) => {
+  if (sessionSearchDebounceTimer) {
+    clearTimeout(sessionSearchDebounceTimer);
+  }
+  sessionSearchDebounceTimer = setTimeout(() => {
+    debouncedSessionSearchQuery.value = value;
+  }, 300);
+});
 
 /** Whether to show cron sessions (hidden by default) */
 export const showCronSessions = signal<boolean>(false);
@@ -119,8 +135,8 @@ export const sessionsByRecent = computed(() => {
     filtered = filtered.filter((s) => !isSpawnSession(s));
   }
 
-  // Apply search filter
-  const query = sessionSearchQuery.value.toLowerCase().trim();
+  // Apply search filter (use debounced query for performance during typing)
+  const query = debouncedSessionSearchQuery.value.toLowerCase().trim();
   if (query) {
     filtered = filtered.filter((s) => {
       const label = getSessionDisplayLabel(s).toLowerCase();
