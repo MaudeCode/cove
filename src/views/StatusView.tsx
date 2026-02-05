@@ -231,13 +231,13 @@ function StatCard({
 }) {
   const content = (
     <>
-      <div class="p-2 rounded-lg bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]">
-        <Icon class="w-5 h-5" />
+      <div class="p-1.5 sm:p-2 rounded-lg bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]">
+        <Icon class="w-4 h-4 sm:w-5 sm:h-5" />
       </div>
-      <div>
-        <div class="text-lg font-semibold">{value}</div>
-        <div class="text-sm text-[var(--color-text-muted)]">{label}</div>
-        {subtext && <div class="text-xs text-[var(--color-text-muted)]">{subtext}</div>}
+      <div class="min-w-0 flex-1">
+        <div class="text-base sm:text-lg font-semibold truncate">{value}</div>
+        <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">{label}</div>
+        {subtext && <div class="text-xs text-[var(--color-text-muted)] truncate">{subtext}</div>}
       </div>
     </>
   );
@@ -246,7 +246,7 @@ function StatCard({
     return (
       <a
         href={href}
-        class="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors no-underline"
+        class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors no-underline"
       >
         {content}
       </a>
@@ -254,7 +254,7 @@ function StatCard({
   }
 
   return (
-    <div class="flex items-center gap-3 p-4 rounded-lg bg-[var(--color-bg-secondary)]">
+    <div class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg bg-[var(--color-bg-secondary)]">
       {content}
     </div>
   );
@@ -270,13 +270,15 @@ function CopyableValue({ value, label }: { value: string; label: string }) {
   };
 
   return (
-    <div class="flex items-center justify-between py-2">
-      <span class="text-[var(--color-text-muted)]">{label}</span>
-      <div class="flex items-center gap-2">
-        <code class="text-sm bg-[var(--color-bg-secondary)] px-2 py-0.5 rounded">{value}</code>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 gap-1 sm:gap-2">
+      <span class="text-[var(--color-text-muted)] text-sm">{label}</span>
+      <div class="flex items-center gap-2 min-w-0">
+        <code class="text-xs sm:text-sm bg-[var(--color-bg-secondary)] px-2 py-0.5 rounded truncate max-w-[200px] sm:max-w-none">
+          {value}
+        </code>
         <button
           onClick={handleCopy}
-          class="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors"
+          class="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors flex-shrink-0"
           aria-label={`Copy ${label}`}
         >
           {copied ? (
@@ -293,9 +295,9 @@ function CopyableValue({ value, label }: { value: string; label: string }) {
 function InfoRow({ label, value }: { label: string; value: string | null | undefined }) {
   if (!value) return null;
   return (
-    <div class="flex items-center justify-between py-2">
-      <span class="text-[var(--color-text-muted)]">{label}</span>
-      <span class="font-medium">{value}</span>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 gap-0.5 sm:gap-2">
+      <span class="text-[var(--color-text-muted)] text-sm">{label}</span>
+      <span class="font-medium text-sm sm:text-base">{value}</span>
     </div>
   );
 }
@@ -317,8 +319,8 @@ export function StatusView(_props: RouteProps) {
 
   return (
     <ViewErrorBoundary viewName={t("nav.overview")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           {/* Security Warnings */}
           {!isSecureContext.value && (
             <div class="flex items-start gap-3 p-4 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
@@ -348,20 +350,20 @@ export function StatusView(_props: RouteProps) {
           )}
 
           {/* Connection Status Card */}
-          <Card padding="lg">
-            <div class="flex items-center justify-between mb-4">
+          <Card padding="md">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <div class="flex items-center gap-3">
                 {connected ? (
                   <div class="p-2 rounded-lg bg-[var(--color-success)]/10">
-                    <Wifi class="w-6 h-6 text-[var(--color-success)]" />
+                    <Wifi class="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-success)]" />
                   </div>
                 ) : (
                   <div class="p-2 rounded-lg bg-[var(--color-error)]/10">
-                    <WifiOff class="w-6 h-6 text-[var(--color-error)]" />
+                    <WifiOff class="w-5 h-5 sm:w-6 sm:h-6 text-[var(--color-error)]" />
                   </div>
                 )}
                 <div>
-                  <h2 class="text-lg font-semibold">Gateway Connection</h2>
+                  <h2 class="text-base sm:text-lg font-semibold">Gateway Connection</h2>
                   <Badge
                     variant={connected ? "success" : state === "connecting" ? "warning" : "error"}
                     dot
@@ -397,7 +399,7 @@ export function StatusView(_props: RouteProps) {
 
           {/* Quick Stats */}
           {connected && (
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
               <StatCard
                 icon={Clock}
                 label="Uptime"
@@ -426,7 +428,7 @@ export function StatusView(_props: RouteProps) {
 
           {/* Quick Stats - Row 2: Cron & Channels */}
           {connected && (
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
               <StatCard
                 icon={Zap}
                 label="Cron"
