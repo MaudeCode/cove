@@ -60,8 +60,8 @@ function CronJobActions({
   );
 }
 
-/** Mobile card view for a cron job */
-export function CronJobCard({ job, onEdit, onRun, onToggleEnabled, isRunning }: CronJobRowProps) {
+/** Mobile card view for a cron job (tap to edit, no inline actions) */
+export function CronJobCard({ job, onEdit }: Pick<CronJobRowProps, "job" | "onEdit">) {
   const status = getJobStatusBadge(job);
 
   return (
@@ -78,14 +78,6 @@ export function CronJobCard({ job, onEdit, onRun, onToggleEnabled, isRunning }: 
         { icon: Calendar, value: formatSchedule(job.schedule) },
         { icon: Timer, value: formatNextRun(job) },
       ]}
-      actions={
-        <CronJobActions
-          job={job}
-          onRun={onRun}
-          onToggleEnabled={onToggleEnabled}
-          isRunning={isRunning}
-        />
-      }
       onClick={() => onEdit(job)}
     />
   );
