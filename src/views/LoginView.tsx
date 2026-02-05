@@ -138,20 +138,20 @@ export function LoginView() {
   ];
 
   return (
-    <div class="flex-1 flex items-center justify-center p-8">
-      <div class="w-full max-w-sm">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-8">
+      <div class="w-full max-w-sm mx-auto min-h-full flex flex-col justify-center py-4 sm:py-0">
         {/* Logo */}
-        <div class="text-center mb-8">
-          <CoveLogo size="xl" class="mx-auto mb-3" />
-          <h1 class="text-2xl font-bold">{t("app.name")}</h1>
-          <p class="text-[var(--color-text-muted)] mt-1">{t("app.tagline")}</p>
+        <div class="text-center mb-4 sm:mb-8">
+          <CoveLogo size="lg" class="mx-auto mb-2 sm:mb-3 sm:w-16 sm:h-16" />
+          <h1 class="text-xl sm:text-2xl font-bold">{t("app.name")}</h1>
+          <p class="text-sm sm:text-base text-[var(--color-text-muted)] mt-1">{t("app.tagline")}</p>
         </div>
 
         {/* Form */}
-        <Card variant="elevated" padding="lg">
-          <h2 class="text-lg font-semibold mb-4">{t("auth.title")}</h2>
+        <Card variant="elevated" padding="md">
+          <h2 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">{t("auth.title")}</h2>
 
-          <div class="space-y-4">
+          <div class="space-y-3 sm:space-y-4">
             {/* Gateway URL */}
             <FormField
               label={t("auth.gatewayUrl")}
@@ -160,7 +160,7 @@ export function LoginView() {
             >
               <Input
                 id="gateway-url"
-                type="text"
+                type="url"
                 value={url.value}
                 onInput={(e) => {
                   url.value = (e.target as HTMLInputElement).value;
@@ -169,6 +169,9 @@ export function LoginView() {
                 onKeyDown={handleKeyDown}
                 placeholder={t("auth.gatewayUrlPlaceholder")}
                 error={validationError.value || undefined}
+                autoCorrect="off"
+                autoCapitalize="off"
+                spellcheck={false}
                 fullWidth
               />
             </FormField>

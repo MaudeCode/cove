@@ -253,12 +253,12 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   };
 
   return (
-    <div class="flex-1 flex items-center justify-center p-8">
-      <div class="w-full max-w-md">
+    <div class="flex-1 overflow-y-auto p-4 sm:p-8">
+      <div class="w-full max-w-md mx-auto min-h-full flex flex-col justify-center py-4 sm:py-0">
         <WizardProgress
           steps={["welcome", "url", "auth", "connect"] as const}
           current={step.value}
-          class="mb-8"
+          class="mb-4 sm:mb-8"
         />
 
         {/* Step content */}
@@ -332,12 +332,14 @@ interface WelcomeStepProps {
 function WelcomeStep({ onNext, onSkip }: WelcomeStepProps) {
   return (
     <div class="text-center">
-      <CoveLogo size="xl" class="mx-auto mb-4" />
-      <h1 class="text-2xl font-bold mb-2">{t("onboarding.welcome")}</h1>
-      <p class="text-[var(--color-text-muted)] mb-8">{t("onboarding.welcomeSubtitle")}</p>
+      <CoveLogo size="lg" class="mx-auto mb-2 sm:mb-4 w-12 h-12 sm:w-16 sm:h-16" />
+      <h1 class="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">{t("onboarding.welcome")}</h1>
+      <p class="text-sm sm:text-base text-[var(--color-text-muted)] mb-4 sm:mb-8">
+        {t("onboarding.welcomeSubtitle")}
+      </p>
 
       {/* Features */}
-      <div class="grid gap-4 mb-8 text-left">
+      <div class="grid gap-2 sm:gap-4 mb-4 sm:mb-8 text-left">
         <FeatureCard
           icon={<Zap class="w-5 h-5" />}
           title={t("onboarding.feature1Title")}
@@ -378,13 +380,13 @@ interface FeatureCardProps {
 
 function FeatureCard({ icon, title, description }: FeatureCardProps) {
   return (
-    <div class="flex gap-3 p-3 rounded-lg bg-[var(--color-bg-secondary)]">
-      <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-[var(--color-accent)]/10 text-[var(--color-accent)] flex items-center justify-center">
+    <div class="flex gap-2 sm:gap-3 p-2 sm:p-3 rounded-lg bg-[var(--color-bg-secondary)]">
+      <div class="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 rounded-lg bg-[var(--color-accent)]/10 text-[var(--color-accent)] flex items-center justify-center">
         {icon}
       </div>
-      <div>
-        <h3 class="font-medium text-sm">{title}</h3>
-        <p class="text-xs text-[var(--color-text-muted)]">{description}</p>
+      <div class="min-w-0">
+        <h3 class="font-medium text-xs sm:text-sm">{title}</h3>
+        <p class="text-xs text-[var(--color-text-muted)] line-clamp-2">{description}</p>
       </div>
     </div>
   );
@@ -441,19 +443,24 @@ function UrlStep({
   };
 
   return (
-    <Card variant="elevated" padding="lg">
-      <h2 class="text-lg font-semibold mb-2">{t("onboarding.urlTitle")}</h2>
-      <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.urlSubtitle")}</p>
+    <Card variant="elevated" padding="md">
+      <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">{t("onboarding.urlTitle")}</h2>
+      <p class="text-xs sm:text-sm text-[var(--color-text-muted)] mb-3 sm:mb-6">
+        {t("onboarding.urlSubtitle")}
+      </p>
 
       <FormField label={t("auth.gatewayUrl")} htmlFor="gateway-url">
         <Input
           id="gateway-url"
-          type="text"
+          type="url"
           value={url}
           onInput={(e) => onUrlChange((e.target as HTMLInputElement).value)}
           onKeyDown={handleKeyDown}
           placeholder={t("auth.gatewayUrlPlaceholder")}
           rightElement={getStatusIndicator()}
+          autoCorrect="off"
+          autoCapitalize="off"
+          spellcheck={false}
           fullWidth
         />
       </FormField>
@@ -465,7 +472,7 @@ function UrlStep({
           t("onboarding.troubleshoot2"),
           t("onboarding.troubleshoot3"),
         ]}
-        class="mt-4"
+        class="mt-3 sm:mt-4 text-xs sm:text-sm"
       />
 
       <WizardNav onBack={onBack} onNext={onNext} nextDisabled={!probeSuccess} />
@@ -512,11 +519,13 @@ function AuthStep({
   ];
 
   return (
-    <Card variant="elevated" padding="lg">
-      <h2 class="text-lg font-semibold mb-2">{t("onboarding.authTitle")}</h2>
-      <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.authSubtitle")}</p>
+    <Card variant="elevated" padding="md">
+      <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">{t("onboarding.authTitle")}</h2>
+      <p class="text-xs sm:text-sm text-[var(--color-text-muted)] mb-3 sm:mb-6">
+        {t("onboarding.authSubtitle")}
+      </p>
 
-      <div class="space-y-4">
+      <div class="space-y-3 sm:space-y-4">
         <FormField label={t("onboarding.authMethod")}>
           <Dropdown
             value={authMode}
@@ -581,61 +590,67 @@ function ConnectStep({
   onContinue,
 }: ConnectStepProps) {
   return (
-    <Card variant="elevated" padding="lg" class="text-center">
+    <Card variant="elevated" padding="md" class="text-center">
       {connecting && (
         <>
-          <Spinner size="lg" class="mx-auto mb-4" />
-          <h2 class="text-lg font-semibold mb-2">{t("onboarding.connecting")}</h2>
-          <p class="text-sm text-[var(--color-text-muted)]">{t("onboarding.connectingDesc")}</p>
+          <Spinner size="md" class="mx-auto mb-3 sm:mb-4" />
+          <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">
+            {t("onboarding.connecting")}
+          </h2>
+          <p class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+            {t("onboarding.connectingDesc")}
+          </p>
         </>
       )}
 
       {!connecting && connected && (
         <>
-          <StatusIcon variant="success" class="mx-auto mb-4" />
-          <h2 class="text-lg font-semibold mb-2">{t("onboarding.success")}</h2>
-          <p class="text-sm text-[var(--color-text-muted)] mb-6">{t("onboarding.successDesc")}</p>
+          <StatusIcon variant="success" size="sm" class="mx-auto mb-3 sm:mb-4" />
+          <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">{t("onboarding.success")}</h2>
+          <p class="text-xs sm:text-sm text-[var(--color-text-muted)] mb-4 sm:mb-6">
+            {t("onboarding.successDesc")}
+          </p>
 
           {/* Mode Selection */}
-          <div class="mb-6">
-            <p class="text-sm font-medium text-[var(--color-text-primary)] mb-3">
+          <div class="mb-4 sm:mb-6">
+            <p class="text-xs sm:text-sm font-medium text-[var(--color-text-primary)] mb-2 sm:mb-3">
               {t("onboarding.modeTitle")}
             </p>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-2 gap-2 sm:gap-3">
               <button
                 type="button"
                 onClick={() => onModeChange("single")}
-                class={`p-4 rounded-lg border-2 text-left transition-colors ${
+                class={`p-2 sm:p-4 rounded-lg border-2 text-left transition-colors ${
                   selectedMode === "single"
                     ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
                     : "border-[var(--color-border)] hover:border-[var(--color-accent)]/50"
                 }`}
               >
-                <MessageSquare class="w-5 h-5 mb-2 text-[var(--color-accent)]" />
-                <div class="text-sm font-medium">{t("onboarding.modeSingle")}</div>
-                <div class="text-xs text-[var(--color-text-muted)] mt-1">
+                <MessageSquare class="w-4 h-4 sm:w-5 sm:h-5 mb-1 sm:mb-2 text-[var(--color-accent)]" />
+                <div class="text-xs sm:text-sm font-medium">{t("onboarding.modeSingle")}</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5 sm:mt-1 hidden sm:block">
                   {t("onboarding.modeSingleDesc")}
                 </div>
               </button>
               <button
                 type="button"
                 onClick={() => onModeChange("multi")}
-                class={`p-4 rounded-lg border-2 text-left transition-colors ${
+                class={`p-2 sm:p-4 rounded-lg border-2 text-left transition-colors ${
                   selectedMode === "multi"
                     ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
                     : "border-[var(--color-border)] hover:border-[var(--color-accent)]/50"
                 }`}
               >
-                <LayoutGrid class="w-5 h-5 mb-2 text-[var(--color-accent)]" />
-                <div class="text-sm font-medium">{t("onboarding.modeMulti")}</div>
-                <div class="text-xs text-[var(--color-text-muted)] mt-1">
+                <LayoutGrid class="w-4 h-4 sm:w-5 sm:h-5 mb-1 sm:mb-2 text-[var(--color-accent)]" />
+                <div class="text-xs sm:text-sm font-medium">{t("onboarding.modeMulti")}</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5 sm:mt-1 hidden sm:block">
                   {t("onboarding.modeMultiDesc")}
                 </div>
               </button>
             </div>
           </div>
 
-          <div class="mb-6">
+          <div class="mb-4 sm:mb-6">
             <Toggle
               checked={showTour}
               onChange={onShowTourChange}
@@ -657,9 +672,9 @@ function ConnectStep({
 
       {!connecting && !connected && error && (
         <>
-          <StatusIcon variant="error" class="mx-auto mb-4" />
-          <h2 class="text-lg font-semibold mb-2">{t("onboarding.failed")}</h2>
-          <p class="text-sm text-[var(--color-error)] mb-4">{error}</p>
+          <StatusIcon variant="error" size="sm" class="mx-auto mb-3 sm:mb-4" />
+          <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">{t("onboarding.failed")}</h2>
+          <p class="text-xs sm:text-sm text-[var(--color-error)] mb-3 sm:mb-4">{error}</p>
 
           <HintBox
             title={t("onboarding.failedHints")}
@@ -669,7 +684,7 @@ function ConnectStep({
               t("onboarding.hint3"),
               t("onboarding.hint4"),
             ]}
-            class="text-left mb-6"
+            class="text-left mb-4 sm:mb-6 text-xs sm:text-sm"
           />
 
           <Button
