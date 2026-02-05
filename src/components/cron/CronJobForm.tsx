@@ -70,7 +70,7 @@ export function CronJobForm({
   const errors = formErrors.value;
 
   return (
-    <div class="space-y-5">
+    <div class="space-y-4 sm:space-y-5">
       {/* Name */}
       <FormField label={t("cron.form.name")} error={errors.name}>
         <Input
@@ -101,7 +101,7 @@ export function CronJobForm({
           />
           {editScheduleKind.value === "cron" && (
             <div class="space-y-3">
-              <div class="grid grid-cols-2 gap-3">
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <Input
                   value={editScheduleExpr.value}
                   onInput={(e) => (editScheduleExpr.value = (e.target as HTMLInputElement).value)}
@@ -154,7 +154,7 @@ export function CronJobForm({
       </FormField>
 
       {/* Session Target & Wake Mode */}
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         <FormField label={t("cron.form.sessionTarget")} hint={t("cron.form.sessionTargetHint")}>
           <Dropdown
             value={editSessionTarget.value}

@@ -89,26 +89,36 @@ export function CronJobModal({
       title={isEdit && job ? job.name : t("cron.createJob")}
       size="xl"
       footer={
-        <div class="flex items-center justify-between">
-          <div>
-            {isEdit &&
-              job &&
-              (isDeleting ? (
-                <div class="flex items-center gap-2">
-                  <span class="text-sm text-[var(--color-error)]">{t("cron.confirmDelete")}</span>
-                  <Button size="sm" variant="ghost" onClick={() => onSetDeleting(false)}>
-                    {t("actions.cancel")}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="danger"
-                    icon={<Trash2 class="w-4 h-4" />}
-                    onClick={onDelete}
-                  >
-                    {t("actions.delete")}
-                  </Button>
-                </div>
-              ) : (
+        isDeleting ? (
+          <div class="space-y-3">
+            <p class="text-sm text-[var(--color-error)] text-center sm:text-left">
+              {t("cron.confirmDelete")}
+            </p>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+              <Button
+                variant="ghost"
+                onClick={() => onSetDeleting(false)}
+                fullWidth
+                class="sm:w-auto"
+              >
+                {t("actions.cancel")}
+              </Button>
+              <Button
+                variant="danger"
+                icon={<Trash2 class="w-4 h-4" />}
+                onClick={onDelete}
+                fullWidth
+                class="sm:w-auto"
+              >
+                {t("actions.delete")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            {/* Delete button (edit mode) */}
+            <div class="order-last sm:order-first">
+              {isEdit && job && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -118,59 +128,63 @@ export function CronJobModal({
                 >
                   {t("actions.delete")}
                 </Button>
-              ))}
-          </div>
-          <div class="flex items-center gap-4">
-            <div class="flex items-center gap-2">
-              <Toggle
-                checked={editEnabled.value}
-                onChange={(checked) => (editEnabled.value = checked)}
-              />
-              <span class="text-sm text-[var(--color-text-secondary)]">
-                {editEnabled.value ? t("cron.enabled") : t("cron.disabled")}
-              </span>
+              )}
             </div>
-            <div class="flex items-center gap-2">
-              <Button variant="secondary" onClick={onClose}>
-                {t("actions.cancel")}
-              </Button>
-              <Button onClick={onSave} disabled={isSaving}>
-                {isSaving ? (
-                  <Spinner size="sm" />
-                ) : isEdit ? (
-                  t("actions.save")
-                ) : (
-                  t("actions.create")
-                )}
-              </Button>
+            {/* Toggle + Save/Cancel */}
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div class="flex items-center justify-between sm:justify-start gap-2">
+                <span class="text-sm text-[var(--color-text-secondary)]">
+                  {editEnabled.value ? t("cron.enabled") : t("cron.disabled")}
+                </span>
+                <Toggle
+                  checked={editEnabled.value}
+                  onChange={(checked) => (editEnabled.value = checked)}
+                />
+              </div>
+              <div class="flex gap-2">
+                <Button variant="secondary" onClick={onClose} fullWidth class="sm:w-auto">
+                  {t("actions.cancel")}
+                </Button>
+                <Button onClick={onSave} disabled={isSaving} fullWidth class="sm:w-auto">
+                  {isSaving ? (
+                    <Spinner size="sm" />
+                  ) : isEdit ? (
+                    t("actions.save")
+                  ) : (
+                    t("actions.create")
+                  )}
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
+        )
       }
     >
-      <div class="space-y-6">
+      <div class="space-y-4 sm:space-y-6">
         {/* Status Summary (edit mode only) */}
         {isEdit && job && status && (
           <>
-            <div class="flex items-center gap-4 p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-              <div
-                class={`p-3 rounded-xl ${job.enabled ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"}`}
-              >
-                <Clock
-                  class={`w-6 h-6 ${job.enabled ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"}`}
-                />
-              </div>
-              <div class="flex-1">
-                <div class="flex items-center gap-2 mb-1">
-                  <Badge variant={status.variant} size="sm">
-                    {status.label}
-                  </Badge>
-                  <Badge variant={job.sessionTarget === "main" ? "success" : "default"} size="sm">
-                    {job.sessionTarget}
-                  </Badge>
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-3 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+              <div class="flex items-center gap-3 flex-1 min-w-0">
+                <div
+                  class={`p-2 sm:p-3 rounded-xl flex-shrink-0 ${job.enabled ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"}`}
+                >
+                  <Clock
+                    class={`w-5 h-5 sm:w-6 sm:h-6 ${job.enabled ? "text-[var(--color-success)]" : "text-[var(--color-text-muted)]"}`}
+                  />
                 </div>
-                <div class="text-sm text-[var(--color-text-muted)]">
-                  {formatSchedule(job.schedule)}
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-1.5 mb-1">
+                    <Badge variant={status.variant} size="sm">
+                      {status.label}
+                    </Badge>
+                    <Badge variant={job.sessionTarget === "main" ? "success" : "default"} size="sm">
+                      {job.sessionTarget}
+                    </Badge>
+                  </div>
+                  <div class="text-xs sm:text-sm text-[var(--color-text-muted)] truncate">
+                    {formatSchedule(job.schedule)}
+                  </div>
                 </div>
               </div>
               <Button
@@ -179,12 +193,14 @@ export function CronJobModal({
                 icon={<Play class="w-4 h-4" />}
                 onClick={() => onRun(job)}
                 disabled={isRunning}
+                fullWidth
+                class="sm:w-auto"
               >
                 {t("cron.runNow")}
               </Button>
             </div>
 
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-3 gap-2 sm:gap-4">
               <MiniStat value={formatNextRun(job)} label={t("cron.nextRun")} />
               <MiniStat value={formatLastRun(job)} label={t("cron.lastRun")} />
               <MiniStat
