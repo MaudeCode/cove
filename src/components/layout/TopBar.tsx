@@ -9,6 +9,7 @@ import { t } from "@/lib/i18n";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
 import { sidebarOpen, previousRoute } from "@/signals/ui";
 import { isSearchOpen } from "@/signals/chat";
+import { HeartbeatIndicator } from "@/components/chat/HeartbeatIndicator";
 import { IconButton } from "@/components/ui/IconButton";
 import { CoveLogo } from "@/components/ui/CoveLogo";
 import { XIcon, MenuIcon, SettingsIcon, SearchIcon } from "@/components/ui/icons";
@@ -61,8 +62,9 @@ export function TopBar() {
             );
           })()}
 
-          {/* Search button - mobile only */}
-          <div class="sm:hidden">
+          {/* Search + Heartbeat - mobile only */}
+          <div class="sm:hidden flex items-center gap-2">
+            <HeartbeatIndicator />
             <IconButton
               icon={<SearchIcon />}
               label={t("chat.search")}
