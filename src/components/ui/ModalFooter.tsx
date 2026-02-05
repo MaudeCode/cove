@@ -115,7 +115,7 @@ interface EditFooterProps {
 
 /**
  * Standard edit footer - delete on left, cancel/save on right.
- * Stacks vertically on mobile with delete at bottom, extra content below buttons.
+ * On mobile: buttons on top, delete + extra content on bottom row.
  */
 export function EditFooter({
   onCancel,
@@ -127,41 +127,36 @@ export function EditFooter({
   extraContent,
 }: EditFooterProps) {
   return (
-    <div class="space-y-3 sm:space-y-0">
-      {/* Main row: delete left, buttons right */}
-      <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
-        {/* Delete button (edit mode only) */}
-        <div>
-          {isEdit && onDeleteClick && (
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<Trash2 class="w-4 h-4" />}
-              onClick={onDeleteClick}
-              class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-            >
-              {t("actions.delete")}
-            </Button>
-          )}
-        </div>
-
-        {/* Right side: extra content (desktop) + buttons */}
-        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-          {/* Extra content - hidden on mobile, shown on desktop */}
-          {extraContent && <div class="hidden sm:block">{extraContent}</div>}
-          <div class="flex flex-col sm:flex-row gap-2">
-            <Button variant="secondary" onClick={onCancel} fullWidth class="sm:w-auto">
-              {t("actions.cancel")}
-            </Button>
-            <Button onClick={onSave} disabled={isSaving} fullWidth class="sm:w-auto">
-              {isSaving ? <Spinner size="sm" /> : saveLabel || t("actions.save")}
-            </Button>
-          </div>
-        </div>
+    <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* Bottom row on mobile: delete + extra content */}
+      <div class="flex items-center justify-between sm:justify-start gap-3">
+        {isEdit && onDeleteClick && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<Trash2 class="w-4 h-4" />}
+            onClick={onDeleteClick}
+            class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+          >
+            {t("actions.delete")}
+          </Button>
+        )}
+        {/* Extra content - shown on mobile in this row, desktop too */}
+        {extraContent && <div class="sm:hidden">{extraContent}</div>}
       </div>
 
-      {/* Extra content - shown on mobile only, below buttons */}
-      {extraContent && <div class="sm:hidden">{extraContent}</div>}
+      {/* Top row on mobile: extra content (desktop) + buttons */}
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        {extraContent && <div class="hidden sm:block">{extraContent}</div>}
+        <div class="flex flex-col sm:flex-row gap-2">
+          <Button variant="secondary" onClick={onCancel} fullWidth class="sm:w-auto">
+            {t("actions.cancel")}
+          </Button>
+          <Button onClick={onSave} disabled={isSaving} fullWidth class="sm:w-auto">
+            {isSaving ? <Spinner size="sm" /> : saveLabel || t("actions.save")}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }
