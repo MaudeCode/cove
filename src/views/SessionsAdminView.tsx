@@ -635,22 +635,22 @@ function SessionDetailModal() {
           </FormField>
 
           <FormField label={t("sessions.admin.overrides")}>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <FormField label={t("sessions.admin.thinking")}>
+            <div class="grid grid-cols-3 gap-2 sm:gap-4">
+              <FormField label={t("sessions.admin.thinking")} class="space-y-1">
                 <Dropdown
                   value={editThinking.value}
                   onChange={(val) => (editThinking.value = val)}
                   options={LEVEL_OPTIONS}
                 />
               </FormField>
-              <FormField label={t("sessions.admin.verbose")}>
+              <FormField label={t("sessions.admin.verbose")} class="space-y-1">
                 <Dropdown
                   value={editVerbose.value}
                   onChange={(val) => (editVerbose.value = val)}
                   options={LEVEL_OPTIONS}
                 />
               </FormField>
-              <FormField label={t("sessions.admin.reasoning")}>
+              <FormField label={t("sessions.admin.reasoning")} class="space-y-1">
                 <Dropdown
                   value={editReasoning.value}
                   onChange={(val) => (editReasoning.value = val)}
