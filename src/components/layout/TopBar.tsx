@@ -8,9 +8,10 @@ import { route, getCurrentUrl } from "preact-router";
 import { t } from "@/lib/i18n";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
 import { sidebarOpen, previousRoute } from "@/signals/ui";
+import { isSearchOpen } from "@/signals/chat";
 import { IconButton } from "@/components/ui/IconButton";
 import { CoveLogo } from "@/components/ui/CoveLogo";
-import { XIcon, MenuIcon, SettingsIcon } from "@/components/ui/icons";
+import { XIcon, MenuIcon, SettingsIcon, SearchIcon } from "@/components/ui/icons";
 import { UsageBadge } from "@/components/usage/UsageBadge";
 
 export function TopBar() {
@@ -56,6 +57,17 @@ export function TopBar() {
               </div>
             );
           })()}
+
+          {/* Search button - mobile only */}
+          <div class="sm:hidden">
+            <IconButton
+              icon={<SearchIcon />}
+              label={t("chat.search")}
+              onClick={() => (isSearchOpen.value = true)}
+              variant="ghost"
+              size="md"
+            />
+          </div>
 
           {/* Usage badge - only shows when Anthropic OAuth is active */}
           <UsageBadge />
