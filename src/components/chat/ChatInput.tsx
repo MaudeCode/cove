@@ -262,7 +262,7 @@ export function ChatInput({
             placeholder={placeholder || t("chat.placeholder")}
             rows={1}
             class={`
-              w-full px-4 pb-1 text-sm rounded-t-xl resize-none
+              w-full px-4 pb-1 text-base sm:text-sm rounded-t-xl resize-none
               bg-transparent border-none
               placeholder:text-[var(--color-text-muted)]
               disabled:opacity-50 disabled:cursor-not-allowed
