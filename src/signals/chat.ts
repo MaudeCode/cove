@@ -21,7 +21,7 @@ import {
 } from "@/lib/constants";
 import { isHeartbeatMessage } from "@/lib/message-detection";
 import { getMessagesCache, setMessagesCache } from "@/lib/storage";
-import { effectiveSessionKey } from "@/signals/sessions";
+import { isForActiveSession } from "@/signals/sessions";
 
 // ============================================
 // Message Cache
@@ -364,12 +364,7 @@ export function completeRun(runId: string, message?: Message): void {
   if (message) {
     // Only add message to global messages if this run belongs to the active session.
     // Messages from other sessions will be loaded from history when user switches to them.
-    // Use effectiveSessionKey to handle "main" → "agent:main:main" alias resolution.
-    const currentSession = effectiveSessionKey.value;
-    const runSession = run?.sessionKey;
-    const isActiveSession = !runSession || !currentSession || runSession === currentSession;
-
-    if (isActiveSession) {
+    if (isForActiveSession(run?.sessionKey)) {
       // If run was created on-the-fly (after refresh), try to update existing message
       // instead of adding a duplicate
       if (run?.sessionKey === "unknown") {

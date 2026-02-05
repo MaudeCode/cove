@@ -92,6 +92,18 @@ export const activeSession = computed(
   () => sessions.value.find((s) => s.key === effectiveSessionKey.value) ?? null,
 );
 
+/**
+ * Check if an event/run belongs to the currently active session.
+ * Returns true if:
+ * - eventSessionKey is undefined/null (allow for backwards compat)
+ * - No active session (allow processing)
+ * - Keys match
+ */
+export function isForActiveSession(eventSessionKey: string | undefined | null): boolean {
+  const current = effectiveSessionKey.value;
+  return !eventSessionKey || !current || eventSessionKey === current;
+}
+
 /** Get display label for a session (for search matching) */
 function getSessionDisplayLabel(session: Session): string {
   if (session.label) return session.label;
