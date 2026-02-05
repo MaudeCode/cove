@@ -162,12 +162,13 @@ function handleCompactionEvent(evt: AgentEvent): void {
 /**
  * Handle assistant stream events (immediate text updates, not throttled).
  * These arrive faster than chat delta events which are throttled at 150ms.
+ * Uses `delta` to append new text rather than `text` which would overwrite.
  */
 function handleAssistantStreamEvent(evt: AgentEvent): void {
   const { runId, sessionKey, data } = evt;
-  const text = typeof data?.text === "string" ? data.text : null;
+  const delta = typeof data?.delta === "string" ? data.delta : null;
 
-  if (!text) return;
+  if (!delta) return;
 
   // Session filter - only process events for the active session
   if (!isForActiveSession(sessionKey)) {
@@ -185,10 +186,9 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
 
   if (!run) return;
 
-  // Only update if new text is longer or equal (prevents late/stale updates from overwriting)
-  if (text.length >= run.content.length) {
-    updateRunContent(runId, text, run.toolCalls);
-  }
+  // Append delta to existing content
+  const newContent = run.content + delta;
+  updateRunContent(runId, newContent, run.toolCalls);
 }
 
 /**
