@@ -530,54 +530,60 @@ function SessionDetailModal() {
       title={session.label || session.displayName || t("sessions.admin.sessionDetails")}
       size="xl"
       footer={
-        <div class="flex items-center justify-between">
-          <div>
-            {isDeleting.value ? (
-              <div class="flex items-center gap-2">
-                <span class="text-sm text-[var(--color-error)]">
-                  {t("sessions.admin.confirmDelete")}
-                </span>
-                <Button size="sm" variant="ghost" onClick={() => (isDeleting.value = false)}>
-                  {t("actions.cancel")}
-                </Button>
-                <Button
-                  size="sm"
-                  variant="danger"
-                  icon={<Trash2 class="w-4 h-4" />}
-                  onClick={deleteSession}
-                >
-                  {t("actions.delete")}
-                </Button>
-              </div>
-            ) : (
+        isDeleting.value ? (
+          <div class="space-y-3">
+            <p class="text-sm text-[var(--color-error)] text-center sm:text-left">
+              {t("sessions.admin.confirmDelete")}
+            </p>
+            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
               <Button
-                size="sm"
                 variant="ghost"
+                onClick={() => (isDeleting.value = false)}
+                fullWidth
+                class="sm:w-auto"
+              >
+                {t("actions.cancel")}
+              </Button>
+              <Button
+                variant="danger"
                 icon={<Trash2 class="w-4 h-4" />}
-                onClick={() => (isDeleting.value = true)}
-                class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+                onClick={deleteSession}
+                fullWidth
+                class="sm:w-auto"
               >
                 {t("actions.delete")}
               </Button>
-            )}
+            </div>
           </div>
-          <div class="flex items-center gap-2">
-            <Button variant="secondary" onClick={closeSessionDetail}>
-              {t("actions.cancel")}
+        ) : (
+          <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+            <Button
+              size="sm"
+              variant="ghost"
+              icon={<Trash2 class="w-4 h-4" />}
+              onClick={() => (isDeleting.value = true)}
+              class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+            >
+              {t("actions.delete")}
             </Button>
-            <Button onClick={saveSession} disabled={isSaving.value}>
-              {isSaving.value ? <Spinner size="sm" /> : t("actions.save")}
-            </Button>
+            <div class="flex flex-col sm:flex-row gap-2">
+              <Button variant="secondary" onClick={closeSessionDetail} fullWidth class="sm:w-auto">
+                {t("actions.cancel")}
+              </Button>
+              <Button onClick={saveSession} disabled={isSaving.value} fullWidth class="sm:w-auto">
+                {isSaving.value ? <Spinner size="sm" /> : t("actions.save")}
+              </Button>
+            </div>
           </div>
-        </div>
+        )
       }
     >
-      <div class="space-y-6">
+      <div class="space-y-4 sm:space-y-6">
         {/* Session Info */}
-        <div class="flex items-start gap-4 p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+        <div class="flex items-start gap-3 p-3 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
           <KindIconWrapper kind={kind} size="md" />
           <div class="flex-1 min-w-0">
-            <div class="flex items-center gap-2 mb-1">
+            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
               <Badge variant={style.badgeVariant} size="sm">
                 {getKindLabel(kind)}
               </Badge>
@@ -587,7 +593,9 @@ function SessionDetailModal() {
                 </Badge>
               )}
             </div>
-            <code class="text-sm text-[var(--color-text-muted)] break-all">{session.key}</code>
+            <code class="text-xs sm:text-sm text-[var(--color-text-muted)] break-all">
+              {session.key}
+            </code>
           </div>
         </div>
 
@@ -616,7 +624,7 @@ function SessionDetailModal() {
         </div>
 
         {/* Edit Form */}
-        <div class="space-y-5">
+        <div class="space-y-4 sm:space-y-5">
           <FormField label={t("sessions.admin.label")} hint={t("sessions.admin.labelHelp")}>
             <Input
               value={editLabel.value}
