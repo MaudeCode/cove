@@ -50,9 +50,15 @@ const slackPaths = [
 const nostrPath =
   "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z";
 
-// BlueBubbles logo (chat bubble with inner bubble)
-const blueBubblesPath =
-  "M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-9 12H7v-2h4v2zm6-4H7V8h10v2z";
+// BlueBubbles logo (chat bubble with three dots)
+// Simplified from official logo: speech bubble outline + 3 dots
+const blueBubblesOutline =
+  "M12 2C6.48 2 2 6.48 2 12c0 2.08.64 4.01 1.73 5.6L2 22l4.4-1.73C8 21.36 9.92 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z";
+const blueBubblesDots = [
+  { cx: 7.5, cy: 12, r: 1.5 },
+  { cx: 12, cy: 12, r: 1.5 },
+  { cx: 16.5, cy: 12, r: 1.5 },
+];
 
 interface ChannelIconData {
   path: string;
@@ -70,8 +76,7 @@ const channelIcons: Record<string, ChannelIconData> = {
   mastodon: { path: siMastodon.path, hex: siMastodon.hex, title: siMastodon.title },
   imessage: { path: appleMessagesPath, hex: "34C759", title: "iMessage" },
   nostr: { path: nostrPath, hex: "8B5CF6", title: "Nostr" },
-  bluebubbles: { path: blueBubblesPath, hex: "2196F3", title: "BlueBubbles" },
-  // Slack and Webchat handled separately (multicolor / globe)
+  // Slack, BlueBubbles, and Webchat handled separately
 };
 
 interface ChannelIconProps {
@@ -104,6 +109,28 @@ export function ChannelIcon({
         <title>Slack</title>
         {slackPaths.map((p, i) => (
           <path key={i} fill={colored ? p.color : "currentColor"} d={p.path} />
+        ))}
+      </svg>
+    );
+  }
+
+  // BlueBubbles: chat bubble with three dots
+  if (id === "bluebubbles") {
+    const color = colored ? "#2196F3" : "currentColor";
+    return (
+      <svg
+        role="img"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+        width={size}
+        height={size}
+        class={className}
+        aria-label="BlueBubbles"
+      >
+        <title>BlueBubbles</title>
+        <path fill="none" stroke={color} stroke-width="2" d={blueBubblesOutline} />
+        {blueBubblesDots.map((dot, i) => (
+          <circle key={i} cx={dot.cx} cy={dot.cy} r={dot.r} fill={color} />
         ))}
       </svg>
     );
