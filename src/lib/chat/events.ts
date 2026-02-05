@@ -17,6 +17,7 @@ import {
   abortRun as abortRunSignal,
   isCompacting,
 } from "@/signals/chat";
+import { activeSessionKey } from "@/signals/sessions";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatEvent, AgentEvent } from "@/types/chat";
 import { parseMessageContent, mergeToolCalls } from "@/types/chat";
@@ -51,6 +52,24 @@ export function subscribeToChatEvents(): () => void {
       return;
     }
     const evt = payload;
+
+    // Filter out events from other sessions (except compaction which is global)
+    const currentSession = activeSessionKey.value;
+    if (
+      evt.stream !== "compaction" &&
+      evt.sessionKey &&
+      currentSession &&
+      evt.sessionKey !== currentSession
+    ) {
+      log.chat.debug(
+        "Ignoring agent event from different session:",
+        evt.sessionKey,
+        "current:",
+        currentSession,
+      );
+      return;
+    }
+
     if (evt.stream === "tool") {
       handleToolEvent(evt);
     } else if (evt.stream === "lifecycle") {
@@ -279,9 +298,21 @@ function handleToolEvent(evt: AgentEvent): void {
  * Handle a chat event from the gateway.
  */
 function handleChatEvent(event: ChatEvent): void {
-  const { runId, state, errorMessage } = event;
+  const { runId, state, errorMessage, sessionKey } = event;
 
-  log.chat.debug("Chat event:", state, runId, "session:", event.sessionKey);
+  log.chat.debug("Chat event:", state, runId, "session:", sessionKey);
+
+  // Filter out events from other sessions
+  const currentSession = activeSessionKey.value;
+  if (sessionKey && currentSession && sessionKey !== currentSession) {
+    log.chat.debug(
+      "Ignoring chat event from different session:",
+      sessionKey,
+      "current:",
+      currentSession,
+    );
+    return;
+  }
 
   switch (state) {
     case "delta":
