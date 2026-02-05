@@ -115,8 +115,8 @@ export function SearchBar() {
           )}
         </div>
 
-        {/* Date range */}
-        <div class="flex items-center gap-1.5 flex-shrink-0">
+        {/* Date range - hidden on mobile */}
+        <div class="hidden sm:flex items-center gap-1.5 flex-shrink-0">
           <DatePicker
             value={dateRangeStart.value}
             onChange={(date) => (dateRangeStart.value = date)}

@@ -283,6 +283,12 @@ function getArrowStyles(placement: TooltipPlacement): string {
 /**
  * Tooltip trigger wrapper
  */
+// Check if device is touch-only (no mouse)
+const isTouchDevice = () => {
+  if (typeof window === "undefined") return false;
+  return "ontouchstart" in window || navigator.maxTouchPoints > 0;
+};
+
 export function Tooltip({
   content,
   placement = "top",
@@ -295,8 +301,11 @@ export function Tooltip({
   const timeoutRef = useRef<number | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
 
+  // Disable tooltips on touch devices
+  const isDisabled = disabled || isTouchDevice();
+
   const showTooltip = useCallback(() => {
-    if (disabled || !context) return;
+    if (isDisabled || !context) return;
 
     timeoutRef.current = window.setTimeout(() => {
       if (triggerRef.current) {
@@ -304,7 +313,7 @@ export function Tooltip({
         context.show({ content, placement, triggerRect: rect });
       }
     }, delay);
-  }, [context, content, placement, delay, disabled]);
+  }, [context, content, placement, delay, isDisabled]);
 
   const hideTooltip = useCallback(() => {
     if (timeoutRef.current) {
