@@ -5,7 +5,7 @@
  * Route: /cron
  */
 
-import { signal, computed } from "@preact/signals";
+import { signal, computed, useComputed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
@@ -72,41 +72,6 @@ const formErrors = signal<Record<string, string>>({});
 // ============================================
 // Computed
 // ============================================
-
-/** Check if form has changes from the original job (edit mode) */
-const hasFormChanges = computed(() => {
-  const job = selectedJob.value;
-  // In create mode, always allow save if form is valid
-  if (!job) return true;
-
-  // Compare each field to original
-  if (editName.value !== job.name) return true;
-  if (editDescription.value !== (job.description ?? "")) return true;
-  if (editEnabled.value !== job.enabled) return true;
-  if (editScheduleKind.value !== job.schedule.kind) return true;
-  if (editWakeMode.value !== job.wakeMode) return true;
-  if (editSessionTarget.value !== job.sessionTarget) return true;
-
-  // Schedule-specific comparisons
-  if (job.schedule.kind === "cron" && editScheduleKind.value === "cron") {
-    if (editScheduleExpr.value !== job.schedule.expr) return true;
-    if (editScheduleTz.value !== (job.schedule.tz ?? "")) return true;
-  } else if (job.schedule.kind === "every" && editScheduleKind.value === "every") {
-    if (editScheduleEveryMs.value !== String(job.schedule.everyMs)) return true;
-  } else if (job.schedule.kind === "at" && editScheduleKind.value === "at") {
-    if (editScheduleAtMs.value !== String(job.schedule.atMs)) return true;
-  }
-
-  // Payload comparisons
-  if (job.payload.kind === "systemEvent" && editSessionTarget.value === "main") {
-    if (editPayloadText.value !== job.payload.text) return true;
-  } else if (job.payload.kind === "agentTurn" && editSessionTarget.value === "isolated") {
-    if (editPayloadMessage.value !== job.payload.message) return true;
-    if (editPayloadModel.value !== (job.payload.model ?? "")) return true;
-  }
-
-  return false;
-});
 
 const filteredJobs = computed(() => {
   let result = cronJobs.value;
@@ -411,6 +376,41 @@ export function CronView(_props: RouteProps) {
       loadCronJobs();
     }
   }, [isConnected.value]);
+
+  // Check if form has changes from the original job (useComputed ensures reactivity)
+  const hasFormChanges = useComputed(() => {
+    const job = selectedJob.value;
+    // In create mode, always allow save if form is valid
+    if (!job) return true;
+
+    // Compare each field to original
+    if (editName.value !== job.name) return true;
+    if (editDescription.value !== (job.description ?? "")) return true;
+    if (editEnabled.value !== job.enabled) return true;
+    if (editScheduleKind.value !== job.schedule.kind) return true;
+    if (editWakeMode.value !== job.wakeMode) return true;
+    if (editSessionTarget.value !== job.sessionTarget) return true;
+
+    // Schedule-specific comparisons
+    if (job.schedule.kind === "cron" && editScheduleKind.value === "cron") {
+      if (editScheduleExpr.value !== job.schedule.expr) return true;
+      if (editScheduleTz.value !== (job.schedule.tz ?? "")) return true;
+    } else if (job.schedule.kind === "every" && editScheduleKind.value === "every") {
+      if (editScheduleEveryMs.value !== String(job.schedule.everyMs)) return true;
+    } else if (job.schedule.kind === "at" && editScheduleKind.value === "at") {
+      if (editScheduleAtMs.value !== String(job.schedule.atMs)) return true;
+    }
+
+    // Payload comparisons
+    if (job.payload.kind === "systemEvent" && editSessionTarget.value === "main") {
+      if (editPayloadText.value !== job.payload.text) return true;
+    } else if (job.payload.kind === "agentTurn" && editSessionTarget.value === "isolated") {
+      if (editPayloadMessage.value !== job.payload.message) return true;
+      if (editPayloadModel.value !== (job.payload.model ?? "")) return true;
+    }
+
+    return false;
+  });
 
   const counts = jobCounts.value;
 
