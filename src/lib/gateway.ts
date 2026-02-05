@@ -250,7 +250,8 @@ export function probeGateway(url: string, signal?: AbortSignal): Promise<ProbeRe
         }
       };
 
-      probeWs.onerror = () => {
+      probeWs.onerror = (event) => {
+        log.gateway.error("Probe WebSocket error:", { url, event: event.type });
         fail("Connection failed");
       };
 
@@ -362,8 +363,15 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
         }
       };
 
-      ws.onerror = () => {
-        lastError.value = "WebSocket error";
+      ws.onerror = (event) => {
+        // WebSocket errors don't expose details for security reasons,
+        // but we can log what we have for debugging
+        log.gateway.error("WebSocket error:", {
+          url: config.url,
+          readyState: ws?.readyState,
+          event: event.type,
+        });
+        lastError.value = "WebSocket error - check console for details";
       };
 
       ws.onclose = (_event) => {
