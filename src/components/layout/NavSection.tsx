@@ -5,7 +5,7 @@
  * Open/closed state persists to localStorage per mode.
  */
 
-import { useSignal } from "@preact/signals";
+import { useComputed, useSignal } from "@preact/signals";
 import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { ChevronDownIcon, ExternalLinkIcon } from "@/components/ui/icons";
@@ -56,10 +56,13 @@ interface NavItemComponentProps {
 
 function NavItemComponent({ item }: NavItemComponentProps) {
   const itemPath = `/${item.id}`;
-  const isActive =
-    !item.external &&
-    (currentPath.value === itemPath ||
-      (item.id === "chat" && currentPath.value.startsWith("/chat")));
+  // Use useComputed to properly subscribe to currentPath changes
+  const isActive = useComputed(
+    () =>
+      !item.external &&
+      (currentPath.value === itemPath ||
+        (item.id === "chat" && currentPath.value.startsWith("/chat"))),
+  );
   const Icon = item.icon;
 
   // External link
@@ -92,7 +95,7 @@ function NavItemComponent({ item }: NavItemComponentProps) {
         w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm
         transition-all duration-200 ease-out
         ${
-          isActive
+          isActive.value
             ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
             : "hover:bg-[var(--color-bg-primary)] hover:shadow-soft-sm text-[var(--color-text-secondary)]"
         }
