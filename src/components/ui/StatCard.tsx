@@ -23,9 +23,19 @@ interface StatCardProps {
   highlight?: boolean;
   /** Click handler */
   onClick?: () => void;
+  /** Additional CSS classes */
+  class?: string;
 }
 
-export function StatCard({ icon: Icon, label, value, active, highlight, onClick }: StatCardProps) {
+export function StatCard({
+  icon: Icon,
+  label,
+  value,
+  active,
+  highlight,
+  onClick,
+  class: className,
+}: StatCardProps) {
   const isClickable = !!onClick;
 
   const content = (
@@ -56,6 +66,7 @@ export function StatCard({ icon: Icon, label, value, active, highlight, onClick 
         : "bg-[var(--color-bg-secondary)] border-2 border-transparent"
     }
     ${isClickable ? "hover:bg-[var(--color-bg-tertiary)] cursor-pointer" : ""}
+    ${className ?? ""}
   `;
 
   if (isClickable) {
