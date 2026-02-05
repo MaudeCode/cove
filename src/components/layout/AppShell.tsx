@@ -43,15 +43,27 @@ export function AppShell({ children }: AppShellProps) {
       <TopBar />
 
       <div class="flex-1 flex overflow-hidden">
-        {/* Sidebar - hidden on mobile when closed */}
+        {/* Mobile overlay when sidebar is open */}
+        {sidebarOpen.value && (
+          <div
+            class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => (sidebarOpen.value = false)}
+            aria-hidden="true"
+          />
+        )}
+
+        {/* Sidebar - fixed overlay on mobile, in-flow on desktop */}
         <aside
-          style={{ width: sidebarOpen.value ? `${sidebarWidth.value}px` : "0" }}
+          style={{ "--sidebar-width": `${sidebarWidth.value}px` } as React.CSSProperties}
           class={`
-            flex-shrink-0 p-2 pr-0
-            bg-[var(--color-bg-secondary)] overflow-hidden
-            ${sidebarResizing.value ? "" : "transition-all duration-200 ease-out"}
-            ${sidebarOpen.value ? "translate-x-0" : "-translate-x-full p-0"}
-            lg:translate-x-0 lg:p-2 lg:pr-0
+            fixed inset-y-0 left-0 z-50 w-72 p-2 pr-0 pt-16
+            bg-[var(--color-bg-secondary)]
+            transition-transform duration-200 ease-out
+            ${sidebarOpen.value ? "translate-x-0" : "-translate-x-full"}
+            lg:relative lg:inset-auto lg:z-auto lg:pt-2 lg:translate-x-0
+            lg:w-[var(--sidebar-width)]
+            ${!sidebarOpen.value && "lg:w-0 lg:p-0"}
+            ${sidebarResizing.value ? "lg:transition-none" : ""}
           `}
         >
           <div class="h-full rounded-xl bg-[var(--color-bg-surface)] border border-[var(--color-border)] shadow-soft-sm overflow-hidden">
@@ -72,17 +84,8 @@ export function AppShell({ children }: AppShellProps) {
           </div>
         )}
 
-        {/* Mobile overlay when sidebar is open */}
-        {sidebarOpen.value && (
-          <div
-            class="fixed inset-0 bg-black/50 z-40 lg:hidden"
-            onClick={() => (sidebarOpen.value = false)}
-            aria-hidden="true"
-          />
-        )}
-
         {/* Main content area - rounded panel */}
-        <main id="main-content" class="flex-1 flex flex-col overflow-hidden p-2 pl-0 lg:pl-0">
+        <main id="main-content" class="flex-1 flex flex-col overflow-hidden p-2 lg:pl-0">
           <div class="h-full rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)] shadow-soft overflow-hidden flex flex-col">
             {children}
           </div>

@@ -247,6 +247,7 @@
 
   "chat": {
     "placeholder": "Message (Enter to send, Shift+Enter for new line)",
+    "placeholderMobile": "Message...",
     "placeholderDisabled": "Connect to gateway to start chatting",
     "sending": "Sending...",
     "thinking": "Thinking...",

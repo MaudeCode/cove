@@ -259,7 +259,10 @@ export function ChatInput({
             onKeyDown={handleKeyDown}
             onPaste={onPaste}
             disabled={disabled}
-            placeholder={placeholder || t("chat.placeholder")}
+            placeholder={
+              placeholder ||
+              (window.innerWidth < 640 ? t("chat.placeholderMobile") : t("chat.placeholder"))
+            }
             rows={1}
             class={`
               w-full px-4 pb-1 text-base sm:text-sm rounded-t-xl resize-none
@@ -324,13 +327,13 @@ export function ChatInput({
                   type="button"
                   onClick={onAbort}
                   aria-label={t("actions.stop")}
-                  class="px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer
+                  class="p-2 sm:px-3 sm:py-1.5 rounded-lg flex items-center justify-center gap-1.5 cursor-pointer
                     bg-[var(--color-error)]/10 text-[var(--color-error)]
                     hover:bg-[var(--color-error)]/20
                     active:scale-95 transition-all duration-150"
                 >
                   <StopIcon class="w-4 h-4" />
-                  <span class="text-xs font-medium">{t("actions.stop")}</span>
+                  <span class="hidden sm:inline text-xs font-medium">{t("actions.stop")}</span>
                 </button>
               )}
 
@@ -340,7 +343,7 @@ export function ChatInput({
                 onClick={handleSend}
                 disabled={!canSend}
                 aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
-                class={`px-3 py-1.5 rounded-lg flex items-center justify-center gap-1.5
+                class={`p-2 sm:px-3 sm:py-1.5 rounded-lg flex items-center justify-center gap-1.5
                   transition-all duration-150 active:scale-95
                   ${
                     canSend
@@ -349,11 +352,9 @@ export function ChatInput({
                   }`}
               >
                 <SendIcon class="w-4 h-4" />
-                {(hasText || hasAttachments || isStreaming) && (
-                  <span class="text-xs font-medium">
-                    {isStreaming ? t("actions.queue") : t("actions.send")}
-                  </span>
-                )}
+                <span class="hidden sm:inline text-xs font-medium">
+                  {isStreaming ? t("actions.queue") : t("actions.send")}
+                </span>
               </button>
             </div>
           </div>
