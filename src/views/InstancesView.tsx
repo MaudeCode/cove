@@ -124,7 +124,6 @@ function InstanceCard({ presence }: { presence: SystemPresence }) {
 }
 
 /** Desktop table row for an instance */
-/** Desktop table row for an instance */
 function InstanceRow({ presence }: { presence: SystemPresence }) {
   const Icon = getDeviceIcon(presence);
   const isGateway = presence.mode === "gateway";
