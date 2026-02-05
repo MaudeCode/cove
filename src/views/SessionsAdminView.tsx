@@ -321,6 +321,73 @@ function KindIconWrapper({ kind, size = "sm" }: { kind: SessionKind; size?: "sm"
   );
 }
 
+/** Mobile card view for a session */
+function SessionCard({ session }: { session: Session }) {
+  const kind = getSessionDisplayKind(session);
+  const style = getKindStyle(kind);
+  const displayName = getDisplayName(session);
+
+  return (
+    <button
+      type="button"
+      class="w-full p-3 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors text-left"
+      onClick={() => openSessionDetail(session)}
+    >
+      <div class="flex items-start gap-3">
+        <KindIconWrapper kind={kind} />
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 mb-0.5">
+            <span class="font-medium truncate">{displayName}</span>
+            <Badge variant={style.badgeVariant} size="sm">
+              {getKindLabel(kind)}
+            </Badge>
+          </div>
+          <div class="text-xs text-[var(--color-text-muted)] font-mono truncate mb-2">
+            {session.key}
+          </div>
+          <div class="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+            <span class="flex items-center gap-1">
+              <Clock class="w-3 h-3" />
+              {session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—"}
+            </span>
+            <span class="flex items-center gap-1">
+              <Hash class="w-3 h-3" />
+              {formatTokenCount(session)}
+            </span>
+          </div>
+        </div>
+        <div class="flex items-center gap-1 flex-shrink-0">
+          {isMultiChatMode.value && (
+            <IconButton
+              icon={<MessageSquare class="w-4 h-4" />}
+              label={t("sessions.admin.openInChat")}
+              size="sm"
+              variant="ghost"
+              onClick={(e) => {
+                e.stopPropagation();
+                openInChat(session.key);
+              }}
+            />
+          )}
+          <IconButton
+            icon={<Trash2 class="w-4 h-4" />}
+            label={t("actions.delete")}
+            size="sm"
+            variant="ghost"
+            onClick={(e) => {
+              e.stopPropagation();
+              openSessionDetail(session);
+              isDeleting.value = true;
+            }}
+            class="text-[var(--color-text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+          />
+        </div>
+      </div>
+    </button>
+  );
+}
+
+/** Desktop table row for a session */
 function SessionRow({ session }: { session: Session }) {
   const kind = getSessionDisplayKind(session);
   const displayName = getDisplayName(session);
@@ -339,7 +406,7 @@ function SessionRow({ session }: { session: Session }) {
       tabIndex={isEditing ? -1 : 0}
     >
       {/* Name & Key */}
-      <td class="py-3 px-3 sm:px-4">
+      <td class="py-3 px-4">
         <div class="flex items-center gap-3">
           <KindIconWrapper kind={kind} />
           <div class="min-w-0 flex-1">
@@ -389,8 +456,8 @@ function SessionRow({ session }: { session: Session }) {
         </div>
       </td>
 
-      {/* Model - hidden on mobile */}
-      <td class="py-3 px-4 hidden md:table-cell">
+      {/* Model */}
+      <td class="py-3 px-4">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Cpu class="w-3.5 h-3.5 flex-shrink-0" />
           <span class="truncate max-w-[120px]" title={session.model || "Default"}>
@@ -399,8 +466,8 @@ function SessionRow({ session }: { session: Session }) {
         </div>
       </td>
 
-      {/* Last Active - hidden on small mobile */}
-      <td class="py-3 px-4 whitespace-nowrap hidden sm:table-cell">
+      {/* Last Active */}
+      <td class="py-3 px-4 whitespace-nowrap">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Clock class="w-3.5 h-3.5 flex-shrink-0" />
           <span>{session.updatedAt ? formatTimestamp(session.updatedAt) : "—"}</span>
@@ -417,7 +484,7 @@ function SessionRow({ session }: { session: Session }) {
       </td>
 
       {/* Actions */}
-      <td class="py-3 px-3 sm:px-4">
+      <td class="py-3 px-4">
         <div class="flex items-center gap-1">
           {isMultiChatMode.value && (
             <IconButton
@@ -650,15 +717,31 @@ export function SessionsAdminView(_props: RouteProps) {
             }
           />
 
-          {/* Stats Cards */}
+          {/* Mobile Search */}
+          {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
+            <div class="relative md:hidden">
+              <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+              <Input
+                type="text"
+                value={searchQuery.value}
+                onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                placeholder={t("sessions.admin.searchPlaceholder")}
+                class="pl-10"
+                fullWidth
+              />
+            </div>
+          )}
+
+          {/* Stats Cards - scrollable on mobile */}
           {isConnected.value && !isLoading.value && (
-            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+            <div class="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible">
               <StatCard
                 icon={MessageSquare}
                 label={t("sessions.admin.stats.total")}
                 value={counts.total}
                 active={kindFilter.value === "all"}
                 onClick={() => (kindFilter.value = "all")}
+                class="flex-shrink-0 w-24 sm:w-auto"
               />
               <StatCard
                 icon={getKindStyle("main").icon}
@@ -666,6 +749,7 @@ export function SessionsAdminView(_props: RouteProps) {
                 value={counts.main}
                 active={kindFilter.value === "main"}
                 onClick={() => (kindFilter.value = "main")}
+                class="flex-shrink-0 w-24 sm:w-auto"
               />
               <StatCard
                 icon={getKindStyle("channel").icon}
@@ -673,6 +757,7 @@ export function SessionsAdminView(_props: RouteProps) {
                 value={counts.channel}
                 active={kindFilter.value === "channel"}
                 onClick={() => (kindFilter.value = "channel")}
+                class="flex-shrink-0 w-24 sm:w-auto"
               />
               <StatCard
                 icon={getKindStyle("cron").icon}
@@ -680,6 +765,7 @@ export function SessionsAdminView(_props: RouteProps) {
                 value={counts.cron}
                 active={kindFilter.value === "cron"}
                 onClick={() => (kindFilter.value = "cron")}
+                class="flex-shrink-0 w-24 sm:w-auto"
               />
               <StatCard
                 icon={getKindStyle("isolated").icon}
@@ -687,6 +773,7 @@ export function SessionsAdminView(_props: RouteProps) {
                 value={counts.isolated}
                 active={kindFilter.value === "isolated"}
                 onClick={() => (kindFilter.value = "isolated")}
+                class="flex-shrink-0 w-24 sm:w-auto"
               />
             </div>
           )}
@@ -705,26 +792,32 @@ export function SessionsAdminView(_props: RouteProps) {
             </div>
           )}
 
-          {/* Sessions Table */}
+          {/* Sessions - Cards on mobile, Table on desktop */}
           {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && (
-            <Card padding="none">
-              <div class="overflow-x-auto">
+            <>
+              {/* Mobile: Card list */}
+              <div class="md:hidden space-y-2">
+                {filteredSessions.value.map((session) => (
+                  <SessionCard key={session.key} session={session} />
+                ))}
+              </div>
+
+              {/* Desktop: Table */}
+              <Card padding="none" class="hidden md:block">
                 <table class="w-full">
                   <thead>
                     <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                      <th class="py-3 px-3 sm:px-4 font-medium">
-                        {t("sessions.admin.columns.session")}
-                      </th>
-                      <th class="py-3 px-4 font-medium w-32 hidden md:table-cell">
+                      <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.session")}</th>
+                      <th class="py-3 px-4 font-medium w-32">
                         {t("sessions.admin.columns.model")}
                       </th>
-                      <th class="py-3 px-4 font-medium w-36 hidden sm:table-cell">
+                      <th class="py-3 px-4 font-medium w-36">
                         {t("sessions.admin.columns.lastActive")}
                       </th>
                       <th class="py-3 px-4 font-medium w-32 hidden lg:table-cell">
                         {t("sessions.admin.columns.tokens")}
                       </th>
-                      <th class="py-3 px-3 sm:px-4 font-medium w-12"></th>
+                      <th class="py-3 px-4 font-medium w-12"></th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-[var(--color-border)]">
@@ -733,8 +826,8 @@ export function SessionsAdminView(_props: RouteProps) {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </Card>
+              </Card>
+            </>
           )}
 
           {/* Empty state */}
