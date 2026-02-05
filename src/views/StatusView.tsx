@@ -423,12 +423,6 @@ export function StatusView(_props: RouteProps) {
                 subtext="Active sessions"
                 href="/sessions"
               />
-            </div>
-          )}
-
-          {/* Quick Stats - Row 2: Cron & Channels */}
-          {connected && (
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-2 sm:gap-4">
               <StatCard
                 icon={Zap}
                 label="Cron"
