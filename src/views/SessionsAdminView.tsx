@@ -321,6 +321,34 @@ function KindIconWrapper({ kind, size = "sm" }: { kind: SessionKind; size?: "sm"
   );
 }
 
+/** Shared action buttons for session card/row */
+function SessionActions({ session, onDelete }: { session: Session; onDelete: (e: Event) => void }) {
+  return (
+    <div class="flex items-center gap-1 flex-shrink-0">
+      {isMultiChatMode.value && (
+        <IconButton
+          icon={<MessageSquare class="w-4 h-4" />}
+          label={t("sessions.admin.openInChat")}
+          size="sm"
+          variant="ghost"
+          onClick={(e) => {
+            e.stopPropagation();
+            openInChat(session.key);
+          }}
+        />
+      )}
+      <IconButton
+        icon={<Trash2 class="w-4 h-4" />}
+        label={t("actions.delete")}
+        size="sm"
+        variant="ghost"
+        onClick={onDelete}
+        class="text-[var(--color-text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+      />
+    </div>
+  );
+}
+
 /** Mobile card view for a session */
 function SessionCard({ session }: { session: Session }) {
   const kind = getSessionDisplayKind(session);
@@ -356,32 +384,14 @@ function SessionCard({ session }: { session: Session }) {
             </span>
           </div>
         </div>
-        <div class="flex items-center gap-1 flex-shrink-0">
-          {isMultiChatMode.value && (
-            <IconButton
-              icon={<MessageSquare class="w-4 h-4" />}
-              label={t("sessions.admin.openInChat")}
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                openInChat(session.key);
-              }}
-            />
-          )}
-          <IconButton
-            icon={<Trash2 class="w-4 h-4" />}
-            label={t("actions.delete")}
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              openSessionDetail(session);
-              isDeleting.value = true;
-            }}
-            class="text-[var(--color-text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-          />
-        </div>
+        <SessionActions
+          session={session}
+          onDelete={(e) => {
+            e.stopPropagation();
+            openSessionDetail(session);
+            isDeleting.value = true;
+          }}
+        />
       </div>
     </button>
   );
@@ -485,32 +495,14 @@ function SessionRow({ session }: { session: Session }) {
 
       {/* Actions */}
       <td class="py-3 px-4">
-        <div class="flex items-center gap-1">
-          {isMultiChatMode.value && (
-            <IconButton
-              icon={<MessageSquare class="w-4 h-4" />}
-              label={t("sessions.admin.openInChat")}
-              size="sm"
-              variant="ghost"
-              onClick={(e) => {
-                e.stopPropagation();
-                openInChat(session.key);
-              }}
-            />
-          )}
-          <IconButton
-            icon={<Trash2 class="w-4 h-4" />}
-            label={t("actions.delete")}
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              openSessionDetail(session);
-              isDeleting.value = true;
-            }}
-            class="text-[var(--color-text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-          />
-        </div>
+        <SessionActions
+          session={session}
+          onDelete={(e) => {
+            e.stopPropagation();
+            openSessionDetail(session);
+            isDeleting.value = true;
+          }}
+        />
       </td>
     </tr>
   );
@@ -741,6 +733,7 @@ export function SessionsAdminView(_props: RouteProps) {
           )}
 
           {/* Stats Cards - 3+2 centered on mobile, 5 across on desktop */}
+          {/* Mobile: flex-wrap with 33.333% width minus half gap (0.375rem = gap-2/2) for 3-col layout */}
           {isConnected.value && !isLoading.value && (
             <div class="flex flex-wrap justify-center sm:grid sm:grid-cols-5 gap-2 sm:gap-3 [&>*]:w-[calc(33.333%-0.375rem)] sm:[&>*]:w-auto">
               <StatCard

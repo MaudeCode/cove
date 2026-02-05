@@ -66,7 +66,7 @@ export function StatCard({
         : "bg-[var(--color-bg-secondary)] border-2 border-transparent"
     }
     ${isClickable ? "hover:bg-[var(--color-bg-tertiary)] cursor-pointer" : ""}
-    ${className ?? ""}
+    ${className || ""}
   `;
 
   if (isClickable) {
