@@ -44,7 +44,6 @@ interface CronJobModalProps {
   editScheduleAtMs: Signal<string>;
   editSessionTarget: Signal<"main" | "isolated">;
   editWakeMode: Signal<"next-heartbeat" | "now">;
-  editPayloadKind: Signal<"systemEvent" | "agentTurn">;
   editPayloadText: Signal<string>;
   editPayloadMessage: Signal<string>;
   editPayloadModel: Signal<string>;
@@ -75,7 +74,6 @@ export function CronJobModal({
   editScheduleAtMs,
   editSessionTarget,
   editWakeMode,
-  editPayloadKind,
   editPayloadText,
   editPayloadMessage,
   editPayloadModel,
@@ -187,7 +185,6 @@ export function CronJobModal({
           editScheduleAtMs={editScheduleAtMs}
           editSessionTarget={editSessionTarget}
           editWakeMode={editWakeMode}
-          editPayloadKind={editPayloadKind}
           editPayloadText={editPayloadText}
           editPayloadMessage={editPayloadMessage}
           editPayloadModel={editPayloadModel}
@@ -208,9 +205,9 @@ export function CronJobModal({
               </p>
             ) : (
               <div class="space-y-2 max-h-48 overflow-y-auto">
-                {runs.map((run, i) => (
+                {runs.map((run) => (
                   <div
-                    key={i}
+                    key={run.runAtMs}
                     class="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-bg-secondary)] text-sm"
                   >
                     {run.status === "ok" ? (

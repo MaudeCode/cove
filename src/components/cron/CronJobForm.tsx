@@ -29,7 +29,6 @@ interface CronJobFormProps {
   editScheduleAtMs: Signal<string>;
   editSessionTarget: Signal<"main" | "isolated">;
   editWakeMode: Signal<"next-heartbeat" | "now">;
-  editPayloadKind: Signal<"systemEvent" | "agentTurn">;
   editPayloadText: Signal<string>;
   editPayloadMessage: Signal<string>;
   editPayloadModel: Signal<string>;
