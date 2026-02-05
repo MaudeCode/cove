@@ -1,6 +1,6 @@
 {
   "name": "@maudecode/cove",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "A beautiful, full-featured WebUI for OpenClaw",
   "type": "module",
   "license": "MIT",
