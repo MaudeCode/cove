@@ -31,23 +31,25 @@ export function StatCard({ icon: Icon, label, value, active, highlight, onClick 
   const content = (
     <>
       <div
-        class={`p-2 rounded-lg ${active ? "bg-[var(--color-accent)]/20" : "bg-[var(--color-bg-tertiary)]"}`}
+        class={`p-1.5 sm:p-2 rounded-lg ${active ? "bg-[var(--color-accent)]/20" : "bg-[var(--color-bg-tertiary)]"}`}
       >
         <Icon
-          class={`w-5 h-5 ${active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
+          class={`w-4 h-4 sm:w-5 sm:h-5 ${active ? "text-[var(--color-accent)]" : "text-[var(--color-text-muted)]"}`}
         />
       </div>
-      <div>
-        <div class={`text-2xl font-bold ${highlight ? "text-[var(--color-error)]" : ""}`}>
+      <div class="min-w-0">
+        <div
+          class={`text-lg sm:text-2xl font-bold ${highlight ? "text-[var(--color-error)]" : ""}`}
+        >
           {value}
         </div>
-        <div class="text-sm text-[var(--color-text-muted)]">{label}</div>
+        <div class="text-xs sm:text-sm text-[var(--color-text-muted)] truncate">{label}</div>
       </div>
     </>
   );
 
   const baseClass = `
-    flex items-center gap-3 p-4 rounded-xl text-left transition-all
+    flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl text-left transition-all
     ${
       active
         ? "bg-[var(--color-accent)]/10 border-2 border-[var(--color-accent)]"
