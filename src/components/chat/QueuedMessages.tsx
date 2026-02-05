@@ -57,8 +57,26 @@ export function QueuedMessages() {
     setEditImages(message.images ?? []);
   };
 
+  /** Check if edit has changes from original */
+  const hasEditChanges = () => {
+    if (!editingMessage) return false;
+    const originalContent = editingMessage.content;
+    const originalImages = editingMessage.images ?? [];
+
+    // Check content change
+    if (editContent.trim() !== originalContent) return true;
+
+    // Check images change (length or any URL difference)
+    if (editImages.length !== originalImages.length) return true;
+    for (let i = 0; i < editImages.length; i++) {
+      if (editImages[i].url !== originalImages[i].url) return true;
+    }
+
+    return false;
+  };
+
   const handleSaveEdit = () => {
-    if (editingMessage && (editContent.trim() || editImages.length > 0)) {
+    if (editingMessage && (editContent.trim() || editImages.length > 0) && hasEditChanges()) {
       updateQueuedMessage(
         editingMessage.id,
         editContent.trim(),
@@ -197,7 +215,7 @@ export function QueuedMessages() {
             onCancel={handleCancelEdit}
             onConfirm={handleSaveEdit}
             confirmLabel={t("actions.save")}
-            confirmDisabled={!editContent.trim() && editImages.length === 0}
+            confirmDisabled={(!editContent.trim() && editImages.length === 0) || !hasEditChanges()}
           />
         }
       >

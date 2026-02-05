@@ -48,6 +48,9 @@ export function SessionRenameModal({ session, onClose, onRename }: SessionRename
 
   if (!session) return null;
 
+  const originalLabel = getSessionLabel(session);
+  const hasChanges = label.trim() !== originalLabel;
+
   return (
     <Modal open={!!session} onClose={onClose} title={t("sessions.rename")}>
       <form onSubmit={handleSubmit}>
@@ -67,7 +70,12 @@ export function SessionRenameModal({ session, onClose, onRename }: SessionRename
           <Button variant="ghost" onClick={onClose} disabled={saving}>
             {t("actions.cancel")}
           </Button>
-          <Button type="submit" variant="primary" loading={saving} disabled={!label.trim()}>
+          <Button
+            type="submit"
+            variant="primary"
+            loading={saving}
+            disabled={!label.trim() || !hasChanges}
+          >
             {t("actions.save")}
           </Button>
         </div>
