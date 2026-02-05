@@ -14,8 +14,9 @@ import { getSidebarWidth, setSidebarWidth } from "@/lib/storage";
 export const SIDEBAR_MIN_WIDTH = 200;
 export const SIDEBAR_MAX_WIDTH = 480;
 
-/** Whether the sidebar is open */
-export const sidebarOpen = signal<boolean>(true);
+/** Whether the sidebar is open (start closed on mobile) */
+const isMobile = typeof window !== "undefined" && window.innerWidth < 1024;
+export const sidebarOpen = signal<boolean>(!isMobile);
 
 /** Sidebar width in pixels */
 export const sidebarWidth = signal<number>(getSidebarWidth());
