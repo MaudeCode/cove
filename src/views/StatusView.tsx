@@ -270,12 +270,9 @@ function CopyableValue({ value, label }: { value: string; label: string }) {
   };
 
   return (
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between py-2 gap-1 sm:gap-2">
-      <span class="text-[var(--color-text-muted)] text-sm">{label}</span>
-      <div class="flex items-center gap-2 min-w-0">
-        <code class="text-xs sm:text-sm bg-[var(--color-bg-secondary)] px-2 py-0.5 rounded truncate max-w-[200px] sm:max-w-none">
-          {value}
-        </code>
+    <div class="py-2">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[var(--color-text-muted)] text-sm">{label}</span>
         <button
           onClick={handleCopy}
           class="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors flex-shrink-0"
@@ -288,6 +285,9 @@ function CopyableValue({ value, label }: { value: string; label: string }) {
           )}
         </button>
       </div>
+      <code class="block text-xs sm:text-sm bg-[var(--color-bg-secondary)] px-2 py-1 rounded truncate w-full">
+        {value}
+      </code>
     </div>
   );
 }
