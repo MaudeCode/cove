@@ -339,7 +339,7 @@ function SessionRow({ session }: { session: Session }) {
       tabIndex={isEditing ? -1 : 0}
     >
       {/* Name & Key */}
-      <td class="py-3 px-4">
+      <td class="py-3 px-3 sm:px-4">
         <div class="flex items-center gap-3">
           <KindIconWrapper kind={kind} />
           <div class="min-w-0 flex-1">
@@ -389,8 +389,8 @@ function SessionRow({ session }: { session: Session }) {
         </div>
       </td>
 
-      {/* Model */}
-      <td class="py-3 px-4">
+      {/* Model - hidden on mobile */}
+      <td class="py-3 px-4 hidden md:table-cell">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Cpu class="w-3.5 h-3.5 flex-shrink-0" />
           <span class="truncate max-w-[120px]" title={session.model || "Default"}>
@@ -399,16 +399,16 @@ function SessionRow({ session }: { session: Session }) {
         </div>
       </td>
 
-      {/* Last Active */}
-      <td class="py-3 px-4 whitespace-nowrap">
+      {/* Last Active - hidden on small mobile */}
+      <td class="py-3 px-4 whitespace-nowrap hidden sm:table-cell">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Clock class="w-3.5 h-3.5 flex-shrink-0" />
           <span>{session.updatedAt ? formatTimestamp(session.updatedAt) : "—"}</span>
         </div>
       </td>
 
-      {/* Tokens */}
-      <td class="py-3 px-4 whitespace-nowrap">
+      {/* Tokens - hidden until lg */}
+      <td class="py-3 px-4 whitespace-nowrap hidden lg:table-cell">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Hash class="w-3.5 h-3.5 flex-shrink-0" />
           <span>{formatTokenCount(session)}</span>
@@ -417,7 +417,7 @@ function SessionRow({ session }: { session: Session }) {
       </td>
 
       {/* Actions */}
-      <td class="py-3 px-4">
+      <td class="py-3 px-3 sm:px-4">
         <div class="flex items-center gap-1">
           {isMultiChatMode.value && (
             <IconButton
@@ -525,22 +525,24 @@ function SessionDetailModal() {
         </div>
 
         {/* Stats */}
-        <div class="grid grid-cols-3 gap-4">
-          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-xl font-bold">{formatTokenCount(session)}</div>
-            <div class="text-sm text-[var(--color-text-muted)]">{t("sessions.admin.tokens")}</div>
+        <div class="grid grid-cols-3 gap-2 sm:gap-4">
+          <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+            <div class="text-lg sm:text-xl font-bold">{formatTokenCount(session)}</div>
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+              {t("sessions.admin.tokens")}
+            </div>
           </div>
-          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-xl font-bold">{formatContextUsage(session)}</div>
-            <div class="text-sm text-[var(--color-text-muted)]">
+          <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+            <div class="text-lg sm:text-xl font-bold">{formatContextUsage(session)}</div>
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
               {t("sessions.admin.contextUsed")}
             </div>
           </div>
-          <div class="text-center p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-xl font-bold">
+          <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
+            <div class="text-lg sm:text-xl font-bold">
               {session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—"}
             </div>
-            <div class="text-sm text-[var(--color-text-muted)]">
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
               {t("sessions.admin.lastActive")}
             </div>
           </div>
@@ -558,7 +560,7 @@ function SessionDetailModal() {
           </FormField>
 
           <FormField label={t("sessions.admin.overrides")}>
-            <div class="grid grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <FormField label={t("sessions.admin.thinking")}>
                 <Dropdown
                   value={editThinking.value}
@@ -618,22 +620,22 @@ export function SessionsAdminView(_props: RouteProps) {
 
   return (
     <ViewErrorBoundary viewName={t("nav.sessions")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           <PageHeader
             title={t("sessions.admin.title")}
             subtitle={t("sessions.admin.description")}
             actions={
               <>
                 {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
-                  <div class="relative">
+                  <div class="relative hidden sm:block">
                     <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                     <Input
                       type="text"
                       value={searchQuery.value}
                       onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
                       placeholder={t("sessions.admin.searchPlaceholder")}
-                      class="pl-10 w-64"
+                      class="pl-10 w-48 lg:w-64"
                     />
                   </div>
                 )}
@@ -650,7 +652,7 @@ export function SessionsAdminView(_props: RouteProps) {
 
           {/* Stats Cards */}
           {isConnected.value && !isLoading.value && (
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
               <StatCard
                 icon={MessageSquare}
                 label={t("sessions.admin.stats.total")}
@@ -710,17 +712,19 @@ export function SessionsAdminView(_props: RouteProps) {
                 <table class="w-full">
                   <thead>
                     <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                      <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.session")}</th>
-                      <th class="py-3 px-4 font-medium w-32">
+                      <th class="py-3 px-3 sm:px-4 font-medium">
+                        {t("sessions.admin.columns.session")}
+                      </th>
+                      <th class="py-3 px-4 font-medium w-32 hidden md:table-cell">
                         {t("sessions.admin.columns.model")}
                       </th>
-                      <th class="py-3 px-4 font-medium w-36">
+                      <th class="py-3 px-4 font-medium w-36 hidden sm:table-cell">
                         {t("sessions.admin.columns.lastActive")}
                       </th>
-                      <th class="py-3 px-4 font-medium w-32">
+                      <th class="py-3 px-4 font-medium w-32 hidden lg:table-cell">
                         {t("sessions.admin.columns.tokens")}
                       </th>
-                      <th class="py-3 px-4 font-medium w-12"></th>
+                      <th class="py-3 px-3 sm:px-4 font-medium w-12"></th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-[var(--color-border)]">
