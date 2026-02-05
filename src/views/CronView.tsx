@@ -63,7 +63,6 @@ const editScheduleEveryMs = signal<string>("");
 const editScheduleAtMs = signal<string>("");
 const editWakeMode = signal<"next-heartbeat" | "now">("next-heartbeat");
 const editSessionTarget = signal<"main" | "isolated">("main");
-const editPayloadKind = signal<"systemEvent" | "agentTurn">("systemEvent");
 const editPayloadText = signal<string>("");
 const editPayloadMessage = signal<string>("");
 const editPayloadModel = signal<string>("");
@@ -187,7 +186,6 @@ function populateEditForm(job: CronJob) {
   }
   editWakeMode.value = job.wakeMode;
   editSessionTarget.value = job.sessionTarget;
-  editPayloadKind.value = job.payload.kind;
   if (job.payload.kind === "systemEvent") {
     editPayloadText.value = job.payload.text;
   } else {
@@ -208,7 +206,6 @@ function resetEditForm() {
   editScheduleAtMs.value = "";
   editWakeMode.value = "next-heartbeat";
   editSessionTarget.value = "main";
-  editPayloadKind.value = "systemEvent";
   editPayloadText.value = "";
   editPayloadMessage.value = "";
   editPayloadModel.value = "";
@@ -283,7 +280,9 @@ function buildSchedule(): CronSchedule {
 }
 
 function buildPayload(): CronPayload {
-  if (editPayloadKind.value === "systemEvent") {
+  // Payload kind is determined by session target:
+  // main → systemEvent, isolated → agentTurn
+  if (editSessionTarget.value === "main") {
     return { kind: "systemEvent", text: editPayloadText.value };
   }
   return {
@@ -642,7 +641,6 @@ export function CronView(_props: RouteProps) {
           editScheduleAtMs={editScheduleAtMs}
           editSessionTarget={editSessionTarget}
           editWakeMode={editWakeMode}
-          editPayloadKind={editPayloadKind}
           editPayloadText={editPayloadText}
           editPayloadMessage={editPayloadMessage}
           editPayloadModel={editPayloadModel}
