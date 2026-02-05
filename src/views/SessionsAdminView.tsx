@@ -23,6 +23,7 @@ import { Modal } from "@/components/ui/Modal";
 import { IconButton } from "@/components/ui/IconButton";
 import { FormField } from "@/components/ui/FormField";
 import { StatCard } from "@/components/ui/StatCard";
+import { ListCard } from "@/components/ui/ListCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   RefreshCw,
@@ -356,34 +357,32 @@ function SessionCard({ session }: { session: Session }) {
   const displayName = getDisplayName(session);
 
   return (
-    <button
-      type="button"
-      class="w-full p-3 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors text-left"
-      onClick={() => openSessionDetail(session)}
-    >
-      <div class="flex items-start gap-3">
-        <KindIconWrapper kind={kind} />
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-0.5">
-            <span class="font-medium truncate">{displayName}</span>
-            <Badge variant={style.badgeVariant} size="sm">
-              {getKindLabel(kind)}
-            </Badge>
-          </div>
-          <div class="text-xs text-[var(--color-text-muted)] font-mono truncate mb-2">
-            {session.key}
-          </div>
-          <div class="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
-            <span class="flex items-center gap-1">
-              <Clock class="w-3 h-3" />
-              {session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—"}
-            </span>
-            <span class="flex items-center gap-1">
-              <Hash class="w-3 h-3" />
-              {formatTokenCount(session)}
-            </span>
-          </div>
-        </div>
+    <ListCard
+      icon={style.icon}
+      iconVariant={
+        kind === "main"
+          ? "success"
+          : kind === "channel"
+            ? "info"
+            : kind === "cron"
+              ? "warning"
+              : "default"
+      }
+      title={displayName}
+      subtitle={session.key}
+      badges={
+        <Badge variant={style.badgeVariant} size="sm">
+          {getKindLabel(kind)}
+        </Badge>
+      }
+      meta={[
+        {
+          icon: Clock,
+          value: session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—",
+        },
+        { icon: Hash, value: formatTokenCount(session) },
+      ]}
+      actions={
         <SessionActions
           session={session}
           onDelete={(e) => {
@@ -392,8 +391,9 @@ function SessionCard({ session }: { session: Session }) {
             isDeleting.value = true;
           }}
         />
-      </div>
-    </button>
+      }
+      onClick={() => openSessionDetail(session)}
+    />
   );
 }
 
