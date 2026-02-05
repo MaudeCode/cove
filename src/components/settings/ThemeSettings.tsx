@@ -64,11 +64,22 @@ function ThemeSwatch({
 }
 
 /** Section header with icon */
-function SectionHeader({ icon, titleKey }: { icon: preact.ComponentChildren; titleKey: string }) {
+function SectionHeader({
+  icon,
+  titleKey,
+  selectedThemeName,
+}: {
+  icon: preact.ComponentChildren;
+  titleKey: string;
+  selectedThemeName?: string;
+}) {
   return (
     <div class="flex items-center gap-2 mb-3">
       <span class="text-[var(--color-text-muted)]">{icon}</span>
       <span class="text-sm font-medium text-[var(--color-text-secondary)]">{t(titleKey)}</span>
+      {selectedThemeName && (
+        <span class="text-sm text-[var(--color-text-muted)]">— {selectedThemeName}</span>
+      )}
     </div>
   );
 }
@@ -137,6 +148,7 @@ export function ThemeSettings() {
             <SectionHeader
               icon={<Sun class="w-4 h-4" />}
               titleKey="settings.appearance.lightTheme"
+              selectedThemeName={lightThemes.find((t) => t.id === selectedLightTheme)?.name}
             />
             <div class="flex flex-wrap gap-2">
               {lightThemes.map((theme) => (
@@ -155,6 +167,7 @@ export function ThemeSettings() {
             <SectionHeader
               icon={<Moon class="w-4 h-4" />}
               titleKey="settings.appearance.darkTheme"
+              selectedThemeName={darkThemes.find((t) => t.id === selectedDarkTheme)?.name}
             />
             <div class="flex flex-wrap gap-2">
               {darkThemes.map((theme) => (
@@ -176,6 +189,7 @@ export function ThemeSettings() {
             <SectionHeader
               icon={<Sun class="w-4 h-4" />}
               titleKey="settings.appearance.lightThemes"
+              selectedThemeName={lightThemes.find((t) => t.id === selectedManualTheme)?.name}
             />
             <div class="flex flex-wrap gap-2">
               {lightThemes.map((theme) => (
@@ -194,6 +208,7 @@ export function ThemeSettings() {
             <SectionHeader
               icon={<Moon class="w-4 h-4" />}
               titleKey="settings.appearance.darkThemes"
+              selectedThemeName={darkThemes.find((t) => t.id === selectedManualTheme)?.name}
             />
             <div class="flex flex-wrap gap-2">
               {darkThemes.map((theme) => (
