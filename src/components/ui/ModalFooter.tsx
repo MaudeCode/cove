@@ -103,6 +103,8 @@ interface EditFooterProps {
   onSave: () => void;
   /** Whether save is in progress */
   isSaving?: boolean;
+  /** Disable save button (e.g., no changes) */
+  saveDisabled?: boolean;
   /** Label for save button (defaults to "Save") */
   saveLabel?: string;
   /** Whether this is for editing (shows delete) or creating */
@@ -121,6 +123,7 @@ export function EditFooter({
   onCancel,
   onSave,
   isSaving,
+  saveDisabled,
   saveLabel,
   isEdit,
   onDeleteClick,
@@ -152,7 +155,7 @@ export function EditFooter({
           <Button variant="secondary" onClick={onCancel} fullWidth class="sm:w-auto">
             {t("actions.cancel")}
           </Button>
-          <Button onClick={onSave} disabled={isSaving} fullWidth class="sm:w-auto">
+          <Button onClick={onSave} disabled={isSaving || saveDisabled} fullWidth class="sm:w-auto">
             {isSaving ? <Spinner size="sm" /> : saveLabel || t("actions.save")}
           </Button>
         </div>

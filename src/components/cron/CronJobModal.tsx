@@ -26,6 +26,8 @@ interface CronJobModalProps {
   isDeleting: boolean;
   isSaving: boolean;
   isRunning: boolean;
+  /** Whether form has unsaved changes */
+  hasChanges: boolean;
   onClose: () => void;
   onSave: () => void;
   onDelete: () => void;
@@ -57,6 +59,7 @@ export function CronJobModal({
   isDeleting,
   isSaving,
   isRunning,
+  hasChanges,
   onClose,
   onSave,
   onDelete,
@@ -103,6 +106,7 @@ export function CronJobModal({
             onCancel={onClose}
             onSave={onSave}
             isSaving={isSaving}
+            saveDisabled={!hasChanges}
             saveLabel={isEdit ? t("actions.save") : t("actions.create")}
             extraContent={
               <div class="flex items-center justify-between sm:justify-start gap-2">
