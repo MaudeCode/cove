@@ -740,9 +740,9 @@ export function SessionsAdminView(_props: RouteProps) {
             </div>
           )}
 
-          {/* Stats Cards - 3+2 grid on mobile, 5 across on desktop */}
+          {/* Stats Cards - 3+2 centered on mobile, 5 across on desktop */}
           {isConnected.value && !isLoading.value && (
-            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
+            <div class="flex flex-wrap justify-center sm:grid sm:grid-cols-5 gap-2 sm:gap-3 [&>*]:w-[calc(33.333%-0.375rem)] sm:[&>*]:w-auto">
               <StatCard
                 icon={MessageSquare}
                 label={t("sessions.admin.stats.total")}
