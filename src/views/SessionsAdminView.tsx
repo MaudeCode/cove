@@ -740,16 +740,15 @@ export function SessionsAdminView(_props: RouteProps) {
             </div>
           )}
 
-          {/* Stats Cards - scrollable on mobile */}
+          {/* Stats Cards - 3+2 grid on mobile, 5 across on desktop */}
           {isConnected.value && !isLoading.value && (
-            <div class="flex gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0 sm:grid sm:grid-cols-5 sm:gap-3 sm:overflow-visible">
+            <div class="grid grid-cols-3 sm:grid-cols-5 gap-2 sm:gap-3">
               <StatCard
                 icon={MessageSquare}
                 label={t("sessions.admin.stats.total")}
                 value={counts.total}
                 active={kindFilter.value === "all"}
                 onClick={() => (kindFilter.value = "all")}
-                class="flex-shrink-0 w-24 sm:w-auto"
               />
               <StatCard
                 icon={getKindStyle("main").icon}
@@ -757,7 +756,6 @@ export function SessionsAdminView(_props: RouteProps) {
                 value={counts.main}
                 active={kindFilter.value === "main"}
                 onClick={() => (kindFilter.value = "main")}
-                class="flex-shrink-0 w-24 sm:w-auto"
               />
               <StatCard
                 icon={getKindStyle("channel").icon}
@@ -765,7 +763,6 @@ export function SessionsAdminView(_props: RouteProps) {
                 value={counts.channel}
                 active={kindFilter.value === "channel"}
                 onClick={() => (kindFilter.value = "channel")}
-                class="flex-shrink-0 w-24 sm:w-auto"
               />
               <StatCard
                 icon={getKindStyle("cron").icon}
@@ -773,7 +770,6 @@ export function SessionsAdminView(_props: RouteProps) {
                 value={counts.cron}
                 active={kindFilter.value === "cron"}
                 onClick={() => (kindFilter.value = "cron")}
-                class="flex-shrink-0 w-24 sm:w-auto"
               />
               <StatCard
                 icon={getKindStyle("isolated").icon}
@@ -781,7 +777,6 @@ export function SessionsAdminView(_props: RouteProps) {
                 value={counts.isolated}
                 active={kindFilter.value === "isolated"}
                 onClick={() => (kindFilter.value = "isolated")}
-                class="flex-shrink-0 w-24 sm:w-auto"
               />
             </div>
           )}
