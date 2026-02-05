@@ -63,15 +63,19 @@ function remove(key: string): void {
 // ============================================
 
 /**
- * Stored auth preferences (URL and mode only - NEVER credentials)
- * Credentials are stored in sessionStorage only for the current session
+ * Stored auth preferences (URL and mode only)
  */
 export interface StoredAuth {
   url: string;
   authMode: "token" | "password";
-  /** @deprecated - credentials are no longer stored in localStorage for security */
-  credential?: string;
   rememberMe: boolean;
+}
+
+/**
+ * Parameters for saveAuth - includes optional credential
+ */
+export interface SaveAuthParams extends StoredAuth {
+  credential?: string;
 }
 
 /**
@@ -85,7 +89,8 @@ interface SessionAuth {
 const SESSION_AUTH_KEY = "cove:session-auth";
 
 export function getAuth(): StoredAuth | null {
-  const stored = getRaw<StoredAuth>("auth");
+  // Read with legacy type that may include credential (for migration)
+  const stored = getRaw<StoredAuth & { credential?: string }>("auth");
   if (!stored) return null;
 
   // Migrate: if old stored auth has credential, clear it
@@ -98,7 +103,7 @@ export function getAuth(): StoredAuth | null {
   return stored;
 }
 
-export function saveAuth(auth: StoredAuth & { credential?: string }): void {
+export function saveAuth(auth: SaveAuthParams): void {
   const safeAuth: StoredAuth = {
     url: auth.url,
     authMode: auth.authMode,

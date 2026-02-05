@@ -7,20 +7,18 @@
 
 import { useEffect } from "preact/hooks";
 import { signal } from "@preact/signals";
-import { sidebarOpen, LG_BREAKPOINT } from "@/signals/ui";
+import { sidebarOpen, LG_BREAKPOINT, SIDEBAR_WIDTH_MOBILE } from "@/signals/ui";
 
 /** Edge zone start - avoid Safari's back gesture at 0-20px */
 const EDGE_START = 20;
 /** Edge zone end - wider zone for easier swiping */
 const EDGE_END = 100;
-/** Sidebar width on mobile */
-const SIDEBAR_WIDTH = 288; // w-72 = 18rem = 288px
 /** Minimum drag to trigger open/close on release */
-const SNAP_THRESHOLD = SIDEBAR_WIDTH * 0.3;
+const SNAP_THRESHOLD = SIDEBAR_WIDTH_MOBILE * 0.3;
 /** Maximum vertical movement allowed (px) */
 const MAX_VERTICAL = 75;
 
-/** Current drag offset (0 = closed, SIDEBAR_WIDTH = open) */
+/** Current drag offset (0 = closed, SIDEBAR_WIDTH_MOBILE = open) */
 export const sidebarDragOffset = signal<number | null>(null);
 
 /** Whether we're actively dragging */
@@ -49,7 +47,7 @@ export function useEdgeSwipe() {
 
       if (inEdgeZone || startedWithOpen) {
         // Initialize drag offset based on current state
-        sidebarDragOffset.value = startedWithOpen ? SIDEBAR_WIDTH : 0;
+        sidebarDragOffset.value = startedWithOpen ? SIDEBAR_WIDTH_MOBILE : 0;
       }
     };
 
@@ -81,14 +79,14 @@ export function useEdgeSwipe() {
       let newOffset: number;
       if (startedWithOpen) {
         // Dragging from open state
-        newOffset = SIDEBAR_WIDTH + deltaX;
+        newOffset = SIDEBAR_WIDTH_MOBILE + deltaX;
       } else {
         // Dragging from closed state
         newOffset = deltaX;
       }
 
       // Clamp to valid range
-      newOffset = Math.max(0, Math.min(SIDEBAR_WIDTH, newOffset));
+      newOffset = Math.max(0, Math.min(SIDEBAR_WIDTH_MOBILE, newOffset));
       sidebarDragOffset.value = newOffset;
     };
 
@@ -105,7 +103,7 @@ export function useEdgeSwipe() {
       // Determine whether to open or close based on position
       if (startedWithOpen) {
         // Started open: close if dragged past threshold
-        sidebarOpen.value = offset > SIDEBAR_WIDTH - SNAP_THRESHOLD;
+        sidebarOpen.value = offset > SIDEBAR_WIDTH_MOBILE - SNAP_THRESHOLD;
       } else {
         // Started closed: open if dragged past threshold
         sidebarOpen.value = offset > SNAP_THRESHOLD;

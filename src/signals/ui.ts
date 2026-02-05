@@ -14,6 +14,9 @@ import { getSidebarWidth, setSidebarWidth } from "@/lib/storage";
 export const SIDEBAR_MIN_WIDTH = 200;
 export const SIDEBAR_MAX_WIDTH = 480;
 
+/** Sidebar width on mobile (w-72 = 18rem = 288px) */
+export const SIDEBAR_WIDTH_MOBILE = 288;
+
 /** Tailwind lg breakpoint (1024px) */
 export const LG_BREAKPOINT = 1024;
 

@@ -12,6 +12,7 @@ import {
   sidebarResizing,
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
+  SIDEBAR_WIDTH_MOBILE,
 } from "@/signals/ui";
 import { useEdgeSwipe, sidebarDragOffset, isDraggingSidebar } from "@/hooks/useEdgeSwipe";
 import { ResizeHandle } from "@/components/ui/ResizeHandle";
@@ -52,7 +53,9 @@ export function AppShell({ children }: AppShellProps) {
           <div
             class="fixed inset-0 bg-black z-40 lg:hidden"
             style={{
-              opacity: isDraggingSidebar.value ? ((sidebarDragOffset.value ?? 0) / 288) * 0.5 : 0.5,
+              opacity: isDraggingSidebar.value
+                ? ((sidebarDragOffset.value ?? 0) / SIDEBAR_WIDTH_MOBILE) * 0.5
+                : 0.5,
               transition: isDraggingSidebar.value ? "none" : "opacity 200ms ease-out",
             }}
             onClick={() => (sidebarOpen.value = false)}
@@ -67,7 +70,7 @@ export function AppShell({ children }: AppShellProps) {
               "--sidebar-width": `${sidebarWidth.value}px`,
               // Use drag offset when dragging, otherwise use open/closed state
               transform: isDraggingSidebar.value
-                ? `translateX(${(sidebarDragOffset.value ?? 0) - 288}px)`
+                ? `translateX(${(sidebarDragOffset.value ?? 0) - SIDEBAR_WIDTH_MOBILE}px)`
                 : undefined,
             } as React.CSSProperties
           }
