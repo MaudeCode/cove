@@ -93,7 +93,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           shadow-soft-sm hover:shadow-soft
           active:scale-[0.97] active:shadow-none
           focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2
-          disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100
+          disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100 disabled:hover:opacity-50
           ${variantStyles[variant]}
           ${sizeStyles[size]}
           ${fullWidth ? "w-full" : ""}
