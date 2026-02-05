@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef } from "preact/hooks";
+import { useComputed } from "@preact/signals";
 import { route } from "preact-router";
 import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
 import { sendMessage, abortChat, processMessageQueue } from "@/lib/chat/send";
@@ -147,8 +148,10 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
   };
 
-  // Get streaming state for current session only
-  const sessionStreamingState = getStreamingStateForSession(effectiveSessionKey.value);
+  // Get streaming state for current session only (useComputed ensures reactivity)
+  const sessionStreamingState = useComputed(() =>
+    getStreamingStateForSession(effectiveSessionKey.value),
+  );
 
   return (
     <div class="flex-1 flex flex-col overflow-hidden relative">
@@ -162,9 +165,9 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         messages={filteredMessages.value}
         isLoading={isLoadingHistory.value}
         error={historyError.value}
-        streamingContent={sessionStreamingState.content}
-        streamingToolCalls={sessionStreamingState.toolCalls}
-        isStreaming={sessionStreamingState.isStreaming}
+        streamingContent={sessionStreamingState.value.content}
+        streamingToolCalls={sessionStreamingState.value.toolCalls}
+        isStreaming={sessionStreamingState.value.isStreaming}
         assistantName={assistantName.value}
         assistantAvatar={assistantAvatar.value ?? undefined}
         userName={userName.value}
@@ -176,7 +179,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         onSend={handleSend}
         onAbort={handleAbort}
         disabled={false} // Allow typing even when disconnected (will queue)
-        isStreaming={sessionStreamingState.isStreaming}
+        isStreaming={sessionStreamingState.value.isStreaming}
         sessionKey={effectiveSessionKey.value}
         currentModel={activeSession.value?.model}
         onModelChange={(modelId) => {
