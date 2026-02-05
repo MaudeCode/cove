@@ -33,6 +33,39 @@ import type { Session } from "@/types/sessions";
 // Track current path for active state (updated by router)
 export const currentPath = signal<string>(window.location.pathname);
 
+/**
+ * Chat navigation button with proper active state
+ */
+function ChatNavButton({ isStreaming }: { isStreaming: boolean }) {
+  // Read currentPath.value to subscribe to changes
+  const isActive = currentPath.value === "/" || currentPath.value.startsWith("/chat");
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        route("/chat");
+        // Close sidebar on mobile (< lg breakpoint)
+        if (window.innerWidth < 1024) {
+          sidebarOpen.value = false;
+        }
+      }}
+      class={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 ease-out ${
+        isActive
+          ? "bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm"
+          : "hover:bg-[var(--color-bg-primary)] hover:shadow-soft-sm text-[var(--color-text-secondary)]"
+      } ${isStreaming ? "ai-glow" : ""}`}
+    >
+      {isStreaming ? (
+        <Spinner size="xs" class="flex-shrink-0 text-[var(--color-accent)]" />
+      ) : (
+        <span class="w-5 h-5 flex-shrink-0">💬</span>
+      )}
+      {t("nav.chat")}
+    </button>
+  );
+}
+
 export function Sidebar() {
   const [renameSession, setRenameSession] = useState<Session | null>(null);
   const [deleteSession, setDeleteSession] = useState<Session | null>(null);
@@ -180,24 +213,7 @@ function SingleChatSidebar() {
     <div class="flex-1 overflow-y-auto">
       {/* Chat link at top */}
       <div class="px-3 py-2">
-        <button
-          type="button"
-          onClick={() => {
-            route("/chat");
-            // Close sidebar on mobile (< lg breakpoint)
-            if (window.innerWidth < 1024) {
-              sidebarOpen.value = false;
-            }
-          }}
-          class={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm transition-all duration-200 ease-out bg-[var(--color-accent)]/10 text-[var(--color-accent)] shadow-soft-sm ${isMainStreaming ? "ai-glow" : ""}`}
-        >
-          {isMainStreaming ? (
-            <Spinner size="xs" class="flex-shrink-0 text-[var(--color-accent)]" />
-          ) : (
-            <span class="w-5 h-5 flex-shrink-0">💬</span>
-          )}
-          {t("nav.chat")}
-        </button>
+        <ChatNavButton isStreaming={isMainStreaming} />
       </div>
 
       {/* All nav sections - expanded */}
