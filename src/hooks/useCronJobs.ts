@@ -5,7 +5,7 @@
  * Extracted from CronView for maintainability.
  */
 
-import { signal, computed, useComputed, type ReadonlySignal } from "@preact/signals";
+import { signal, computed, useComputed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
@@ -19,6 +19,7 @@ import type {
   CronListResult,
   CronRunLogEntry,
   CronRunsResult,
+  UseCronJobsResult,
 } from "@/types/cron";
 
 // ============================================
@@ -353,66 +354,6 @@ async function toggleJobEnabled(job: CronJob): Promise<void> {
 // ============================================
 // Hook
 // ============================================
-
-export interface CronJobsState {
-  cronJobs: typeof cronJobs;
-  cronStatus: typeof cronStatus;
-  isLoading: typeof isLoading;
-  error: typeof error;
-  searchQuery: typeof searchQuery;
-  statusFilter: typeof statusFilter;
-}
-
-export interface CronJobsModal {
-  modalMode: typeof modalMode;
-  selectedJob: typeof selectedJob;
-  selectedJobRuns: typeof selectedJobRuns;
-  isLoadingRuns: typeof isLoadingRuns;
-  isDeleting: typeof isDeleting;
-  isSaving: typeof isSaving;
-  isRunning: typeof isRunning;
-}
-
-export interface CronJobsForm {
-  editName: typeof editName;
-  editDescription: typeof editDescription;
-  editEnabled: typeof editEnabled;
-  editScheduleKind: typeof editScheduleKind;
-  editScheduleExpr: typeof editScheduleExpr;
-  editScheduleTz: typeof editScheduleTz;
-  editScheduleEveryMs: typeof editScheduleEveryMs;
-  editScheduleAtMs: typeof editScheduleAtMs;
-  editWakeMode: typeof editWakeMode;
-  editSessionTarget: typeof editSessionTarget;
-  editPayloadText: typeof editPayloadText;
-  editPayloadMessage: typeof editPayloadMessage;
-  editPayloadModel: typeof editPayloadModel;
-  formErrors: typeof formErrors;
-}
-
-export interface CronJobsComputed {
-  filteredJobs: typeof filteredJobs;
-  jobCounts: typeof jobCounts;
-  hasFormChanges: ReadonlySignal<boolean>;
-}
-
-export interface CronJobsActions {
-  loadCronJobs: typeof loadCronJobs;
-  openJobModal: typeof openJobModal;
-  closeModal: typeof closeModal;
-  saveOrCreateJob: typeof saveOrCreateJob;
-  deleteJob: typeof deleteJob;
-  runJobNow: typeof runJobNow;
-  toggleJobEnabled: typeof toggleJobEnabled;
-}
-
-export interface UseCronJobsResult {
-  state: CronJobsState;
-  modal: CronJobsModal;
-  form: CronJobsForm;
-  computed: CronJobsComputed;
-  actions: CronJobsActions;
-}
 
 export function useCronJobs(): UseCronJobsResult {
   // Load on mount when connected

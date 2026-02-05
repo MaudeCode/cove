@@ -115,3 +115,69 @@ export interface CronListResult {
 export interface CronRunsResult {
   entries: CronRunLogEntry[];
 }
+
+// ============================================
+// Hook Types
+// ============================================
+
+import type { Signal, ReadonlySignal } from "@preact/signals";
+
+export interface CronJobsState {
+  cronJobs: Signal<CronJob[]>;
+  cronStatus: Signal<CronStatusResult | null>;
+  isLoading: Signal<boolean>;
+  error: Signal<string | null>;
+  searchQuery: Signal<string>;
+  statusFilter: Signal<"all" | "enabled" | "disabled">;
+}
+
+export interface CronJobsModal {
+  modalMode: Signal<"create" | "edit" | null>;
+  selectedJob: Signal<CronJob | null>;
+  selectedJobRuns: Signal<CronRunLogEntry[]>;
+  isLoadingRuns: Signal<boolean>;
+  isDeleting: Signal<boolean>;
+  isSaving: Signal<boolean>;
+  isRunning: Signal<boolean>;
+}
+
+export interface CronJobsForm {
+  editName: Signal<string>;
+  editDescription: Signal<string>;
+  editEnabled: Signal<boolean>;
+  editScheduleKind: Signal<"cron" | "every" | "at">;
+  editScheduleExpr: Signal<string>;
+  editScheduleTz: Signal<string>;
+  editScheduleEveryMs: Signal<string>;
+  editScheduleAtMs: Signal<string>;
+  editWakeMode: Signal<CronWakeMode>;
+  editSessionTarget: Signal<CronSessionTarget>;
+  editPayloadText: Signal<string>;
+  editPayloadMessage: Signal<string>;
+  editPayloadModel: Signal<string>;
+  formErrors: Signal<Record<string, string>>;
+}
+
+export interface CronJobsComputed {
+  filteredJobs: ReadonlySignal<CronJob[]>;
+  jobCounts: ReadonlySignal<{ total: number; enabled: number; disabled: number }>;
+  hasFormChanges: ReadonlySignal<boolean>;
+}
+
+export interface CronJobsActions {
+  loadCronJobs: () => Promise<void>;
+  openJobModal: (mode: "create" | "edit", job?: CronJob) => void;
+  closeModal: () => void;
+  saveOrCreateJob: () => Promise<void>;
+  deleteJob: () => Promise<void>;
+  runJobNow: (job: CronJob) => Promise<void>;
+  toggleJobEnabled: (job: CronJob) => Promise<void>;
+}
+
+export interface UseCronJobsResult {
+  state: CronJobsState;
+  modal: CronJobsModal;
+  form: CronJobsForm;
+  computed: CronJobsComputed;
+  actions: CronJobsActions;
+}
