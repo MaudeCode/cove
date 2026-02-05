@@ -359,7 +359,9 @@ export function updateRunContent(
 /** Complete a chat run */
 export function completeRun(runId: string, message?: Message): void {
   const run = activeRuns.value.get(runId);
-  updateRun(runId, { status: "complete", message });
+  // Update content from final message to avoid showing incomplete streamed content
+  const finalContent = message?.content ?? run?.content ?? "";
+  updateRun(runId, { status: "complete", message, content: finalContent });
 
   if (message) {
     // Only add message to global messages if this run belongs to the active session.
