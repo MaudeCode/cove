@@ -73,7 +73,7 @@ export function AppShell({ children }: AppShellProps) {
           }
           class={`
             fixed inset-y-0 left-0 z-50 w-72 p-2 pr-0 pt-16
-            bg-[var(--color-bg-secondary)]
+            lg:bg-[var(--color-bg-secondary)]
             ${isDraggingSidebar.value ? "" : "transition-transform duration-200 ease-out"}
             ${!isDraggingSidebar.value && (sidebarOpen.value ? "translate-x-0" : "-translate-x-full")}
             lg:relative lg:inset-auto lg:z-auto lg:pt-2 lg:translate-x-0
