@@ -21,6 +21,13 @@
     background-color: var(--color-bg-primary);
     color: var(--color-text-primary);
     min-height: 100vh;
+    overflow: hidden;
+  }
+
+  /* Prevent overscroll/bounce on iOS PWA */
+  html,
+  body {
+    overscroll-behavior: none;
   }
 
   /* Monospace text */
