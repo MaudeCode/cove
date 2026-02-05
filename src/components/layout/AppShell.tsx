@@ -13,6 +13,7 @@ import {
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
 } from "@/signals/ui";
+import { useEdgeSwipe } from "@/hooks/useEdgeSwipe";
 import { ResizeHandle } from "@/components/ui/ResizeHandle";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
@@ -22,6 +23,9 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
+  // Enable swipe from left edge to open sidebar on mobile
+  useEdgeSwipe();
+
   const handleResize = (delta: number) => {
     const newWidth = Math.max(
       SIDEBAR_MIN_WIDTH,
