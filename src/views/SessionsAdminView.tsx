@@ -24,6 +24,7 @@ import { IconButton } from "@/components/ui/IconButton";
 import { FormField } from "@/components/ui/FormField";
 import { StatCard } from "@/components/ui/StatCard";
 import { ListCard } from "@/components/ui/ListCard";
+import { DeleteConfirmFooter, EditFooter } from "@/components/ui/ModalFooter";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   RefreshCw,
@@ -523,50 +524,19 @@ function SessionDetailModal() {
       size="xl"
       footer={
         isDeleting.value ? (
-          <div class="space-y-3">
-            <p class="text-sm text-[var(--color-error)] text-center sm:text-left">
-              {t("sessions.admin.confirmDelete")}
-            </p>
-            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => (isDeleting.value = false)}
-                fullWidth
-                class="sm:w-auto"
-              >
-                {t("actions.cancel")}
-              </Button>
-              <Button
-                variant="danger"
-                icon={<Trash2 class="w-4 h-4" />}
-                onClick={deleteSession}
-                fullWidth
-                class="sm:w-auto"
-              >
-                {t("actions.delete")}
-              </Button>
-            </div>
-          </div>
+          <DeleteConfirmFooter
+            message={t("sessions.admin.confirmDelete")}
+            onCancel={() => (isDeleting.value = false)}
+            onDelete={deleteSession}
+          />
         ) : (
-          <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
-            <Button
-              size="sm"
-              variant="ghost"
-              icon={<Trash2 class="w-4 h-4" />}
-              onClick={() => (isDeleting.value = true)}
-              class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-            >
-              {t("actions.delete")}
-            </Button>
-            <div class="flex flex-col sm:flex-row gap-2">
-              <Button variant="secondary" onClick={closeSessionDetail} fullWidth class="sm:w-auto">
-                {t("actions.cancel")}
-              </Button>
-              <Button onClick={saveSession} disabled={isSaving.value} fullWidth class="sm:w-auto">
-                {isSaving.value ? <Spinner size="sm" /> : t("actions.save")}
-              </Button>
-            </div>
-          </div>
+          <EditFooter
+            isEdit
+            onDeleteClick={() => (isDeleting.value = true)}
+            onCancel={closeSessionDetail}
+            onSave={saveSession}
+            isSaving={isSaving.value}
+          />
         )
       }
     >
