@@ -315,8 +315,8 @@ export function ChannelsView(_props: RouteProps) {
 
   return (
     <ViewErrorBoundary viewName={t("nav.channels")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-4xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-4xl mx-auto space-y-4 sm:space-y-6">
           <PageHeader
             title={t("channels.title")}
             subtitle={t("channels.description")}
@@ -344,7 +344,7 @@ export function ChannelsView(_props: RouteProps) {
 
           {/* Stats Cards */}
           {isConnected.value && !isLoading.value && (
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
               <StatCard
                 icon={MessageSquare}
                 label={t("channels.stats.total")}
