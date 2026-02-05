@@ -67,9 +67,9 @@ export function SearchBar() {
 
   return (
     <>
-      {/* Collapsed state - floating buttons */}
+      {/* Collapsed state - floating buttons (hidden on mobile) */}
       <div
-        class={`absolute top-2 left-2 z-10 flex items-center gap-2 transition-opacity ${isOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        class={`hidden sm:flex absolute top-2 left-2 z-10 items-center gap-2 transition-opacity ${isOpen ? "opacity-0 pointer-events-none" : "opacity-100"}`}
       >
         <IconButton
           icon={<SearchIcon />}
