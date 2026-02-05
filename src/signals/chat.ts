@@ -474,3 +474,31 @@ export function updateQueuedMessage(
     m.id === messageId ? { ...m, content: newContent, images: newImages } : m,
   );
 }
+
+// ============================================
+// Draft Persistence
+// ============================================
+
+/** Chat input drafts keyed by session key (persists across navigation) */
+export const chatDrafts = signal<Map<string, string>>(new Map());
+
+/** Get draft for a session */
+export function getDraft(sessionKey: string): string {
+  return chatDrafts.value.get(sessionKey) || "";
+}
+
+/** Set draft for a session */
+export function setDraft(sessionKey: string, text: string): void {
+  const drafts = new Map(chatDrafts.value);
+  if (text) {
+    drafts.set(sessionKey, text);
+  } else {
+    drafts.delete(sessionKey);
+  }
+  chatDrafts.value = drafts;
+}
+
+/** Clear draft for a session (call after sending) */
+export function clearDraft(sessionKey: string): void {
+  setDraft(sessionKey, "");
+}

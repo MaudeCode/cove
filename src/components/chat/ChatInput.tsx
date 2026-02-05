@@ -10,6 +10,7 @@ import { useSignal } from "@preact/signals";
 import { Image } from "lucide-preact";
 import { t } from "@/lib/i18n";
 import { hasContent } from "@/lib/utils";
+import { getDraft, setDraft, clearDraft } from "@/signals/chat";
 import { SendIcon, StopIcon } from "@/components/ui/icons";
 import { Tooltip } from "@/components/ui/Tooltip";
 import { useAttachments } from "@/hooks/useAttachments";
@@ -45,7 +46,8 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const value = useSignal("");
+  // Initialize from draft if session key provided
+  const value = useSignal(sessionKey ? getDraft(sessionKey) : "");
   const isDragging = useSignal(false);
 
   const {
@@ -77,10 +79,15 @@ export function ChatInput({
    */
   const handleInput = useCallback(
     (e: Event) => {
-      value.value = (e.target as HTMLTextAreaElement).value;
+      const newValue = (e.target as HTMLTextAreaElement).value;
+      value.value = newValue;
+      // Persist draft for this session
+      if (sessionKey) {
+        setDraft(sessionKey, newValue);
+      }
       autoResize();
     },
-    [autoResize],
+    [autoResize, sessionKey],
   );
 
   /**
@@ -95,12 +102,16 @@ export function ChatInput({
 
     onSend(message, payloads.length > 0 ? payloads : undefined);
     value.value = "";
+    // Clear the persisted draft
+    if (sessionKey) {
+      clearDraft(sessionKey);
+    }
     clearAttachments();
 
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
     }
-  }, [onSend, disabled, getPayloads, clearAttachments]);
+  }, [onSend, disabled, getPayloads, clearAttachments, sessionKey]);
 
   /**
    * Handle keyboard shortcuts
@@ -184,11 +195,20 @@ export function ChatInput({
   );
 
   /**
-   * Focus textarea on mount
+   * Focus textarea on mount and restore draft when session changes
    */
   useEffect(() => {
     textareaRef.current?.focus();
-  }, []);
+    // Restore draft for this session
+    if (sessionKey) {
+      const draft = getDraft(sessionKey);
+      value.value = draft;
+      // Resize textarea if there's existing content
+      if (draft) {
+        requestAnimationFrame(autoResize);
+      }
+    }
+  }, [sessionKey, autoResize]);
 
   /**
    * Clear error after a delay
