@@ -103,8 +103,8 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
   return (
     <tr class="hover:bg-[var(--color-bg-hover)] transition-colors">
       {/* Instance */}
-      <td class="py-3 px-4">
-        <div class="flex items-center gap-3">
+      <td class="py-3 px-3 sm:px-4">
+        <div class="flex items-center gap-2 sm:gap-3">
           <div
             class={`p-1.5 rounded-lg flex-shrink-0 ${
               isGateway ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"
@@ -117,7 +117,7 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
             />
           </div>
           <div class="min-w-0">
-            <div class="font-medium truncate">
+            <div class="font-medium truncate text-sm sm:text-base">
               {presence.host || presence.instanceId || "Unknown"}
             </div>
             {presence.ip && <div class="text-xs text-[var(--color-text-muted)]">{presence.ip}</div>}
@@ -127,7 +127,7 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
       </td>
 
       {/* Mode */}
-      <td class="py-3 px-4">
+      <td class="py-3 px-3 sm:px-4">
         {presence.mode ? (
           <Badge variant={getModeVariant(presence.mode)} size="sm">
             {presence.mode}
@@ -137,24 +137,24 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
         )}
       </td>
 
-      {/* Platform */}
-      <td class="py-3 px-4">
+      {/* Platform - hidden on mobile */}
+      <td class="py-3 px-4 hidden md:table-cell">
         <div class="text-sm">{presence.platform || "—"}</div>
         {presence.version && (
           <div class="text-xs text-[var(--color-text-muted)]">v{presence.version}</div>
         )}
       </td>
 
-      {/* Last Seen */}
-      <td class="py-3 px-4 whitespace-nowrap">
+      {/* Last Seen - hidden on small mobile */}
+      <td class="py-3 px-4 whitespace-nowrap hidden sm:table-cell">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Clock class="w-3.5 h-3.5" />
           <span>{formatTimestamp(presence.ts, { relative: true })}</span>
         </div>
       </td>
 
-      {/* Idle */}
-      <td class="py-3 px-4 whitespace-nowrap text-sm text-[var(--color-text-muted)]">
+      {/* Idle - hidden until lg */}
+      <td class="py-3 px-4 whitespace-nowrap text-sm text-[var(--color-text-muted)] hidden lg:table-cell">
         {formatIdleTime(presence.lastInputSeconds)}
       </td>
     </tr>
@@ -177,8 +177,8 @@ export function InstancesView(_props: RouteProps) {
 
   return (
     <ViewErrorBoundary viewName={t("nav.instances")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           <PageHeader
             title={t("instances.title")}
             subtitle={t("instances.description")}
@@ -195,7 +195,7 @@ export function InstancesView(_props: RouteProps) {
 
           {/* Stats Cards */}
           {isConnected.value && !isLoading.value && (
-            <div class="grid grid-cols-3 gap-3">
+            <div class="grid grid-cols-3 gap-2 sm:gap-3">
               <StatCard
                 icon={Globe}
                 label={t("instances.stats.total")}
@@ -227,11 +227,21 @@ export function InstancesView(_props: RouteProps) {
                 <table class="w-full">
                   <thead>
                     <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                      <th class="py-3 px-4 font-medium">{t("instances.columns.instance")}</th>
-                      <th class="py-3 px-4 font-medium w-24">{t("instances.columns.mode")}</th>
-                      <th class="py-3 px-4 font-medium w-40">{t("instances.columns.platform")}</th>
-                      <th class="py-3 px-4 font-medium w-28">{t("instances.columns.lastSeen")}</th>
-                      <th class="py-3 px-4 font-medium w-20">{t("instances.columns.idle")}</th>
+                      <th class="py-3 px-3 sm:px-4 font-medium">
+                        {t("instances.columns.instance")}
+                      </th>
+                      <th class="py-3 px-3 sm:px-4 font-medium w-24">
+                        {t("instances.columns.mode")}
+                      </th>
+                      <th class="py-3 px-4 font-medium w-40 hidden md:table-cell">
+                        {t("instances.columns.platform")}
+                      </th>
+                      <th class="py-3 px-4 font-medium w-28 hidden sm:table-cell">
+                        {t("instances.columns.lastSeen")}
+                      </th>
+                      <th class="py-3 px-4 font-medium w-20 hidden lg:table-cell">
+                        {t("instances.columns.idle")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-[var(--color-border)]">
