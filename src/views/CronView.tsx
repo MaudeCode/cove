@@ -492,17 +492,10 @@ export function CronView(_props: RouteProps) {
           {/* Jobs - Cards on mobile, Table on desktop */}
           {isConnected.value && !isLoading.value && filteredJobs.value.length > 0 && (
             <>
-              {/* Mobile: Card list */}
+              {/* Mobile: Card list (tap to edit) */}
               <div class="md:hidden space-y-2">
                 {filteredJobs.value.map((job) => (
-                  <CronJobCard
-                    key={job.id}
-                    job={job}
-                    onEdit={openJobModal.bind(null, "edit")}
-                    onRun={runJobNow}
-                    onToggleEnabled={toggleJobEnabled}
-                    isRunning={isRunning.value}
-                  />
+                  <CronJobCard key={job.id} job={job} onEdit={openJobModal.bind(null, "edit")} />
                 ))}
               </div>
 
