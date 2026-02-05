@@ -13,7 +13,7 @@ import {
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
 } from "@/signals/ui";
-import { useEdgeSwipe } from "@/hooks/useEdgeSwipe";
+import { useEdgeSwipe, sidebarDragOffset, isDraggingSidebar } from "@/hooks/useEdgeSwipe";
 import { ResizeHandle } from "@/components/ui/ResizeHandle";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
@@ -47,10 +47,14 @@ export function AppShell({ children }: AppShellProps) {
       <TopBar />
 
       <div class="flex-1 flex overflow-hidden">
-        {/* Mobile overlay when sidebar is open */}
-        {sidebarOpen.value && (
+        {/* Mobile overlay when sidebar is open or dragging */}
+        {(sidebarOpen.value || isDraggingSidebar.value) && (
           <div
-            class="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            class="fixed inset-0 bg-black z-40 lg:hidden"
+            style={{
+              opacity: isDraggingSidebar.value ? ((sidebarDragOffset.value ?? 0) / 288) * 0.5 : 0.5,
+              transition: isDraggingSidebar.value ? "none" : "opacity 200ms ease-out",
+            }}
             onClick={() => (sidebarOpen.value = false)}
             aria-hidden="true"
           />
@@ -58,12 +62,20 @@ export function AppShell({ children }: AppShellProps) {
 
         {/* Sidebar - fixed overlay on mobile, in-flow on desktop */}
         <aside
-          style={{ "--sidebar-width": `${sidebarWidth.value}px` } as React.CSSProperties}
+          style={
+            {
+              "--sidebar-width": `${sidebarWidth.value}px`,
+              // Use drag offset when dragging, otherwise use open/closed state
+              transform: isDraggingSidebar.value
+                ? `translateX(${(sidebarDragOffset.value ?? 0) - 288}px)`
+                : undefined,
+            } as React.CSSProperties
+          }
           class={`
             fixed inset-y-0 left-0 z-50 w-72 p-2 pr-0 pt-16
             bg-[var(--color-bg-secondary)]
-            transition-transform duration-200 ease-out
-            ${sidebarOpen.value ? "translate-x-0" : "-translate-x-full"}
+            ${isDraggingSidebar.value ? "" : "transition-transform duration-200 ease-out"}
+            ${!isDraggingSidebar.value && (sidebarOpen.value ? "translate-x-0" : "-translate-x-full")}
             lg:relative lg:inset-auto lg:z-auto lg:pt-2 lg:translate-x-0
             lg:w-[var(--sidebar-width)]
             ${!sidebarOpen.value && "lg:w-0 lg:p-0"}
