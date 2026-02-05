@@ -21,6 +21,7 @@ import {
 } from "@/lib/constants";
 import { isHeartbeatMessage } from "@/lib/message-detection";
 import { getMessagesCache, setMessagesCache } from "@/lib/storage";
+import { activeSessionKey } from "@/signals/sessions";
 
 // ============================================
 // Message Cache
@@ -361,15 +362,23 @@ export function completeRun(runId: string, message?: Message): void {
   updateRun(runId, { status: "complete", message });
 
   if (message) {
-    // If run was created on-the-fly (after refresh), try to update existing message
-    // instead of adding a duplicate
-    if (run?.sessionKey === "unknown") {
-      const updated = tryUpdateExistingMessage(message);
-      if (!updated) {
+    // Only add message to global messages if this run belongs to the active session.
+    // Messages from other sessions will be loaded from history when user switches to them.
+    const currentSession = activeSessionKey.value;
+    const runSession = run?.sessionKey;
+    const isActiveSession = !runSession || !currentSession || runSession === currentSession;
+
+    if (isActiveSession) {
+      // If run was created on-the-fly (after refresh), try to update existing message
+      // instead of adding a duplicate
+      if (run?.sessionKey === "unknown") {
+        const updated = tryUpdateExistingMessage(message);
+        if (!updated) {
+          addMessage(message);
+        }
+      } else {
         addMessage(message);
       }
-    } else {
-      addMessage(message);
     }
   }
 
