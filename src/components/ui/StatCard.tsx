@@ -43,13 +43,13 @@ export function StatCard({ icon: Icon, label, value, active, highlight, onClick 
         >
           {value}
         </div>
-        <div class="text-xs sm:text-sm text-[var(--color-text-muted)] truncate">{label}</div>
+        <div class="text-[10px] sm:text-sm text-[var(--color-text-muted)] truncate">{label}</div>
       </div>
     </>
   );
 
   const baseClass = `
-    flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-xl text-left transition-all
+    flex items-center gap-1.5 sm:gap-3 p-2 sm:p-4 rounded-xl text-left transition-all
     ${
       active
         ? "bg-[var(--color-accent)]/10 border-2 border-[var(--color-accent)]"
