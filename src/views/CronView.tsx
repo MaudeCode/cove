@@ -17,7 +17,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { CronJobRow, CronJobModal, isValidCronExpr } from "@/components/cron";
+import { CronJobRow, CronJobCard, CronJobModal, isValidCronExpr } from "@/components/cron";
 import { RefreshCw, Search, Plus, Clock, CheckCircle, XCircle, Zap } from "lucide-preact";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type {
@@ -381,15 +381,15 @@ export function CronView(_props: RouteProps) {
 
   return (
     <ViewErrorBoundary viewName={t("nav.cron")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           <PageHeader
             title={t("cron.title")}
             subtitle={t("cron.description")}
             actions={
               <>
                 {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
-                  <div class="relative">
+                  <div class="relative hidden sm:block">
                     <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                     <Input
                       type="text"
@@ -406,7 +406,8 @@ export function CronView(_props: RouteProps) {
                   onClick={() => openJobModal("create")}
                   disabled={!isConnected.value}
                 >
-                  {t("cron.createJob")}
+                  <span class="hidden sm:inline">{t("cron.createJob")}</span>
+                  <span class="sm:hidden">{t("actions.new")}</span>
                 </Button>
                 <IconButton
                   icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
@@ -419,9 +420,25 @@ export function CronView(_props: RouteProps) {
             }
           />
 
+          {/* Mobile Search */}
+          {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
+            <div class="relative sm:hidden">
+              <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
+              <Input
+                type="text"
+                value={searchQuery.value}
+                onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                placeholder={t("cron.searchPlaceholder")}
+                aria-label={t("cron.searchPlaceholder")}
+                class="pl-10"
+                fullWidth
+              />
+            </div>
+          )}
+
           {/* Stats Cards */}
           {isConnected.value && !isLoading.value && (
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               <StatCard
                 icon={Clock}
                 label={t("cron.stats.total")}
@@ -472,10 +489,25 @@ export function CronView(_props: RouteProps) {
             </div>
           )}
 
-          {/* Jobs Table */}
+          {/* Jobs - Cards on mobile, Table on desktop */}
           {isConnected.value && !isLoading.value && filteredJobs.value.length > 0 && (
-            <Card padding="none">
-              <div class="overflow-x-auto">
+            <>
+              {/* Mobile: Card list */}
+              <div class="md:hidden space-y-2">
+                {filteredJobs.value.map((job) => (
+                  <CronJobCard
+                    key={job.id}
+                    job={job}
+                    onEdit={openJobModal.bind(null, "edit")}
+                    onRun={runJobNow}
+                    onToggleEnabled={toggleJobEnabled}
+                    isRunning={isRunning.value}
+                  />
+                ))}
+              </div>
+
+              {/* Desktop: Table */}
+              <Card padding="none" class="hidden md:block">
                 <table class="w-full">
                   <thead>
                     <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
@@ -500,8 +532,8 @@ export function CronView(_props: RouteProps) {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </Card>
+              </Card>
+            </>
           )}
 
           {/* Empty state */}

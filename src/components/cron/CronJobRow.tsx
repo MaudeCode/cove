@@ -1,12 +1,13 @@
 /**
- * CronJobRow
+ * CronJobRow & CronJobCard
  *
- * Table row component for displaying a cron job.
+ * Table row (desktop) and card (mobile) components for displaying cron jobs.
  */
 
 import { t } from "@/lib/i18n";
 import { Badge } from "@/components/ui/Badge";
 import { IconButton } from "@/components/ui/IconButton";
+import { ListCard } from "@/components/ui/ListCard";
 import { Clock, Calendar, Timer, Play, CheckCircle, XCircle } from "lucide-preact";
 import type { CronJob } from "@/types/cron";
 import { formatSchedule, formatNextRun, getJobStatusBadge } from "./cron-helpers";
@@ -17,6 +18,83 @@ interface CronJobRowProps {
   onRun: (job: CronJob) => void;
   onToggleEnabled: (job: CronJob) => void;
   isRunning: boolean;
+}
+
+/** Shared action buttons for cron job card/row */
+function CronJobActions({
+  job,
+  onRun,
+  onToggleEnabled,
+  isRunning,
+}: {
+  job: CronJob;
+  onRun: (job: CronJob) => void;
+  onToggleEnabled: (job: CronJob) => void;
+  isRunning: boolean;
+}) {
+  return (
+    <div class="flex items-center gap-1 flex-shrink-0">
+      <IconButton
+        icon={<Play class="w-4 h-4" />}
+        label={t("cron.runNow")}
+        size="sm"
+        variant="ghost"
+        disabled={isRunning}
+        onClick={(e) => {
+          e.stopPropagation();
+          onRun(job);
+        }}
+      />
+      <IconButton
+        icon={job.enabled ? <XCircle class="w-4 h-4" /> : <CheckCircle class="w-4 h-4" />}
+        label={job.enabled ? t("cron.disable") : t("cron.enable")}
+        size="sm"
+        variant="ghost"
+        onClick={(e) => {
+          e.stopPropagation();
+          onToggleEnabled(job);
+        }}
+        class={job.enabled ? "text-[var(--color-text-muted)]" : "text-[var(--color-success)]"}
+      />
+    </div>
+  );
+}
+
+/** Mobile card view for a cron job */
+export function CronJobCard({ job, onEdit, onRun, onToggleEnabled, isRunning }: CronJobRowProps) {
+  const status = getJobStatusBadge(job);
+
+  return (
+    <ListCard
+      icon={Clock}
+      iconVariant={job.enabled ? "success" : "default"}
+      title={job.name}
+      subtitle={job.description}
+      badges={
+        <>
+          <Badge variant={job.sessionTarget === "main" ? "success" : "default"} size="sm">
+            {job.sessionTarget}
+          </Badge>
+          <Badge variant={status.variant} size="sm">
+            {status.label}
+          </Badge>
+        </>
+      }
+      meta={[
+        { icon: Calendar, value: formatSchedule(job.schedule) },
+        { icon: Timer, value: formatNextRun(job) },
+      ]}
+      actions={
+        <CronJobActions
+          job={job}
+          onRun={onRun}
+          onToggleEnabled={onToggleEnabled}
+          isRunning={isRunning}
+        />
+      }
+      onClick={() => onEdit(job)}
+    />
+  );
 }
 
 export function CronJobRow({ job, onEdit, onRun, onToggleEnabled, isRunning }: CronJobRowProps) {
@@ -96,30 +174,12 @@ export function CronJobRow({ job, onEdit, onRun, onToggleEnabled, isRunning }: C
 
       {/* Actions */}
       <td class="py-3 px-4">
-        <div class="flex items-center gap-1">
-          <IconButton
-            icon={<Play class="w-4 h-4" />}
-            label={t("cron.runNow")}
-            size="sm"
-            variant="ghost"
-            disabled={isRunning}
-            onClick={(e) => {
-              e.stopPropagation();
-              onRun(job);
-            }}
-          />
-          <IconButton
-            icon={job.enabled ? <XCircle class="w-4 h-4" /> : <CheckCircle class="w-4 h-4" />}
-            label={job.enabled ? t("cron.disable") : t("cron.enable")}
-            size="sm"
-            variant="ghost"
-            onClick={(e) => {
-              e.stopPropagation();
-              onToggleEnabled(job);
-            }}
-            class={job.enabled ? "text-[var(--color-text-muted)]" : "text-[var(--color-success)]"}
-          />
-        </div>
+        <CronJobActions
+          job={job}
+          onRun={onRun}
+          onToggleEnabled={onToggleEnabled}
+          isRunning={isRunning}
+        />
       </td>
     </tr>
   );

@@ -1,4 +1,4 @@
-export { CronJobRow } from "./CronJobRow";
+export { CronJobRow, CronJobCard } from "./CronJobRow";
 export { CronJobForm } from "./CronJobForm";
 export { CronJobModal } from "./CronJobModal";
 export {
