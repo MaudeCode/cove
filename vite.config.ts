@@ -1,4 +1,4 @@
-import { defineConfig, type Plugin } from 'vite'
+import { defineConfig, loadEnv, type Plugin } from 'vite'
 import preact from '@preact/preset-vite'
 import tailwindcss from '@tailwindcss/vite'
 import { resolve } from 'path'
@@ -7,6 +7,44 @@ import { appendFileSync, writeFileSync, readFileSync } from 'fs'
 // Read version from package.json
 const pkg = JSON.parse(readFileSync(resolve(__dirname, 'package.json'), 'utf-8'))
 const appVersion = pkg.version || '0.0.0'
+
+/**
+ * CSP extension plugin - allows adding extra domains to CSP via environment variables.
+ * Set VITE_CSP_EXTRA_DEFAULT_SRC and/or VITE_CSP_EXTRA_SCRIPT_SRC in .env.local
+ * to inject vendor-specific domains (e.g., Cloudflare Access/Insights) at build time.
+ * The repo stays clean; each deployment customizes their own build.
+ */
+function cspExtensionPlugin(env: Record<string, string>): Plugin {
+  const extraDefaultSrc = env.VITE_CSP_EXTRA_DEFAULT_SRC || ''
+  const extraScriptSrc = env.VITE_CSP_EXTRA_SCRIPT_SRC || ''
+
+  return {
+    name: 'cove-csp-extension',
+    transformIndexHtml(html) {
+      if (!extraDefaultSrc && !extraScriptSrc) {
+        return html
+      }
+
+      let modified = html
+
+      if (extraDefaultSrc) {
+        modified = modified.replace(
+          /default-src\s+'self'/,
+          `default-src 'self' ${extraDefaultSrc}`
+        )
+      }
+
+      if (extraScriptSrc) {
+        modified = modified.replace(
+          /script-src\s+'self'\s+'unsafe-inline'/,
+          `script-src 'self' 'unsafe-inline' ${extraScriptSrc}`
+        )
+      }
+
+      return modified
+    }
+  }
+}
 
 /**
  * Debug logging plugin - accepts POSTs to /__cove_debug and writes to debug.log
@@ -54,17 +92,21 @@ function debugLogPlugin(): Plugin {
 }
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [preact(), tailwindcss(), debugLogPlugin()],
-  define: {
-    __APP_VERSION__: JSON.stringify(appVersion),
-  },
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, './src'),
+export default defineConfig(({ mode }) => {
+  const env = loadEnv(mode, process.cwd(), '')
+
+  return {
+    plugins: [preact(), tailwindcss(), cspExtensionPlugin(env), debugLogPlugin()],
+    define: {
+      __APP_VERSION__: JSON.stringify(appVersion),
     },
-  },
-  server: {
-    allowedHosts: ['cove.maudeco.de'],
-  },
+    resolve: {
+      alias: {
+        '@': resolve(__dirname, './src'),
+      },
+    },
+    server: {
+      allowedHosts: ['cove.maudeco.de'],
+    },
+  }
 })
