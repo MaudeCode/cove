@@ -14,7 +14,7 @@ import { loadAgents } from "@/signals/agents";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
-import { getAuth, saveAuth, setSessionCredential, getSessionCredential } from "@/lib/storage";
+import { getAuth, saveAuth, getSessionCredential } from "@/lib/storage";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -72,19 +72,13 @@ export function LoginView() {
         autoReconnect: true,
       });
 
-      // Save URL and auth mode if remember me is checked (NOT credentials)
-      if (rememberMe.value) {
-        saveAuth({
-          url: url.value,
-          authMode: authMode.value,
-          rememberMe: true,
-        });
-      }
-
-      // Store credential in session storage (cleared on tab close)
-      if (token.value) {
-        setSessionCredential(token.value);
-      }
+      // Save auth settings and credential
+      saveAuth({
+        url: url.value,
+        authMode: authMode.value,
+        rememberMe: rememberMe.value,
+        credential: token.value,
+      });
 
       // Load sessions list for sidebar
       await loadSessions();
