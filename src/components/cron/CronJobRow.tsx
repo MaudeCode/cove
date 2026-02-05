@@ -88,6 +88,7 @@ export function CronJobRow({ job, onEdit, onRun, onToggleEnabled, isRunning }: C
 
   return (
     <tr
+      role="button"
       class="group hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors"
       onClick={() => onEdit(job)}
       onKeyDown={(e) => {
