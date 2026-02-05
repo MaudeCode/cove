@@ -131,14 +131,14 @@ export function ThemeSettings() {
 
       {isSystemMode ? (
         /* System mode: show light and dark theme selections side by side */
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {/* Light theme selection */}
           <div>
             <SectionHeader
               icon={<Sun class="w-4 h-4" />}
               titleKey="settings.appearance.lightTheme"
             />
-            <div class="grid grid-cols-5 gap-2">
+            <div class="flex flex-wrap gap-2">
               {lightThemes.map((theme) => (
                 <ThemeSwatch
                   key={theme.id}
@@ -156,7 +156,7 @@ export function ThemeSettings() {
               icon={<Moon class="w-4 h-4" />}
               titleKey="settings.appearance.darkTheme"
             />
-            <div class="grid grid-cols-5 gap-2">
+            <div class="flex flex-wrap gap-2">
               {darkThemes.map((theme) => (
                 <ThemeSwatch
                   key={theme.id}
@@ -170,14 +170,14 @@ export function ThemeSettings() {
         </div>
       ) : (
         /* Manual mode: show all themes in same 2-column layout */
-        <div class="grid grid-cols-2 gap-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
           {/* Light themes */}
           <div>
             <SectionHeader
               icon={<Sun class="w-4 h-4" />}
               titleKey="settings.appearance.lightThemes"
             />
-            <div class="grid grid-cols-5 gap-2">
+            <div class="flex flex-wrap gap-2">
               {lightThemes.map((theme) => (
                 <ThemeSwatch
                   key={theme.id}
@@ -195,7 +195,7 @@ export function ThemeSettings() {
               icon={<Moon class="w-4 h-4" />}
               titleKey="settings.appearance.darkThemes"
             />
-            <div class="grid grid-cols-5 gap-2">
+            <div class="flex flex-wrap gap-2">
               {darkThemes.map((theme) => (
                 <ThemeSwatch
                   key={theme.id}
