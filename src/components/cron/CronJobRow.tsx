@@ -67,18 +67,12 @@ export function CronJobCard({ job, onEdit, onRun, onToggleEnabled, isRunning }: 
   return (
     <ListCard
       icon={Clock}
-      iconVariant={job.enabled ? "success" : "default"}
+      iconVariant={!job.enabled ? "default" : status.variant === "error" ? "error" : "success"}
       title={job.name}
-      subtitle={job.description}
       badges={
-        <>
-          <Badge variant={job.sessionTarget === "main" ? "success" : "default"} size="sm">
-            {job.sessionTarget}
-          </Badge>
-          <Badge variant={status.variant} size="sm">
-            {status.label}
-          </Badge>
-        </>
+        <Badge variant={status.variant} size="sm">
+          {status.label}
+        </Badge>
       }
       meta={[
         { icon: Calendar, value: formatSchedule(job.schedule) },
