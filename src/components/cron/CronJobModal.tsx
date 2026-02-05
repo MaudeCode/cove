@@ -12,9 +12,10 @@ import { Spinner } from "@/components/ui/Spinner";
 import { Modal } from "@/components/ui/Modal";
 import { Toggle } from "@/components/ui/Toggle";
 import { MiniStat } from "@/components/ui/MiniStat";
+import { DeleteConfirmFooter, EditFooter } from "@/components/ui/ModalFooter";
 import { CronJobForm } from "./CronJobForm";
 import { formatSchedule, formatNextRun, formatLastRun, getJobStatusBadge } from "./cron-helpers";
-import { Clock, Play, Trash2, CheckCircle, XCircle } from "lucide-preact";
+import { Clock, Play, CheckCircle, XCircle } from "lucide-preact";
 import type { CronJob, CronRunLogEntry } from "@/types/cron";
 
 interface CronJobModalProps {
@@ -90,48 +91,20 @@ export function CronJobModal({
       size="xl"
       footer={
         isDeleting ? (
-          <div class="space-y-3">
-            <p class="text-sm text-[var(--color-error)] text-center sm:text-left">
-              {t("cron.confirmDelete")}
-            </p>
-            <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-              <Button
-                variant="ghost"
-                onClick={() => onSetDeleting(false)}
-                fullWidth
-                class="sm:w-auto"
-              >
-                {t("actions.cancel")}
-              </Button>
-              <Button
-                variant="danger"
-                icon={<Trash2 class="w-4 h-4" />}
-                onClick={onDelete}
-                fullWidth
-                class="sm:w-auto"
-              >
-                {t("actions.delete")}
-              </Button>
-            </div>
-          </div>
+          <DeleteConfirmFooter
+            message={t("cron.confirmDelete")}
+            onCancel={() => onSetDeleting(false)}
+            onDelete={onDelete}
+          />
         ) : (
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            {/* Delete button (edit mode) */}
-            <div class="order-last sm:order-first">
-              {isEdit && job && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  icon={<Trash2 class="w-4 h-4" />}
-                  onClick={() => onSetDeleting(true)}
-                  class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-                >
-                  {t("actions.delete")}
-                </Button>
-              )}
-            </div>
-            {/* Toggle + Save/Cancel */}
-            <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+          <EditFooter
+            isEdit={isEdit && !!job}
+            onDeleteClick={() => onSetDeleting(true)}
+            onCancel={onClose}
+            onSave={onSave}
+            isSaving={isSaving}
+            saveLabel={isEdit ? t("actions.save") : t("actions.create")}
+            extraContent={
               <div class="flex items-center justify-between sm:justify-start gap-2">
                 <span class="text-sm text-[var(--color-text-secondary)]">
                   {editEnabled.value ? t("cron.enabled") : t("cron.disabled")}
@@ -141,22 +114,8 @@ export function CronJobModal({
                   onChange={(checked) => (editEnabled.value = checked)}
                 />
               </div>
-              <div class="flex gap-2">
-                <Button variant="secondary" onClick={onClose} fullWidth class="sm:w-auto">
-                  {t("actions.cancel")}
-                </Button>
-                <Button onClick={onSave} disabled={isSaving} fullWidth class="sm:w-auto">
-                  {isSaving ? (
-                    <Spinner size="sm" />
-                  ) : isEdit ? (
-                    t("actions.save")
-                  ) : (
-                    t("actions.create")
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
+            }
+          />
         )
       }
     >

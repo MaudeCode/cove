@@ -1,122 +1,160 @@
 /**
- * ModalFooter
+ * ModalFooter Components
  *
- * Standardized modal footer layouts for common patterns:
- * - confirm: Cancel + Primary action (right-aligned)
- * - delete: Delete button (left) + Cancel/Confirm (right)
- * - custom: Full control via children
+ * Reusable footer patterns for modals with edit/delete functionality.
  */
 
 import type { ComponentChildren } from "preact";
 import { t } from "@/lib/i18n";
 import { Button } from "./Button";
+import { Spinner } from "./Spinner";
+import { Trash2 } from "lucide-preact";
 
-export interface ModalFooterProps {
-  /** Footer variant */
-  variant?: "confirm" | "delete" | "custom";
-  /** Primary action label (defaults to "Confirm" or "Save") */
-  confirmLabel?: string;
-  /** Cancel action label (defaults to "Cancel") */
-  cancelLabel?: string;
-  /** Delete action label (defaults to "Delete") */
-  deleteLabel?: string;
-  /** Called when confirm/save is clicked */
-  onConfirm?: () => void;
+// ============================================
+// Basic ModalFooter (Cancel + Confirm)
+// ============================================
+
+interface ModalFooterProps {
   /** Called when cancel is clicked */
-  onCancel?: () => void;
-  /** Called when delete is clicked */
-  onDelete?: () => void;
-  /** Whether the confirm button is disabled */
+  onCancel: () => void;
+  /** Called when confirm is clicked */
+  onConfirm: () => void;
+  /** Label for confirm button */
+  confirmLabel?: string;
+  /** Disable confirm button */
   confirmDisabled?: boolean;
-  /** Whether the delete button is disabled */
-  deleteDisabled?: boolean;
-  /** Whether an action is in progress (shows loading state) */
-  isLoading?: boolean;
-  /** Loading label (shown during loading) */
-  loadingLabel?: string;
-  /** For delete variant: whether delete confirmation is showing */
-  isDeleting?: boolean;
-  /** For delete variant: called to toggle delete confirmation */
-  onSetDeleting?: (deleting: boolean) => void;
-  /** Custom children (for variant="custom") */
-  children?: ComponentChildren;
+  /** Cancel button label */
+  cancelLabel?: string;
 }
 
+/**
+ * Simple modal footer with cancel and confirm buttons.
+ */
 export function ModalFooter({
-  variant = "confirm",
-  confirmLabel,
-  cancelLabel,
-  deleteLabel,
+  onCancel,
   onConfirm,
+  confirmLabel,
+  confirmDisabled,
+  cancelLabel,
+}: ModalFooterProps) {
+  return (
+    <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+      <Button variant="secondary" onClick={onCancel} fullWidth class="sm:w-auto">
+        {cancelLabel || t("actions.cancel")}
+      </Button>
+      <Button onClick={onConfirm} disabled={confirmDisabled} fullWidth class="sm:w-auto">
+        {confirmLabel || t("actions.confirm")}
+      </Button>
+    </div>
+  );
+}
+
+// ============================================
+// Delete Confirmation Footer
+// ============================================
+
+interface DeleteConfirmFooterProps {
+  /** Confirmation message to display */
+  message: string;
+  /** Called when cancel is clicked */
+  onCancel: () => void;
+  /** Called when delete is confirmed */
+  onDelete: () => void;
+  /** Whether delete is in progress */
+  isDeleting?: boolean;
+}
+
+/**
+ * Delete confirmation footer - shows message + cancel/delete buttons.
+ * Stacks vertically on mobile, horizontal on desktop.
+ */
+export function DeleteConfirmFooter({
+  message,
   onCancel,
   onDelete,
-  confirmDisabled = false,
-  deleteDisabled = false,
-  isLoading = false,
-  loadingLabel,
-  isDeleting = false,
-  onSetDeleting,
-  children,
-}: ModalFooterProps) {
-  // Custom variant - just render children
-  if (variant === "custom") {
-    return <div class="flex items-center justify-end gap-2">{children}</div>;
-  }
+  isDeleting,
+}: DeleteConfirmFooterProps) {
+  return (
+    <div class="space-y-3">
+      <p class="text-sm text-[var(--color-error)] text-center sm:text-left">{message}</p>
+      <div class="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
+        <Button variant="ghost" onClick={onCancel} fullWidth class="sm:w-auto">
+          {t("actions.cancel")}
+        </Button>
+        <Button
+          variant="danger"
+          icon={<Trash2 class="w-4 h-4" />}
+          onClick={onDelete}
+          disabled={isDeleting}
+          fullWidth
+          class="sm:w-auto"
+        >
+          {isDeleting ? <Spinner size="sm" /> : t("actions.delete")}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
-  // Delete variant - delete on left, cancel/confirm on right
-  if (variant === "delete") {
-    return (
-      <div class="flex items-center justify-between">
-        <div>
-          {isDeleting ? (
-            <div class="flex items-center gap-2">
-              <span class="text-sm text-[var(--color-error)]">{t("common.confirmDelete")}</span>
-              <Button size="sm" variant="ghost" onClick={() => onSetDeleting?.(false)}>
-                {cancelLabel ?? t("actions.cancel")}
-              </Button>
-              <Button
-                size="sm"
-                variant="danger"
-                onClick={onDelete}
-                disabled={deleteDisabled || isLoading}
-              >
-                {isLoading
-                  ? (loadingLabel ?? t("common.deleting"))
-                  : (deleteLabel ?? t("actions.delete"))}
-              </Button>
-            </div>
-          ) : (
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={() => onSetDeleting?.(true)}
-              disabled={deleteDisabled}
-            >
-              {deleteLabel ?? t("actions.delete")}
-            </Button>
-          )}
-        </div>
-        <div class="flex items-center gap-2">
-          <Button variant="ghost" onClick={onCancel}>
-            {cancelLabel ?? t("actions.cancel")}
+interface EditFooterProps {
+  /** Called when cancel is clicked */
+  onCancel: () => void;
+  /** Called when save is clicked */
+  onSave: () => void;
+  /** Whether save is in progress */
+  isSaving?: boolean;
+  /** Label for save button (defaults to "Save") */
+  saveLabel?: string;
+  /** Whether this is for editing (shows delete) or creating */
+  isEdit?: boolean;
+  /** Called when delete button is clicked (to show confirmation) */
+  onDeleteClick?: () => void;
+  /** Extra content between delete and save (e.g., toggle) */
+  extraContent?: ComponentChildren;
+}
+
+/**
+ * Standard edit footer - delete on left, cancel/save on right.
+ * Stacks vertically on mobile with delete at bottom.
+ */
+export function EditFooter({
+  onCancel,
+  onSave,
+  isSaving,
+  saveLabel,
+  isEdit,
+  onDeleteClick,
+  extraContent,
+}: EditFooterProps) {
+  return (
+    <div class="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3">
+      {/* Delete button (edit mode only) */}
+      <div>
+        {isEdit && onDeleteClick && (
+          <Button
+            size="sm"
+            variant="ghost"
+            icon={<Trash2 class="w-4 h-4" />}
+            onClick={onDeleteClick}
+            class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+          >
+            {t("actions.delete")}
           </Button>
-          <Button variant="primary" onClick={onConfirm} disabled={confirmDisabled || isLoading}>
-            {isLoading ? (loadingLabel ?? t("common.saving")) : (confirmLabel ?? t("actions.save"))}
+        )}
+      </div>
+
+      {/* Right side: extra content + buttons */}
+      <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+        {extraContent}
+        <div class="flex flex-col sm:flex-row gap-2">
+          <Button variant="secondary" onClick={onCancel} fullWidth class="sm:w-auto">
+            {t("actions.cancel")}
+          </Button>
+          <Button onClick={onSave} disabled={isSaving} fullWidth class="sm:w-auto">
+            {isSaving ? <Spinner size="sm" /> : saveLabel || t("actions.save")}
           </Button>
         </div>
       </div>
-    );
-  }
-
-  // Default confirm variant - cancel + confirm right-aligned
-  return (
-    <div class="flex items-center justify-end gap-2">
-      <Button variant="ghost" onClick={onCancel}>
-        {cancelLabel ?? t("actions.cancel")}
-      </Button>
-      <Button variant="primary" onClick={onConfirm} disabled={confirmDisabled || isLoading}>
-        {isLoading ? (loadingLabel ?? t("common.saving")) : (confirmLabel ?? t("actions.confirm"))}
-      </Button>
     </div>
   );
 }
