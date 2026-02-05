@@ -20,8 +20,8 @@ const LOG_LEVELS: Record<LogLevel, number> = {
   off: 4,
 };
 
-// Dev mode file logging
-const DEV_MODE = import.meta.env.DEV;
+// Dev mode file logging - only on localhost to avoid CORS issues with CF Access
+const DEV_MODE = import.meta.env.DEV && globalThis.location?.hostname === "localhost";
 
 /**
  * Resolve log level from environment.
