@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
+import { ListCard } from "@/components/ui/ListCard";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { RefreshCw, Monitor, Server, Smartphone, Globe, Clock } from "lucide-preact";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
@@ -96,6 +97,34 @@ function AccessBadges({ roles, scopes }: { roles?: string[]; scopes?: string[] }
   );
 }
 
+/** Mobile card view for an instance */
+function InstanceCard({ presence }: { presence: SystemPresence }) {
+  const Icon = getDeviceIcon(presence);
+  const isGateway = presence.mode === "gateway";
+
+  return (
+    <ListCard
+      icon={Icon}
+      iconVariant={isGateway ? "success" : "default"}
+      title={presence.host || presence.instanceId || "Unknown"}
+      subtitle={presence.ip}
+      badges={
+        presence.mode ? (
+          <Badge variant={getModeVariant(presence.mode)} size="sm">
+            {presence.mode}
+          </Badge>
+        ) : null
+      }
+      meta={[
+        { icon: Clock, value: formatTimestamp(presence.ts, { relative: true }) },
+        ...(presence.platform ? [{ value: presence.platform }] : []),
+      ]}
+    />
+  );
+}
+
+/** Desktop table row for an instance */
+/** Desktop table row for an instance */
 function InstanceRow({ presence }: { presence: SystemPresence }) {
   const Icon = getDeviceIcon(presence);
   const isGateway = presence.mode === "gateway";
@@ -103,8 +132,8 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
   return (
     <tr class="hover:bg-[var(--color-bg-hover)] transition-colors">
       {/* Instance */}
-      <td class="py-3 px-3 sm:px-4">
-        <div class="flex items-center gap-2 sm:gap-3">
+      <td class="py-3 px-4">
+        <div class="flex items-center gap-3">
           <div
             class={`p-1.5 rounded-lg flex-shrink-0 ${
               isGateway ? "bg-[var(--color-success)]/10" : "bg-[var(--color-bg-tertiary)]"
@@ -117,7 +146,7 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
             />
           </div>
           <div class="min-w-0">
-            <div class="font-medium truncate text-sm sm:text-base">
+            <div class="font-medium truncate">
               {presence.host || presence.instanceId || "Unknown"}
             </div>
             {presence.ip && <div class="text-xs text-[var(--color-text-muted)]">{presence.ip}</div>}
@@ -127,7 +156,7 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
       </td>
 
       {/* Mode */}
-      <td class="py-3 px-3 sm:px-4">
+      <td class="py-3 px-4">
         {presence.mode ? (
           <Badge variant={getModeVariant(presence.mode)} size="sm">
             {presence.mode}
@@ -137,16 +166,16 @@ function InstanceRow({ presence }: { presence: SystemPresence }) {
         )}
       </td>
 
-      {/* Platform - hidden on mobile */}
-      <td class="py-3 px-4 hidden md:table-cell">
+      {/* Platform */}
+      <td class="py-3 px-4">
         <div class="text-sm">{presence.platform || "—"}</div>
         {presence.version && (
           <div class="text-xs text-[var(--color-text-muted)]">v{presence.version}</div>
         )}
       </td>
 
-      {/* Last Seen - hidden on small mobile */}
-      <td class="py-3 px-4 whitespace-nowrap hidden sm:table-cell">
+      {/* Last Seen */}
+      <td class="py-3 px-4 whitespace-nowrap">
         <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
           <Clock class="w-3.5 h-3.5" />
           <span>{formatTimestamp(presence.ts, { relative: true })}</span>
@@ -220,25 +249,28 @@ export function InstancesView(_props: RouteProps) {
             </div>
           )}
 
-          {/* Instances Table */}
+          {/* Instances - Cards on mobile, Table on desktop */}
           {isConnected.value && !isLoading.value && instances.value.length > 0 && (
-            <Card padding="none">
-              <div class="overflow-x-auto">
+            <>
+              {/* Mobile: Card list */}
+              <div class="md:hidden space-y-2">
+                {instances.value.map((presence, i) => (
+                  <InstanceCard
+                    key={presence.instanceId || presence.host || i}
+                    presence={presence}
+                  />
+                ))}
+              </div>
+
+              {/* Desktop: Table */}
+              <Card padding="none" class="hidden md:block">
                 <table class="w-full">
                   <thead>
                     <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                      <th class="py-3 px-3 sm:px-4 font-medium">
-                        {t("instances.columns.instance")}
-                      </th>
-                      <th class="py-3 px-3 sm:px-4 font-medium w-24">
-                        {t("instances.columns.mode")}
-                      </th>
-                      <th class="py-3 px-4 font-medium w-40 hidden md:table-cell">
-                        {t("instances.columns.platform")}
-                      </th>
-                      <th class="py-3 px-4 font-medium w-28 hidden sm:table-cell">
-                        {t("instances.columns.lastSeen")}
-                      </th>
+                      <th class="py-3 px-4 font-medium">{t("instances.columns.instance")}</th>
+                      <th class="py-3 px-4 font-medium w-24">{t("instances.columns.mode")}</th>
+                      <th class="py-3 px-4 font-medium w-40">{t("instances.columns.platform")}</th>
+                      <th class="py-3 px-4 font-medium w-28">{t("instances.columns.lastSeen")}</th>
                       <th class="py-3 px-4 font-medium w-20 hidden lg:table-cell">
                         {t("instances.columns.idle")}
                       </th>
@@ -253,8 +285,8 @@ export function InstancesView(_props: RouteProps) {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </Card>
+              </Card>
+            </>
           )}
 
           {/* Empty state */}
