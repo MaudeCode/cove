@@ -14,10 +14,20 @@ import {
   sessionsByRecent,
   sessionSearchQuery,
 } from "@/signals/sessions";
+import { sidebarOpen } from "@/signals/ui";
 import type { TimeGroup } from "@/lib/session-utils";
 import type { Session } from "@/types/sessions";
 import { SessionItem } from "@/components/sessions/SessionItem";
 import { currentPath } from "./Sidebar";
+
+/** Navigate to session and close sidebar on mobile */
+function navigateToSession(sessionKey: string) {
+  route(`/chat/${encodeURIComponent(sessionKey)}`);
+  // Close sidebar on mobile (< lg breakpoint)
+  if (window.innerWidth < 1024) {
+    sidebarOpen.value = false;
+  }
+}
 
 interface SessionListProps {
   onRename: (session: Session) => void;
@@ -59,7 +69,7 @@ export function SessionList({ onRename, onDelete }: SessionListProps) {
                 effectiveSessionKey.value === session.key && currentPath.value.startsWith("/chat")
               }
               isMain={isMainSession(session.key)}
-              onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
+              onClick={() => navigateToSession(session.key)}
               onRename={onRename}
               onDelete={onDelete}
             />
@@ -96,7 +106,7 @@ export function SessionList({ onRename, onDelete }: SessionListProps) {
                       currentPath.value.startsWith("/chat")
                     }
                     isMain={isMainSession(session.key)}
-                    onClick={() => route(`/chat/${encodeURIComponent(session.key)}`)}
+                    onClick={() => navigateToSession(session.key)}
                     onRename={onRename}
                     onDelete={onDelete}
                   />
