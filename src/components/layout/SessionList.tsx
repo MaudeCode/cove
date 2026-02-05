@@ -14,7 +14,7 @@ import {
   sessionsByRecent,
   sessionSearchQuery,
 } from "@/signals/sessions";
-import { sidebarOpen } from "@/signals/ui";
+import { closeSidebarOnMobile } from "@/signals/ui";
 import type { TimeGroup } from "@/lib/session-utils";
 import type { Session } from "@/types/sessions";
 import { SessionItem } from "@/components/sessions/SessionItem";
@@ -23,10 +23,7 @@ import { currentPath } from "./Sidebar";
 /** Navigate to session and close sidebar on mobile */
 function navigateToSession(sessionKey: string) {
   route(`/chat/${encodeURIComponent(sessionKey)}`);
-  // Close sidebar on mobile (< lg breakpoint)
-  if (window.innerWidth < 1024) {
-    sidebarOpen.value = false;
-  }
+  closeSidebarOnMobile();
 }
 
 interface SessionListProps {
