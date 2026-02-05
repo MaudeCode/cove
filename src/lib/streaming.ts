@@ -1,96 +1,66 @@
 /**
  * Streaming Text Utilities
  *
- * Handles the complex logic of merging streamed text deltas.
- * The gateway sends accumulated text per-block, resetting after tool calls,
- * so we need to detect continuations vs new blocks.
+ * Handles merging streamed text deltas from the gateway.
+ * The gateway sends accumulated text that resets after tool calls.
  */
 
 import { TEXT_BLOCK_SEPARATOR } from "./constants";
-import { log } from "./logger";
 
 export interface DeltaResult {
-  /** Merged content string */
   content: string;
-  /** Start position of the last appended block (for continuation detection) */
   lastBlockStart?: number;
 }
 
 /**
  * Merge incoming delta text with existing content.
  *
- * Handles three cases:
- * 1. Direct continuation (new text starts with existing)
- * 2. Continuation of a previously appended block
- * 3. New block after a tool call
+ * The gateway sends accumulated text per "block" - text resets after tool calls.
+ * We track lastBlockStart to know where the current block began.
  */
 export function mergeDeltaText(
   existingContent: string,
   newText: string,
   lastBlockStart?: number,
 ): DeltaResult {
-  // Case 1: First content
+  // Case 1: First content ever
   if (!existingContent) {
-    log.chat.debug("mergeDeltaText: Case 1 - first content", {
-      newTextLen: newText.length,
-    });
     return { content: newText };
   }
 
-  // Case 2: Direct continuation (same block, no tool call in between)
+  // Case 2: Simple continuation - newText is the full accumulated content
+  // This happens when streaming without tool calls
   if (newText.startsWith(existingContent)) {
-    log.chat.debug("mergeDeltaText: Case 2 - direct continuation", {
-      existingLen: existingContent.length,
-      newLen: newText.length,
-    });
     return { content: newText };
   }
 
-  // Case 3: We have a previous block start - check if this continues that block
-  if (lastBlockStart !== undefined && lastBlockStart > 0) {
+  // Case 3: We're in a post-tool block (lastBlockStart is set)
+  if (
+    lastBlockStart !== undefined &&
+    lastBlockStart > 0 &&
+    lastBlockStart <= existingContent.length
+  ) {
     const baseContent = existingContent.slice(0, lastBlockStart);
     const lastBlock = existingContent.slice(lastBlockStart);
 
-    log.chat.debug("mergeDeltaText: Case 3 - checking block continuation", {
-      lastBlockStart,
-      baseContentLen: baseContent.length,
-      lastBlockLen: lastBlock.length,
-      lastBlockPreview: lastBlock.slice(0, 50),
-      newTextPreview: newText.slice(0, 50),
-    });
-
-    // Check if new text continues/replaces the last block
+    // If newText starts with what we have in lastBlock, it's a continuation
+    // Replace lastBlock with the fuller newText
     if (newText.startsWith(lastBlock)) {
-      log.chat.debug("mergeDeltaText: Case 3a - continues last block");
       return { content: baseContent + newText, lastBlockStart };
     }
 
-    // Check if it's a prefix match (partial continuation)
-    const prefixLen = Math.min(lastBlock.length, 30);
-    if (lastBlock.length > 0 && newText.startsWith(lastBlock.slice(0, prefixLen))) {
-      log.chat.debug("mergeDeltaText: Case 3b - prefix match continuation");
-      return { content: baseContent + newText, lastBlockStart };
+    // If lastBlock starts with newText, keep what we have (stale delta arrived late)
+    if (lastBlock.startsWith(newText)) {
+      return { content: existingContent, lastBlockStart };
     }
 
-    // New block - append with separator
-    const newBlockStart = existingContent.length + TEXT_BLOCK_SEPARATOR.length;
-    log.chat.debug("mergeDeltaText: Case 3c - new block after existing", {
-      newBlockStart,
-      resultLen: existingContent.length + TEXT_BLOCK_SEPARATOR.length + newText.length,
-    });
-    return {
-      content: existingContent + TEXT_BLOCK_SEPARATOR + newText,
-      lastBlockStart: newBlockStart,
-    };
+    // Otherwise newText is growing the block - replace lastBlock entirely
+    // This handles the case where accumulated text grows: "A" -> "An" -> "And"
+    return { content: baseContent + newText, lastBlockStart };
   }
 
-  // Case 4: No lastBlockStart but content doesn't continue - new block after tool
+  // Case 4: New block after tool (no lastBlockStart yet)
   const newBlockStart = existingContent.length + TEXT_BLOCK_SEPARATOR.length;
-  log.chat.debug("mergeDeltaText: Case 4 - new block (no lastBlockStart)", {
-    existingLen: existingContent.length,
-    newTextLen: newText.length,
-    newBlockStart,
-  });
   return {
     content: existingContent + TEXT_BLOCK_SEPARATOR + newText,
     lastBlockStart: newBlockStart,
