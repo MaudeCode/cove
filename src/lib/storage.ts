@@ -98,20 +98,31 @@ export function getAuth(): StoredAuth | null {
   return stored;
 }
 
-export function saveAuth(auth: StoredAuth): void {
-  // SECURITY: Never store credentials in localStorage
-  // Only store URL and auth mode
+export function saveAuth(auth: StoredAuth & { credential?: string }): void {
   const safeAuth: StoredAuth = {
     url: auth.url,
     authMode: auth.authMode,
     rememberMe: auth.rememberMe,
-    // credential is intentionally NOT stored
   };
   setRaw("auth", safeAuth);
+
+  // Store credential based on rememberMe preference
+  if (auth.credential) {
+    if (auth.rememberMe) {
+      // rememberMe: persist in localStorage (survives PWA restart)
+      setRaw("credential", auth.credential);
+      clearSessionCredential();
+    } else {
+      // No rememberMe: session only (cleared when PWA closes)
+      setSessionCredential(auth.credential);
+      remove("credential");
+    }
+  }
 }
 
 export function clearAuth(): void {
   remove("auth");
+  remove("credential");
   clearSessionCredential();
 }
 
@@ -128,10 +139,15 @@ export function setSessionCredential(credential: string): void {
 }
 
 /**
- * Get credential from sessionStorage (current session only)
+ * Get credential - checks localStorage first (rememberMe), then sessionStorage
  */
 export function getSessionCredential(): string | null {
   try {
+    // Check localStorage first (rememberMe enabled)
+    const remembered = getRaw<string>("credential");
+    if (remembered) return remembered;
+
+    // Fall back to sessionStorage
     const raw = sessionStorage.getItem(SESSION_AUTH_KEY);
     if (!raw) return null;
     const data = JSON.parse(raw) as SessionAuth;
