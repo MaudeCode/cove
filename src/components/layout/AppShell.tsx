@@ -75,7 +75,7 @@ export function AppShell({ children }: AppShellProps) {
         {/* Mobile overlay when sidebar is open */}
         {sidebarOpen.value && (
           <div
-            class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40 lg:hidden"
+            class="fixed inset-0 bg-black/50 z-40 lg:hidden"
             onClick={() => (sidebarOpen.value = false)}
             aria-hidden="true"
           />
