@@ -21,6 +21,7 @@ import type { Message, ToolCall } from "@/types/messages";
 import type { ChatEvent, AgentEvent } from "@/types/chat";
 import { parseMessageContent, mergeToolCalls } from "@/types/chat";
 import { isHeartbeatResponse, isNoReplyContent } from "@/lib/message-detection";
+import { isForActiveSession } from "@/signals/sessions";
 import { processNextQueuedMessage } from "./send";
 import { loadHistory } from "./history";
 
@@ -61,6 +62,8 @@ export function subscribeToChatEvents(): () => void {
       }
     } else if (evt.stream === "compaction") {
       handleCompactionEvent(evt);
+    } else if (evt.stream === "assistant") {
+      handleAssistantStreamEvent(evt);
     }
   });
 
@@ -153,6 +156,38 @@ function handleCompactionEvent(evt: AgentEvent): void {
     isCompacting.value = true;
   } else if (phase === "end") {
     isCompacting.value = false;
+  }
+}
+
+/**
+ * Handle assistant stream events (immediate text updates, not throttled).
+ * These arrive faster than chat delta events which are throttled at 150ms.
+ */
+function handleAssistantStreamEvent(evt: AgentEvent): void {
+  const { runId, sessionKey, data } = evt;
+  const text = typeof data?.text === "string" ? data.text : null;
+
+  if (!text) return;
+
+  // Session filter - only process events for the active session
+  if (!isForActiveSession(sessionKey)) {
+    return;
+  }
+
+  let run = activeRuns.value.get(runId);
+
+  // If no run exists, create one on-the-fly
+  if (!run && sessionKey) {
+    log.chat.debug("Creating run on-the-fly for assistant stream:", runId, "session:", sessionKey);
+    startRun(runId, sessionKey);
+    run = activeRuns.value.get(runId);
+  }
+
+  if (!run) return;
+
+  // Only update if new text is longer or equal (prevents late/stale updates from overwriting)
+  if (text.length >= run.content.length) {
+    updateRunContent(runId, text, run.toolCalls);
   }
 }
 
