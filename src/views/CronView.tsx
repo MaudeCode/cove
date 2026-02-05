@@ -21,52 +21,9 @@ import { RefreshCw, Search, Plus, Clock, CheckCircle, XCircle, Zap } from "lucid
 import type { RouteProps } from "@/types/routes";
 
 export function CronView(_props: RouteProps) {
-  const {
-    // State
-    cronJobs,
-    cronStatus,
-    isLoading,
-    error,
-    searchQuery,
-    statusFilter,
-    // Modal state
-    modalMode,
-    selectedJob,
-    selectedJobRuns,
-    isLoadingRuns,
-    isDeleting,
-    isSaving,
-    isRunning,
-    // Form signals
-    editName,
-    editDescription,
-    editEnabled,
-    editScheduleKind,
-    editScheduleExpr,
-    editScheduleTz,
-    editScheduleEveryMs,
-    editScheduleAtMs,
-    editWakeMode,
-    editSessionTarget,
-    editPayloadText,
-    editPayloadMessage,
-    editPayloadModel,
-    formErrors,
-    // Computed
-    filteredJobs,
-    jobCounts,
-    hasFormChanges,
-    // Actions
-    loadCronJobs,
-    openJobModal,
-    closeModal,
-    saveOrCreateJob,
-    deleteJob,
-    runJobNow,
-    toggleJobEnabled,
-  } = useCronJobs();
+  const { state, modal, form, computed, actions } = useCronJobs();
 
-  const counts = jobCounts.value;
+  const counts = computed.jobCounts.value;
 
   return (
     <ViewErrorBoundary viewName={t("nav.cron")}>
@@ -77,13 +34,15 @@ export function CronView(_props: RouteProps) {
             subtitle={t("cron.description")}
             actions={
               <>
-                {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
+                {isConnected.value && !state.isLoading.value && state.cronJobs.value.length > 0 && (
                   <div class="relative hidden sm:block">
                     <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
                     <Input
                       type="text"
-                      value={searchQuery.value}
-                      onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                      value={state.searchQuery.value}
+                      onInput={(e) =>
+                        (state.searchQuery.value = (e.target as HTMLInputElement).value)
+                      }
                       placeholder={t("cron.searchPlaceholder")}
                       aria-label={t("cron.searchPlaceholder")}
                       class="pl-10 w-64"
@@ -92,17 +51,19 @@ export function CronView(_props: RouteProps) {
                 )}
                 <Button
                   icon={<Plus class="w-4 h-4" />}
-                  onClick={() => openJobModal("create")}
+                  onClick={() => actions.openJobModal("create")}
                   disabled={!isConnected.value}
                 >
                   <span class="hidden sm:inline">{t("cron.createJob")}</span>
                   <span class="sm:hidden">{t("actions.new")}</span>
                 </Button>
                 <IconButton
-                  icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+                  icon={
+                    <RefreshCw class={`w-4 h-4 ${state.isLoading.value ? "animate-spin" : ""}`} />
+                  }
                   label={t("actions.refresh")}
-                  onClick={loadCronJobs}
-                  disabled={isLoading.value || !isConnected.value}
+                  onClick={actions.loadCronJobs}
+                  disabled={state.isLoading.value || !isConnected.value}
                   variant="ghost"
                 />
               </>
@@ -110,13 +71,13 @@ export function CronView(_props: RouteProps) {
           />
 
           {/* Mobile Search */}
-          {isConnected.value && !isLoading.value && cronJobs.value.length > 0 && (
+          {isConnected.value && !state.isLoading.value && state.cronJobs.value.length > 0 && (
             <div class="relative sm:hidden">
               <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
               <Input
                 type="text"
-                value={searchQuery.value}
-                onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+                value={state.searchQuery.value}
+                onInput={(e) => (state.searchQuery.value = (e.target as HTMLInputElement).value)}
                 placeholder={t("cron.searchPlaceholder")}
                 aria-label={t("cron.searchPlaceholder")}
                 class="pl-10"
@@ -126,35 +87,35 @@ export function CronView(_props: RouteProps) {
           )}
 
           {/* Stats Cards */}
-          {isConnected.value && !isLoading.value && (
+          {isConnected.value && !state.isLoading.value && (
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
               <StatCard
                 icon={Clock}
                 label={t("cron.stats.total")}
                 value={counts.total}
-                active={statusFilter.value === "all"}
-                onClick={() => (statusFilter.value = "all")}
+                active={state.statusFilter.value === "all"}
+                onClick={() => (state.statusFilter.value = "all")}
               />
               <StatCard
                 icon={CheckCircle}
                 label={t("cron.stats.enabled")}
                 value={counts.enabled}
-                active={statusFilter.value === "enabled"}
-                onClick={() => (statusFilter.value = "enabled")}
+                active={state.statusFilter.value === "enabled"}
+                onClick={() => (state.statusFilter.value = "enabled")}
               />
               <StatCard
                 icon={XCircle}
                 label={t("cron.stats.disabled")}
                 value={counts.disabled}
-                active={statusFilter.value === "disabled"}
-                onClick={() => (statusFilter.value = "disabled")}
+                active={state.statusFilter.value === "disabled"}
+                onClick={() => (state.statusFilter.value = "disabled")}
               />
               <StatCard
                 icon={Zap}
                 label={t("cron.stats.nextWake")}
                 value={
-                  cronStatus.value?.nextWakeAtMs
-                    ? formatTimestamp(cronStatus.value.nextWakeAtMs, { relative: true })
+                  state.cronStatus.value?.nextWakeAtMs
+                    ? formatTimestamp(state.cronStatus.value.nextWakeAtMs, { relative: true })
                     : "—"
                 }
               />
@@ -162,81 +123,93 @@ export function CronView(_props: RouteProps) {
           )}
 
           {/* Error */}
-          {error.value && (
+          {state.error.value && (
             <div
               class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]"
               role="alert"
             >
-              {error.value}
+              {state.error.value}
             </div>
           )}
 
           {/* Loading / Connecting */}
-          {(isLoading.value || !isConnected.value) && (
+          {(state.isLoading.value || !isConnected.value) && (
             <div class="flex justify-center py-16">
               <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
             </div>
           )}
 
           {/* Jobs - Cards on mobile, Table on desktop */}
-          {isConnected.value && !isLoading.value && filteredJobs.value.length > 0 && (
-            <>
-              {/* Mobile: Card list (tap to edit) */}
-              <div class="md:hidden space-y-2">
-                {filteredJobs.value.map((job) => (
-                  <CronJobCard key={job.id} job={job} onEdit={openJobModal.bind(null, "edit")} />
-                ))}
-              </div>
+          {isConnected.value &&
+            !state.isLoading.value &&
+            computed.filteredJobs.value.length > 0 && (
+              <>
+                {/* Mobile: Card list (tap to edit) */}
+                <div class="md:hidden space-y-2">
+                  {computed.filteredJobs.value.map((job) => (
+                    <CronJobCard
+                      key={job.id}
+                      job={job}
+                      onEdit={actions.openJobModal.bind(null, "edit")}
+                    />
+                  ))}
+                </div>
 
-              {/* Desktop: Table */}
-              <Card padding="none" class="hidden md:block">
-                <table class="w-full">
-                  <thead>
-                    <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                      <th class="py-3 px-4 font-medium">{t("cron.columns.job")}</th>
-                      <th class="py-3 px-4 font-medium w-40">{t("cron.columns.schedule")}</th>
-                      <th class="py-3 px-4 font-medium w-24">{t("cron.columns.target")}</th>
-                      <th class="py-3 px-4 font-medium w-32">{t("cron.columns.nextRun")}</th>
-                      <th class="py-3 px-4 font-medium w-24">{t("cron.columns.status")}</th>
-                      <th class="py-3 px-4 font-medium w-20"></th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-[var(--color-border)]">
-                    {filteredJobs.value.map((job) => (
-                      <CronJobRow
-                        key={job.id}
-                        job={job}
-                        onEdit={openJobModal.bind(null, "edit")}
-                        onRun={runJobNow}
-                        onToggleEnabled={toggleJobEnabled}
-                        isRunning={isRunning.value}
-                      />
-                    ))}
-                  </tbody>
-                </table>
-              </Card>
-            </>
-          )}
+                {/* Desktop: Table */}
+                <Card padding="none" class="hidden md:block">
+                  <table class="w-full">
+                    <thead>
+                      <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
+                        <th class="py-3 px-4 font-medium">{t("cron.columns.job")}</th>
+                        <th class="py-3 px-4 font-medium w-40">{t("cron.columns.schedule")}</th>
+                        <th class="py-3 px-4 font-medium w-24">{t("cron.columns.target")}</th>
+                        <th class="py-3 px-4 font-medium w-32">{t("cron.columns.nextRun")}</th>
+                        <th class="py-3 px-4 font-medium w-24">{t("cron.columns.status")}</th>
+                        <th class="py-3 px-4 font-medium w-20"></th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[var(--color-border)]">
+                      {computed.filteredJobs.value.map((job) => (
+                        <CronJobRow
+                          key={job.id}
+                          job={job}
+                          onEdit={actions.openJobModal.bind(null, "edit")}
+                          onRun={actions.runJobNow}
+                          onToggleEnabled={actions.toggleJobEnabled}
+                          isRunning={modal.isRunning.value}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </Card>
+              </>
+            )}
 
           {/* Empty state */}
-          {isConnected.value && !isLoading.value && cronJobs.value.length === 0 && !error.value && (
-            <Card>
-              <div class="p-16 text-center">
-                <Clock class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-                <h3 class="text-lg font-medium mb-2">{t("cron.emptyTitle")}</h3>
-                <p class="text-[var(--color-text-muted)] mb-4">{t("cron.emptyDescription")}</p>
-                <Button icon={<Plus class="w-4 h-4" />} onClick={() => openJobModal("create")}>
-                  {t("cron.createJob")}
-                </Button>
-              </div>
-            </Card>
-          )}
+          {isConnected.value &&
+            !state.isLoading.value &&
+            state.cronJobs.value.length === 0 &&
+            !state.error.value && (
+              <Card>
+                <div class="p-16 text-center">
+                  <Clock class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+                  <h3 class="text-lg font-medium mb-2">{t("cron.emptyTitle")}</h3>
+                  <p class="text-[var(--color-text-muted)] mb-4">{t("cron.emptyDescription")}</p>
+                  <Button
+                    icon={<Plus class="w-4 h-4" />}
+                    onClick={() => actions.openJobModal("create")}
+                  >
+                    {t("cron.createJob")}
+                  </Button>
+                </div>
+              </Card>
+            )}
 
           {/* No results from filter */}
           {isConnected.value &&
-            !isLoading.value &&
-            cronJobs.value.length > 0 &&
-            filteredJobs.value.length === 0 && (
+            !state.isLoading.value &&
+            state.cronJobs.value.length > 0 &&
+            computed.filteredJobs.value.length === 0 && (
               <Card>
                 <div class="p-12 text-center">
                   <Search class="w-10 h-10 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
@@ -248,8 +221,8 @@ export function CronView(_props: RouteProps) {
                     variant="secondary"
                     size="sm"
                     onClick={() => {
-                      searchQuery.value = "";
-                      statusFilter.value = "all";
+                      state.searchQuery.value = "";
+                      state.statusFilter.value = "all";
                     }}
                   >
                     {t("cron.clearFilters")}
@@ -259,47 +232,49 @@ export function CronView(_props: RouteProps) {
             )}
 
           {/* Footer count */}
-          {isConnected.value && !isLoading.value && filteredJobs.value.length > 0 && (
-            <p class="text-sm text-[var(--color-text-muted)] text-center">
-              {filteredJobs.value.length === cronJobs.value.length
-                ? t("cron.count", { count: cronJobs.value.length })
-                : t("cron.filteredCount", {
-                    filtered: filteredJobs.value.length,
-                    total: cronJobs.value.length,
-                  })}
-            </p>
-          )}
+          {isConnected.value &&
+            !state.isLoading.value &&
+            computed.filteredJobs.value.length > 0 && (
+              <p class="text-sm text-[var(--color-text-muted)] text-center">
+                {computed.filteredJobs.value.length === state.cronJobs.value.length
+                  ? t("cron.count", { count: state.cronJobs.value.length })
+                  : t("cron.filteredCount", {
+                      filtered: computed.filteredJobs.value.length,
+                      total: state.cronJobs.value.length,
+                    })}
+              </p>
+            )}
         </div>
 
         {/* Modal */}
         <CronJobModal
-          mode={modalMode.value}
-          job={selectedJob.value}
-          runs={selectedJobRuns.value}
-          isLoadingRuns={isLoadingRuns.value}
-          isDeleting={isDeleting.value}
-          isSaving={isSaving.value}
-          isRunning={isRunning.value}
-          hasChanges={hasFormChanges.value}
-          onClose={closeModal}
-          onSave={saveOrCreateJob}
-          onDelete={deleteJob}
-          onRun={runJobNow}
-          onSetDeleting={(v) => (isDeleting.value = v)}
-          editName={editName}
-          editDescription={editDescription}
-          editEnabled={editEnabled}
-          editScheduleKind={editScheduleKind}
-          editScheduleExpr={editScheduleExpr}
-          editScheduleTz={editScheduleTz}
-          editScheduleEveryMs={editScheduleEveryMs}
-          editScheduleAtMs={editScheduleAtMs}
-          editSessionTarget={editSessionTarget}
-          editWakeMode={editWakeMode}
-          editPayloadText={editPayloadText}
-          editPayloadMessage={editPayloadMessage}
-          editPayloadModel={editPayloadModel}
-          formErrors={formErrors}
+          mode={modal.modalMode.value}
+          job={modal.selectedJob.value}
+          runs={modal.selectedJobRuns.value}
+          isLoadingRuns={modal.isLoadingRuns.value}
+          isDeleting={modal.isDeleting.value}
+          isSaving={modal.isSaving.value}
+          isRunning={modal.isRunning.value}
+          hasChanges={computed.hasFormChanges.value}
+          onClose={actions.closeModal}
+          onSave={actions.saveOrCreateJob}
+          onDelete={actions.deleteJob}
+          onRun={actions.runJobNow}
+          onSetDeleting={(v) => (modal.isDeleting.value = v)}
+          editName={form.editName}
+          editDescription={form.editDescription}
+          editEnabled={form.editEnabled}
+          editScheduleKind={form.editScheduleKind}
+          editScheduleExpr={form.editScheduleExpr}
+          editScheduleTz={form.editScheduleTz}
+          editScheduleEveryMs={form.editScheduleEveryMs}
+          editScheduleAtMs={form.editScheduleAtMs}
+          editSessionTarget={form.editSessionTarget}
+          editWakeMode={form.editWakeMode}
+          editPayloadText={form.editPayloadText}
+          editPayloadMessage={form.editPayloadMessage}
+          editPayloadModel={form.editPayloadModel}
+          formErrors={form.formErrors}
         />
       </div>
     </ViewErrorBoundary>
