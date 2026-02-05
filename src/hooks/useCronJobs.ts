@@ -354,16 +354,16 @@ async function toggleJobEnabled(job: CronJob): Promise<void> {
 // Hook
 // ============================================
 
-export interface UseCronJobsResult {
-  // State
+export interface CronJobsState {
   cronJobs: typeof cronJobs;
   cronStatus: typeof cronStatus;
   isLoading: typeof isLoading;
   error: typeof error;
   searchQuery: typeof searchQuery;
   statusFilter: typeof statusFilter;
+}
 
-  // Modal state
+export interface CronJobsModal {
   modalMode: typeof modalMode;
   selectedJob: typeof selectedJob;
   selectedJobRuns: typeof selectedJobRuns;
@@ -371,8 +371,9 @@ export interface UseCronJobsResult {
   isDeleting: typeof isDeleting;
   isSaving: typeof isSaving;
   isRunning: typeof isRunning;
+}
 
-  // Form signals
+export interface CronJobsForm {
   editName: typeof editName;
   editDescription: typeof editDescription;
   editEnabled: typeof editEnabled;
@@ -387,13 +388,15 @@ export interface UseCronJobsResult {
   editPayloadMessage: typeof editPayloadMessage;
   editPayloadModel: typeof editPayloadModel;
   formErrors: typeof formErrors;
+}
 
-  // Computed
+export interface CronJobsComputed {
   filteredJobs: typeof filteredJobs;
   jobCounts: typeof jobCounts;
   hasFormChanges: ReadonlySignal<boolean>;
+}
 
-  // Actions
+export interface CronJobsActions {
   loadCronJobs: typeof loadCronJobs;
   openJobModal: typeof openJobModal;
   closeModal: typeof closeModal;
@@ -401,6 +404,14 @@ export interface UseCronJobsResult {
   deleteJob: typeof deleteJob;
   runJobNow: typeof runJobNow;
   toggleJobEnabled: typeof toggleJobEnabled;
+}
+
+export interface UseCronJobsResult {
+  state: CronJobsState;
+  modal: CronJobsModal;
+  form: CronJobsForm;
+  computed: CronJobsComputed;
+  actions: CronJobsActions;
 }
 
 export function useCronJobs(): UseCronJobsResult {
@@ -443,51 +454,52 @@ export function useCronJobs(): UseCronJobsResult {
   });
 
   return {
-    // State
-    cronJobs,
-    cronStatus,
-    isLoading,
-    error,
-    searchQuery,
-    statusFilter,
-
-    // Modal state
-    modalMode,
-    selectedJob,
-    selectedJobRuns,
-    isLoadingRuns,
-    isDeleting,
-    isSaving,
-    isRunning,
-
-    // Form signals
-    editName,
-    editDescription,
-    editEnabled,
-    editScheduleKind,
-    editScheduleExpr,
-    editScheduleTz,
-    editScheduleEveryMs,
-    editScheduleAtMs,
-    editWakeMode,
-    editSessionTarget,
-    editPayloadText,
-    editPayloadMessage,
-    editPayloadModel,
-    formErrors,
-
-    // Computed
-    filteredJobs,
-    jobCounts,
-    hasFormChanges,
-
-    // Actions
-    loadCronJobs,
-    openJobModal,
-    closeModal,
-    saveOrCreateJob,
-    deleteJob,
-    runJobNow,
-    toggleJobEnabled,
+    state: {
+      cronJobs,
+      cronStatus,
+      isLoading,
+      error,
+      searchQuery,
+      statusFilter,
+    },
+    modal: {
+      modalMode,
+      selectedJob,
+      selectedJobRuns,
+      isLoadingRuns,
+      isDeleting,
+      isSaving,
+      isRunning,
+    },
+    form: {
+      editName,
+      editDescription,
+      editEnabled,
+      editScheduleKind,
+      editScheduleExpr,
+      editScheduleTz,
+      editScheduleEveryMs,
+      editScheduleAtMs,
+      editWakeMode,
+      editSessionTarget,
+      editPayloadText,
+      editPayloadMessage,
+      editPayloadModel,
+      formErrors,
+    },
+    computed: {
+      filteredJobs,
+      jobCounts,
+      hasFormChanges,
+    },
+    actions: {
+      loadCronJobs,
+      openJobModal,
+      closeModal,
+      saveOrCreateJob,
+      deleteJob,
+      runJobNow,
+      toggleJobEnabled,
+    },
   };
 }
