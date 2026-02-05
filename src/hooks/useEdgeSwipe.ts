@@ -10,7 +10,9 @@ import { useEffect, useRef } from "preact/hooks";
 import { sidebarOpen, LG_BREAKPOINT } from "@/signals/ui";
 
 /** How close to the edge the touch must start (px) */
-const EDGE_THRESHOLD = 30;
+/** Note: Safari's back gesture owns ~20px, so we start at 20-50px zone */
+const EDGE_START = 20;
+const EDGE_END = 50;
 
 /** Minimum swipe distance to trigger (px) */
 const SWIPE_THRESHOLD = 50;
@@ -32,9 +34,11 @@ export function useEdgeSwipe() {
       const touch = e.touches[0];
       touchStart.current = { x: touch.clientX, y: touch.clientY };
 
-      // Check if touch started at left edge (for opening)
+      // Check if touch started in the edge zone (for opening)
+      // Zone is 20-50px to avoid Safari's back gesture at 0-20px
       // Or anywhere if sidebar is open (for closing)
-      touchStartedAtEdge.current = touch.clientX <= EDGE_THRESHOLD || sidebarOpen.value;
+      const inEdgeZone = touch.clientX >= EDGE_START && touch.clientX <= EDGE_END;
+      touchStartedAtEdge.current = inEdgeZone || sidebarOpen.value;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -50,10 +54,11 @@ export function useEdgeSwipe() {
         return;
       }
 
-      // Swipe right from left edge → open
+      // Swipe right from edge zone → open
       if (
         !sidebarOpen.value &&
-        touchStart.current.x <= EDGE_THRESHOLD &&
+        touchStart.current.x >= EDGE_START &&
+        touchStart.current.x <= EDGE_END &&
         deltaX > SWIPE_THRESHOLD
       ) {
         sidebarOpen.value = true;
