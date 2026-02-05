@@ -47,10 +47,12 @@ interface SettingsSectionProps {
 function SettingsSection({ titleKey, children }: SettingsSectionProps) {
   return (
     <Card>
-      <div class="p-4 border-b border-[var(--color-border)]">
-        <h2 class="text-lg font-semibold text-[var(--color-text-primary)]">{t(titleKey)}</h2>
+      <div class="p-3 sm:p-4 border-b border-[var(--color-border)]">
+        <h2 class="text-base sm:text-lg font-semibold text-[var(--color-text-primary)]">
+          {t(titleKey)}
+        </h2>
       </div>
-      <div class="p-4">{children}</div>
+      <div class="p-3 sm:p-4">{children}</div>
     </Card>
   );
 }
@@ -65,12 +67,14 @@ interface SettingRowProps {
 /** A setting row with label, description, and control */
 function SettingRow({ labelKey, descriptionKey, disabled, children }: SettingRowProps) {
   return (
-    <div class={`flex items-center justify-between ${disabled ? "opacity-50" : ""}`}>
-      <div>
+    <div
+      class={`flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4 ${disabled ? "opacity-50" : ""}`}
+    >
+      <div class="flex-1 min-w-0">
         <label class="text-sm font-medium text-[var(--color-text-primary)]">{t(labelKey)}</label>
         <p class="text-xs text-[var(--color-text-muted)] mt-0.5">{t(descriptionKey)}</p>
       </div>
-      {children}
+      <div class="flex-shrink-0">{children}</div>
     </div>
   );
 }
@@ -84,9 +88,11 @@ interface InfoRowProps {
 /** A simple label-value row for info display */
 function InfoRow({ label, value, truncate }: InfoRowProps) {
   return (
-    <div class="flex justify-between text-sm">
+    <div class="flex flex-col sm:flex-row sm:justify-between text-sm gap-0.5 sm:gap-2">
       <span class="text-[var(--color-text-muted)]">{label}</span>
-      <span class={`text-[var(--color-text-primary)] ${truncate ? "truncate max-w-[200px]" : ""}`}>
+      <span
+        class={`text-[var(--color-text-primary)] ${truncate ? "truncate max-w-full sm:max-w-[200px]" : ""}`}
+      >
         {value}
       </span>
     </div>
@@ -105,8 +111,8 @@ interface SettingsViewProps {
 export function SettingsView(_props: SettingsViewProps) {
   return (
     <ViewErrorBoundary viewName={t("nav.settings")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           <PageHeader title={t("nav.settings")} subtitle={t("settings.description")} />
 
           {/* Appearance Section */}
@@ -243,11 +249,11 @@ export function SettingsView(_props: SettingsViewProps) {
 
           {/* Reset to Defaults */}
           <SettingsSection titleKey="settings.data.title">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p class="text-sm text-[var(--color-text-muted)]">
                 {t("settings.data.resetDefaultsDescription")}
               </p>
-              <Button variant="secondary" onClick={() => resetToDefaults()}>
+              <Button variant="secondary" onClick={() => resetToDefaults()} class="flex-shrink-0">
                 {t("settings.data.resetDefaults")}
               </Button>
             </div>
@@ -256,13 +262,11 @@ export function SettingsView(_props: SettingsViewProps) {
           {/* Account Section */}
           {isConnected.value && (
             <SettingsSection titleKey="settings.account.title">
-              <div class="flex items-center justify-between">
-                <div>
-                  <p class="text-sm text-[var(--color-text-primary)]">
-                    {t("settings.account.logoutDescription")}
-                  </p>
-                </div>
-                <Button variant="secondary" onClick={() => logout()}>
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <p class="text-sm text-[var(--color-text-primary)]">
+                  {t("settings.account.logoutDescription")}
+                </p>
+                <Button variant="secondary" onClick={() => logout()} class="flex-shrink-0">
                   {t("actions.logout")}
                 </Button>
               </div>
