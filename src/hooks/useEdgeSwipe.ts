@@ -11,8 +11,8 @@ import { sidebarOpen, LG_BREAKPOINT } from "@/signals/ui";
 
 /** Edge zone start - avoid Safari's back gesture at 0-20px */
 const EDGE_START = 20;
-/** Edge zone end */
-const EDGE_END = 50;
+/** Edge zone end - wider zone for easier swiping */
+const EDGE_END = 100;
 /** Sidebar width on mobile */
 const SIDEBAR_WIDTH = 288; // w-72 = 18rem = 288px
 /** Minimum drag to trigger open/close on release */
@@ -62,13 +62,20 @@ export function useEdgeSwipe() {
       const deltaY = Math.abs(touch.clientY - touchStartY);
 
       // Ignore if too much vertical movement (user is scrolling)
-      if (deltaY > MAX_VERTICAL) {
+      if (deltaY > MAX_VERTICAL && !isDraggingSidebar.value) {
         sidebarDragOffset.value = null;
-        isDraggingSidebar.value = false;
+        startedInEdgeZone = false;
         return;
       }
 
-      isDraggingSidebar.value = true;
+      // Once we've started dragging horizontally, commit to it
+      if (Math.abs(deltaX) > 10 || isDraggingSidebar.value) {
+        isDraggingSidebar.value = true;
+        // Prevent page scroll while dragging sidebar
+        e.preventDefault();
+      }
+
+      if (!isDraggingSidebar.value) return;
 
       // Calculate new offset
       let newOffset: number;
@@ -112,7 +119,8 @@ export function useEdgeSwipe() {
     };
 
     document.addEventListener("touchstart", handleTouchStart, { passive: true });
-    document.addEventListener("touchmove", handleTouchMove, { passive: true });
+    // passive: false allows preventDefault() to stop page scroll during drag
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
     document.addEventListener("touchend", handleTouchEnd, { passive: true });
     document.addEventListener("touchcancel", handleTouchEnd, { passive: true });
 
