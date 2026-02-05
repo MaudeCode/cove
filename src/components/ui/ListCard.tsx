@@ -82,8 +82,8 @@ export function ListCard({
         {/* Metadata row */}
         {meta && meta.length > 0 && (
           <div class="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
-            {meta.map((item, i) => (
-              <span key={i} class="flex items-center gap-1" title={item.title}>
+            {meta.map((item) => (
+              <span key={item.value} class="flex items-center gap-1" title={item.title}>
                 {item.icon && <item.icon class="w-3 h-3" />}
                 {item.value}
               </span>
@@ -101,6 +101,7 @@ export function ListCard({
     return (
       <button
         type="button"
+        aria-label={title}
         class="w-full p-3 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors text-left"
         onClick={onClick}
       >
