@@ -10,16 +10,8 @@ import { route } from "preact-router";
 import { t } from "@/lib/i18n";
 import { ChevronDownIcon, ExternalLinkIcon } from "@/components/ui/icons";
 import { navigation, type NavItem, type NavSection as NavSectionType } from "@/lib/navigation";
-import { sidebarOpen } from "@/signals/ui";
+import { closeSidebarOnMobile } from "@/signals/ui";
 import { currentPath } from "./Sidebar";
-
-/** Close sidebar on mobile after navigation */
-function closeSidebarOnMobile() {
-  // lg breakpoint is 1024px - only close on mobile
-  if (window.innerWidth < 1024) {
-    sidebarOpen.value = false;
-  }
-}
 
 // ============================================
 // localStorage persistence for section states
