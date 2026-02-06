@@ -29,7 +29,7 @@
   }
 }
 
-/* Slide in from bottom */
+/* Slide in from bottom (subtle) */
 @keyframes slide-in-bottom {
   from {
     transform: translateY(10px);
@@ -38,6 +38,26 @@
   to {
     transform: translateY(0);
     opacity: 1;
+  }
+}
+
+/* Slide up from bottom (bottom sheet) */
+@keyframes slide-up-full {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+/* Slide down to bottom (bottom sheet dismiss) */
+@keyframes slide-down-full {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(100%);
   }
 }
 
@@ -240,6 +260,14 @@
 
 .animate-scale-in {
   animation: scale-in var(--transition-slow) var(--ease-soft, ease-out);
+}
+
+.animate-slide-up-full {
+  animation: slide-up-full var(--transition-normal) ease-out;
+}
+
+.animate-slide-down-full {
+  animation: slide-down-full var(--transition-normal) ease-out forwards;
 }
 
 .animate-scale-in-bounce {
