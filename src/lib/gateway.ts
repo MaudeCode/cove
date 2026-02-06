@@ -412,6 +412,7 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
       platform: getBrowserPlatform(),
       mode: "webchat",
     },
+    caps: ["tool-events"],
     role: "operator",
     scopes: ["operator.admin", "operator.read", "operator.write"],
     auth: {} as { token?: string; password?: string },
