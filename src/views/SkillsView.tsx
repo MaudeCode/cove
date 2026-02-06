@@ -379,7 +379,7 @@ export function SkillsView(_props: RouteProps) {
                       </div>
 
                       {/* Desktop: Row list with expand/collapse */}
-                      <Card padding="none" class="hidden md:block">
+                      <Card padding="none" class="hidden md:block overflow-hidden">
                         {filtered.map((skill) => (
                           <SkillRow
                             key={skill.skillKey}
