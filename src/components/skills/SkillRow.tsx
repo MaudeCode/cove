@@ -1,12 +1,13 @@
 /**
- * SkillRow
+ * SkillRow & SkillCard
  *
- * Single skill row with expand/collapse.
+ * List row (desktop) and card (mobile) components for displaying skills.
  */
 
 import { t } from "@/lib/i18n";
 import { Badge } from "@/components/ui/Badge";
 import { Toggle } from "@/components/ui/Toggle";
+import { ListCard } from "@/components/ui/ListCard";
 import { ChevronDown, ChevronRight, Package, Folder, FolderCog, Puzzle } from "lucide-preact";
 import type { SkillStatusEntry, SkillSource, SkillStatus } from "@/types/skills";
 import { getSkillStatus } from "@/types/skills";
@@ -58,8 +59,60 @@ function getSourceLabel(source: SkillSource) {
 }
 
 // ============================================
-// Component
+// Components
 // ============================================
+
+interface SkillCardProps {
+  skill: SkillStatusEntry;
+  onToggleExpand: () => void;
+  onToggleEnabled: () => void;
+}
+
+/** Mobile card view for a skill (tap to expand) */
+export function SkillCard({ skill, onToggleExpand, onToggleEnabled }: SkillCardProps) {
+  const status = getSkillStatus(skill);
+  const statusBadge = getStatusBadge(status);
+  const SourceIcon = getSourceIcon(skill.source);
+
+  return (
+    <ListCard
+      icon={() => <span class="text-lg">{skill.emoji || "🔧"}</span>}
+      iconVariant={
+        status === "eligible" ? "success" : status === "missing-reqs" ? "warning" : "default"
+      }
+      title={skill.name}
+      subtitle={skill.description}
+      badges={
+        <>
+          <Badge variant={statusBadge.variant} size="sm">
+            {statusBadge.label}
+          </Badge>
+          {skill.always && (
+            <span class="text-xs text-[var(--color-text-muted)]" title={t("skills.alwaysActive")}>
+              ⚡
+            </span>
+          )}
+        </>
+      }
+      meta={[{ icon: SourceIcon, value: getSourceLabel(skill.source) }]}
+      actions={
+        <div
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => e.stopPropagation()}
+          role="presentation"
+        >
+          <Toggle
+            checked={!skill.disabled}
+            onChange={onToggleEnabled}
+            size="sm"
+            aria-label={skill.disabled ? t("skills.enable") : t("skills.disable")}
+          />
+        </div>
+      }
+      onClick={onToggleExpand}
+    />
+  );
+}
 
 interface SkillRowProps {
   skill: SkillStatusEntry;
