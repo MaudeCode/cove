@@ -25,6 +25,33 @@ import { isHeartbeatResponse, isNoReplyContent } from "@/lib/message-detection";
 import { processNextQueuedMessage } from "./send";
 import { loadHistory } from "./history";
 
+/**
+ * Normalize a tool result to match history format.
+ *
+ * Streaming tool results come as objects like:
+ *   { content: [{ type: "text", text: "..." }], details: {...}, statusText: "..." }
+ *
+ * History extracts just the text. This function does the same for streaming,
+ * so tool results display consistently as formatted text instead of raw JSON.
+ */
+function normalizeToolResult(result: unknown): unknown {
+  if (!result || typeof result !== "object") {
+    return result;
+  }
+
+  const obj = result as Record<string, unknown>;
+
+  // If it has content array with a text block, extract the text
+  if (Array.isArray(obj.content) && obj.content.length > 0) {
+    const firstBlock = obj.content[0] as Record<string, unknown> | undefined;
+    if (firstBlock?.type === "text" && typeof firstBlock.text === "string") {
+      return firstBlock.text;
+    }
+  }
+
+  return result;
+}
+
 let chatEventUnsubscribe: (() => void) | null = null;
 let agentEventUnsubscribe: (() => void) | null = null;
 
@@ -316,7 +343,10 @@ function handleToolEvent(evt: AgentEvent): void {
 
     case "update": {
       const idx = findOrCreateToolCall();
-      existingToolCalls[idx] = { ...existingToolCalls[idx], result: data.partialResult };
+      existingToolCalls[idx] = {
+        ...existingToolCalls[idx],
+        result: normalizeToolResult(data.partialResult),
+      };
       updateRunContent(runId, run.content, existingToolCalls);
       break;
     }
@@ -325,7 +355,7 @@ function handleToolEvent(evt: AgentEvent): void {
       const idx = findOrCreateToolCall();
       existingToolCalls[idx] = {
         ...existingToolCalls[idx],
-        result: data.result,
+        result: normalizeToolResult(data.result),
         status: data.isError ? "error" : "complete",
         completedAt: Date.now(),
       };
