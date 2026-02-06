@@ -20,9 +20,18 @@ export function extractToolResultContent(result: unknown): unknown {
     return result;
   }
 
-  const obj = result as Record<string, unknown>;
+  // Case 1: Direct array of content blocks (history format)
+  // e.g., [{ type: "text", text: "..." }]
+  if (Array.isArray(result) && result.length > 0) {
+    const firstBlock = result[0] as Record<string, unknown> | undefined;
+    if (firstBlock?.type === "text" && typeof firstBlock.text === "string") {
+      return firstBlock.text;
+    }
+  }
 
-  // If it has content array with a text block, extract the text
+  // Case 2: Object with content array (streaming format)
+  // e.g., { content: [{ type: "text", text: "..." }], details: {...} }
+  const obj = result as Record<string, unknown>;
   if (Array.isArray(obj.content) && obj.content.length > 0) {
     const firstBlock = obj.content[0] as Record<string, unknown> | undefined;
     if (firstBlock?.type === "text" && typeof firstBlock.text === "string") {
