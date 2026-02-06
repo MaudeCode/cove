@@ -88,7 +88,7 @@ export function CronView(_props: RouteProps) {
 
           {/* Stats Cards */}
           {isConnected.value && !state.isLoading.value && (
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
               <StatCard
                 icon={Clock}
                 label={t("cron.stats.total")}

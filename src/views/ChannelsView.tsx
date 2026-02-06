@@ -344,7 +344,7 @@ export function ChannelsView(_props: RouteProps) {
 
           {/* Stats Cards */}
           {isConnected.value && !isLoading.value && (
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-3">
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
               <StatCard
                 icon={MessageSquare}
                 label={t("channels.stats.total")}
