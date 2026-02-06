@@ -17,6 +17,7 @@ import {
   abortRun as abortRunSignal,
   isCompacting,
 } from "@/signals/chat";
+import { isForActiveSession } from "@/signals/sessions";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatEvent, AgentEvent } from "@/types/chat";
 import { parseMessageContent, mergeToolCalls } from "@/types/chat";
@@ -62,8 +63,7 @@ export function subscribeToChatEvents(): () => void {
     } else if (evt.stream === "compaction") {
       handleCompactionEvent(evt);
     } else if (evt.stream === "assistant") {
-      // Assistant stream disabled: causes text duplication with chat delta events.
-      // The gateway sends both streams and they overlap; delta handles text merging properly.
+      handleAssistantStreamEvent(evt);
     }
   });
 
@@ -157,6 +157,46 @@ function handleCompactionEvent(evt: AgentEvent): void {
   } else if (phase === "end") {
     isCompacting.value = false;
   }
+}
+
+/**
+ * Handle assistant stream events (immediate text updates, not throttled).
+ * These arrive faster than chat delta events which are throttled at 150ms.
+ *
+ * Uses `text` (accumulated text for current block) which resets after tool calls.
+ * We detect block boundaries by checking if new text is NOT a continuation of existing content.
+ */
+function handleAssistantStreamEvent(evt: AgentEvent): void {
+  const { runId, sessionKey, data } = evt;
+  const text = typeof data?.text === "string" ? data.text : null;
+
+  if (!text) return;
+
+  // Session filter - only process events for the active session
+  if (!isForActiveSession(sessionKey)) {
+    return;
+  }
+
+  let run = activeRuns.value.get(runId);
+
+  // If no run exists, create one on-the-fly
+  if (!run && sessionKey) {
+    log.chat.debug("Creating run for assistant stream:", runId, "session:", sessionKey);
+    startRun(runId, sessionKey);
+    run = activeRuns.value.get(runId);
+  }
+
+  if (!run) return;
+
+  // Use mergeDeltaText to handle block boundaries correctly
+  // It detects when text resets (new block) vs continues (same block)
+  const { content: newContent, lastBlockStart: newLastBlockStart } = mergeDeltaText(
+    run.content,
+    text,
+    run.lastBlockStart,
+  );
+
+  updateRunContent(runId, newContent, run.toolCalls, newLastBlockStart);
 }
 
 /**
@@ -307,6 +347,9 @@ function handleChatEvent(event: ChatEvent): void {
 
 /**
  * Handle streaming delta event.
+ *
+ * Text updates are handled by assistant stream (faster, not throttled).
+ * Chat delta only processes tool calls as a supplement to tool events.
  */
 function handleDeltaEvent(event: ChatEvent): void {
   const { runId, sessionKey, message } = event;
@@ -323,35 +366,23 @@ function handleDeltaEvent(event: ChatEvent): void {
     if (!existingRun) return;
   }
 
-  log.chat.debug("Delta event received", {
+  // Only process if there are tool calls to merge
+  // Text content is handled by assistant stream events (faster, not throttled)
+  if (parsed.toolCalls.length === 0) {
+    return;
+  }
+
+  log.chat.debug("Delta event - processing tool calls only", {
     runId,
-    parsedTextLen: parsed.text.length,
-    parsedTextPreview: parsed.text.slice(0, 100),
     parsedToolCallsCount: parsed.toolCalls.length,
-    existingContentLen: existingRun.content.length,
     existingToolCallsCount: existingRun.toolCalls.length,
-    lastBlockStart: existingRun.lastBlockStart,
   });
 
   // Merge tool calls
   const mergedToolCalls = mergeToolCalls(existingRun.toolCalls, parsed.toolCalls);
 
-  // Merge text content using the streaming helper
-  const { content, lastBlockStart } = mergeDeltaText(
-    existingRun.content,
-    parsed.text,
-    existingRun.lastBlockStart,
-  );
-
-  log.chat.debug("Delta merged result", {
-    runId,
-    newContentLen: content.length,
-    newLastBlockStart: lastBlockStart,
-    contentPreview: content.slice(-100),
-    mergedToolCallsCount: mergedToolCalls.length,
-  });
-
-  updateRunContent(runId, content, mergedToolCalls, lastBlockStart);
+  // Keep existing content, only update tool calls
+  updateRunContent(runId, existingRun.content, mergedToolCalls, existingRun.lastBlockStart);
 }
 
 /**

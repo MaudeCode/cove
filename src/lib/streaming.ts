@@ -54,6 +54,16 @@ export function mergeDeltaText(
       return { content: existingContent, lastBlockStart };
     }
 
+    // If newText is unrelated and shorter, it's likely a NEW block (text reset again)
+    // This happens with multiple tool calls: block1 -> tool -> block2 -> tool -> block3
+    if (newText.length < lastBlock.length && !lastBlock.includes(newText)) {
+      const newBlockStart = existingContent.length + TEXT_BLOCK_SEPARATOR.length;
+      return {
+        content: existingContent + TEXT_BLOCK_SEPARATOR + newText,
+        lastBlockStart: newBlockStart,
+      };
+    }
+
     // Otherwise newText is growing the block - replace lastBlock entirely
     // This handles the case where accumulated text grows: "A" -> "An" -> "And"
     return { content: baseContent + newText, lastBlockStart };
