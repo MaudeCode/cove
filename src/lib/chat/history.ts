@@ -17,6 +17,7 @@ import {
 import type { Message } from "@/types/messages";
 import type { ChatHistoryResult } from "@/types/chat";
 import { normalizeMessage } from "@/types/chat";
+import { extractToolResultContent } from "@/lib/tool-utils";
 
 /** Track in-flight history loads to prevent concurrent loads for the same session */
 const pendingLoads = new Map<string, Promise<void>>();
@@ -31,12 +32,8 @@ function collectToolResults(
 
   for (const raw of rawMessages) {
     if (raw.role === "toolResult" && raw.toolCallId) {
-      const resultContent =
-        Array.isArray(raw.content) && raw.content[0]?.type === "text"
-          ? raw.content[0].text
-          : raw.content;
       results.set(raw.toolCallId, {
-        content: resultContent,
+        content: extractToolResultContent(raw.content),
         isError: raw.isError ?? false,
       });
     }
