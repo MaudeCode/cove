@@ -13,7 +13,6 @@ import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
-import { IconButton } from "@/components/ui/IconButton";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
 import { StatCard } from "@/components/ui/StatCard";
@@ -22,7 +21,8 @@ import { Modal } from "@/components/ui/Modal";
 import { HintBox } from "@/components/ui/HintBox";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { ListCard } from "@/components/ui/ListCard";
+import { IconButton } from "@/components/ui/IconButton";
+import { DeviceCard, DeviceRow, DeviceDetails } from "@/components/devices";
 import {
   RefreshCw,
   Search,
@@ -31,13 +31,9 @@ import {
   Globe,
   Check,
   X,
-  ChevronDown,
-  ChevronRight,
   Clock,
-  Key,
   RotateCcw,
   Trash2,
-  Shield,
 } from "lucide-preact";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { RouteProps } from "@/types/routes";
@@ -256,209 +252,14 @@ function PendingRequestCard({ request }: { request: DevicePendingRequest }) {
   );
 }
 
-/** Mobile card view for a device (tap to view details) */
-function DeviceCard({ device }: { device: PairedDevice }) {
-  const role = getDeviceRole(device);
-  const tokenCount = device.tokens?.length ?? 0;
-  const PlatformIcon = device.platform?.includes("ios")
-    ? Smartphone
-    : device.platform?.includes("android")
-      ? Smartphone
-      : Monitor;
-
-  return (
-    <ListCard
-      icon={PlatformIcon}
-      iconVariant={role === "operator" ? "info" : "success"}
-      title={device.displayName || formatDeviceId(device.deviceId)}
-      subtitle={device.platform || undefined}
-      badges={<Badge variant={getRoleBadgeVariant(role)}>{role}</Badge>}
-      meta={[
-        ...(tokenCount > 0 ? [{ icon: Key, value: `${tokenCount}` }] : []),
-        { icon: Clock, value: formatTimestamp(device.approvedAtMs, { relative: true }) },
-      ]}
-      onClick={() => {
-        mobileDetailModal.value = device;
-      }}
-    />
-  );
+/** Token card for the token management modal */
+interface TokenCardProps {
+  token: DeviceTokenSummary;
+  device: PairedDevice;
+  disabled?: boolean;
 }
 
-function DeviceRow({ device }: { device: PairedDevice }) {
-  const isExpanded = expandedDevices.value.has(device.deviceId);
-  const role = getDeviceRole(device);
-  const tokenCount = device.tokens?.length ?? 0;
-
-  return (
-    <div class="border-b border-[var(--color-border)] last:border-b-0">
-      {/* Row header */}
-      <button
-        type="button"
-        class="w-full flex items-center gap-4 px-4 py-3 hover:bg-[var(--color-bg-tertiary)] text-left"
-        onClick={() => toggleExpanded(device.deviceId)}
-        aria-expanded={isExpanded}
-        aria-label={t("devices.toggleDetails", {
-          name: device.displayName || formatDeviceId(device.deviceId),
-        })}
-      >
-        {/* Expand chevron */}
-        <span class="text-[var(--color-text-muted)]">
-          {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
-        </span>
-
-        {/* Platform icon */}
-        <span class="text-xl w-8 text-center flex-shrink-0">
-          {getPlatformIcon(device.platform)}
-        </span>
-
-        {/* Name & info */}
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2">
-            <span class="font-medium truncate">
-              {device.displayName || formatDeviceId(device.deviceId)}
-            </span>
-          </div>
-          <div class="text-sm text-[var(--color-text-muted)] truncate">
-            {device.platform}
-            {device.remoteIp && ` • ${device.remoteIp}`}
-            {device.clientMode && ` • ${device.clientMode}`}
-          </div>
-        </div>
-
-        {/* Role badge */}
-        <Badge variant={getRoleBadgeVariant(role)}>{role}</Badge>
-
-        {/* Token count */}
-        {tokenCount > 0 && (
-          <div class="flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
-            <Key class="w-4 h-4" />
-            <span>{tokenCount}</span>
-          </div>
-        )}
-
-        {/* Approved date */}
-        <div class="hidden md:flex items-center gap-1 text-sm text-[var(--color-text-muted)]">
-          <Clock class="w-4 h-4" />
-          <span>{formatTimestamp(device.approvedAtMs)}</span>
-        </div>
-      </button>
-
-      {/* Expanded details */}
-      {isExpanded && <DeviceDetails device={device} />}
-    </div>
-  );
-}
-
-function DeviceDetails({ device, bare = false }: { device: PairedDevice; bare?: boolean }) {
-  const tokens = device.tokens ?? [];
-
-  const containerClass = bare
-    ? ""
-    : "px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]";
-
-  return (
-    <div class={containerClass}>
-      <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
-        {/* Left column: Metadata */}
-        <div class="space-y-2 text-sm min-w-0">
-          <DetailRow label={t("devices.deviceId")}>
-            <code class="text-xs bg-[var(--color-bg-primary)] px-1 py-0.5 rounded break-all">
-              {device.deviceId}
-            </code>
-          </DetailRow>
-          {device.clientId && (
-            <DetailRow label={t("devices.clientId")}>{device.clientId}</DetailRow>
-          )}
-          {device.scopes && device.scopes.length > 0 && (
-            <DetailRow label={t("devices.scopes")}>
-              <span class="text-xs">{device.scopes.join(", ")}</span>
-            </DetailRow>
-          )}
-          <DetailRow label={t("devices.approved")}>
-            {formatTimestamp(device.approvedAtMs)}
-          </DetailRow>
-        </div>
-
-        {/* Right column: Tokens */}
-        <div class="space-y-2 w-48 shrink-0">
-          <h4 class="text-sm font-medium flex items-center gap-2">
-            <Shield class="w-4 h-4" />
-            {t("devices.tokens")}
-          </h4>
-          {tokens.length === 0 ? (
-            <p class="text-sm text-[var(--color-text-muted)]">{t("devices.noTokens")}</p>
-          ) : (
-            <div class="space-y-2">
-              {tokens.map((token) => (
-                <TokenCard
-                  key={token.role}
-                  token={token}
-                  device={device}
-                  variant="compact"
-                  onRotate={() => {
-                    tokenModal.value = device;
-                  }}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DetailRow({ label, children }: { label: string; children: preact.ComponentChildren }) {
-  return (
-    <div>
-      <span class="text-[var(--color-text-muted)]">{label}:</span> {children}
-    </div>
-  );
-}
-
-type TokenCardProps =
-  | {
-      token: DeviceTokenSummary;
-      device: PairedDevice;
-      variant: "compact";
-      /** Callback to open token modal */
-      onRotate: () => void;
-    }
-  | {
-      token: DeviceTokenSummary;
-      device: PairedDevice;
-      variant: "full";
-      /** Disable buttons while rotating */
-      disabled?: boolean;
-    };
-
-function TokenCard(props: TokenCardProps) {
-  const { token, device, variant } = props;
-
-  if (variant === "compact") {
-    const { onRotate } = props;
-    return (
-      <div class="flex items-center justify-between rounded-lg p-2 bg-[var(--color-bg-primary)]">
-        <div>
-          <div class="font-medium text-sm">{token.role}</div>
-          <div class="text-xs text-[var(--color-text-muted)]">
-            {token.revokedAtMs ? t("devices.tokenRevoked") : t("devices.tokenActive")}
-          </div>
-        </div>
-        <div class="flex gap-1">
-          <IconButton
-            icon={<RotateCcw class="w-4 h-4" />}
-            label={t("devices.rotateToken")}
-            onClick={onRotate}
-            size="sm"
-          />
-        </div>
-      </div>
-    );
-  }
-
-  // variant === "full"
-  const { disabled } = props;
+function TokenCard({ token, device, disabled }: TokenCardProps) {
   return (
     <div class="flex items-center justify-between rounded-lg p-3 bg-[var(--color-bg-tertiary)]">
       <div>
@@ -526,7 +327,6 @@ function TokenModal() {
                 key={token.role}
                 token={token}
                 device={device}
-                variant="full"
                 disabled={rotatingToken.value}
               />
             ))}
@@ -696,14 +496,28 @@ export function DevicesView(_props: RouteProps) {
                     {/* Mobile: Card list */}
                     <div class="md:hidden space-y-2">
                       {filtered.map((device) => (
-                        <DeviceCard key={device.deviceId} device={device} />
+                        <DeviceCard
+                          key={device.deviceId}
+                          device={device}
+                          onSelect={(d) => {
+                            mobileDetailModal.value = d;
+                          }}
+                        />
                       ))}
                     </div>
 
                     {/* Desktop: Row list with expand/collapse */}
                     <Card padding="none" class="hidden md:block overflow-hidden">
                       {filtered.map((device) => (
-                        <DeviceRow key={device.deviceId} device={device} />
+                        <DeviceRow
+                          key={device.deviceId}
+                          device={device}
+                          isExpanded={expandedDevices.value.has(device.deviceId)}
+                          onToggleExpand={() => toggleExpanded(device.deviceId)}
+                          onOpenTokenModal={(d) => {
+                            tokenModal.value = d;
+                          }}
+                        />
                       ))}
                     </Card>
                   </>
@@ -725,7 +539,16 @@ export function DevicesView(_props: RouteProps) {
               (mobileDetailModal.value ? formatDeviceId(mobileDetailModal.value.deviceId) : "")
             }
           >
-            {mobileDetailModal.value && <DeviceDetails device={mobileDetailModal.value} bare />}
+            {mobileDetailModal.value && (
+              <DeviceDetails
+                device={mobileDetailModal.value}
+                bare
+                onOpenTokenModal={(d) => {
+                  mobileDetailModal.value = null;
+                  tokenModal.value = d;
+                }}
+              />
+            )}
           </Modal>
 
           {/* Token modal */}

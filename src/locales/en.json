@@ -628,6 +628,7 @@
     "error": "Error",
     "clickToExpand": "click to expand",
     "noPayload": "no payload",
+    "viewEventDetails": "View {{event}} event details",
     "manualRpc": "Manual RPC",
     "manualRpcDesc": "Send a raw gateway method with JSON params.",
     "method": "Method",

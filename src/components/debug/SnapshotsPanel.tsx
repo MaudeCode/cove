@@ -219,7 +219,7 @@ export function SnapshotsPanel() {
                   </Badge>
                 )}
               </div>
-              <div class="grid grid-cols-4 gap-2 p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
                 <StatItem
                   label={t("debug.input")}
                   value={formatTokens(recentSession.inputTokens)}
