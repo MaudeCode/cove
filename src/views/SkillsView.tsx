@@ -19,11 +19,18 @@ import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { HintBox } from "@/components/ui/HintBox";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { Modal } from "@/components/ui/Modal";
 import { RefreshCw, Search, Puzzle, CheckCircle, XCircle, AlertTriangle } from "lucide-preact";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { SkillStatusReport, SkillStatusEntry, SkillStatus, SkillSource } from "@/types/skills";
 import { getSkillStatus } from "@/types/skills";
-import { ClawHubBrowser, SkillRow, InstallDepsModal } from "@/components/skills";
+import {
+  ClawHubBrowser,
+  SkillRow,
+  SkillCard,
+  InstallDepsModal,
+  SkillDetails,
+} from "@/components/skills";
 import type { RouteProps } from "@/types/routes";
 
 // ============================================
@@ -59,6 +66,7 @@ const statusFilter = signal<SkillStatus | "all">("all");
 // UI state
 const expandedSkills = signal<Set<string>>(new Set());
 const installModal = signal<SkillStatusEntry | null>(null);
+const mobileDetailModal = signal<SkillStatusEntry | null>(null);
 
 // ============================================
 // Computed
@@ -229,8 +237,8 @@ export function SkillsView(_props: RouteProps) {
 
   return (
     <ViewErrorBoundary viewName={t("nav.skills")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           <PageHeader
             title={t("skills.title")}
             subtitle={t("skills.description")}
@@ -276,7 +284,7 @@ export function SkillsView(_props: RouteProps) {
               {!isLoading.value && !error.value && (
                 <>
                   {/* Stats */}
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
                     <StatCard
                       icon={Puzzle}
                       label={t("skills.stats.total")}
@@ -317,8 +325,9 @@ export function SkillsView(_props: RouteProps) {
                   </div>
 
                   {/* Filters */}
-                  <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div class="flex-1 flex items-center gap-3">
+                  <div class="space-y-3">
+                    {/* Search row */}
+                    <div class="flex items-center gap-3">
                       <Input
                         type="text"
                         placeholder={t("skills.searchPlaceholder")}
@@ -329,30 +338,48 @@ export function SkillsView(_props: RouteProps) {
                         leftElement={<Search class="w-4 h-4" />}
                         class="flex-1"
                       />
-                      <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-                        {filtered.length !== s.total
-                          ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
-                          : t("skills.count", { count: s.total })}
-                      </span>
+                      <Dropdown
+                        value={sourceFilter.value}
+                        onChange={(v) => {
+                          sourceFilter.value = v as SkillSource | "all";
+                        }}
+                        options={SOURCE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
+                        size="sm"
+                        align="right"
+                        aria-label={t("skills.filters.allSources")}
+                      />
                     </div>
-                    <Dropdown
-                      value={sourceFilter.value}
-                      onChange={(v) => {
-                        sourceFilter.value = v as SkillSource | "all";
-                      }}
-                      options={SOURCE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
-                      size="sm"
-                      align="right"
-                      aria-label={t("skills.filters.allSources")}
-                    />
+                    {/* Count */}
+                    <p class="text-sm text-[var(--color-text-muted)]">
+                      {filtered.length !== s.total
+                        ? t("skills.filteredCount", { filtered: filtered.length, total: s.total })
+                        : t("skills.count", { count: s.total })}
+                    </p>
                   </div>
 
-                  {/* Skills list */}
-                  <Card padding="none">
-                    {filtered.length === 0 ? (
+                  {/* Skills list - Cards on mobile, list on desktop */}
+                  {filtered.length === 0 ? (
+                    <Card padding="none">
                       <EmptyState hasFilters={hasFilters} />
-                    ) : (
-                      <div>
+                    </Card>
+                  ) : (
+                    <>
+                      {/* Mobile: Card list */}
+                      <div class="md:hidden space-y-2">
+                        {filtered.map((skill) => (
+                          <SkillCard
+                            key={skill.skillKey}
+                            skill={skill}
+                            onToggleExpand={() => {
+                              mobileDetailModal.value = skill;
+                            }}
+                            onToggleEnabled={() => toggleSkillEnabled(skill)}
+                          />
+                        ))}
+                      </div>
+
+                      {/* Desktop: Row list with expand/collapse */}
+                      <Card padding="none" class="hidden md:block">
                         {filtered.map((skill) => (
                           <SkillRow
                             key={skill.skillKey}
@@ -365,9 +392,9 @@ export function SkillsView(_props: RouteProps) {
                             }}
                           />
                         ))}
-                      </div>
-                    )}
-                  </Card>
+                      </Card>
+                    </>
+                  )}
 
                   {/* Workspace info */}
                   {workspaceDir.value && (
@@ -384,6 +411,25 @@ export function SkillsView(_props: RouteProps) {
               )}
             </>
           )}
+
+          {/* Mobile detail modal */}
+          <Modal
+            open={!!mobileDetailModal.value}
+            onClose={() => {
+              mobileDetailModal.value = null;
+            }}
+            title={mobileDetailModal.value?.name || ""}
+          >
+            {mobileDetailModal.value && (
+              <SkillDetails
+                skill={mobileDetailModal.value}
+                onInstall={(s) => {
+                  mobileDetailModal.value = null;
+                  installModal.value = s;
+                }}
+              />
+            )}
+          </Modal>
 
           {/* Install modal */}
           <InstallDepsModal

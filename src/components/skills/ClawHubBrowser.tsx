@@ -93,9 +93,9 @@ function SkillCard({ skill }: { skill: ClawHubSkill }) {
 
   return (
     <Card class="hover:border-[var(--color-border-hover)] transition-colors">
-      <div class="flex items-start justify-between gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div class="flex-1 min-w-0">
-          <div class="flex items-center gap-2 mb-1">
+          <div class="flex items-center gap-2 mb-1 flex-wrap">
             <h3 class="font-semibold truncate">{skill.displayName}</h3>
             <Badge variant="default">{version}</Badge>
           </div>
@@ -105,7 +105,7 @@ function SkillCard({ skill }: { skill: ClawHubSkill }) {
           >
             {skill.summary || t("skills.clawhub.noDescription")}
           </p>
-          <div class="flex items-center gap-4 text-xs text-[var(--color-text-muted)]">
+          <div class="flex items-center gap-3 sm:gap-4 text-xs text-[var(--color-text-muted)] flex-wrap">
             <span class="flex items-center gap-1">
               <Download class="w-3 h-3" />
               {skill.stats.downloads}
@@ -127,6 +127,7 @@ function SkillCard({ skill }: { skill: ClawHubSkill }) {
           onClick={() => {
             installModal.value = skill;
           }}
+          class="self-start sm:flex-shrink-0"
         >
           {t("skills.clawhub.install")}
         </Button>
@@ -237,8 +238,8 @@ export function ClawHubBrowser() {
   return (
     <div class="space-y-6">
       {/* Search */}
-      <div class="flex items-center gap-4">
-        <div class="flex-1">
+      <div class="flex items-center gap-2 sm:gap-4">
+        <div class="flex-1 min-w-0">
           <Input
             type="text"
             placeholder={t("skills.clawhub.searchPlaceholder")}
@@ -252,8 +253,14 @@ export function ClawHubBrowser() {
             leftElement={<Search class="w-4 h-4" />}
           />
         </div>
-        <Button variant="secondary" onClick={doSearch} disabled={isLoading.value}>
-          {t("actions.search")}
+        <Button
+          variant="secondary"
+          onClick={doSearch}
+          disabled={isLoading.value}
+          class="flex-shrink-0"
+        >
+          <span class="hidden sm:inline">{t("actions.search")}</span>
+          <Search class="w-4 h-4 sm:hidden" />
         </Button>
         <IconButton
           icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
