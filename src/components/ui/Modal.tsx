@@ -3,15 +3,19 @@
  *
  * Accessible modal dialog with focus trap and keyboard handling.
  * Uses createPortal to render at document body level (avoids stacking context issues).
+ * On mobile: renders as bottom sheet with drag-to-dismiss.
  */
 
 import type { ComponentChildren } from "preact";
 import { createPortal } from "preact/compat";
-import { useEffect, useRef, useCallback } from "preact/hooks";
+import { useEffect, useRef, useCallback, useState } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { useFocusTrap } from "@/hooks/useFocusTrap";
 import { IconButton } from "./IconButton";
 import { XIcon } from "./icons";
+
+const ANIMATION_DURATION = 250;
+const DRAG_THRESHOLD = 80;
 
 type ModalSize = "sm" | "md" | "lg" | "xl" | "full";
 
@@ -37,15 +41,12 @@ export interface ModalProps {
 }
 
 const sizeStyles: Record<ModalSize, string> = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
-  full: "max-w-4xl",
+  sm: "sm:max-w-sm",
+  md: "sm:max-w-md",
+  lg: "sm:max-w-lg",
+  xl: "sm:max-w-xl",
+  full: "sm:max-w-4xl",
 };
-
-// Mobile: full-width with small margin; desktop: centered with size constraint
-const mobileStyles = "w-[calc(100%-1rem)] sm:w-full";
 
 export function Modal({
   open,
@@ -59,56 +60,164 @@ export function Modal({
   footer,
 }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
+  const [shouldRender, setShouldRender] = useState(open);
+  const isClosingRef = useRef(false);
+  const dragStartY = useRef<number | null>(null);
 
-  // Use focus trap hook for proper focus cycling within modal
+  // Animate close
+  const animateClose = useCallback(() => {
+    if (isClosingRef.current) return;
+    isClosingRef.current = true;
+
+    const modal = modalRef.current;
+    const backdrop = backdropRef.current;
+    if (modal) {
+      modal.style.transition = `transform ${ANIMATION_DURATION}ms ease-out`;
+      modal.style.transform = "translateY(100%)";
+    }
+    if (backdrop) {
+      backdrop.style.transition = `opacity ${ANIMATION_DURATION}ms ease-out`;
+      backdrop.style.opacity = "0";
+    }
+
+    setTimeout(() => {
+      setShouldRender(false);
+      isClosingRef.current = false;
+      onClose();
+    }, ANIMATION_DURATION);
+  }, [onClose]);
+
+  // Handle open state changes
+  useEffect(() => {
+    if (open) {
+      setShouldRender(true);
+      isClosingRef.current = false;
+    } else if (shouldRender && !isClosingRef.current) {
+      animateClose();
+    }
+  }, [open, shouldRender, animateClose]);
+
+  // Reset modal position when opening
+  useEffect(() => {
+    if (open && modalRef.current) {
+      // Small delay to ensure DOM is ready
+      requestAnimationFrame(() => {
+        if (modalRef.current) {
+          modalRef.current.style.transform = "";
+          modalRef.current.style.transition = "";
+        }
+        if (backdropRef.current) {
+          backdropRef.current.style.opacity = "";
+          backdropRef.current.style.transition = "";
+        }
+      });
+    }
+  }, [open]);
+
+  // Use focus trap hook - disable autoFocus to prevent close button highlight
   useFocusTrap(modalRef, {
-    enabled: open,
-    autoFocus: true,
+    enabled: open && !isClosingRef.current,
+    autoFocus: false,
   });
 
   // Handle escape key
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
-      if (e.key === "Escape" && closeOnEscape) {
-        onClose();
+      if (e.key === "Escape" && closeOnEscape && !isClosingRef.current) {
+        animateClose();
       }
     },
-    [closeOnEscape, onClose],
+    [closeOnEscape, animateClose],
   );
+
+  // Touch handlers - direct DOM manipulation for performance
+  const onTouchStart = useCallback((e: TouchEvent) => {
+    dragStartY.current = e.touches[0].clientY;
+    if (modalRef.current) {
+      modalRef.current.style.transition = "none";
+    }
+  }, []);
+
+  const onTouchMove = useCallback((e: TouchEvent) => {
+    if (dragStartY.current === null) return;
+    const currentY = e.touches[0].clientY;
+    const delta = currentY - dragStartY.current;
+
+    if (delta > 0) {
+      if (modalRef.current) {
+        modalRef.current.style.transform = `translateY(${delta}px)`;
+      }
+      // Fade backdrop proportionally
+      if (backdropRef.current) {
+        const opacity = Math.max(0, 1 - delta / 300);
+        backdropRef.current.style.opacity = String(opacity);
+      }
+    }
+  }, []);
+
+  const onTouchEnd = useCallback(() => {
+    if (dragStartY.current === null) return;
+
+    const modal = modalRef.current;
+    if (modal) {
+      const transform = modal.style.transform;
+      const match = transform.match(/translateY\((\d+)px\)/);
+      const currentOffset = match ? parseInt(match[1], 10) : 0;
+
+      if (currentOffset > DRAG_THRESHOLD) {
+        // Dismiss
+        animateClose();
+      } else {
+        // Snap back
+        modal.style.transition = "transform 150ms ease-out";
+        modal.style.transform = "translateY(0)";
+        if (backdropRef.current) {
+          backdropRef.current.style.transition = "opacity 150ms ease-out";
+          backdropRef.current.style.opacity = "1";
+        }
+      }
+    }
+
+    dragStartY.current = null;
+  }, [animateClose]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
-    if (!open) return;
-
+    if (!shouldRender) return;
     document.body.style.overflow = "hidden";
-
     return () => {
       document.body.style.overflow = "";
     };
-  }, [open]);
+  }, [shouldRender]);
 
   // Escape key listener
   useEffect(() => {
-    if (!open) return;
-
+    if (!shouldRender) return;
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [open, handleKeyDown]);
+  }, [shouldRender, handleKeyDown]);
 
-  if (!open) return null;
+  if (!shouldRender) return null;
 
-  // Render modal at document body level using portal to avoid stacking context issues
+  const handleBackdropClick = () => {
+    if (closeOnBackdrop && !isClosingRef.current) {
+      animateClose();
+    }
+  };
+
   return createPortal(
     <div
-      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4"
+      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? "modal-title" : undefined}
     >
       {/* Backdrop */}
       <div
+        ref={backdropRef}
         class="absolute inset-0 bg-black/40 backdrop-blur-md animate-fade-in"
-        onClick={closeOnBackdrop ? onClose : undefined}
+        onClick={handleBackdropClick}
         aria-hidden="true"
       />
 
@@ -117,34 +226,44 @@ export function Modal({
         ref={modalRef}
         tabIndex={-1}
         class={`
-          relative ${mobileStyles} ${sizeStyles[size]}
+          relative w-full ${sizeStyles[size]}
           bg-[var(--color-bg-surface)]
           border border-[var(--color-border)]
-          rounded-xl shadow-soft-xl
           max-h-[85vh] sm:max-h-[90vh] flex flex-col
-          focus:outline-none
-          animate-scale-in
+          focus:outline-none shadow-soft-xl
+          rounded-t-xl border-b-0 sm:rounded-xl sm:border-b
+          animate-slide-up-full sm:animate-scale-in
         `}
       >
+        {/* Drag handle - mobile only (visual affordance, dismiss via backdrop/Escape) */}
+        <div
+          class="sm:hidden flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing"
+          onTouchStart={onTouchStart}
+          onTouchMove={onTouchMove}
+          onTouchEnd={onTouchEnd}
+          aria-hidden="true"
+        >
+          <div class="w-10 h-1 rounded-full bg-[var(--color-text-muted)]/40" />
+        </div>
+
         {/* Header */}
-        {(title || !hideCloseButton) && (
-          <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--color-border)]">
-            {title && (
-              <h2
-                id="modal-title"
-                class="text-base sm:text-lg font-semibold text-[var(--color-text-primary)] truncate pr-2"
-              >
-                {title}
-              </h2>
-            )}
+        {title && (
+          <div class="flex items-center justify-between px-4 sm:px-6 py-2 sm:py-4 border-b border-[var(--color-border)]">
+            <h2
+              id="modal-title"
+              class="text-base sm:text-lg font-semibold text-[var(--color-text-primary)] truncate pr-2"
+            >
+              {title}
+            </h2>
+            {/* Close button - desktop only */}
             {!hideCloseButton && (
               <IconButton
                 icon={<XIcon />}
                 label={t("actions.close")}
                 variant="ghost"
                 size="sm"
-                onClick={onClose}
-                class={title ? "flex-shrink-0" : "ml-auto"}
+                onClick={animateClose}
+                class="hidden sm:flex flex-shrink-0"
               />
             )}
           </div>
@@ -155,7 +274,7 @@ export function Modal({
 
         {/* Footer */}
         {footer && (
-          <div class="px-4 sm:px-6 py-3 sm:py-4 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] rounded-b-xl">
+          <div class="px-4 sm:px-6 py-3 sm:py-4 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] sm:rounded-b-xl">
             {footer}
           </div>
         )}
