@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { Toggle } from "@/components/ui/Toggle";
+import { Modal } from "@/components/ui/Modal";
 import { PageHeader } from "@/components/ui/PageHeader";
 import {
   Wifi,
@@ -89,8 +90,11 @@ let eventCounter = 0;
 /** Copied state for copy buttons */
 const copiedItem = signal<string | null>(null);
 
-/** Expanded event IDs */
+/** Expanded event IDs (desktop) */
 const expandedEvents = signal<Set<number>>(new Set());
+
+/** Mobile event detail modal */
+const mobileEventModal = signal<EventLogEntry | null>(null);
 
 /** Tick counter for forcing uptime re-render */
 const uptimeTick = signal(0);
@@ -193,13 +197,13 @@ function InfoRow({ icon: Icon, label, value, copyable, mono }: InfoRowProps) {
   const isCopied = copiedItem.value === itemId;
 
   return (
-    <div class="flex items-center justify-between py-2 border-b border-[var(--color-border)] last:border-0">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between py-2 gap-1 sm:gap-2 border-b border-[var(--color-border)] last:border-0">
       <div class="flex items-center gap-2 text-[var(--color-text-muted)]">
-        <Icon size={16} />
-        <span>{label}</span>
+        <Icon size={16} class="flex-shrink-0" />
+        <span class="text-sm">{label}</span>
       </div>
-      <div class="flex items-center gap-2">
-        <span class={mono ? "font-mono text-sm" : ""}>{displayValue}</span>
+      <div class="flex items-center gap-2 pl-6 sm:pl-0">
+        <span class={`${mono ? "font-mono text-sm" : ""} break-all`}>{displayValue}</span>
         {copyable && value && (
           <IconButton
             icon={isCopied ? <Check size={14} /> : <Copy size={14} />}
@@ -207,6 +211,7 @@ function InfoRow({ icon: Icon, label, value, copyable, mono }: InfoRowProps) {
             variant="ghost"
             label={t("actions.copy")}
             onClick={() => copyToClipboard(value, itemId)}
+            class="flex-shrink-0"
           />
         )}
       </div>
@@ -224,6 +229,35 @@ interface EventEntryProps {
   onToggle: () => void;
 }
 
+/** Mobile-only event card */
+function MobileEventCard({ entry }: { entry: EventLogEntry }) {
+  const hasPayload = entry.payload != null && Object.keys(entry.payload as object).length > 0;
+
+  return (
+    <button
+      type="button"
+      class="w-full flex items-center justify-between gap-3 p-3 text-left bg-[var(--color-bg-secondary)] rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors"
+      onClick={() => {
+        mobileEventModal.value = entry;
+      }}
+      aria-label={t("debug.viewEventDetails", { event: entry.event })}
+    >
+      <div class="min-w-0">
+        <Badge variant="default" class="font-mono text-xs mb-1">
+          {entry.event}
+        </Badge>
+        <div class="text-xs text-[var(--color-text-muted)]">
+          {new Date(entry.timestamp).toLocaleTimeString()}
+        </div>
+      </div>
+      {hasPayload && (
+        <ChevronRight size={16} class="text-[var(--color-text-muted)] flex-shrink-0" />
+      )}
+    </button>
+  );
+}
+
+/** Desktop expandable event row */
 function EventEntry({ entry, expanded, onToggle }: EventEntryProps) {
   const hasPayload = entry.payload != null && Object.keys(entry.payload as object).length > 0;
   const payloadStr = formatJson(entry.payload);
@@ -293,8 +327,8 @@ export function DebugView(_props: RouteProps) {
 
   return (
     <ViewErrorBoundary viewName={t("nav.debug")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           <PageHeader
             title={t("nav.debug")}
             subtitle={t("debug.subtitle")}
@@ -306,7 +340,7 @@ export function DebugView(_props: RouteProps) {
             }
           />
           {/* Connection & Server Info */}
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
             {/* Connection Info */}
             <Card>
               <div class="flex items-center gap-2 mb-4">
@@ -412,14 +446,14 @@ export function DebugView(_props: RouteProps) {
           </div>
 
           {/* Snapshots & Manual RPC - Side by side on larger screens */}
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
             <SnapshotsPanel />
             <ManualRpcPanel />
           </div>
 
           {/* Event Log - at bottom so it doesn't push other cards around */}
           <Card>
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
               <div class="flex items-center gap-2">
                 <Activity size={18} class="text-[var(--color-accent)]" />
                 <h2 class="font-medium">{t("debug.eventLog")}</h2>
@@ -440,7 +474,7 @@ export function DebugView(_props: RouteProps) {
                   disabled={eventLog.value.length === 0}
                   icon={<Trash2 size={14} />}
                 >
-                  {t("debug.clear")}
+                  <span class="hidden sm:inline">{t("debug.clear")}</span>
                 </Button>
               </div>
             </div>
@@ -452,18 +486,55 @@ export function DebugView(_props: RouteProps) {
                 <p class="text-sm mt-1">{t("debug.noEventsHint")}</p>
               </div>
             ) : (
-              <div class="max-h-96 overflow-y-auto border border-[var(--color-border)] rounded-lg">
-                {eventLog.value.map((entry) => (
-                  <EventEntry
-                    key={entry.id}
-                    entry={entry}
-                    expanded={expandedEvents.value.has(entry.id)}
-                    onToggle={() => toggleEventExpanded(entry.id)}
-                  />
-                ))}
-              </div>
+              <>
+                {/* Mobile: Card list */}
+                <div class="md:hidden space-y-2 max-h-96 overflow-y-auto">
+                  {eventLog.value.map((entry) => (
+                    <MobileEventCard key={entry.id} entry={entry} />
+                  ))}
+                </div>
+
+                {/* Desktop: Expandable rows */}
+                <div class="hidden md:block max-h-96 overflow-y-auto border border-[var(--color-border)] rounded-lg">
+                  {eventLog.value.map((entry) => (
+                    <EventEntry
+                      key={entry.id}
+                      entry={entry}
+                      expanded={expandedEvents.value.has(entry.id)}
+                      onToggle={() => toggleEventExpanded(entry.id)}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </Card>
+
+          {/* Mobile event detail modal */}
+          <Modal
+            open={!!mobileEventModal.value}
+            onClose={() => {
+              mobileEventModal.value = null;
+            }}
+            title={mobileEventModal.value?.event || ""}
+          >
+            {mobileEventModal.value && (
+              <div class="space-y-3">
+                <div class="text-sm text-[var(--color-text-muted)]">
+                  {new Date(mobileEventModal.value.timestamp).toLocaleString()}
+                </div>
+                {mobileEventModal.value.payload != null &&
+                Object.keys(mobileEventModal.value.payload as object).length > 0 ? (
+                  <JsonBlock
+                    value={formatJson(mobileEventModal.value.payload)}
+                    maxHeight="max-h-[60vh]"
+                    id={`mobile-event-${mobileEventModal.value.id}`}
+                  />
+                ) : (
+                  <p class="text-sm text-[var(--color-text-muted)]">{t("debug.noPayload")}</p>
+                )}
+              </div>
+            )}
+          </Modal>
         </div>
       </div>
     </ViewErrorBoundary>
