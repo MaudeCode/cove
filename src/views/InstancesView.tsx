@@ -223,7 +223,7 @@ export function InstancesView(_props: RouteProps) {
 
           {/* Stats Cards */}
           {isConnected.value && !isLoading.value && (
-            <div class="grid grid-cols-3 gap-1.5 sm:gap-3">
+            <div class="grid grid-cols-3 gap-2 sm:gap-4">
               <StatCard
                 icon={Globe}
                 label={t("instances.stats.total")}

@@ -22,6 +22,7 @@ import { Modal } from "@/components/ui/Modal";
 import { HintBox } from "@/components/ui/HintBox";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ListCard } from "@/components/ui/ListCard";
 import {
   RefreshCw,
   Search,
@@ -72,6 +73,7 @@ const roleFilter = signal<DeviceRole>("all");
 // UI state
 const expandedDevices = signal<Set<string>>(new Set());
 const tokenModal = signal<PairedDevice | null>(null);
+const mobileDetailModal = signal<PairedDevice | null>(null);
 const rotatingToken = signal(false);
 
 // ============================================
@@ -214,11 +216,11 @@ function PendingRequestCard({ request }: { request: DevicePendingRequest }) {
 
   return (
     <Card class="border-[var(--color-warning)] border-2">
-      <div class="flex items-start justify-between gap-4">
+      <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4">
         <div class="flex items-center gap-3">
           <span class="text-2xl">{getPlatformIcon(request.platform)}</span>
           <div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
               <h3 class="font-medium">{request.displayName || formatDeviceId(request.deviceId)}</h3>
               <Badge variant={getRoleBadgeVariant(role)}>{role}</Badge>
               {request.isRepair && <Badge variant="warning">{t("devices.repair")}</Badge>}
@@ -231,7 +233,7 @@ function PendingRequestCard({ request }: { request: DevicePendingRequest }) {
             </p>
           </div>
         </div>
-        <div class="flex gap-2">
+        <div class="flex gap-2 self-end sm:self-start">
           <Button
             variant="primary"
             size="sm"
@@ -251,6 +253,34 @@ function PendingRequestCard({ request }: { request: DevicePendingRequest }) {
         </div>
       </div>
     </Card>
+  );
+}
+
+/** Mobile card view for a device (tap to view details) */
+function DeviceCard({ device }: { device: PairedDevice }) {
+  const role = getDeviceRole(device);
+  const tokenCount = device.tokens?.length ?? 0;
+  const PlatformIcon = device.platform?.includes("ios")
+    ? Smartphone
+    : device.platform?.includes("android")
+      ? Smartphone
+      : Monitor;
+
+  return (
+    <ListCard
+      icon={PlatformIcon}
+      iconVariant={role === "operator" ? "info" : "success"}
+      title={device.displayName || formatDeviceId(device.deviceId)}
+      subtitle={device.platform || undefined}
+      badges={<Badge variant={getRoleBadgeVariant(role)}>{role}</Badge>}
+      meta={[
+        ...(tokenCount > 0 ? [{ icon: Key, value: `${tokenCount}` }] : []),
+        { icon: Clock, value: formatTimestamp(device.approvedAtMs, { relative: true }) },
+      ]}
+      onClick={() => {
+        mobileDetailModal.value = device;
+      }}
+    />
   );
 }
 
@@ -319,11 +349,15 @@ function DeviceRow({ device }: { device: PairedDevice }) {
   );
 }
 
-function DeviceDetails({ device }: { device: PairedDevice }) {
+function DeviceDetails({ device, bare = false }: { device: PairedDevice; bare?: boolean }) {
   const tokens = device.tokens ?? [];
 
+  const containerClass = bare
+    ? ""
+    : "px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]";
+
   return (
-    <div class="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]">
+    <div class={containerClass}>
       <div class="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4">
         {/* Left column: Metadata */}
         <div class="space-y-2 text-sm min-w-0">
@@ -541,8 +575,8 @@ export function DevicesView(_props: RouteProps) {
 
   return (
     <ViewErrorBoundary viewName={t("nav.devices")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-5xl mx-auto space-y-6">
+      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
           <PageHeader
             title={t("devices.title")}
             subtitle={t("devices.description")}
@@ -570,7 +604,7 @@ export function DevicesView(_props: RouteProps) {
           {!isLoading.value && !error.value && (
             <>
               {/* Stats */}
-              <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
                 <StatCard
                   icon={Smartphone}
                   label={t("devices.stats.total")}
@@ -618,8 +652,8 @@ export function DevicesView(_props: RouteProps) {
 
               {/* Filters */}
               {devices.value.length > 0 && (
-                <div class="flex flex-col sm:flex-row sm:items-center gap-4">
-                  <div class="flex-1 flex items-center gap-3">
+                <div class="space-y-3">
+                  <div class="flex items-center gap-3">
                     <Input
                       type="text"
                       placeholder={t("devices.searchPlaceholder")}
@@ -630,45 +664,69 @@ export function DevicesView(_props: RouteProps) {
                       leftElement={<Search class="w-4 h-4" />}
                       class="flex-1"
                     />
-                    <span class="text-sm text-[var(--color-text-muted)] whitespace-nowrap">
-                      {filtered.length !== s.total
-                        ? t("devices.filteredCount", { filtered: filtered.length, total: s.total })
-                        : t("devices.count", { count: s.total })}
-                    </span>
+                    <Dropdown
+                      value={roleFilter.value}
+                      onChange={(v) => {
+                        roleFilter.value = v as DeviceRole;
+                      }}
+                      options={ROLE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
+                      size="sm"
+                      align="right"
+                      aria-label={t("devices.filters.allRoles")}
+                    />
                   </div>
-                  <Dropdown
-                    value={roleFilter.value}
-                    onChange={(v) => {
-                      roleFilter.value = v as DeviceRole;
-                    }}
-                    options={ROLE_OPTIONS.map((o) => ({ value: o.value, label: o.label() }))}
-                    size="sm"
-                    align="right"
-                    aria-label={t("devices.filters.allRoles")}
-                  />
+                  <p class="text-sm text-[var(--color-text-muted)]">
+                    {filtered.length !== s.total
+                      ? t("devices.filteredCount", { filtered: filtered.length, total: s.total })
+                      : t("devices.count", { count: s.total })}
+                  </p>
                 </div>
               )}
 
               {/* Devices list */}
               {devices.value.length > 0 ? (
-                <Card padding="none">
-                  {filtered.length === 0 ? (
+                filtered.length === 0 ? (
+                  <Card padding="none">
                     <div class="text-center py-8 text-[var(--color-text-muted)]">
                       {t("devices.noResults")}
                     </div>
-                  ) : (
-                    <div>
+                  </Card>
+                ) : (
+                  <>
+                    {/* Mobile: Card list */}
+                    <div class="md:hidden space-y-2">
+                      {filtered.map((device) => (
+                        <DeviceCard key={device.deviceId} device={device} />
+                      ))}
+                    </div>
+
+                    {/* Desktop: Row list with expand/collapse */}
+                    <Card padding="none" class="hidden md:block overflow-hidden">
                       {filtered.map((device) => (
                         <DeviceRow key={device.deviceId} device={device} />
                       ))}
-                    </div>
-                  )}
-                </Card>
+                    </Card>
+                  </>
+                )
               ) : (
                 <EmptyState />
               )}
             </>
           )}
+
+          {/* Mobile detail modal */}
+          <Modal
+            open={!!mobileDetailModal.value}
+            onClose={() => {
+              mobileDetailModal.value = null;
+            }}
+            title={
+              mobileDetailModal.value?.displayName ||
+              (mobileDetailModal.value ? formatDeviceId(mobileDetailModal.value.deviceId) : "")
+            }
+          >
+            {mobileDetailModal.value && <DeviceDetails device={mobileDetailModal.value} bare />}
+          </Modal>
 
           {/* Token modal */}
           <TokenModal />
