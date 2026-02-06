@@ -89,6 +89,12 @@ export function unsubscribeFromChatEvents(): void {
  */
 function handleLifecycleStart(evt: AgentEvent): void {
   const { runId, sessionKey } = evt;
+
+  // Filter out events from other sessions
+  if (!isForActiveSession(sessionKey)) {
+    return;
+  }
+
   const existingRun = activeRuns.value.get(runId);
 
   if (!existingRun && sessionKey) {
@@ -103,7 +109,13 @@ function handleLifecycleStart(evt: AgentEvent): void {
  * sends lifecycle events.
  */
 function handleLifecycleEnd(evt: AgentEvent): void {
-  const { runId } = evt;
+  const { runId, sessionKey } = evt;
+
+  // Filter out events from other sessions
+  if (!isForActiveSession(sessionKey)) {
+    return;
+  }
+
   const existingRun = activeRuns.value.get(runId);
 
   if (existingRun && (existingRun.status === "pending" || existingRun.status === "streaming")) {
@@ -205,6 +217,11 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
 function handleToolEvent(evt: AgentEvent): void {
   const { runId, sessionKey, data } = evt;
   if (!data) return;
+
+  // Filter out events from other sessions
+  if (!isForActiveSession(sessionKey)) {
+    return;
+  }
 
   log.chat.debug("Tool event received", {
     runId,
