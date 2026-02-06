@@ -44,6 +44,9 @@ const sizeStyles: Record<ModalSize, string> = {
   full: "max-w-4xl",
 };
 
+// Mobile: full-width with small margin; desktop: centered with size constraint
+const mobileStyles = "w-[calc(100%-1rem)] sm:w-full";
+
 export function Modal({
   open,
   onClose,
@@ -97,7 +100,7 @@ export function Modal({
   // Render modal at document body level using portal to avoid stacking context issues
   return createPortal(
     <div
-      class="fixed inset-0 z-50 flex items-center justify-center p-4"
+      class="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-2 sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? "modal-title" : undefined}
@@ -114,20 +117,23 @@ export function Modal({
         ref={modalRef}
         tabIndex={-1}
         class={`
-          relative w-full ${sizeStyles[size]}
+          relative ${mobileStyles} ${sizeStyles[size]}
           bg-[var(--color-bg-surface)]
           border border-[var(--color-border)]
           rounded-xl shadow-soft-xl
-          max-h-[90vh] flex flex-col
+          max-h-[85vh] sm:max-h-[90vh] flex flex-col
           focus:outline-none
           animate-scale-in
         `}
       >
         {/* Header */}
         {(title || !hideCloseButton) && (
-          <div class="flex items-center justify-between px-6 py-4 border-b border-[var(--color-border)]">
+          <div class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-[var(--color-border)]">
             {title && (
-              <h2 id="modal-title" class="text-lg font-semibold text-[var(--color-text-primary)]">
+              <h2
+                id="modal-title"
+                class="text-base sm:text-lg font-semibold text-[var(--color-text-primary)] truncate pr-2"
+              >
                 {title}
               </h2>
             )}
@@ -138,18 +144,18 @@ export function Modal({
                 variant="ghost"
                 size="sm"
                 onClick={onClose}
-                class={title ? "" : "ml-auto"}
+                class={title ? "flex-shrink-0" : "ml-auto"}
               />
             )}
           </div>
         )}
 
         {/* Body */}
-        <div class="flex-1 overflow-y-auto px-6 py-4">{children}</div>
+        <div class="flex-1 overflow-y-auto px-4 sm:px-6 py-3 sm:py-4">{children}</div>
 
         {/* Footer */}
         {footer && (
-          <div class="px-6 py-4 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] rounded-b-xl">
+          <div class="px-4 sm:px-6 py-3 sm:py-4 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] rounded-b-xl">
             {footer}
           </div>
         )}

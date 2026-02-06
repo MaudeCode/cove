@@ -427,6 +427,7 @@ export function SkillsView(_props: RouteProps) {
                   mobileDetailModal.value = null;
                   installModal.value = s;
                 }}
+                bare
               />
             )}
           </Modal>

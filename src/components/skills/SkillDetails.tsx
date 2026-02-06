@@ -13,6 +13,8 @@ import { hasMissingRequirements, getMissingSummary } from "@/types/skills";
 interface SkillDetailsProps {
   skill: SkillStatusEntry;
   onInstall: (skill: SkillStatusEntry) => void;
+  /** When true, removes container styling (for use in modals) */
+  bare?: boolean;
 }
 
 /** Simple label: value row */
@@ -24,12 +26,16 @@ function DetailRow({ label, children }: { label: string; children: preact.Compon
   );
 }
 
-export function SkillDetails({ skill, onInstall }: SkillDetailsProps) {
+export function SkillDetails({ skill, onInstall, bare = false }: SkillDetailsProps) {
   const missing = getMissingSummary(skill);
   const hasInstallOptions = skill.install.length > 0 && hasMissingRequirements(skill);
 
+  const containerClass = bare
+    ? ""
+    : "px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]";
+
   return (
-    <div class="px-4 py-3 bg-[var(--color-bg-tertiary)] border-t border-[var(--color-border)]">
+    <div class={containerClass}>
       {/* Full description */}
       <p class="text-sm text-[var(--color-text-secondary)] mb-4">{skill.description}</p>
 
