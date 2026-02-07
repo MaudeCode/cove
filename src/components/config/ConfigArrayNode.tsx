@@ -53,7 +53,7 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
   if (itemType === "string" || itemType === "number") {
     return (
       <div class="mt-6 first:mt-3">
-        <div class="flex items-center justify-between mb-3">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
           <div>
             <label class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</label>
             {help && (
@@ -64,7 +64,7 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
             {t("config.field.addItem")}
           </Button>
         </div>
-        <div class="space-y-2 max-w-md">
+        <div class="space-y-2 w-full sm:max-w-md">
           {items.map((item, index) => (
             <DraggableArrayItem key={index} index={index} path={path} onReorder={reorderItems}>
               <Input
@@ -76,7 +76,7 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
                   next[index] = itemType === "number" ? Number(val) : val;
                   updateField(path, next);
                 }}
-                class="flex-1"
+                fullWidth
               />
               <IconButton
                 icon={<Trash2 class="w-4 h-4" />}
@@ -100,7 +100,7 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
   // Array of objects
   return (
     <div class="mt-6 first:mt-3">
-      <div class="flex items-center justify-between mb-3">
+      <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-3">
         <button
           type="button"
           class="flex items-center gap-2 group"
@@ -113,7 +113,13 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
           <span class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</span>
           <span class="text-xs text-[var(--color-text-muted)]">({items.length})</span>
         </button>
-        <Button variant="secondary" size="sm" icon={Plus} onClick={addItem}>
+        <Button
+          variant="secondary"
+          size="sm"
+          icon={Plus}
+          onClick={addItem}
+          class="self-start sm:self-auto"
+        >
           {t("config.field.addItem")}
         </Button>
       </div>
@@ -336,7 +342,7 @@ function DraggableArrayItem({
 
   return (
     <div
-      class={`flex items-center gap-1 rounded-md transition-colors ${
+      class={`w-full flex items-center gap-1 rounded-md transition-colors ${
         isDragging ? "opacity-50" : ""
       } ${isDragOver ? "bg-[var(--color-accent)]/10 ring-1 ring-[var(--color-accent)]" : ""}`}
       draggable

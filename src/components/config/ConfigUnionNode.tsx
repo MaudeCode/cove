@@ -73,7 +73,7 @@ export function UnionNode({
           options={options}
           onChange={(v) => updateField(path, v)}
           size="sm"
-          width="160px"
+          class="w-full sm:w-auto sm:inline-block"
         />
       </SettingRow>
     );
