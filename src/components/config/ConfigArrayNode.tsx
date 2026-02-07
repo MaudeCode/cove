@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
-import { ChevronDown, ChevronRight, Plus, Trash2, GripVertical } from "lucide-preact";
+import { ChevronDown, ChevronRight, ChevronUp, Plus, Trash2, GripVertical } from "lucide-preact";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
 import { updateField } from "@/signals/config";
 import { schemaType, schemaDefault } from "@/lib/config/schema-utils";
@@ -66,7 +66,13 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
         </div>
         <div class="space-y-2 w-full sm:max-w-md">
           {items.map((item, index) => (
-            <DraggableArrayItem key={index} index={index} path={path} onReorder={reorderItems}>
+            <DraggableArrayItem
+              key={index}
+              index={index}
+              totalItems={items.length}
+              path={path}
+              onReorder={reorderItems}
+            >
               <Input
                 type={itemType === "number" ? "number" : "text"}
                 value={String(item ?? "")}
@@ -79,11 +85,12 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
                 fullWidth
               />
               <IconButton
-                icon={<Trash2 class="w-4 h-4" />}
+                icon={<Trash2 class="w-5 h-5 sm:w-4 sm:h-4" />}
                 label={t("config.field.removeItem")}
                 onClick={() => removeItem(index)}
-                size="sm"
+                size="md"
                 variant="ghost"
+                class="!p-2.5 sm:!p-1.5 flex-shrink-0"
               />
             </DraggableArrayItem>
           ))}
@@ -240,11 +247,34 @@ function ArrayItemCard({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div class="flex items-center gap-2 px-3 py-3">
-        {/* Drag handle */}
+      <div class="flex items-center gap-1 sm:gap-2 px-2 sm:px-3 py-2 sm:py-3 select-none">
+        {/* Mobile: up/down buttons for reordering - large touch targets */}
+        {totalItems > 1 && (
+          <div class="flex flex-col sm:hidden">
+            <button
+              type="button"
+              class="p-3 -m-1 text-[var(--color-text-muted)] active:text-[var(--color-text-primary)] active:bg-[var(--color-bg-hover)] rounded disabled:opacity-30"
+              onClick={() => index > 0 && onReorder(index, index - 1)}
+              disabled={index === 0}
+              aria-label={t("config.field.moveUp")}
+            >
+              <ChevronUp class="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              class="p-3 -m-1 text-[var(--color-text-muted)] active:text-[var(--color-text-primary)] active:bg-[var(--color-bg-hover)] rounded disabled:opacity-30"
+              onClick={() => index < totalItems - 1 && onReorder(index, index + 1)}
+              disabled={index === totalItems - 1}
+              aria-label={t("config.field.moveDown")}
+            >
+              <ChevronDown class="w-5 h-5" />
+            </button>
+          </div>
+        )}
+        {/* Desktop: drag handle */}
         {totalItems > 1 && (
           <div
-            class="p-1 cursor-grab text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] active:cursor-grabbing"
+            class="hidden sm:block p-1 cursor-grab text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] active:cursor-grabbing"
             title={t("config.field.dragToReorder")}
           >
             <GripVertical class="w-4 h-4" />
@@ -252,7 +282,7 @@ function ArrayItemCard({
         )}
         <button
           type="button"
-          class="flex-1 flex items-center gap-2 text-left group"
+          class="flex-1 flex items-center gap-2 text-left group min-h-[44px] sm:min-h-0"
           onClick={() => setIsExpanded(!isExpanded)}
           aria-expanded={isExpanded}
         >
@@ -262,12 +292,14 @@ function ArrayItemCard({
           {emoji && <span>{emoji}</span>}
           <span class="text-sm font-medium">{String(displayName)}</span>
         </button>
+        {/* Delete button - larger touch target on mobile */}
         <IconButton
-          icon={<Trash2 class="w-4 h-4" />}
+          icon={<Trash2 class="w-5 h-5 sm:w-4 sm:h-4" />}
           label={t("config.field.removeItem")}
           onClick={onRemove}
-          size="sm"
+          size="md"
           variant="ghost"
+          class="!p-2.5 sm:!p-1.5"
         />
       </div>
 
@@ -294,11 +326,13 @@ function ArrayItemCard({
 
 function DraggableArrayItem({
   index,
+  totalItems,
   path,
   onReorder,
   children,
 }: {
   index: number;
+  totalItems: number;
   path: (string | number)[];
   onReorder: (fromIndex: number, toIndex: number) => void;
   children: preact.ComponentChildren;
@@ -342,7 +376,7 @@ function DraggableArrayItem({
 
   return (
     <div
-      class={`w-full flex items-center gap-1 rounded-md transition-colors ${
+      class={`w-full flex items-center gap-1 rounded-md transition-colors select-none ${
         isDragging ? "opacity-50" : ""
       } ${isDragOver ? "bg-[var(--color-accent)]/10 ring-1 ring-[var(--color-accent)]" : ""}`}
       draggable
@@ -352,12 +386,38 @@ function DraggableArrayItem({
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
     >
-      <div
-        class="p-1 cursor-grab text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] active:cursor-grabbing"
-        title={t("config.field.dragToReorder")}
-      >
-        <GripVertical class="w-4 h-4" />
-      </div>
+      {/* Mobile: up/down buttons - large touch targets */}
+      {totalItems > 1 && (
+        <div class="flex flex-col sm:hidden">
+          <button
+            type="button"
+            class="p-2.5 -m-1 text-[var(--color-text-muted)] active:text-[var(--color-text-primary)] active:bg-[var(--color-bg-hover)] rounded disabled:opacity-30"
+            onClick={() => index > 0 && onReorder(index, index - 1)}
+            disabled={index === 0}
+            aria-label={t("config.field.moveUp")}
+          >
+            <ChevronUp class="w-5 h-5" />
+          </button>
+          <button
+            type="button"
+            class="p-2.5 -m-1 text-[var(--color-text-muted)] active:text-[var(--color-text-primary)] active:bg-[var(--color-bg-hover)] rounded disabled:opacity-30"
+            onClick={() => index < totalItems - 1 && onReorder(index, index + 1)}
+            disabled={index === totalItems - 1}
+            aria-label={t("config.field.moveDown")}
+          >
+            <ChevronDown class="w-5 h-5" />
+          </button>
+        </div>
+      )}
+      {/* Desktop: drag handle */}
+      {totalItems > 1 && (
+        <div
+          class="hidden sm:block p-1 cursor-grab text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] active:cursor-grabbing"
+          title={t("config.field.dragToReorder")}
+        >
+          <GripVertical class="w-4 h-4" />
+        </div>
+      )}
       {children}
     </div>
   );

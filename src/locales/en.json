@@ -1069,6 +1069,8 @@
       "noItems": "No items",
       "editJson": "Edit as JSON",
       "dragToReorder": "Drag to reorder",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
       "invalidJson": "Invalid JSON"
     }
   }
