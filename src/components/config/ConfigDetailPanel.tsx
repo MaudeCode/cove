@@ -17,6 +17,8 @@ interface ConfigDetailPanelProps {
   schema: Signal<JsonSchema | null>;
   draftConfig: Signal<Record<string, unknown>>;
   uiHints: Signal<ConfigUiHints>;
+  /** When true, skip rendering nav-worthy children (for mobile "General" view) */
+  skipNavWorthy?: boolean;
 }
 
 export function ConfigDetailPanel({
@@ -24,6 +26,7 @@ export function ConfigDetailPanel({
   schema,
   draftConfig,
   uiHints,
+  skipNavWorthy = false,
 }: ConfigDetailPanelProps) {
   const path = selectedPath.value;
   const schemaValue = schema.value;
@@ -127,6 +130,7 @@ export function ConfigDetailPanel({
           level={0}
           showLabel={false}
           isDetailView
+          skipNavWorthy={skipNavWorthy}
         />
       </div>
     </div>

@@ -1019,6 +1019,7 @@
     "noResults": "No matching settings",
     "selectSection": "Select a section to configure",
     "subsections": "Subsections",
+    "general": "General",
     "mobileNotReady": "Mobile editing coming soon",
     "mobileNotReadyHint": "Use desktop for full configuration editing.",
     "emptyConfig": "Configuration is empty",
