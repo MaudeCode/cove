@@ -96,8 +96,29 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build-docker, build-npm]
     steps:
-      - name: Download all artifacts
+      - name: Download Docker amd64
         uses: actions/download-artifact@v4
+        with:
+          name: docker-amd64
+          path: docker-amd64
+
+      - name: Download Docker arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-arm64
+          path: docker-arm64
+
+      - name: Download npm package
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+          path: npm-package
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
 
       - name: Verify artifacts exist
         run: |
@@ -132,8 +153,29 @@ jobs:
         with:
           fetch-depth: 0  # Need full history for changelog
 
-      - name: Download artifacts
+      - name: Download Docker amd64
         uses: actions/download-artifact@v4
+        with:
+          name: docker-amd64
+          path: docker-amd64
+
+      - name: Download Docker arm64
+        uses: actions/download-artifact@v4
+        with:
+          name: docker-arm64
+          path: docker-arm64
+
+      - name: Download npm package
+        uses: actions/download-artifact@v4
+        with:
+          name: npm-package
+          path: npm-package
+
+      - name: Download dist
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist
 
       # --- npm publish (do first - most likely to fail) ---
       - uses: actions/setup-node@v4
