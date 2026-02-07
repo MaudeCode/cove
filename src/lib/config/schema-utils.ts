@@ -50,6 +50,53 @@ export function setValueAtPath(
 }
 
 // ============================================
+// Schema Navigation
+// ============================================
+
+/** Navigate to a schema node at the given path */
+export function getSchemaAtPath(
+  schema: JsonSchema | null | undefined,
+  path: (string | number)[],
+): JsonSchema | null {
+  if (!schema || path.length === 0) return schema ?? null;
+
+  let current: JsonSchema | undefined = schema;
+
+  for (const segment of path) {
+    if (!current) return null;
+
+    if (typeof segment === "number") {
+      // Array index - get items schema
+      current = current.items;
+    } else {
+      // Object property
+      current = current.properties?.[segment];
+    }
+  }
+
+  return current ?? null;
+}
+
+/** Navigate to a value at the given path */
+export function getValueAtPath(value: unknown, path: (string | number)[]): unknown {
+  if (path.length === 0) return value;
+
+  let current: unknown = value;
+
+  for (const segment of path) {
+    if (current === null || current === undefined) return undefined;
+
+    if (typeof segment === "number") {
+      current = (current as unknown[])[segment];
+    } else {
+      current = (current as Record<string, unknown>)[segment];
+    }
+  }
+
+  return current;
+}
+
+// ============================================
 // Schema Type Resolution
 // ============================================
 
