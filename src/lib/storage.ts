@@ -14,6 +14,7 @@
 import type { Message } from "@/types/messages";
 import type { Session } from "@/types/sessions";
 import type { UsageSummary } from "@/types/usage";
+import type { SessionsUsageResult } from "@/types/server-stats";
 import type { Theme } from "@/types/theme";
 
 // ============================================
@@ -300,6 +301,14 @@ export function getUsageCache(): UsageSummary | null {
 
 export function setUsageCache(usage: UsageSummary): void {
   setRaw("usage-cache", usage);
+}
+
+export function getSessionsUsageCache(): SessionsUsageResult | null {
+  return getRaw<SessionsUsageResult>("sessions-usage-cache");
+}
+
+export function setSessionsUsageCache(data: SessionsUsageResult): void {
+  setRaw("sessions-usage-cache", data);
 }
 
 export function getModelFavorites(): Set<string> {

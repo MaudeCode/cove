@@ -58,14 +58,14 @@ export function ListCard({
   onClick,
 }: ListCardProps) {
   const content = (
-    <div class="flex items-start gap-3">
+    <div class="flex items-start gap-3 w-full">
       {/* Icon */}
       <div class={`p-1.5 rounded-lg flex-shrink-0 ${iconVariantStyles[iconVariant]}`}>
         <Icon class="w-4 h-4" />
       </div>
 
       {/* Content */}
-      <div class="flex-1 min-w-0">
+      <div class="flex-1 min-w-0 w-0">
         {/* Title + Badges */}
         <div class="flex items-center gap-2 mb-0.5">
           <span class="font-medium truncate">{title}</span>
@@ -81,7 +81,7 @@ export function ListCard({
 
         {/* Metadata row */}
         {meta && meta.length > 0 && (
-          <div class="flex items-center gap-3 text-xs text-[var(--color-text-muted)]">
+          <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-[var(--color-text-muted)]">
             {meta.map((item, i) => (
               <span key={`${i}-${item.value}`} class="flex items-center gap-1" title={item.title}>
                 {item.icon && <item.icon class="w-3 h-3" />}
@@ -102,7 +102,7 @@ export function ListCard({
       <button
         type="button"
         aria-label={title}
-        class="w-full p-3 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors text-left"
+        class="w-full p-3 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors text-left overflow-hidden"
         onClick={onClick}
       >
         {content}
@@ -110,5 +110,5 @@ export function ListCard({
     );
   }
 
-  return <div class="p-3 rounded-lg bg-[var(--color-bg-secondary)]">{content}</div>;
+  return <div class="p-3 rounded-lg bg-[var(--color-bg-secondary)] overflow-hidden">{content}</div>;
 }

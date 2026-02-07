@@ -36,7 +36,7 @@ export interface SessionUsageEntry {
   key: string;
   label?: string;
   model?: string;
-  lastActiveAt?: number;
+  updatedAt?: number;
   usage: UsageTotals;
   contextWeight?: ContextWeightBreakdown;
 }
