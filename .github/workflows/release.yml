@@ -151,6 +151,7 @@ jobs:
         run: npm publish --provenance --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          # NPM_TOKEN secret must be set in repo settings
 
   create-release:
     name: Create GitHub Release
