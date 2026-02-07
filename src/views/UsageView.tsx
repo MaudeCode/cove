@@ -325,35 +325,35 @@ function SessionUsageTable() {
                 <th class="text-left py-2 px-2 font-medium text-[var(--color-text-muted)]">
                   {t("usage.sessions.model")}
                 </th>
-                <th
-                  class="text-right py-2 px-2 font-medium text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-primary)]"
-                  onClick={() => toggleSort("tokens")}
-                  onKeyDown={(e) => e.key === "Enter" && toggleSort("tokens")}
-                  tabIndex={0}
-                  role="button"
-                >
-                  {t("usage.sessions.tokens")}
-                  <SortIcon col="tokens" />
+                <th class="text-right py-2 px-2 font-medium">
+                  <button
+                    type="button"
+                    class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
+                    onClick={() => toggleSort("tokens")}
+                  >
+                    {t("usage.sessions.tokens")}
+                    <SortIcon col="tokens" />
+                  </button>
                 </th>
-                <th
-                  class="text-right py-2 px-2 font-medium text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-primary)]"
-                  onClick={() => toggleSort("cost")}
-                  onKeyDown={(e) => e.key === "Enter" && toggleSort("cost")}
-                  tabIndex={0}
-                  role="button"
-                >
-                  {t("usage.sessions.cost")}
-                  <SortIcon col="cost" />
+                <th class="text-right py-2 px-2 font-medium">
+                  <button
+                    type="button"
+                    class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
+                    onClick={() => toggleSort("cost")}
+                  >
+                    {t("usage.sessions.cost")}
+                    <SortIcon col="cost" />
+                  </button>
                 </th>
-                <th
-                  class="text-right py-2 px-2 font-medium text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-primary)]"
-                  onClick={() => toggleSort("recent")}
-                  onKeyDown={(e) => e.key === "Enter" && toggleSort("recent")}
-                  tabIndex={0}
-                  role="button"
-                >
-                  {t("usage.sessions.lastActive")}
-                  <SortIcon col="recent" />
+                <th class="text-right py-2 px-2 font-medium">
+                  <button
+                    type="button"
+                    class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
+                    onClick={() => toggleSort("recent")}
+                  >
+                    {t("usage.sessions.lastActive")}
+                    <SortIcon col="recent" />
+                  </button>
                 </th>
               </tr>
             </thead>
@@ -376,7 +376,9 @@ function SessionUsageTable() {
                       }
                     }}
                     tabIndex={0}
-                    role="button"
+                    aria-label={t("usage.sessions.viewDetails", {
+                      name: session.label || session.key,
+                    })}
                   >
                     <td class="py-2 px-2 truncate max-w-[200px]" title={session.key}>
                       {session.label || session.key}

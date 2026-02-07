@@ -966,7 +966,8 @@
       "tokens": "Tokens",
       "cost": "Cost",
       "lastActive": "Last Active",
-      "showing": "Showing {from}–{to} of {total}"
+      "showing": "Showing {from}–{to} of {total}",
+      "viewDetails": "View details for {name}"
     },
     "detail": {
       "title": "Session Details",
