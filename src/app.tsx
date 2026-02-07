@@ -42,7 +42,7 @@ import { DebugView } from "@/views/DebugView";
 import { LogsView } from "@/views/LogsView";
 import { DevicesView } from "@/views/DevicesView";
 import { SkillsView } from "@/views/SkillsView";
-import { ServerStatsView } from "@/views/ServerStatsView";
+import { UsageView } from "@/views/UsageView";
 import { ChannelsView } from "@/views/ChannelsView";
 import { InstancesView } from "@/views/InstancesView";
 import { SessionsAdminView } from "@/views/SessionsAdminView";
@@ -159,7 +159,7 @@ function MainRouter() {
 
       {/* Control */}
       <OverviewView path="/overview" />
-      <ServerStatsView path="/stats" />
+      <UsageView path="/usage" />
       <ChannelsView path="/channels" />
       <InstancesView path="/instances" />
       <SessionsAdminView path="/sessions" />
