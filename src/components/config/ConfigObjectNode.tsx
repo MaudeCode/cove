@@ -8,6 +8,7 @@ import { useState } from "preact/hooks";
 import { ChevronDown, ChevronRight } from "lucide-preact";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
 import { ConfigNode } from "./ConfigNode";
+import { isNavWorthy } from "@/lib/config/nav-tree";
 
 interface ObjectNodeProps {
   schema: JsonSchema;
@@ -18,6 +19,7 @@ interface ObjectNodeProps {
   label: string;
   help?: string;
   isDetailView?: boolean;
+  skipNavWorthy?: boolean;
 }
 
 export function ObjectNode({
@@ -29,14 +31,31 @@ export function ObjectNode({
   label,
   help,
   isDetailView = false,
+  skipNavWorthy = false,
 }: ObjectNodeProps) {
   const [isExpanded, setIsExpanded] = useState(level < 2 || isDetailView);
   const properties = schema.properties ?? {};
-  const propertyKeys = Object.keys(properties);
+
+  // Filter out nav-worthy properties if skipNavWorthy is true
+  const propertyKeys = Object.keys(properties).filter((key) => {
+    if (!skipNavWorthy) return true;
+    const propSchema = properties[key];
+    return !isNavWorthy(propSchema);
+  });
+
   const actualValue = value ?? {};
 
   // In detail view at level 0, render fields directly (no wrapper)
   if (isDetailView && level === 0) {
+    // If all properties were filtered out, show a message
+    if (propertyKeys.length === 0) {
+      return (
+        <div class="text-sm text-[var(--color-text-muted)] py-4">
+          No settings available at this level.
+        </div>
+      );
+    }
+
     return (
       <div class="space-y-2">
         {help && <p class="text-sm text-[var(--color-text-muted)] mb-4">{help}</p>}
@@ -48,6 +67,7 @@ export function ObjectNode({
             path={[...path, key]}
             hints={hints}
             level={level + 1}
+            skipNavWorthy={skipNavWorthy}
           />
         ))}
       </div>
@@ -83,6 +103,7 @@ export function ObjectNode({
               path={[...path, key]}
               hints={hints}
               level={level + 1}
+              skipNavWorthy={skipNavWorthy}
             />
           ))}
         </div>

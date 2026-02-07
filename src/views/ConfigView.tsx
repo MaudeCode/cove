@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/Input";
 import { Spinner } from "@/components/ui/Spinner";
 import { HintBox } from "@/components/ui/HintBox";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { RefreshCw, Search, Save, RotateCcw } from "lucide-preact";
+import { RefreshCw, Search, Save, RotateCcw, Settings2, ChevronRight } from "lucide-preact";
 import type { RouteProps } from "@/types/routes";
 import {
   isLoading,
@@ -80,6 +80,14 @@ const selectedPath = signal<(string | number)[]>(parseHashToPath());
 
 /** Expanded nav items */
 const expandedNav = signal<Set<string>>(loadPersistedExpanded());
+
+/** Mobile: viewing detail panel instead of nav for current path */
+const mobileViewingDetail = signal(false);
+
+// Reset detail view when path changes
+selectedPath.subscribe(() => {
+  mobileViewingDetail.value = false;
+});
 
 // Sync selectedPath → URL hash (without triggering hashchange)
 let isUpdatingHash = false;
@@ -255,7 +263,12 @@ export function ConfigView(_props: RouteProps) {
 
   // Get mobile nav state
   const mobileNavData = getNavItemsForPath(navTree, selectedPath.value);
-  const showMobileNav = mobileNavData !== null;
+  const showMobileNav = mobileNavData !== null && !mobileViewingDetail.value;
+
+  // Check if current section has inline fields (for "General" item)
+  // We show "General" if we're not at root and the section has nav children
+  const showGeneralItem =
+    selectedPath.value.length > 0 && mobileNavData !== null && mobileNavData.items.length > 0;
 
   return (
     <ViewErrorBoundary viewName={t("config.title")}>
@@ -269,6 +282,14 @@ export function ConfigView(_props: RouteProps) {
           isSaving={isSaving.value}
           onSave={handleSave}
           onReset={handleReset}
+          showBack={selectedPath.value.length > 0 || mobileViewingDetail.value}
+          onBack={() => {
+            if (mobileViewingDetail.value) {
+              mobileViewingDetail.value = false;
+            } else if (selectedPath.value.length > 0) {
+              selectedPath.value = selectedPath.value.slice(0, -1);
+            }
+          }}
         />
 
         {/* Error */}
@@ -288,18 +309,41 @@ export function ConfigView(_props: RouteProps) {
         {/* Content */}
         {!isLoading.value && schemaValue && (
           <div class="flex-1 overflow-y-auto bg-[var(--color-bg-surface)]">
-            {showMobileNav && mobileNavData.items.length > 0 ? (
-              <MobileConfigNavList
-                items={mobileNavData.items}
-                selectedPath={selectedPath}
-                isTopLevel={mobileNavData.isTopLevel}
-              />
+            {showMobileNav ? (
+              /* Has children: show nav list with optional General item */
+              <div class="divide-y divide-[var(--color-border)]">
+                {/* General item - shows inline fields for this section */}
+                {showGeneralItem && (
+                  <button
+                    type="button"
+                    class="w-full flex items-center gap-3 px-4 py-3 text-left hover:bg-[var(--color-bg-hover)] active:bg-[var(--color-bg-tertiary)] transition-colors"
+                    onClick={() => {
+                      mobileViewingDetail.value = true;
+                    }}
+                  >
+                    <div class="w-8 h-8 rounded-lg bg-[var(--color-text-muted)]/10 flex items-center justify-center flex-shrink-0">
+                      <Settings2 size={18} class="text-[var(--color-text-muted)]" />
+                    </div>
+                    <span class="flex-1 text-[var(--color-text-primary)]">
+                      {t("config.general")}
+                    </span>
+                    <ChevronRight size={18} class="text-[var(--color-text-muted)] flex-shrink-0" />
+                  </button>
+                )}
+                <MobileConfigNavList
+                  items={mobileNavData.items}
+                  selectedPath={selectedPath}
+                  isTopLevel={mobileNavData.isTopLevel}
+                />
+              </div>
             ) : (
+              /* Leaf node or viewing detail: show detail panel */
               <ConfigDetailPanel
                 selectedPath={selectedPath}
                 schema={schema}
                 draftConfig={draftConfig}
                 uiHints={uiHints}
+                skipNavWorthy={mobileViewingDetail.value}
               />
             )}
           </div>

@@ -19,6 +19,8 @@ interface MobileConfigHeaderProps {
   isSaving: boolean;
   onSave: () => void;
   onReset: () => void;
+  onBack?: () => void;
+  showBack?: boolean;
 }
 
 export function MobileConfigHeader({
@@ -29,9 +31,12 @@ export function MobileConfigHeader({
   isSaving,
   onSave,
   onReset,
+  onBack,
+  showBack,
 }: MobileConfigHeaderProps) {
   const path = selectedPath.value;
   const hints = uiHints.value;
+  const canGoBack = showBack ?? path.length > 0;
 
   // Build title from current path
   const getTitle = (): string => {
@@ -60,7 +65,9 @@ export function MobileConfigHeader({
   };
 
   const handleBack = () => {
-    if (path.length > 0) {
+    if (onBack) {
+      onBack();
+    } else if (path.length > 0) {
       selectedPath.value = path.slice(0, -1);
     }
   };
@@ -71,7 +78,7 @@ export function MobileConfigHeader({
   return (
     <div class="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)]">
       {/* Back button */}
-      {path.length > 0 && (
+      {canGoBack && (
         <IconButton
           icon={<ChevronLeft size={20} />}
           onClick={handleBack}

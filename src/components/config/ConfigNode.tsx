@@ -32,6 +32,8 @@ export interface ConfigNodeProps {
   showLabel?: boolean;
   /** When true, renders for the detail panel (no outer card wrapper) */
   isDetailView?: boolean;
+  /** When true, skip rendering nav-worthy children (for mobile "General" view) */
+  skipNavWorthy?: boolean;
 }
 
 export function ConfigNode({
@@ -42,6 +44,7 @@ export function ConfigNode({
   level = 0,
   showLabel = true,
   isDetailView = false,
+  skipNavWorthy = false,
 }: ConfigNodeProps) {
   const type = schemaType(schema);
   const hint = hintForPath(path, hints) ?? {};
@@ -79,6 +82,7 @@ export function ConfigNode({
           label={label}
           help={help}
           isDetailView={isDetailView}
+          skipNavWorthy={skipNavWorthy}
         />
       );
 
