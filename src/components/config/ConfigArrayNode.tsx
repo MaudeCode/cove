@@ -60,19 +60,55 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
               <p class="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">{help}</p>
             )}
           </div>
-          <Button variant="secondary" size="sm" icon={Plus} onClick={addItem}>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Plus}
+            onClick={addItem}
+            fullWidth
+            class="sm:w-auto"
+          >
             {t("config.field.addItem")}
           </Button>
         </div>
-        <div class="space-y-2 w-full sm:max-w-md">
+        <div class="space-y-2 w-full">
           {items.map((item, index) => (
-            <DraggableArrayItem
+            <div
               key={index}
-              index={index}
-              totalItems={items.length}
-              path={path}
-              onReorder={reorderItems}
+              class="flex items-center gap-1 p-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
             >
+              {/* Mobile: up/down buttons */}
+              {items.length > 1 && (
+                <div class="flex flex-col sm:hidden">
+                  <button
+                    type="button"
+                    class="p-2 text-[var(--color-text-muted)] active:text-[var(--color-text-primary)] disabled:opacity-30"
+                    onClick={() => index > 0 && reorderItems(index, index - 1)}
+                    disabled={index === 0}
+                    aria-label={t("config.field.moveUp")}
+                  >
+                    <ChevronUp class="w-4 h-4" />
+                  </button>
+                  <button
+                    type="button"
+                    class="p-2 text-[var(--color-text-muted)] active:text-[var(--color-text-primary)] disabled:opacity-30"
+                    onClick={() => index < items.length - 1 && reorderItems(index, index + 1)}
+                    disabled={index === items.length - 1}
+                    aria-label={t("config.field.moveDown")}
+                  >
+                    <ChevronDown class="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+              {/* Desktop: drag handle */}
+              {items.length > 1 && (
+                <div
+                  class="hidden sm:block p-1 cursor-grab text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                  title={t("config.field.dragToReorder")}
+                >
+                  <GripVertical class="w-4 h-4" />
+                </div>
+              )}
               <Input
                 type={itemType === "number" ? "number" : "text"}
                 value={String(item ?? "")}
@@ -92,7 +128,7 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
                 variant="ghost"
                 class="!p-2.5 sm:!p-1.5 flex-shrink-0"
               />
-            </DraggableArrayItem>
+            </div>
           ))}
           {items.length === 0 && (
             <p class="text-sm text-[var(--color-text-muted)] py-4 text-center border border-dashed border-[var(--color-border)] rounded-lg">
@@ -125,7 +161,8 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
           size="sm"
           icon={Plus}
           onClick={addItem}
-          class="self-start sm:self-auto"
+          fullWidth
+          class="sm:w-auto"
         >
           {t("config.field.addItem")}
         </Button>
@@ -317,108 +354,5 @@ function ArrayItemCard({
         </div>
       )}
     </Card>
-  );
-}
-
-// ============================================
-// Draggable Array Item (for primitive arrays)
-// ============================================
-
-function DraggableArrayItem({
-  index,
-  totalItems,
-  path,
-  onReorder,
-  children,
-}: {
-  index: number;
-  totalItems: number;
-  path: (string | number)[];
-  onReorder: (fromIndex: number, toIndex: number) => void;
-  children: preact.ComponentChildren;
-}) {
-  const [isDragging, setIsDragging] = useState(false);
-  const [isDragOver, setIsDragOver] = useState(false);
-
-  const handleDragStart = (e: DragEvent) => {
-    setIsDragging(true);
-    e.dataTransfer!.effectAllowed = "move";
-    e.dataTransfer!.setData("text/plain", JSON.stringify({ path: path.join("."), index }));
-  };
-
-  const handleDragEnd = () => {
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e: DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer!.dropEffect = "move";
-    setIsDragOver(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragOver(false);
-  };
-
-  const handleDrop = (e: DragEvent) => {
-    e.preventDefault();
-    setIsDragOver(false);
-
-    try {
-      const data = JSON.parse(e.dataTransfer!.getData("text/plain"));
-      if (data.path === path.join(".") && data.index !== index) {
-        onReorder(data.index, index);
-      }
-    } catch {
-      // Invalid drop data
-    }
-  };
-
-  return (
-    <div
-      class={`w-full flex items-center gap-1 rounded-md transition-colors select-none ${
-        isDragging ? "opacity-50" : ""
-      } ${isDragOver ? "bg-[var(--color-accent)]/10 ring-1 ring-[var(--color-accent)]" : ""}`}
-      draggable
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragOver={handleDragOver}
-      onDragLeave={handleDragLeave}
-      onDrop={handleDrop}
-    >
-      {/* Mobile: up/down buttons - large touch targets */}
-      {totalItems > 1 && (
-        <div class="flex flex-col sm:hidden">
-          <button
-            type="button"
-            class="p-2.5 -m-1 text-[var(--color-text-muted)] active:text-[var(--color-text-primary)] active:bg-[var(--color-bg-hover)] rounded disabled:opacity-30"
-            onClick={() => index > 0 && onReorder(index, index - 1)}
-            disabled={index === 0}
-            aria-label={t("config.field.moveUp")}
-          >
-            <ChevronUp class="w-5 h-5" />
-          </button>
-          <button
-            type="button"
-            class="p-2.5 -m-1 text-[var(--color-text-muted)] active:text-[var(--color-text-primary)] active:bg-[var(--color-bg-hover)] rounded disabled:opacity-30"
-            onClick={() => index < totalItems - 1 && onReorder(index, index + 1)}
-            disabled={index === totalItems - 1}
-            aria-label={t("config.field.moveDown")}
-          >
-            <ChevronDown class="w-5 h-5" />
-          </button>
-        </div>
-      )}
-      {/* Desktop: drag handle */}
-      {totalItems > 1 && (
-        <div
-          class="hidden sm:block p-1 cursor-grab text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] active:cursor-grabbing"
-          title={t("config.field.dragToReorder")}
-        >
-          <GripVertical class="w-4 h-4" />
-        </div>
-      )}
-      {children}
-    </div>
   );
 }

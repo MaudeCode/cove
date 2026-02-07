@@ -77,7 +77,7 @@ export function MobileConfigHeader({
 
   return (
     <div class="flex items-center gap-2 px-4 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-surface)]">
-      {/* Back button */}
+      {/* Back button - touch-action prevents double-tap zoom */}
       {canGoBack && (
         <IconButton
           icon={<ChevronLeft size={20} />}
@@ -85,6 +85,7 @@ export function MobileConfigHeader({
           label={t("actions.back")}
           size="sm"
           variant="ghost"
+          class="touch-manipulation"
         />
       )}
 

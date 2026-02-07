@@ -26,14 +26,16 @@ interface ToggleProps extends Omit<JSX.HTMLAttributes<HTMLButtonElement>, "size"
 
 const sizeStyles: Record<ToggleSize, { track: string; thumb: string; translate: string }> = {
   sm: {
-    track: "w-8 h-4",
-    thumb: "w-3 h-3",
-    translate: "translate-x-4",
+    // Mobile-first: slightly larger, then smaller on desktop
+    track: "w-10 h-5 sm:w-8 sm:h-4",
+    thumb: "w-4 h-4 sm:w-3 sm:h-3",
+    translate: "translate-x-5 sm:translate-x-4",
   },
   md: {
-    track: "w-10 h-5",
-    thumb: "w-4 h-4",
-    translate: "translate-x-5",
+    // Mobile-first: lg size on mobile, md on desktop
+    track: "w-12 h-6 sm:w-10 sm:h-5",
+    thumb: "w-5 h-5 sm:w-4 sm:h-4",
+    translate: "translate-x-6 sm:translate-x-5",
   },
   lg: {
     track: "w-12 h-6",
