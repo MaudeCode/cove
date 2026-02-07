@@ -11,6 +11,7 @@
     "src/locales/index.ts"
   ],
   "ignoreDependencies": [
-    "@types/dompurify"
+    "@types/dompurify",
+    "conventional-changelog-cli"
   ]
 }

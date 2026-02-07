@@ -64,6 +64,7 @@
     "@types/dompurify": "^3.2.0",
     "@types/node": "^25.2.1",
     "@types/prismjs": "^1.26.5",
+    "conventional-changelog-cli": "^5.0.0",
     "husky": "^9.1.7",
     "knip": "^5.83.1",
     "oxfmt": "^0.28.0",
