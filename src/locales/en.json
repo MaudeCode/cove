@@ -1020,6 +1020,8 @@
     "selectSection": "Select a section to configure",
     "subsections": "Subsections",
     "general": "General",
+    "noSettingsAtLevel": "No settings available at this level.",
+    "schemaNotFound": "Schema not found for path: {path}",
     "mobileNotReady": "Mobile editing coming soon",
     "mobileNotReadyHint": "Use desktop for full configuration editing.",
     "emptyConfig": "Configuration is empty",

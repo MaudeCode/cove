@@ -6,7 +6,6 @@
  */
 
 import { useEffect } from "preact/hooks";
-import { signal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import { isConnected } from "@/lib/gateway";
@@ -35,104 +34,17 @@ import {
 } from "@/signals/config";
 import { buildNavTree, hasInlineFields } from "@/lib/config/nav-tree";
 import type { NavItem } from "@/lib/config/nav-tree";
-import type { JsonSchema } from "@/types/config";
+import { getSchemaAtPath } from "@/lib/config/schema-utils";
 import { ConfigNavItem } from "@/components/config/ConfigNavItem";
 import { ConfigDetailPanel } from "@/components/config/ConfigDetailPanel";
 import { MobileConfigHeader } from "@/components/config/MobileConfigHeader";
 import { MobileConfigNavList } from "@/components/config/MobileConfigNavList";
-
-// ============================================
-// Navigation State (synced with URL hash)
-// ============================================
-
-const STORAGE_KEY_EXPANDED = "cove:config:expandedNav";
-
-/** Parse URL hash to path array: #gateway.controlUi → ["gateway", "controlUi"] */
-function parseHashToPath(): (string | number)[] {
-  const hash = window.location.hash.slice(1); // Remove #
-  if (!hash) return [];
-
-  return hash.split(".").map((segment) => {
-    // Convert numeric strings to numbers (for array indices)
-    const num = Number(segment);
-    return Number.isInteger(num) && num >= 0 ? num : segment;
-  });
-}
-
-/** Convert path array to URL hash: ["gateway", "controlUi"] → "gateway.controlUi" */
-function pathToHash(path: (string | number)[]): string {
-  if (path.length === 0) return "";
-  return path.join(".");
-}
-
-/** Load persisted expanded nav from localStorage */
-function loadPersistedExpanded(): Set<string> {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY_EXPANDED);
-    if (stored) return new Set(JSON.parse(stored));
-  } catch {
-    // Ignore parse errors
-  }
-  return new Set(["gateway", "agents", "channels"]);
-}
-
-/** Currently selected path in the nav tree (synced with URL hash) */
-const selectedPath = signal<(string | number)[]>(parseHashToPath());
-
-/** Expanded nav items */
-const expandedNav = signal<Set<string>>(loadPersistedExpanded());
-
-/** Mobile: viewing detail panel instead of nav for current path */
-const mobileViewingDetail = signal(false);
-
-// Reset detail view when path changes
-selectedPath.subscribe(() => {
-  mobileViewingDetail.value = false;
-});
-
-// Sync selectedPath → URL hash (without triggering hashchange)
-let isUpdatingHash = false;
-selectedPath.subscribe((path) => {
-  const newHash = pathToHash(path);
-  const currentHash = window.location.hash.slice(1);
-  if (newHash !== currentHash) {
-    isUpdatingHash = true;
-    if (newHash) {
-      window.location.hash = newHash;
-    } else {
-      // Remove hash without adding to history
-      history.replaceState(null, "", window.location.pathname + window.location.search);
-    }
-    isUpdatingHash = false;
-  }
-
-  // Auto-expand parent paths so selected item is visible
-  if (path.length > 1) {
-    const next = new Set(expandedNav.value);
-    for (let i = 1; i < path.length; i++) {
-      next.add(path.slice(0, i).join("."));
-    }
-    expandedNav.value = next;
-  }
-});
-
-// Sync URL hash → selectedPath (for back/forward navigation)
-if (typeof window !== "undefined") {
-  window.addEventListener("hashchange", () => {
-    if (!isUpdatingHash) {
-      selectedPath.value = parseHashToPath();
-    }
-  });
-}
-
-// Persist expanded nav to localStorage
-expandedNav.subscribe((expanded) => {
-  try {
-    localStorage.setItem(STORAGE_KEY_EXPANDED, JSON.stringify([...expanded]));
-  } catch {
-    // Ignore storage errors
-  }
-});
+import {
+  selectedPath,
+  expandedNav,
+  mobileViewingDetail,
+  parseHashToPath,
+} from "@/signals/configNav";
 
 // ============================================
 // Mobile Navigation Helpers
@@ -267,19 +179,7 @@ export function ConfigView(_props: RouteProps) {
   const showMobileNav = mobileNavData !== null && !mobileViewingDetail.value;
 
   // Check if current section has inline fields (for "General" item)
-  // Navigate to the selected schema node
-  const currentSchema = (() => {
-    if (!schemaValue || selectedPath.value.length === 0) return null;
-    let s: JsonSchema | undefined = schemaValue;
-    for (const segment of selectedPath.value) {
-      if (typeof segment === "number") {
-        s = s?.items;
-      } else {
-        s = s?.properties?.[segment];
-      }
-    }
-    return s ?? null;
-  })();
+  const currentSchema = getSchemaAtPath(schemaValue, selectedPath.value);
 
   // Show "General" only if section has both nav children AND inline fields
   const showGeneralItem =

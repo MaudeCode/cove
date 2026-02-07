@@ -6,6 +6,7 @@
 
 import { useState } from "preact/hooks";
 import { ChevronDown, ChevronRight } from "lucide-preact";
+import { t } from "@/lib/i18n";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
 import { ConfigNode } from "./ConfigNode";
 import { isNavWorthy } from "@/lib/config/nav-tree";
@@ -51,7 +52,7 @@ export function ObjectNode({
     if (propertyKeys.length === 0) {
       return (
         <div class="text-sm text-[var(--color-text-muted)] py-4">
-          No settings available at this level.
+          {t("config.noSettingsAtLevel")}
         </div>
       );
     }

@@ -8,7 +8,7 @@ import type { Signal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { Settings2 } from "lucide-preact";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
-import { humanize } from "@/lib/config/schema-utils";
+import { humanize, getSchemaAtPath, getValueAtPath } from "@/lib/config/schema-utils";
 import { SECTION_ICONS } from "@/lib/config/section-icons";
 import { ConfigNode } from "./ConfigNode";
 
@@ -45,25 +45,13 @@ export function ConfigDetailPanel({
   }
 
   // Navigate to the selected schema node
-  let currentSchema: JsonSchema | undefined = schemaValue;
-  let currentValue: unknown = configValue;
-
-  for (const segment of path) {
-    if (typeof segment === "number") {
-      // Array index
-      currentSchema = currentSchema?.items;
-      currentValue = (currentValue as unknown[])?.[segment];
-    } else {
-      // Object property
-      currentSchema = currentSchema?.properties?.[segment];
-      currentValue = (currentValue as Record<string, unknown>)?.[segment];
-    }
-  }
+  const currentSchema = getSchemaAtPath(schemaValue, path);
+  const currentValue = getValueAtPath(configValue, path);
 
   if (!currentSchema) {
     return (
       <div class="flex-1 p-6 text-[var(--color-text-muted)]">
-        <p>Schema not found for path: {path.join(" › ")}</p>
+        <p>{t("config.schemaNotFound", { path: path.join(" › ") })}</p>
       </div>
     );
   }
