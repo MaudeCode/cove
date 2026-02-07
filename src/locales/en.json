@@ -211,7 +211,7 @@
     "chat": "Chat",
     "sessions": "Sessions",
     "overview": "Overview",
-    "stats": "Server Stats",
+    "usage": "Usage",
     "channels": "Channels",
     "instances": "Instances",
     "cron": "Cron Jobs",
@@ -928,17 +928,17 @@
     }
   },
 
-  "stats": {
-    "title": "Server Stats",
-    "description": "Gateway metrics and usage statistics",
-    "loadError": "Failed to load server stats",
+  "usage": {
+    "title": "Usage",
+    "description": "Token usage and cost analytics",
+    "loadError": "Failed to load usage data",
     "gateway": {
       "title": "Gateway",
       "unknown": "Unknown host",
       "uptime": "Uptime",
       "sessions": "Sessions"
     },
-    "usage": {
+    "summary": {
       "title": "Token Usage",
       "period": "Last {days} days",
       "totalCost": "Total Cost",
@@ -957,6 +957,24 @@
       "title": "Agents",
       "default": "Default",
       "sessions": "sessions"
+    },
+    "sessions": {
+      "title": "Sessions",
+      "noData": "No session usage data available",
+      "name": "Session",
+      "model": "Model",
+      "tokens": "Tokens",
+      "cost": "Cost",
+      "lastActive": "Last Active"
+    },
+    "detail": {
+      "title": "Session Details",
+      "contextWeight": "Context Weight",
+      "skills": "Skills",
+      "tools": "Tools",
+      "files": "Files",
+      "system": "System Prompt",
+      "other": "Other"
     }
   },
 

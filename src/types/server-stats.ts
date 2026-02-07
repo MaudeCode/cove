@@ -29,6 +29,35 @@ export interface CostUsageSummary {
 }
 
 // ============================================
+// Session Usage Types
+// ============================================
+
+export interface SessionUsageEntry {
+  key: string;
+  label?: string;
+  model?: string;
+  lastActiveAt?: number;
+  usage: UsageTotals;
+  contextWeight?: ContextWeightBreakdown;
+}
+
+export interface ContextWeightBreakdown {
+  total: number;
+  skills?: number;
+  tools?: number;
+  files?: number;
+  systemPrompt?: number;
+  other?: number;
+}
+
+export interface SessionsUsageResult {
+  sessions: SessionUsageEntry[];
+  totals: UsageTotals;
+  startDate?: string;
+  endDate?: string;
+}
+
+// ============================================
 // Health Types
 // ============================================
 
