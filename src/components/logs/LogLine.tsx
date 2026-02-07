@@ -5,8 +5,9 @@
  */
 
 import { t } from "@/lib/i18n";
-import { ChevronRight, AlertCircle, Info, AlertTriangle, Bug } from "lucide-preact";
+import { ChevronRight } from "lucide-preact";
 import type { ParsedLogLine } from "./log-parser";
+import { levelIcons, levelColors, formatLogTimestamp } from "./constants";
 
 interface LogLineProps {
   line: ParsedLogLine;
@@ -14,28 +15,10 @@ interface LogLineProps {
   onToggle: () => void;
 }
 
-const levelColors: Record<string, string> = {
-  debug: "text-[var(--color-text-muted)]",
-  info: "text-[var(--color-info)]",
-  warn: "text-[var(--color-warning)]",
-  error: "text-[var(--color-error)]",
-};
-
-const levelIcons: Record<string, typeof Info> = {
-  debug: Bug,
-  info: Info,
-  warn: AlertTriangle,
-  error: AlertCircle,
-};
-
 export function LogLine({ line, expanded, onToggle }: LogLineProps) {
   const Icon = line.level ? levelIcons[line.level] : undefined;
   const iconColor = line.level ? levelColors[line.level] : "text-[var(--color-text-muted)]";
-
-  // Format timestamp for display (show time portion only)
-  const displayTime = line.timestamp
-    ? line.timestamp.split("T")[1]?.slice(0, 12) || line.timestamp.slice(0, 12)
-    : null;
+  const displayTime = formatLogTimestamp(line.timestamp);
 
   const hasFields = line.fields && Object.keys(line.fields).length > 0;
 

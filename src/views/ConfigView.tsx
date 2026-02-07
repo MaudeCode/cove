@@ -34,8 +34,11 @@ import {
   saveConfig,
 } from "@/signals/config";
 import { buildNavTree } from "@/lib/config/nav-tree";
+import type { NavItem } from "@/lib/config/nav-tree";
 import { ConfigNavItem } from "@/components/config/ConfigNavItem";
 import { ConfigDetailPanel } from "@/components/config/ConfigDetailPanel";
+import { MobileConfigHeader } from "@/components/config/MobileConfigHeader";
+import { MobileConfigNavList } from "@/components/config/MobileConfigNavList";
 
 // ============================================
 // Navigation State (synced with URL hash)
@@ -123,6 +126,51 @@ expandedNav.subscribe((expanded) => {
 });
 
 // ============================================
+// Mobile Navigation Helpers
+// ============================================
+
+/**
+ * Find a nav item by path in the tree.
+ */
+function findNavItem(tree: NavItem[], path: (string | number)[]): NavItem | null {
+  if (path.length === 0) return null;
+
+  const [first, ...rest] = path;
+  const item = tree.find((i) => i.key === String(first));
+
+  if (!item) return null;
+  if (rest.length === 0) return item;
+  if (!item.children) return null;
+
+  return findNavItem(item.children, rest);
+}
+
+/**
+ * Get the nav items to display at the current path level.
+ * Returns null if we should show the detail panel instead.
+ */
+function getNavItemsForPath(
+  tree: NavItem[],
+  path: (string | number)[],
+): { items: NavItem[]; isTopLevel: boolean } | null {
+  // Empty path → show root level
+  if (path.length === 0) {
+    return { items: tree, isTopLevel: true };
+  }
+
+  // Find the item at current path
+  const currentItem = findNavItem(tree, path);
+
+  // If item has children, show them
+  if (currentItem?.children && currentItem.children.length > 0) {
+    return { items: currentItem.children, isTopLevel: false };
+  }
+
+  // No children → show detail panel
+  return null;
+}
+
+// ============================================
 // Main View
 // ============================================
 
@@ -143,18 +191,20 @@ export function ConfigView(_props: RouteProps) {
   }, [isConnected.value]);
 
   // Auto-select first section when loaded, or validate persisted path
+  // Only auto-select on desktop; mobile starts at root nav list
   useEffect(() => {
     if (!schema.value) return;
 
     const path = selectedPath.value;
+    const isMobile = window.matchMedia("(max-width: 767px)").matches;
 
     // Build nav tree to get sorted first item
     const tree = buildNavTree(schema.value, draftConfig.value, uiHints.value);
     const firstPath = tree[0]?.path;
 
-    // If no path selected, select first section (using sorted order)
+    // If no path selected, select first section on desktop only
     if (path.length === 0) {
-      if (firstPath) {
+      if (firstPath && !isMobile) {
         selectedPath.value = firstPath;
       }
       return;
@@ -163,8 +213,10 @@ export function ConfigView(_props: RouteProps) {
     // Validate persisted path still exists in schema
     const topLevel = String(path[0]);
     if (!schema.value.properties?.[topLevel]) {
-      // Path no longer valid, select first section
-      if (firstPath) {
+      // Path no longer valid, select first section (or clear on mobile)
+      if (isMobile) {
+        selectedPath.value = [];
+      } else if (firstPath) {
         selectedPath.value = firstPath;
       }
     }
@@ -201,10 +253,66 @@ export function ConfigView(_props: RouteProps) {
       })
     : navTree;
 
+  // Get mobile nav state
+  const mobileNavData = getNavItemsForPath(navTree, selectedPath.value);
+  const showMobileNav = mobileNavData !== null;
+
   return (
     <ViewErrorBoundary viewName={t("config.title")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-6xl mx-auto space-y-6">
+      {/* Mobile Layout */}
+      <div class="md:hidden flex-1 flex flex-col overflow-hidden">
+        <MobileConfigHeader
+          selectedPath={selectedPath}
+          uiHints={uiHints}
+          isDirty={isDirty.value}
+          canSave={canSave.value}
+          isSaving={isSaving.value}
+          onSave={handleSave}
+          onReset={handleReset}
+        />
+
+        {/* Error */}
+        {error.value && (
+          <div class="px-4 pt-4">
+            <HintBox variant="error">{error.value}</HintBox>
+          </div>
+        )}
+
+        {/* Loading */}
+        {isLoading.value && !schemaValue && (
+          <div class="flex-1 flex items-center justify-center">
+            <Spinner size="lg" />
+          </div>
+        )}
+
+        {/* Content */}
+        {!isLoading.value && schemaValue && (
+          <div class="flex-1 overflow-y-auto bg-[var(--color-bg-surface)]">
+            {showMobileNav && mobileNavData.items.length > 0 ? (
+              <MobileConfigNavList
+                items={mobileNavData.items}
+                selectedPath={selectedPath}
+                isTopLevel={mobileNavData.isTopLevel}
+              />
+            ) : selectedPath.value.length > 0 ? (
+              <ConfigDetailPanel
+                selectedPath={selectedPath}
+                schema={schema}
+                draftConfig={draftConfig}
+                uiHints={uiHints}
+              />
+            ) : (
+              <div class="flex-1 flex items-center justify-center p-8 text-[var(--color-text-muted)]">
+                <p>{t("config.noFields")}</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Desktop Layout */}
+      <div class="hidden md:flex md:flex-1 md:overflow-y-auto p-6">
+        <div class="max-w-6xl mx-auto w-full space-y-6">
           <PageHeader
             title={t("config.title")}
             subtitle={t("config.description")}

@@ -669,7 +669,12 @@
     "noMatches": "No logs match your filter",
     "fetchError": "Failed to fetch logs",
     "expandLine": "Expand log details",
-    "filterByLevel": "Filter by {level} level"
+    "filterByLevel": "Filter by {level} level",
+    "viewLogDetails": "View log details",
+    "logDetails": "Log Details",
+    "message": "Message",
+    "rawLine": "Raw",
+    "fields": "fields"
   },
 
   "channels": {
