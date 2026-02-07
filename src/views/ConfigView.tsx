@@ -33,8 +33,9 @@ import {
   resetDraft,
   saveConfig,
 } from "@/signals/config";
-import { buildNavTree } from "@/lib/config/nav-tree";
+import { buildNavTree, hasInlineFields } from "@/lib/config/nav-tree";
 import type { NavItem } from "@/lib/config/nav-tree";
+import type { JsonSchema } from "@/types/config";
 import { ConfigNavItem } from "@/components/config/ConfigNavItem";
 import { ConfigDetailPanel } from "@/components/config/ConfigDetailPanel";
 import { MobileConfigHeader } from "@/components/config/MobileConfigHeader";
@@ -266,9 +267,27 @@ export function ConfigView(_props: RouteProps) {
   const showMobileNav = mobileNavData !== null && !mobileViewingDetail.value;
 
   // Check if current section has inline fields (for "General" item)
-  // We show "General" if we're not at root and the section has nav children
+  // Navigate to the selected schema node
+  const currentSchema = (() => {
+    if (!schemaValue || selectedPath.value.length === 0) return null;
+    let s: JsonSchema | undefined = schemaValue;
+    for (const segment of selectedPath.value) {
+      if (typeof segment === "number") {
+        s = s?.items;
+      } else {
+        s = s?.properties?.[segment];
+      }
+    }
+    return s ?? null;
+  })();
+
+  // Show "General" only if section has both nav children AND inline fields
   const showGeneralItem =
-    selectedPath.value.length > 0 && mobileNavData !== null && mobileNavData.items.length > 0;
+    selectedPath.value.length > 0 &&
+    mobileNavData !== null &&
+    mobileNavData.items.length > 0 &&
+    currentSchema !== null &&
+    hasInlineFields(currentSchema);
 
   return (
     <ViewErrorBoundary viewName={t("config.title")}>
@@ -321,9 +340,12 @@ export function ConfigView(_props: RouteProps) {
                       mobileViewingDetail.value = true;
                     }}
                   >
-                    <div class="w-8 h-8 rounded-lg bg-[var(--color-text-muted)]/10 flex items-center justify-center flex-shrink-0">
-                      <Settings2 size={18} class="text-[var(--color-text-muted)]" />
-                    </div>
+                    {/* Only show icon if top-level (to match other nav items) */}
+                    {mobileNavData.isTopLevel && (
+                      <div class="w-8 h-8 rounded-lg bg-[var(--color-text-muted)]/10 flex items-center justify-center flex-shrink-0">
+                        <Settings2 size={18} class="text-[var(--color-text-muted)]" />
+                      </div>
+                    )}
                     <span class="flex-1 text-[var(--color-text-primary)]">
                       {t("config.general")}
                     </span>

@@ -32,6 +32,8 @@ export interface DropdownProps {
   "aria-label"?: string;
   /** Additional classes for trigger button */
   class?: string;
+  /** Additional classes (alias) */
+  className?: string;
   /** Disabled state */
   disabled?: boolean;
   /** Menu alignment (default: left) */
@@ -42,14 +44,15 @@ export interface DropdownProps {
 
 const sizeStyles: Record<DropdownSize, { trigger: string; menu: string; option: string }> = {
   sm: {
-    trigger: "px-2.5 py-1.5 text-xs",
-    menu: "text-xs",
-    option: "px-2.5 py-1.5",
+    // Mobile-first: larger touch targets, then smaller on desktop
+    trigger: "px-3 py-2.5 text-sm sm:px-2.5 sm:py-1.5 sm:text-xs",
+    menu: "text-sm sm:text-xs",
+    option: "px-3 py-2.5 sm:px-2.5 sm:py-1.5",
   },
   md: {
-    trigger: "px-3 py-2 text-sm",
-    menu: "text-sm",
-    option: "px-3 py-2",
+    trigger: "px-4 py-3 text-base sm:px-3 sm:py-2 sm:text-sm",
+    menu: "text-base sm:text-sm",
+    option: "px-4 py-3 sm:px-3 sm:py-2",
   },
   lg: {
     trigger: "px-4 py-3 text-base",
@@ -65,11 +68,13 @@ export function Dropdown({
   size = "md",
   placeholder = "Select...",
   "aria-label": ariaLabel,
-  class: className,
+  class: classFromClass,
+  className: classFromClassName,
   disabled = false,
   align = "left",
   width,
 }: DropdownProps) {
+  const className = classFromClass || classFromClassName;
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [minWidth, setMinWidth] = useState<number | undefined>(undefined);
@@ -149,7 +154,7 @@ export function Dropdown({
   );
 
   return (
-    <div class={`relative w-fit ${className || ""}`}>
+    <div class={`relative ${className ?? "inline-block"}`}>
       {/* Hidden sizer to measure longest option */}
       <div
         ref={sizerRef}
@@ -178,7 +183,13 @@ export function Dropdown({
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
-        style={width ? { width } : minWidth ? { minWidth: `${minWidth}px` } : undefined}
+        style={
+          width
+            ? { width }
+            : minWidth && !className?.includes("w-full")
+              ? { minWidth: `${minWidth}px` }
+              : undefined
+        }
         class={`
           flex items-center justify-between gap-2 rounded-md cursor-pointer
           bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]
@@ -186,6 +197,7 @@ export function Dropdown({
           shadow-soft-sm hover:shadow-soft focus:shadow-soft
           focus:outline-none focus:ring-2 focus:ring-[var(--color-accent)] focus:ring-offset-0 focus:border-transparent
           disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none
+          ${className?.includes("w-full") ? "w-full" : ""}
           ${styles.trigger}
         `}
       >

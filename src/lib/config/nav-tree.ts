@@ -24,6 +24,16 @@ export interface NavItem {
 // ============================================
 
 /**
+ * Checks if a schema has any inline fields (non-nav-worthy properties).
+ * Used to determine if "General" section should be shown.
+ */
+export function hasInlineFields(schema: JsonSchema): boolean {
+  if (!schema.properties) return false;
+
+  return Object.values(schema.properties).some((propSchema) => !isNavWorthy(propSchema));
+}
+
+/**
  * Checks if a schema property is "navigation-worthy" (should appear in sidebar).
  * Only objects with 2+ properties or arrays of objects qualify.
  * Single-field objects and primitives should just be rendered inline.
