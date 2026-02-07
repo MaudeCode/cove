@@ -87,8 +87,8 @@ export function ConfigDetailPanel({
 
   return (
     <div class="flex-1 overflow-y-auto">
-      {/* Header */}
-      <div class="px-8 pt-6 pb-4 border-b border-[var(--color-border)] bg-[var(--color-bg-primary)]">
+      {/* Header - hidden on mobile since MobileConfigHeader shows it */}
+      <div class="hidden md:block px-4 sm:px-8 pt-4 sm:pt-6 pb-3 sm:pb-4 border-b border-[var(--color-border)] bg-[var(--color-bg-primary)]">
         {/* Parent breadcrumb (if nested) */}
         {parentPath.length > 0 && (
           <div class="text-xs text-[var(--color-text-muted)] mb-1.5">{parentPath.join(" › ")}</div>
@@ -110,8 +110,15 @@ export function ConfigDetailPanel({
         )}
       </div>
 
+      {/* Description on mobile (title is in MobileConfigHeader) */}
+      {sectionHelp && (
+        <div class="md:hidden px-4 pt-3 pb-2 border-b border-[var(--color-border)] bg-[var(--color-bg-primary)]">
+          <p class="text-sm text-[var(--color-text-muted)] leading-relaxed">{sectionHelp}</p>
+        </div>
+      )}
+
       {/* Content */}
-      <div class="px-8 py-6 max-w-4xl">
+      <div class="px-4 sm:px-8 py-4 sm:py-6 max-w-4xl">
         <ConfigNode
           schema={currentSchema}
           value={currentValue}

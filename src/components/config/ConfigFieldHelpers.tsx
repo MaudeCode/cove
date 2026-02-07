@@ -24,12 +24,12 @@ export interface SettingRowProps {
 }
 
 export function SettingRow({ label, description, error, inline, children }: SettingRowProps) {
-  // For inline layout: label+description left, control right
+  // For inline layout: stacks on mobile, side-by-side on desktop
   if (inline && label) {
     return (
       <div class="py-3">
-        <div class="flex items-start justify-between gap-8">
-          <div class="min-w-0 max-w-sm">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
+          <div class="min-w-0 sm:max-w-sm">
             <label class="text-sm font-medium text-[var(--color-text-primary)]">{label}</label>
             {description && (
               <p class="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">
@@ -37,7 +37,7 @@ export function SettingRow({ label, description, error, inline, children }: Sett
               </p>
             )}
           </div>
-          <div class="flex-shrink-0">{children}</div>
+          <div class="w-full sm:w-auto sm:flex-shrink-0">{children}</div>
         </div>
         {error && <p class="text-xs text-[var(--color-error)] mt-1">{error}</p>}
       </div>
@@ -87,7 +87,7 @@ export function PasswordInput({
         value={value}
         placeholder={placeholder}
         onInput={(e) => onChange((e.target as HTMLInputElement).value)}
-        class={`pr-10 ${wide ? "w-72" : "w-48"}`}
+        class={`pr-10 w-full ${wide ? "sm:w-72" : "sm:w-48"}`}
       />
       <button
         type="button"

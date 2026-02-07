@@ -294,17 +294,13 @@ export function ConfigView(_props: RouteProps) {
                 selectedPath={selectedPath}
                 isTopLevel={mobileNavData.isTopLevel}
               />
-            ) : selectedPath.value.length > 0 ? (
+            ) : (
               <ConfigDetailPanel
                 selectedPath={selectedPath}
                 schema={schema}
                 draftConfig={draftConfig}
                 uiHints={uiHints}
               />
-            ) : (
-              <div class="flex-1 flex items-center justify-center p-8 text-[var(--color-text-muted)]">
-                <p>{t("config.noFields")}</p>
-              </div>
             )}
           </div>
         )}
