@@ -130,7 +130,7 @@ export function ConfigNode({
             }}
             min={schema.minimum}
             max={schema.maximum}
-            class="w-24 text-right"
+            class="w-full sm:w-24 text-right"
           />
         </SettingRow>
       );
@@ -194,7 +194,7 @@ function renderStringField({
           }))}
           onChange={(v) => updateField(path, v)}
           size="sm"
-          width="160px"
+          class="w-full sm:w-auto"
         />
       </SettingRow>
     );
@@ -242,7 +242,7 @@ function renderStringField({
     key.toLowerCase().includes("path") ||
     key.toLowerCase().includes("dir") ||
     key.toLowerCase().includes("file");
-  const inputWidth = isUrl || isPath ? "w-72" : "w-48";
+  const inputWidth = isUrl || isPath ? "w-full sm:w-72" : "w-full sm:w-48";
 
   // Regular string input
   return (
