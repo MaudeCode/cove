@@ -191,7 +191,8 @@ jobs:
         run: |
           TARBALL=$(ls npm-package/*.tgz)
           echo "Publishing ./$TARBALL"
-          npm publish "./$TARBALL" --provenance --access public
+          # Use --tag latest for calver patch versions (e.g., 2026.2.6-1)
+          npm publish "./$TARBALL" --provenance --access public --tag latest
 
       # --- Docker publish ---
       - name: Set up Docker Buildx
