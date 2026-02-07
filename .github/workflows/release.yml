@@ -190,8 +190,8 @@ jobs:
         id: npm
         run: |
           TARBALL=$(ls npm-package/*.tgz)
-          echo "Publishing $TARBALL"
-          npm publish "$TARBALL" --provenance --access public
+          echo "Publishing ./$TARBALL"
+          npm publish "./$TARBALL" --provenance --access public
 
       # --- Docker publish ---
       - name: Set up Docker Buildx
