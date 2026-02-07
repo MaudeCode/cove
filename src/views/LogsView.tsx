@@ -11,12 +11,22 @@ import { t } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
 import { Spinner } from "@/components/ui/Spinner";
-import { LogLine, parseLogLine, resetLineIdCounter } from "@/components/logs";
+import { Badge } from "@/components/ui/Badge";
+import { Modal } from "@/components/ui/Modal";
+import {
+  LogLine,
+  parseLogLine,
+  resetLineIdCounter,
+  levelIcons,
+  levelColors,
+  formatLogTimestamp,
+} from "@/components/logs";
 import type { ParsedLogLine, LogLevel } from "@/components/logs";
-import { RefreshCw, Search, Trash2, Download, FileText } from "lucide-preact";
+import { RefreshCw, Search, Trash2, Download, FileText, ChevronRight, Info } from "lucide-preact";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { RouteProps } from "@/types/routes";
 
@@ -46,6 +56,9 @@ const isLive = signal(true);
 const searchQuery = signal("");
 const selectedLevels = signal<Set<LogLevel>>(new Set());
 const expandedLogs = signal<Set<number>>(new Set());
+
+/** Mobile log detail modal */
+const mobileLogModal = signal<ParsedLogLine | null>(null);
 
 // ============================================
 // Actions
@@ -217,12 +230,52 @@ function LevelFilter({ level, count, selected, onClick }: LevelFilterProps) {
 }
 
 // ============================================
+// Mobile Log Card
+// ============================================
+
+function MobileLogCard({ line }: { line: ParsedLogLine }) {
+  const Icon = line.level ? levelIcons[line.level] : Info;
+  const iconColor = line.level ? levelColors[line.level] : "text-[var(--color-text-muted)]";
+  const hasFields = line.fields && Object.keys(line.fields).length > 0;
+  const displayTime = formatLogTimestamp(line.timestamp);
+
+  return (
+    <button
+      type="button"
+      class="w-full flex items-start gap-3 p-3 text-left bg-[var(--color-bg-secondary)] rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors"
+      onClick={() => {
+        mobileLogModal.value = line;
+      }}
+      aria-label={t("logs.viewLogDetails")}
+    >
+      <Icon size={16} class={`mt-0.5 flex-shrink-0 ${iconColor}`} />
+      <div class="flex-1 min-w-0">
+        <p class="text-sm text-[var(--color-text-primary)] line-clamp-2">{line.message}</p>
+        <div class="flex items-center gap-2 mt-1">
+          {displayTime && (
+            <span class="text-xs text-[var(--color-text-muted)] font-mono">{displayTime}</span>
+          )}
+          {hasFields && (
+            <Badge variant="default" class="text-xs">
+              {Object.keys(line.fields!).length} {t("logs.fields")}
+            </Badge>
+          )}
+        </div>
+      </div>
+      <ChevronRight size={16} class="text-[var(--color-text-muted)] flex-shrink-0 mt-0.5" />
+    </button>
+  );
+}
+
+// ============================================
 // Main Component
 // ============================================
 
 export function LogsView(_props: RouteProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const mobileContainerRef = useRef<HTMLDivElement>(null);
   const shouldAutoScroll = useRef(true);
+  const mobileShouldAutoScroll = useRef(true);
 
   // Initial fetch
   useEffect(() => {
@@ -239,10 +292,13 @@ export function LogsView(_props: RouteProps) {
     return () => clearInterval(interval);
   }, [isLive.value, isConnected.value]);
 
-  // Auto-scroll to bottom when new logs arrive
+  // Auto-scroll to bottom when new logs arrive (desktop)
   useEffect(() => {
     if (shouldAutoScroll.current && containerRef.current) {
       containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+    if (mobileShouldAutoScroll.current && mobileContainerRef.current) {
+      mobileContainerRef.current.scrollTop = mobileContainerRef.current.scrollHeight;
     }
   }, [filteredLines.value.length]);
 
@@ -252,51 +308,54 @@ export function LogsView(_props: RouteProps) {
     shouldAutoScroll.current = scrollHeight - scrollTop - clientHeight < 50;
   };
 
+  const handleMobileScroll = () => {
+    if (!mobileContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = mobileContainerRef.current;
+    mobileShouldAutoScroll.current = scrollHeight - scrollTop - clientHeight < 50;
+  };
+
   const lines = filteredLines.value;
   const counts = levelCounts.value;
 
   return (
     <ViewErrorBoundary viewName={t("nav.logs")}>
-      <div class="flex-1 overflow-y-auto p-6">
-        <div class="max-w-6xl mx-auto space-y-6">
+      <div class="flex-1 flex flex-col overflow-hidden p-4 sm:p-6">
+        <div class="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0 space-y-4 sm:space-y-6">
           <PageHeader
             title={t("logs.title")}
             subtitle={t("logs.description")}
             actions={
-              <>
-                <div class="relative">
-                  <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
-                  <Input
-                    type="text"
-                    value={searchQuery.value}
-                    onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-                    placeholder={t("logs.searchPlaceholder")}
-                    aria-label={t("logs.searchPlaceholder")}
-                    class="pl-10 w-48"
-                  />
-                </div>
+              <div class="flex items-center gap-2">
                 <Toggle
                   checked={isLive.value}
                   onChange={(checked) => (isLive.value = checked)}
                   label={isLive.value ? t("logs.live") : t("logs.paused")}
                 />
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <IconButton
+                  icon={<RefreshCw size={16} class={isLoading.value ? "animate-spin" : ""} />}
                   onClick={() => fetchLogs(true)}
                   disabled={isLoading.value}
-                  icon={<RefreshCw size={14} class={isLoading.value ? "animate-spin" : ""} />}
-                >
-                  {t("actions.refresh")}
-                </Button>
-              </>
+                  label={t("actions.refresh")}
+                />
+              </div>
             }
           />
 
+          {/* Search - full width on mobile */}
+          <Input
+            type="text"
+            value={searchQuery.value}
+            onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+            placeholder={t("logs.searchPlaceholder")}
+            aria-label={t("logs.searchPlaceholder")}
+            leftElement={<Search class="w-4 h-4" />}
+          />
+
           {/* Stats bar */}
-          <div class="flex items-center justify-between flex-wrap gap-2">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            {/* Level filters - horizontal scroll on mobile */}
             <div
-              class="flex items-center gap-2"
+              class="flex items-center gap-2 overflow-x-auto pb-1 sm:pb-0 -mx-4 px-4 sm:mx-0 sm:px-0"
               role="group"
               aria-label={t("logs.filterByLevel", { level: "" })}
             >
@@ -304,7 +363,7 @@ export function LogsView(_props: RouteProps) {
                 type="button"
                 onClick={clearLevelFilters}
                 aria-pressed={selectedLevels.value.size === 0}
-                class={`px-3 py-1 text-sm rounded-full transition-colors ${
+                class={`px-3 py-1 text-sm rounded-full transition-colors whitespace-nowrap ${
                   selectedLevels.value.size === 0
                     ? "bg-[var(--color-accent)] text-white"
                     : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
@@ -337,30 +396,50 @@ export function LogsView(_props: RouteProps) {
                 onClick={() => toggleLevel("error")}
               />
             </div>
+            {/* Actions */}
             <div class="flex items-center gap-2">
               {logFile.value && (
-                <span class="text-xs text-[var(--color-text-muted)] flex items-center gap-1">
+                <span class="hidden sm:flex text-xs text-[var(--color-text-muted)] items-center gap-1">
                   <FileText size={12} />
                   {logFile.value.split("/").pop()}
                 </span>
               )}
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={downloadLogs}
-                icon={<Download size={14} />}
-              >
-                {t("logs.download")}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearLogs}
-                disabled={logLines.value.length === 0}
-                icon={<Trash2 size={14} />}
-              >
-                {t("logs.clear")}
-              </Button>
+              {/* Desktop: buttons with labels */}
+              <div class="hidden sm:flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={downloadLogs}
+                  icon={<Download size={14} />}
+                >
+                  {t("logs.download")}
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={clearLogs}
+                  disabled={logLines.value.length === 0}
+                  icon={<Trash2 size={14} />}
+                >
+                  {t("logs.clear")}
+                </Button>
+              </div>
+              {/* Mobile: icon-only buttons */}
+              <div class="flex sm:hidden items-center gap-1">
+                <IconButton
+                  icon={<Download size={16} />}
+                  onClick={downloadLogs}
+                  label={t("logs.download")}
+                  size="sm"
+                />
+                <IconButton
+                  icon={<Trash2 size={16} />}
+                  onClick={clearLogs}
+                  disabled={logLines.value.length === 0}
+                  label={t("logs.clear")}
+                  size="sm"
+                />
+              </div>
             </div>
           </div>
 
@@ -375,7 +454,7 @@ export function LogsView(_props: RouteProps) {
           )}
 
           {/* Log viewer */}
-          <div class="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] overflow-hidden min-h-[calc(100vh-280px)]">
+          <div class="flex-1 min-h-0 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-tertiary)] overflow-hidden flex flex-col">
             {/* Loading state */}
             {isLoading.value && logLines.value.length === 0 && (
               <div class="flex items-center justify-center py-12">
@@ -402,24 +481,116 @@ export function LogsView(_props: RouteProps) {
 
             {/* Log lines */}
             {lines.length > 0 && (
-              <div
-                ref={containerRef}
-                class="max-h-[calc(100vh-280px)] overflow-y-auto"
-                onScroll={handleScroll}
-                role="log"
-                aria-live="polite"
-              >
-                {lines.map((line) => (
-                  <LogLine
-                    key={line.id}
-                    line={line}
-                    expanded={expandedLogs.value.has(line.id)}
-                    onToggle={() => toggleExpanded(line.id)}
-                  />
-                ))}
-              </div>
+              <>
+                {/* Mobile: Card list */}
+                <div
+                  ref={mobileContainerRef}
+                  class="md:hidden flex-1 overflow-y-auto p-3 space-y-2"
+                  onScroll={handleMobileScroll}
+                  role="log"
+                  aria-live="polite"
+                >
+                  {lines.map((line) => (
+                    <MobileLogCard key={line.id} line={line} />
+                  ))}
+                </div>
+
+                {/* Desktop: Expandable rows */}
+                <div
+                  ref={containerRef}
+                  class="hidden md:flex md:flex-col flex-1 overflow-y-auto"
+                  onScroll={handleScroll}
+                  role="log"
+                  aria-live="polite"
+                >
+                  {lines.map((line) => (
+                    <LogLine
+                      key={line.id}
+                      line={line}
+                      expanded={expandedLogs.value.has(line.id)}
+                      onToggle={() => toggleExpanded(line.id)}
+                    />
+                  ))}
+                </div>
+              </>
             )}
           </div>
+
+          {/* Mobile log detail modal */}
+          <Modal
+            open={!!mobileLogModal.value}
+            onClose={() => {
+              mobileLogModal.value = null;
+            }}
+            title={t("logs.logDetails")}
+          >
+            {mobileLogModal.value && (
+              <div class="space-y-4">
+                {/* Level & timestamp */}
+                <div class="flex items-center gap-2">
+                  {mobileLogModal.value.level && (
+                    <Badge
+                      variant={
+                        mobileLogModal.value.level === "error"
+                          ? "error"
+                          : mobileLogModal.value.level === "warn"
+                            ? "warning"
+                            : "default"
+                      }
+                    >
+                      {mobileLogModal.value.level}
+                    </Badge>
+                  )}
+                  {mobileLogModal.value.timestamp && (
+                    <span class="text-sm text-[var(--color-text-muted)] font-mono">
+                      {mobileLogModal.value.timestamp}
+                    </span>
+                  )}
+                </div>
+
+                {/* Message */}
+                <div>
+                  <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
+                    {t("logs.message")}
+                  </h4>
+                  <p class="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap break-words">
+                    {mobileLogModal.value.message}
+                  </p>
+                </div>
+
+                {/* Fields */}
+                {mobileLogModal.value.fields &&
+                  Object.keys(mobileLogModal.value.fields).length > 0 && (
+                    <div>
+                      <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-2">
+                        {t("logs.fields")}
+                      </h4>
+                      <div class="space-y-2 bg-[var(--color-bg-tertiary)] rounded-lg p-3">
+                        {Object.entries(mobileLogModal.value.fields).map(([key, value]) => (
+                          <div key={key} class="text-xs font-mono">
+                            <span class="text-[var(--color-accent)]">{key}</span>
+                            <span class="text-[var(--color-text-muted)] mx-1">=</span>
+                            <span class="text-[var(--color-text-secondary)] break-all">
+                              {value}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                {/* Raw line */}
+                <div>
+                  <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
+                    {t("logs.rawLine")}
+                  </h4>
+                  <pre class="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-bg-tertiary)] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
+                    {mobileLogModal.value.raw}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </Modal>
         </div>
       </div>
     </ViewErrorBoundary>
