@@ -965,7 +965,8 @@
       "model": "Model",
       "tokens": "Tokens",
       "cost": "Cost",
-      "lastActive": "Last Active"
+      "lastActive": "Last Active",
+      "showing": "Showing {from}–{to} of {total}"
     },
     "detail": {
       "title": "Session Details",

@@ -39,6 +39,8 @@ import {
   Users,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   X,
 } from "lucide-preact";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
@@ -67,6 +69,8 @@ const error = signal<string | null>(null);
 const usageDays = signal<number>(30);
 const sessionsSortBy = signal<"cost" | "tokens" | "recent">("cost");
 const sessionsSortDesc = signal<boolean>(true);
+const sessionsPage = signal<number>(0);
+const sessionsPageSize = 20;
 
 // ============================================
 // Actions
@@ -360,6 +364,7 @@ function SessionUsageTable() {
       sessionsSortBy.value = col;
       sessionsSortDesc.value = true;
     }
+    sessionsPage.value = 0; // Reset to first page on sort change
   };
 
   const SortIcon = ({ col }: { col: "cost" | "tokens" | "recent" }) => {
@@ -424,53 +429,96 @@ function SessionUsageTable() {
             </tr>
           </thead>
           <tbody>
-            {sortedSessions.slice(0, 20).map((session) => {
-              const isSelected = selected?.key === session.key;
-              return (
-                <tr
-                  key={session.key}
-                  class={`border-b border-[var(--color-border)] cursor-pointer transition-colors ${
-                    isSelected ? "bg-[var(--color-accent)]/10" : "hover:bg-[var(--color-bg-hover)]"
-                  }`}
-                  onClick={() => {
-                    selectedSession.value = isSelected ? null : session;
-                  }}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" || e.key === " ") {
-                      e.preventDefault();
+            {sortedSessions
+              .slice(
+                sessionsPage.value * sessionsPageSize,
+                (sessionsPage.value + 1) * sessionsPageSize,
+              )
+              .map((session) => {
+                const isSelected = selected?.key === session.key;
+                return (
+                  <tr
+                    key={session.key}
+                    class={`border-b border-[var(--color-border)] cursor-pointer transition-colors ${
+                      isSelected
+                        ? "bg-[var(--color-accent)]/10"
+                        : "hover:bg-[var(--color-bg-hover)]"
+                    }`}
+                    onClick={() => {
                       selectedSession.value = isSelected ? null : session;
-                    }
-                  }}
-                  tabIndex={0}
-                  role="button"
-                >
-                  <td class="py-2 px-2 truncate max-w-[200px]" title={session.key}>
-                    {session.label || session.key}
-                  </td>
-                  <td class="py-2 px-2 text-[var(--color-text-muted)] truncate max-w-[120px]">
-                    {session.model || "-"}
-                  </td>
-                  <td class="py-2 px-2 text-right font-mono">
-                    {formatTokenCount(session.usage.totalTokens)}
-                  </td>
-                  <td class="py-2 px-2 text-right font-mono">
-                    {formatCost(session.usage.totalCost)}
-                  </td>
-                  <td class="py-2 px-2 text-right text-[var(--color-text-muted)]">
-                    {session.lastActiveAt
-                      ? formatTimestamp(new Date(session.lastActiveAt), { relative: true })
-                      : "-"}
-                  </td>
-                </tr>
-              );
-            })}
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        selectedSession.value = isSelected ? null : session;
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                  >
+                    <td class="py-2 px-2 truncate max-w-[200px]" title={session.key}>
+                      {session.label || session.key}
+                    </td>
+                    <td class="py-2 px-2 text-[var(--color-text-muted)] truncate max-w-[120px]">
+                      {session.model || "-"}
+                    </td>
+                    <td class="py-2 px-2 text-right font-mono">
+                      {formatTokenCount(session.usage.totalTokens)}
+                    </td>
+                    <td class="py-2 px-2 text-right font-mono">
+                      {formatCost(session.usage.totalCost)}
+                    </td>
+                    <td class="py-2 px-2 text-right text-[var(--color-text-muted)]">
+                      {session.lastActiveAt
+                        ? formatTimestamp(new Date(session.lastActiveAt), { relative: true })
+                        : "-"}
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
       </div>
 
-      {sortedSessions.length > 20 && (
-        <div class="mt-3 text-center text-sm text-[var(--color-text-muted)]">
-          Showing 20 of {sortedSessions.length} sessions
+      {sortedSessions.length > sessionsPageSize && (
+        <div class="mt-4 flex items-center justify-between">
+          <div class="text-sm text-[var(--color-text-muted)]">
+            {t("usage.sessions.showing", {
+              from: sessionsPage.value * sessionsPageSize + 1,
+              to: Math.min((sessionsPage.value + 1) * sessionsPageSize, sortedSessions.length),
+              total: sortedSessions.length,
+            })}
+          </div>
+          <div class="flex items-center gap-1">
+            <IconButton
+              icon={<ChevronLeft class="w-4 h-4" />}
+              label={t("actions.previous")}
+              onClick={() => {
+                sessionsPage.value = Math.max(0, sessionsPage.value - 1);
+              }}
+              disabled={sessionsPage.value === 0}
+              variant="ghost"
+              size="sm"
+            />
+            <span class="px-2 text-sm text-[var(--color-text-muted)]">
+              {sessionsPage.value + 1} / {Math.ceil(sortedSessions.length / sessionsPageSize)}
+            </span>
+            <IconButton
+              icon={<ChevronRight class="w-4 h-4" />}
+              label={t("actions.next")}
+              onClick={() => {
+                sessionsPage.value = Math.min(
+                  Math.ceil(sortedSessions.length / sessionsPageSize) - 1,
+                  sessionsPage.value + 1,
+                );
+              }}
+              disabled={
+                sessionsPage.value >= Math.ceil(sortedSessions.length / sessionsPageSize) - 1
+              }
+              variant="ghost"
+              size="sm"
+            />
+          </div>
         </div>
       )}
     </Card>
