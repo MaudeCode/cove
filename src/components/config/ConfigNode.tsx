@@ -198,7 +198,7 @@ function renderStringField({
           }))}
           onChange={(v) => updateField(path, v)}
           size="sm"
-          aria-label="FROM_CONFIG_NODE"
+          class="w-full sm:w-auto sm:inline-block"
         />
       </SettingRow>
     );

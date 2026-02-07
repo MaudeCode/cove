@@ -74,40 +74,68 @@ export function ObjectNode({
     );
   }
 
-  // Nested object: collapsible section with subtle styling
+  // Nested object: card on mobile, collapsible on desktop
   return (
     <div class="mt-6 first:mt-3">
-      <button
-        type="button"
-        class="flex items-center gap-2 py-2 text-left group"
-        onClick={() => setIsExpanded(!isExpanded)}
-        aria-expanded={isExpanded}
-      >
-        <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
-          {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
-        </span>
-        <span class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</span>
-        <span class="text-xs text-[var(--color-text-muted)]">({propertyKeys.length})</span>
-      </button>
-
-      {isExpanded && (
-        <div class="ml-6 pl-4 border-l border-[var(--color-border)] mt-1">
-          {help && (
-            <p class="text-xs text-[var(--color-text-muted)] pb-2 leading-relaxed">{help}</p>
-          )}
-          {propertyKeys.map((key) => (
-            <ConfigNode
-              key={key}
-              schema={properties[key]}
-              value={actualValue[key]}
-              path={[...path, key]}
-              hints={hints}
-              level={level + 1}
-              skipNavWorthy={skipNavWorthy}
-            />
-          ))}
+      {/* Mobile: flat card section (no collapse) */}
+      <div class="md:hidden">
+        <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden">
+          <div class="px-4 py-3 bg-[var(--color-bg-secondary)] border-b border-[var(--color-border)]">
+            <span class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</span>
+            {help && (
+              <p class="text-xs text-[var(--color-text-muted)] mt-1 leading-relaxed">{help}</p>
+            )}
+          </div>
+          <div class="px-4 py-2">
+            {propertyKeys.map((key) => (
+              <ConfigNode
+                key={key}
+                schema={properties[key]}
+                value={actualValue[key]}
+                path={[...path, key]}
+                hints={hints}
+                level={level + 1}
+                skipNavWorthy={skipNavWorthy}
+              />
+            ))}
+          </div>
         </div>
-      )}
+      </div>
+
+      {/* Desktop: collapsible section */}
+      <div class="hidden md:block">
+        <button
+          type="button"
+          class="flex items-center gap-2 py-2 text-left group"
+          onClick={() => setIsExpanded(!isExpanded)}
+          aria-expanded={isExpanded}
+        >
+          <span class="text-[var(--color-text-muted)] group-hover:text-[var(--color-text-primary)] transition-colors">
+            {isExpanded ? <ChevronDown class="w-4 h-4" /> : <ChevronRight class="w-4 h-4" />}
+          </span>
+          <span class="text-sm font-semibold text-[var(--color-text-primary)]">{label}</span>
+          <span class="text-xs text-[var(--color-text-muted)]">({propertyKeys.length})</span>
+        </button>
+
+        {isExpanded && (
+          <div class="ml-6 pl-4 border-l border-[var(--color-border)] mt-1">
+            {help && (
+              <p class="text-xs text-[var(--color-text-muted)] pb-2 leading-relaxed">{help}</p>
+            )}
+            {propertyKeys.map((key) => (
+              <ConfigNode
+                key={key}
+                schema={properties[key]}
+                value={actualValue[key]}
+                path={[...path, key]}
+                hints={hints}
+                level={level + 1}
+                skipNavWorthy={skipNavWorthy}
+              />
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
