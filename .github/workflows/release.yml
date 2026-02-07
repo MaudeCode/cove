@@ -12,7 +12,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Must be lowercase for Docker registry
+  IMAGE_NAME: maudecode/cove
 
 jobs:
   # Build each architecture on native runners (fast, no emulation)
