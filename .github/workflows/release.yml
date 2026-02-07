@@ -280,10 +280,19 @@ jobs:
 
           INSTALL
 
-          # Add auto-generated changelog
+          # Add auto-generated changelog (compare to previous tag)
           echo "## Changelog" >> /tmp/release-body.md
           echo "" >> /tmp/release-body.md
-          npx conventional-changelog -p angular -r 1 >> /tmp/release-body.md
+          
+          # Get previous tag for comparison
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            echo "Generating changelog from $PREV_TAG to HEAD"
+            npx conventional-changelog -p angular -r 2 | tail -n +2 >> /tmp/release-body.md
+          else
+            echo "No previous tag found, listing recent commits"
+            git log --pretty=format:"* %s ([%h](https://github.com/${{ github.repository }}/commit/%H))" -20 >> /tmp/release-body.md
+          fi
 
       - name: Create release archives
         run: |
