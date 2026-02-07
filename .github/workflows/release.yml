@@ -188,7 +188,10 @@ jobs:
 
       - name: Publish to npm
         id: npm
-        run: npm publish npm-package/*.tgz --provenance --access public
+        run: |
+          TARBALL=$(ls npm-package/*.tgz)
+          echo "Publishing $TARBALL"
+          npm publish "$TARBALL" --provenance --access public
 
       # --- Docker publish ---
       - name: Set up Docker Buildx
