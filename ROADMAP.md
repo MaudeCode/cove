@@ -985,6 +985,15 @@ export const navigation: NavSection[] = [
 - [ ] Cron job execution history
 - [ ] Channel message volume by channel type
 
+### 3.14 Usage Page (Per-Session Analytics) ✅
+- [x] Per-session token usage and cost breakdown
+- [x] Session detail modal with token visualization
+- [x] Timeline tab with usage over time chart
+- [x] Messages tab with session history browser
+- [x] Sortable columns (cost, tokens, activity)
+- [x] Mobile-responsive card layout
+- [x] Cron delivery mode support (announce/none toggle)
+
 ### 3.13 Exec Approval Modal ✅
 **Priority**: High (security feature)
 
@@ -1012,10 +1021,21 @@ Interactive approval for shell commands when `exec.ask` is enabled.
 
 ## Phase 4: Nice to Have
 
+### 4.0 Workspace Page ✅
+- [x] List all agent configuration files (AGENTS.md, SOUL.md, etc.)
+- [x] File metadata (size, tokens, last modified)
+- [x] Total token count showing context budget per conversation
+- [x] Agent switcher dropdown (for multi-agent setups)
+- [x] Inline editor with view/edit tabs
+- [x] Cmd+S keyboard shortcut to save
+- [x] Mobile-friendly layout
+
 ### 4.1 Memory Browser
-- [ ] Tree view of MEMORY.md + memory/*.md
-- [ ] View file contents
-- [ ] Edit in-place
+> **Partially blocked**: Gateway only exposes MEMORY.md, not memory/*.md subdirectory
+
+- [ ] Tree view of MEMORY.md + memory/*.md (needs gateway enhancement)
+- [x] View file contents (MEMORY.md only)
+- [x] Edit in-place (MEMORY.md only)
 - [ ] Search across memory files
 - [ ] Git history view (if repo)
 
