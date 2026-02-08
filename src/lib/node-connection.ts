@@ -6,7 +6,7 @@
  */
 
 import { signal } from "@preact/signals";
-import { gatewayUrl, canvasHostUrl } from "./gateway";
+import { gatewayUrl } from "./gateway";
 import { getAuth, getSessionCredential } from "./storage";
 import { log } from "./logger";
 import {
@@ -113,16 +113,7 @@ function transformCanvasUrl(url: string): string {
 
   const canvasPath = match[3]; // e.g., /__openclaw__/canvas/image.png
 
-  // Try canvasHostUrl first (if gateway advertised it)
-  if (canvasHostUrl.value) {
-    const base = canvasHostUrl.value.replace(/\/$/, "");
-    // canvasHostUrl should already point to the canvas root
-    const transformed = base + canvasPath.replace("/__openclaw__/canvas", "");
-    log.node.debug("Transformed canvas URL via canvasHostUrl:", url, "->", transformed);
-    return transformed;
-  }
-
-  // Fall back to gatewayUrl (construct canvas URL from it)
+  // Use gatewayUrl - it's the URL Cove uses to connect (goes through reverse proxy)
   if (gatewayUrl.value) {
     const base = gatewayUrl.value.replace(/\/$/, "");
     const transformed = base + canvasPath;
