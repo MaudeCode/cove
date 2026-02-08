@@ -32,8 +32,6 @@ import { ToastContainer, toast } from "@/components/ui/Toast";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { initExecApproval } from "@/signals/exec";
-import { startNodeConnection } from "@/lib/node-connection";
-import { CanvasPanel } from "@/components/canvas/CanvasPanel";
 import { ChatView } from "@/views/ChatView";
 import { LoginView } from "@/views/LoginView";
 import { StatusView as OverviewView } from "@/views/StatusView";
@@ -50,11 +48,28 @@ import { UsageView } from "@/views/UsageView";
 import { ChannelsView } from "@/views/ChannelsView";
 import { InstancesView } from "@/views/InstancesView";
 import { SessionsAdminView } from "@/views/SessionsAdminView";
+import { CanvasView } from "@/views/CanvasView";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { SpotlightTour } from "@/components/tour/SpotlightTour";
 import { getTourSteps } from "@/lib/tour-steps";
 import { appMode } from "@/signals/settings";
 import { CommandPalette, useCommandPaletteShortcut } from "@/components/command";
+
+// Lazy-loaded CanvasPanel to avoid loading node-connection.ts on /canvas route
+import type { ComponentType } from "preact";
+
+const LazyCanvasPanelComponent = signal<ComponentType | null>(null);
+
+function LazyCanvasPanel() {
+  useEffect(() => {
+    import("@/components/canvas/CanvasPanel").then((mod) => {
+      LazyCanvasPanelComponent.value = mod.CanvasPanel;
+    });
+  }, []);
+
+  const Component = LazyCanvasPanelComponent.value;
+  return Component ? <Component /> : null;
+}
 
 // Initialize storage synchronously so we can check saved auth immediately
 initStorage();
@@ -113,6 +128,18 @@ export function App() {
     !isReconnecting &&
     (authChecked.value ? !isConnected.value : !hasSavedAuth.value);
 
+  // Check for standalone canvas view (no AppShell wrapper)
+  const isCanvasRoute = window.location.pathname === "/canvas";
+  if (isCanvasRoute) {
+    return (
+      <TooltipProvider>
+        <ErrorBoundary onError={(error) => toast.error(`Error: ${error.message}`)}>
+          <CanvasView />
+        </ErrorBoundary>
+      </TooltipProvider>
+    );
+  }
+
   let content;
   if (showOnboarding.value) {
     content = <WelcomeWizard onComplete={handleOnboardingComplete} onSkip={handleOnboardingSkip} />;
@@ -137,8 +164,8 @@ export function App() {
       {/* Command palette overlay */}
       <CommandPalette />
 
-      {/* Canvas panel for agent-pushed content */}
-      <CanvasPanel />
+      {/* Canvas panel for agent-pushed content (lazy loaded) */}
+      <LazyCanvasPanel />
 
       {/* Spotlight tour overlay */}
       {showTour.value && (
@@ -243,7 +270,7 @@ async function tryAutoConnect() {
     initExecApproval();
 
     // Start node connection for canvas support
-    startNodeConnection();
+    import("@/lib/node-connection").then((mod) => mod.startNodeConnection());
   } catch {
     // Clear invalid session credential
     setSessionCredential("");

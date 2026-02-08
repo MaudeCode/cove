@@ -21,6 +21,60 @@ export const canvasUrl = signal<string | null>(null);
 export const canvasContent = signal<string | null>(null);
 export const canvasBlobUrl = signal<string | null>(null);
 export const canvasContentType = signal<string | null>(null);
+export const standaloneCanvasOpen = signal(false);
+
+// Cross-tab broadcast for canvas content
+const canvasChannel =
+  typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("cove:canvas") : null;
+
+// Store last base64 for cross-tab sharing (blob URLs can't be shared)
+let lastBase64: string | null = null;
+let lastBase64Mime: string | null = null;
+
+function broadcastCanvasContent() {
+  canvasChannel?.postMessage({
+    type: "canvas-content",
+    url: canvasUrl.value,
+    base64: lastBase64,
+    mimeType: lastBase64Mime,
+  });
+}
+
+// Handle incoming content from other tabs
+canvasChannel?.addEventListener("message", (e) => {
+  if (e.data.type === "canvas-content") {
+    if (e.data.url) {
+      canvasUrl.value = e.data.url;
+      canvasBlobUrl.value = null;
+    } else if (e.data.base64) {
+      try {
+        const blobUrl = createBlobUrlFromBase64(e.data.base64, e.data.mimeType || "image/png");
+        canvasBlobUrl.value = blobUrl;
+        canvasContentType.value = e.data.mimeType;
+        canvasUrl.value = null;
+      } catch {
+        // Ignore errors
+      }
+    }
+  }
+  // Handle standalone canvas status
+  if (e.data.type === "canvas-standalone-status") {
+    const wasOpen = standaloneCanvasOpen.value;
+    standaloneCanvasOpen.value = e.data.open;
+    log.node.debug(`Standalone canvas status: ${e.data.open ? "open" : "closed"}`);
+
+    if (e.data.open) {
+      // Send current content when standalone opens
+      if (canvasUrl.value || lastBase64) {
+        broadcastCanvasContent();
+      }
+    } else if (wasOpen) {
+      // Re-register node when standalone closes
+      log.node.debug("Standalone closed, re-registering node");
+      refreshNodeRegistration();
+    }
+  }
+});
 
 /**
  * Create a blob URL from base64 data
@@ -77,6 +131,9 @@ function handleCanvasContent(cmdParams: Record<string, unknown>): {
       canvasBlobUrl.value = blobUrl;
       canvasContentType.value = imageMimeType;
       canvasUrl.value = null;
+      lastBase64 = imageBase64;
+      lastBase64Mime = imageMimeType;
+      broadcastCanvasContent();
       return { type: "base64", detail: imageMimeType };
     } catch (e) {
       log.node.error("Failed to create blob from base64:", e);
@@ -86,6 +143,9 @@ function handleCanvasContent(cmdParams: Record<string, unknown>): {
 
   if (url) {
     canvasUrl.value = url;
+    lastBase64 = null;
+    lastBase64Mime = null;
+    broadcastCanvasContent();
     return { type: "url", detail: url };
   }
 
@@ -109,7 +169,7 @@ let pingInterval: ReturnType<typeof setInterval> | null = null;
 let currentAuthMode: "token" | "password" | undefined = undefined;
 let currentCredential: string | undefined = undefined;
 
-const PING_INTERVAL_MS = 30000; // Send ping every 30 seconds
+const PING_INTERVAL_MS = 15000; // Send ping every 15 seconds
 const pendingRequests = new Map<
   string,
   {
@@ -247,18 +307,26 @@ async function sendConnectRequest() {
     nodePairingStatus.value = "paired"; // Connected with shared auth = effectively paired
     log.node.info("Node connected successfully");
 
-    // Start keepalive pings
-    if (pingInterval) clearInterval(pingInterval);
-    pingInterval = setInterval(() => {
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        send("ping", {}).catch(() => {
-          // Ignore ping failures, onclose will handle reconnect
-        });
-      }
-    }, PING_INTERVAL_MS);
+    // Start keepalive pings (only if not already running)
+    startKeepalive();
   } catch (e) {
     log.node.error("Connect failed:", e);
   }
+}
+
+function startKeepalive() {
+  if (pingInterval) return; // Already running
+  pingInterval = setInterval(async () => {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      try {
+        await send("ping", {});
+        log.node.debug("Keepalive ping successful");
+      } catch {
+        log.node.debug("Keepalive ping failed, reconnecting");
+        refreshNodeRegistration();
+      }
+    }
+  }, PING_INTERVAL_MS);
 }
 
 async function handleInvokeRequest(payload: unknown) {
@@ -288,6 +356,8 @@ async function handleInvokeRequest(payload: unknown) {
     switch (p.command) {
       case "canvas.present": {
         const contentResult = handleCanvasContent(cmdParams);
+        // Toggle to ensure subscribers see the change even if already true
+        canvasVisible.value = false;
         canvasVisible.value = true;
         if (contentResult) {
           log.node.debug(
@@ -303,6 +373,8 @@ async function handleInvokeRequest(payload: unknown) {
       }
       case "canvas.navigate": {
         const contentResult = handleCanvasContent(cmdParams);
+        // Toggle to ensure subscribers see the change even if already true
+        canvasVisible.value = false;
         canvasVisible.value = true;
         if (contentResult) {
           log.node.debug(
@@ -412,6 +484,20 @@ export function startNodeConnection() {
 }
 
 /** Stop the node connection (for cleanup) */
+export function refreshNodeRegistration() {
+  log.node.debug("refreshNodeRegistration called - doing full reconnect");
+  // Close existing connection and reconnect fresh
+  if (ws) {
+    ws.close();
+    ws = null;
+  }
+  nodeConnected.value = false;
+  // Reconnect after a brief delay
+  setTimeout(() => {
+    connectNode();
+  }, 500);
+}
+
 export function stopNodeConnection() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);

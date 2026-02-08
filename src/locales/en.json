@@ -1134,6 +1134,8 @@
     "restore": "Restore",
     "expand": "Expand",
     "openInNewTab": "Open in new tab",
+    "openUrlInNewTab": "Open URL in new tab",
+    "openCanvasTab": "Pop out to canvas tab",
     "iframeTitle": "Canvas content",
     "imageAlt": "Canvas image",
     "noContent": "No content to display",

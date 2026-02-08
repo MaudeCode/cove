@@ -11,143 +11,42 @@ import {
   canvasContent,
   canvasBlobUrl,
   canvasContentType,
+  standaloneCanvasOpen,
 } from "@/lib/node-connection";
 import { canvasPanelOpen } from "@/signals/ui";
-import { X, ExternalLink, GripHorizontal, Minimize2, Maximize2 } from "lucide-preact";
-import { signal, computed, effect } from "@preact/signals";
-import { useEffect, useRef, useCallback } from "preact/hooks";
+import {
+  X,
+  ExternalLink,
+  GripHorizontal,
+  Minimize2,
+  Maximize2,
+  PictureInPicture2,
+} from "lucide-preact";
+import { useEffect } from "preact/hooks";
 import { IconButton } from "@/components/ui/IconButton";
 import { t } from "@/lib/i18n";
-
-// Storage key for persisting panel state
-const STORAGE_KEY = "cove:canvasPanel";
-
-// Panel state
-type DockPosition = "floating" | "left" | "top" | "right";
-
-interface PersistedState {
-  dockPosition: DockPosition;
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-// Load persisted state
-function loadPersistedState(): PersistedState | null {
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) return JSON.parse(stored);
-  } catch {
-    // Ignore parse errors
-  }
-  return null;
-}
-
-const persisted = loadPersistedState();
-
-const dockPosition = signal<DockPosition>(persisted?.dockPosition ?? "floating");
-const panelX = signal(persisted?.x ?? 100);
-const panelY = signal(persisted?.y ?? 100);
-const panelWidth = signal(persisted?.width ?? 400);
-const panelHeight = signal(persisted?.height ?? 350);
-const isMinimized = signal(false);
-
-// Persist state changes (debounced via effect)
-effect(() => {
-  const state: PersistedState = {
-    dockPosition: dockPosition.value,
-    x: panelX.value,
-    y: panelY.value,
-    width: panelWidth.value,
-    height: panelHeight.value,
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-});
-
-// Constraints
-const MIN_WIDTH = 280;
-const MIN_HEIGHT = 200;
-const MAX_DOCKED_WIDTH_PERCENT = 0.5;
-const MAX_DOCKED_HEIGHT_PERCENT = 0.6;
-const DOCK_THRESHOLD = 40; // pixels from edge to trigger dock
-const HEADER_HEIGHT = 44;
-
-// Computed panel style based on dock position
-const panelStyle = computed(() => {
-  if (isMinimized.value) {
-    return {
-      width: "auto",
-      height: `${HEADER_HEIGHT}px`,
-      left: `${panelX.value}px`,
-      top: `${panelY.value}px`,
-      borderRadius: "9999px",
-    };
-  }
-
-  switch (dockPosition.value) {
-    case "left":
-      return {
-        left: "0",
-        top: "0",
-        width: `${panelWidth.value}px`,
-        height: "100%",
-        borderRadius: "0 12px 12px 0",
-      };
-    case "right":
-      return {
-        right: "0",
-        top: "0",
-        width: `${panelWidth.value}px`,
-        height: "100%",
-        borderRadius: "12px 0 0 12px",
-      };
-    case "top":
-      return {
-        left: "0",
-        top: "0",
-        width: "100%",
-        height: `${panelHeight.value}px`,
-        borderRadius: "0 0 12px 12px",
-      };
-    default:
-      return {
-        left: `${panelX.value}px`,
-        top: `${panelY.value}px`,
-        width: `${panelWidth.value}px`,
-        height: `${panelHeight.value}px`,
-        borderRadius: "12px",
-      };
-  }
-});
+import { isImageContentType, isImageUrl } from "@/lib/canvas-utils";
+import {
+  dockPosition,
+  panelX,
+  panelY,
+  isMinimized,
+  priorDockPosition,
+  isInteracting,
+  panelStyle,
+  HEADER_HEIGHT,
+} from "./canvas-panel-state";
+import { usePanelInteraction } from "./usePanelInteraction";
 
 // Sync panel visibility with canvas state
 function syncOpenState() {
   if (canvasVisible.value && !canvasPanelOpen.value) {
-    // Auto-open when content arrives
+    if (standaloneCanvasOpen.value) return;
     canvasPanelOpen.value = true;
     isMinimized.value = false;
   } else if (!canvasVisible.value && canvasPanelOpen.value) {
-    // Auto-close when agent hides canvas
     canvasPanelOpen.value = false;
   }
-}
-
-/**
- * Check if a content type is an image
- */
-function isImageContentType(contentType: string | null): boolean {
-  if (!contentType) return false;
-  return contentType.startsWith("image/");
-}
-
-/**
- * Check if a URL looks like an image (by extension)
- */
-function isImageUrl(url: string | null): boolean {
-  if (!url) return false;
-  const lower = url.toLowerCase();
-  return /\.(png|jpg|jpeg|gif|webp|svg|ico|bmp)(\?|$)/.test(lower);
 }
 
 /**
@@ -174,7 +73,7 @@ function renderCanvasContent(url: string | null, content: string | null) {
       <div class="w-full h-full overflow-hidden">
         <iframe
           src={blobUrl}
-          class="w-full h-full border-0 bg-white"
+          class="w-full h-full border-0"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           title={t("canvas.iframeTitle")}
         />
@@ -199,7 +98,7 @@ function renderCanvasContent(url: string | null, content: string | null) {
       <div class="w-full h-full overflow-hidden">
         <iframe
           src={url}
-          class="w-full h-full border-0 bg-white"
+          class="w-full h-full border-0"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
           title={t("canvas.iframeTitle")}
         />
@@ -207,11 +106,11 @@ function renderCanvasContent(url: string | null, content: string | null) {
     );
   }
 
-  // HTML content
+  // HTML content (legacy)
   if (content) {
     return (
       <div
-        class="w-full h-full p-4 overflow-auto"
+        class="w-full h-full p-4 overflow-auto bg-[var(--color-bg-tertiary)]"
         // eslint-disable-next-line react/no-danger
         dangerouslySetInnerHTML={{ __html: content }}
       />
@@ -227,24 +126,8 @@ function renderCanvasContent(url: string | null, content: string | null) {
   );
 }
 
-// Track if actively interacting (for overlay to block iframe)
-const isInteracting = signal(false);
-
-// Helper to get coordinates from mouse or touch event
-function getPointerCoords(e: MouseEvent | TouchEvent): { x: number; y: number } {
-  if ("touches" in e) {
-    const touch = e.touches[0] || e.changedTouches[0];
-    return { x: touch.clientX, y: touch.clientY };
-  }
-  return { x: e.clientX, y: e.clientY };
-}
-
 export function CanvasPanel() {
-  const isDragging = useRef(false);
-  const isResizing = useRef(false);
-  const dragStart = useRef({ x: 0, y: 0, panelX: 0, panelY: 0 });
-  const resizeStart = useRef({ x: 0, y: 0, width: 0, height: 0, panelX: 0, panelY: 0 });
-  const resizeDirection = useRef<string>("");
+  const { handleDragStart, handleResizeStart, handleDockedResizeStart } = usePanelInteraction();
 
   // Auto-open when canvas becomes visible
   useEffect(() => {
@@ -254,11 +137,9 @@ export function CanvasPanel() {
   // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Escape to close
       if (e.key === "Escape" && canvasPanelOpen.value) {
         canvasPanelOpen.value = false;
       }
-      // Cmd/Ctrl+Shift+C to toggle
       if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "c") {
         e.preventDefault();
         canvasPanelOpen.value = !canvasPanelOpen.value;
@@ -266,211 +147,6 @@ export function CanvasPanel() {
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  // Drag handling (mouse + touch)
-  const handleDragStart = useCallback((e: MouseEvent | TouchEvent) => {
-    if ((e.target as HTMLElement).closest("button")) return;
-    e.preventDefault();
-    isDragging.current = true;
-    isInteracting.value = true;
-
-    const coords = getPointerCoords(e);
-    dragStart.current = {
-      x: coords.x,
-      y: coords.y,
-      panelX: panelX.value,
-      panelY: panelY.value,
-    };
-
-    document.body.style.cursor = "grabbing";
-    document.body.style.userSelect = "none";
-  }, []);
-
-  // Resize handling for floating panel (mouse + touch)
-  const handleResizeStart = useCallback((e: MouseEvent | TouchEvent, direction: string) => {
-    e.preventDefault();
-    if ("stopPropagation" in e) e.stopPropagation();
-    isResizing.current = true;
-    isInteracting.value = true;
-    resizeDirection.current = direction;
-    const coords = getPointerCoords(e);
-    resizeStart.current = {
-      x: coords.x,
-      y: coords.y,
-      width: panelWidth.value,
-      height: panelHeight.value,
-      panelX: panelX.value,
-      panelY: panelY.value,
-    };
-    const cursorMap: Record<string, string> = {
-      n: "n-resize",
-      s: "s-resize",
-      e: "e-resize",
-      w: "w-resize",
-      ne: "ne-resize",
-      nw: "nw-resize",
-      se: "se-resize",
-      sw: "sw-resize",
-    };
-    document.body.style.cursor = cursorMap[direction] || "nwse-resize";
-    document.body.style.userSelect = "none";
-  }, []);
-
-  // Resize handling for docked panels
-  const handleDockedResizeStart = useCallback((e: MouseEvent) => {
-    e.preventDefault();
-    isResizing.current = true;
-    isInteracting.value = true;
-    resizeStart.current = {
-      x: e.clientX,
-      y: e.clientY,
-      width: panelWidth.value,
-      height: panelHeight.value,
-      panelX: panelX.value,
-      panelY: panelY.value,
-    };
-    document.body.style.userSelect = "none";
-
-    const maxWidth = window.innerWidth * MAX_DOCKED_WIDTH_PERCENT;
-    const maxHeight = window.innerHeight * MAX_DOCKED_HEIGHT_PERCENT;
-
-    const handleMove = (ev: MouseEvent) => {
-      if (dockPosition.value === "left") {
-        const dx = ev.clientX - resizeStart.current.x;
-        panelWidth.value = Math.min(maxWidth, Math.max(MIN_WIDTH, resizeStart.current.width + dx));
-      } else if (dockPosition.value === "right") {
-        const dx = resizeStart.current.x - ev.clientX;
-        panelWidth.value = Math.min(maxWidth, Math.max(MIN_WIDTH, resizeStart.current.width + dx));
-      } else if (dockPosition.value === "top") {
-        const dy = ev.clientY - resizeStart.current.y;
-        panelHeight.value = Math.min(
-          maxHeight,
-          Math.max(MIN_HEIGHT, resizeStart.current.height + dy),
-        );
-      }
-    };
-
-    const handleUp = () => {
-      isResizing.current = false;
-      isInteracting.value = false;
-      document.body.style.userSelect = "";
-      document.removeEventListener("mousemove", handleMove);
-      document.removeEventListener("mouseup", handleUp);
-    };
-
-    document.addEventListener("mousemove", handleMove);
-    document.addEventListener("mouseup", handleUp);
-  }, []);
-
-  useEffect(() => {
-    const handlePointerMove = (clientX: number, clientY: number) => {
-      if (isDragging.current) {
-        const viewportWidth = window.innerWidth;
-        const viewportHeight = window.innerHeight;
-
-        // When minimized, don't allow docking - just free drag
-        if (isMinimized.value) {
-          const dx = clientX - dragStart.current.x;
-          const dy = clientY - dragStart.current.y;
-          const newX = dragStart.current.panelX + dx;
-          const newY = dragStart.current.panelY + dy;
-          const minWidth = 200;
-          panelX.value = Math.max(0, Math.min(newX, viewportWidth - minWidth));
-          panelY.value = Math.max(0, Math.min(newY, viewportHeight - HEADER_HEIGHT));
-          return;
-        }
-
-        // Check for dock zones
-        if (clientX < DOCK_THRESHOLD) {
-          dockPosition.value = "left";
-        } else if (clientX > viewportWidth - DOCK_THRESHOLD) {
-          dockPosition.value = "right";
-        } else if (clientY < DOCK_THRESHOLD) {
-          dockPosition.value = "top";
-        } else {
-          if (dockPosition.value !== "floating") {
-            panelX.value = Math.max(
-              0,
-              Math.min(clientX - panelWidth.value / 2, viewportWidth - panelWidth.value),
-            );
-            panelY.value = Math.max(
-              0,
-              Math.min(clientY - HEADER_HEIGHT / 2, viewportHeight - panelHeight.value),
-            );
-            dragStart.current = {
-              x: clientX,
-              y: clientY,
-              panelX: panelX.value,
-              panelY: panelY.value,
-            };
-          } else {
-            const dx = clientX - dragStart.current.x;
-            const dy = clientY - dragStart.current.y;
-            const newX = dragStart.current.panelX + dx;
-            const newY = dragStart.current.panelY + dy;
-            panelX.value = Math.max(0, Math.min(newX, viewportWidth - panelWidth.value));
-            panelY.value = Math.max(0, Math.min(newY, viewportHeight - panelHeight.value));
-          }
-          dockPosition.value = "floating";
-        }
-      }
-
-      if (isResizing.current && dockPosition.value === "floating") {
-        const dx = clientX - resizeStart.current.x;
-        const dy = clientY - resizeStart.current.y;
-        const dir = resizeDirection.current;
-
-        if (dir.includes("e")) {
-          panelWidth.value = Math.max(MIN_WIDTH, resizeStart.current.width + dx);
-        }
-        if (dir.includes("w")) {
-          const newWidth = Math.max(MIN_WIDTH, resizeStart.current.width - dx);
-          const widthDelta = resizeStart.current.width - newWidth;
-          panelWidth.value = newWidth;
-          panelX.value = resizeStart.current.panelX + widthDelta;
-        }
-        if (dir.includes("s")) {
-          panelHeight.value = Math.max(MIN_HEIGHT, resizeStart.current.height + dy);
-        }
-        if (dir.includes("n")) {
-          const newHeight = Math.max(MIN_HEIGHT, resizeStart.current.height - dy);
-          const heightDelta = resizeStart.current.height - newHeight;
-          panelHeight.value = newHeight;
-          panelY.value = resizeStart.current.panelY + heightDelta;
-        }
-      }
-    };
-
-    const handleMouseMove = (e: MouseEvent) => handlePointerMove(e.clientX, e.clientY);
-    const handleTouchMove = (e: TouchEvent) => {
-      if (isDragging.current || isResizing.current) {
-        e.preventDefault();
-        const touch = e.touches[0];
-        handlePointerMove(touch.clientX, touch.clientY);
-      }
-    };
-
-    const handlePointerUp = () => {
-      isDragging.current = false;
-      isResizing.current = false;
-      isInteracting.value = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-
-    document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handlePointerUp);
-    document.addEventListener("touchmove", handleTouchMove, { passive: false });
-    document.addEventListener("touchend", handlePointerUp);
-    document.addEventListener("touchcancel", handlePointerUp);
-    return () => {
-      document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handlePointerUp);
-      document.removeEventListener("touchmove", handleTouchMove);
-      document.removeEventListener("touchend", handlePointerUp);
-      document.removeEventListener("touchcancel", handlePointerUp);
-    };
   }, []);
 
   const url = canvasUrl.value;
@@ -481,14 +157,14 @@ export function CanvasPanel() {
   return (
     <div
       class={`
-            fixed z-50
-            bg-[var(--color-bg-surface)]
-            shadow-soft-xl
-            flex flex-col
-            overflow-hidden
-            animate-[fade-in-scale_150ms_ease-out]
-            ${isMinimized.value ? "rounded-full border-0" : "rounded-xl border border-[var(--color-border)]"}
-          `}
+        fixed z-50
+        bg-[var(--color-bg-surface)]
+        shadow-soft-xl
+        flex flex-col
+        overflow-hidden
+        animate-[fade-in-scale_150ms_ease-out]
+        ${isMinimized.value ? "rounded-full border-0" : "rounded-xl border border-[var(--color-border)]"}
+      `}
       style={{
         ...panelStyle.value,
         position: "fixed",
@@ -497,37 +173,35 @@ export function CanvasPanel() {
       {/* Header - draggable */}
       <div
         class={`
-              flex items-center gap-2 px-3 h-11
-              bg-[var(--color-bg-secondary)]
-              cursor-grab active:cursor-grabbing
-              select-none flex-shrink-0
-              ${isMinimized.value ? "rounded-full" : "border-b border-[var(--color-border)]"}
-            `}
+          flex items-center gap-2 px-3 cursor-grab active:cursor-grabbing select-none shrink-0
+          ${isMinimized.value ? "py-2" : "py-2 border-b border-[var(--color-border)]"}
+        `}
+        style={{ height: `${HEADER_HEIGHT}px` }}
         onMouseDown={handleDragStart}
         onTouchStart={handleDragStart}
       >
-        <GripHorizontal class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
-        <span class="text-sm font-medium text-[var(--color-text)] truncate flex-1">
+        <GripHorizontal class="w-4 h-4 text-[var(--color-text-muted)] shrink-0" />
+        <span class="text-sm font-medium text-[var(--color-text-primary)] truncate flex-1">
           {t("canvas.title")}
         </span>
-        {url && !isMinimized.value && (
-          <span class="text-xs text-[var(--color-text-muted)] truncate hidden sm:block max-w-[100px]">
-            {(() => {
-              try {
-                return new URL(url).hostname;
-              } catch {
-                return "";
-              }
-            })()}
-          </span>
-        )}
-        <div class="flex items-center flex-shrink-0">
+        <div class="flex items-center gap-1">
           {url && !isMinimized.value && (
             <IconButton
               icon={<ExternalLink />}
-              label={t("canvas.openInNewTab")}
+              label={t("canvas.openUrlInNewTab")}
               size="sm"
               onClick={() => window.open(url, "_blank")}
+            />
+          )}
+          {!isMinimized.value && (
+            <IconButton
+              icon={<PictureInPicture2 />}
+              label={t("canvas.openCanvasTab")}
+              size="sm"
+              onClick={() => {
+                window.open("/canvas", "_blank");
+                canvasPanelOpen.value = false;
+              }}
             />
           )}
           <IconButton
@@ -535,10 +209,17 @@ export function CanvasPanel() {
             label={isMinimized.value ? t("canvas.maximize") : t("canvas.minimize")}
             size="sm"
             onClick={() => {
-              isMinimized.value = !isMinimized.value;
-              if (isMinimized.value) {
+              if (!isMinimized.value) {
+                priorDockPosition.value = dockPosition.value;
+                if (dockPosition.value !== "floating") {
+                  panelX.value = window.innerWidth - 220;
+                  panelY.value = window.innerHeight - 60;
+                }
                 dockPosition.value = "floating";
+              } else {
+                dockPosition.value = priorDockPosition.value;
               }
+              isMinimized.value = !isMinimized.value;
             }}
           />
           <IconButton
@@ -554,12 +235,11 @@ export function CanvasPanel() {
       {!isMinimized.value && (
         <div class="flex-1 overflow-hidden relative">
           {renderCanvasContent(url, content)}
-          {/* Overlay to block iframe during drag/resize */}
           {isInteracting.value && <div class="absolute inset-0 z-10" />}
         </div>
       )}
 
-      {/* Resize handles (only when floating and not minimized) */}
+      {/* Resize handles (floating mode only) */}
       {dockPosition.value === "floating" && !isMinimized.value && (
         <>
           {/* Corners */}
@@ -573,7 +253,6 @@ export function CanvasPanel() {
             onMouseDown={(e) => handleResizeStart(e, "sw")}
             onTouchStart={(e) => handleResizeStart(e, "sw")}
           />
-          {/* Note: top corners are below header to avoid overlap */}
           <div
             class="absolute top-11 right-0 w-4 h-4 cursor-ne-resize z-10 touch-none"
             onMouseDown={(e) => handleResizeStart(e, "ne")}
@@ -584,7 +263,7 @@ export function CanvasPanel() {
             onMouseDown={(e) => handleResizeStart(e, "nw")}
             onTouchStart={(e) => handleResizeStart(e, "nw")}
           />
-          {/* Edges - side edges start below header (44px + 16px for corner) */}
+          {/* Edges */}
           <div
             class="absolute right-0 w-2 cursor-e-resize touch-none"
             style={{ top: "60px", height: "calc(100% - 76px)" }}
@@ -606,15 +285,22 @@ export function CanvasPanel() {
         </>
       )}
 
-      {/* Resize handle for docked panels */}
-      {dockPosition.value !== "floating" && !isMinimized.value && (
+      {/* Docked resize handles - invisible, just cursor change */}
+      {dockPosition.value === "left" && !isMinimized.value && (
         <div
-          class={`
-            absolute
-            ${dockPosition.value === "left" ? "top-0 right-0 w-2 h-full cursor-e-resize" : ""}
-            ${dockPosition.value === "right" ? "top-0 left-0 w-2 h-full cursor-w-resize" : ""}
-            ${dockPosition.value === "top" ? "bottom-0 left-0 w-full h-2 cursor-s-resize" : ""}
-          `}
+          class="absolute right-0 top-0 w-2 h-full cursor-e-resize"
+          onMouseDown={handleDockedResizeStart}
+        />
+      )}
+      {dockPosition.value === "right" && !isMinimized.value && (
+        <div
+          class="absolute left-0 top-0 w-2 h-full cursor-w-resize"
+          onMouseDown={handleDockedResizeStart}
+        />
+      )}
+      {dockPosition.value === "top" && !isMinimized.value && (
+        <div
+          class="absolute left-0 bottom-0 w-full h-2 cursor-s-resize"
           onMouseDown={handleDockedResizeStart}
         />
       )}

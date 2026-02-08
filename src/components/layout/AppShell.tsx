@@ -10,6 +10,7 @@ import {
   sidebarOpen,
   sidebarWidth,
   sidebarResizing,
+  canvasPanelOpen,
   SIDEBAR_MIN_WIDTH,
   SIDEBAR_MAX_WIDTH,
   SIDEBAR_WIDTH_MOBILE,
@@ -18,6 +19,12 @@ import { useEdgeSwipe, sidebarDragOffset, isDraggingSidebar } from "@/hooks/useE
 import { ResizeHandle } from "@/components/ui/ResizeHandle";
 import { TopBar } from "./TopBar";
 import { Sidebar } from "./Sidebar";
+import {
+  dockPosition,
+  panelWidth,
+  panelHeight,
+  isMinimized,
+} from "@/components/canvas/canvas-panel-state";
 
 interface AppShellProps {
   children: ComponentChildren;
@@ -26,6 +33,20 @@ interface AppShellProps {
 export function AppShell({ children }: AppShellProps) {
   // Enable swipe from left edge to open sidebar on mobile
   useEdgeSwipe();
+
+  // Compute content inset based on docked canvas
+  const canvasDocked =
+    canvasPanelOpen.value && !isMinimized.value && dockPosition.value !== "floating";
+  const contentStyle: Record<string, string> = {};
+  if (canvasDocked) {
+    if (dockPosition.value === "left") {
+      contentStyle.paddingLeft = `${panelWidth.value}px`;
+    } else if (dockPosition.value === "right") {
+      contentStyle.paddingRight = `${panelWidth.value}px`;
+    } else if (dockPosition.value === "top") {
+      contentStyle.paddingTop = `${panelHeight.value}px`;
+    }
+  }
 
   const handleResize = (delta: number) => {
     const newWidth = Math.max(
@@ -47,7 +68,7 @@ export function AppShell({ children }: AppShellProps) {
 
       <TopBar />
 
-      <div class="flex-1 flex overflow-hidden">
+      <div class="flex-1 flex overflow-hidden" style={contentStyle}>
         {/* Mobile overlay when sidebar is open or dragging */}
         {(sidebarOpen.value || isDraggingSidebar.value) && (
           <div
