@@ -160,6 +160,7 @@
   margin: 1em 0;
   border-collapse: collapse;
   font-size: 0.875em;
+  table-layout: fixed;
 }
 
 .message-content th,
@@ -167,6 +168,9 @@
   padding: 0.5em 0.75em;
   border: 1px solid var(--color-border);
   text-align: left;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .message-content th {
