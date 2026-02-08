@@ -113,19 +113,31 @@ nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson=
 
 ## Local Images Without Base64
 
-To avoid base64 encoding large images:
+Cove includes a server proxy that routes `/canvas-proxy/*` to the gateway's canvas host.
+This bypasses mixed content and CSP issues.
 
-1. **Serve images via HTTP** — Copy to a directory served by a local web server
-2. **Use the URL** — Push the HTTP URL to the canvas
+**How it works:**
+1. Copy image to `~/.openclaw/canvas/`
+2. Push the localhost URL — Cove transforms it automatically
+3. Cove's server proxies to the gateway
 
-Example using MaudeUtils (if configured):
+**Example:**
+```bash
+# Copy image to gateway canvas directory
+cp /path/to/image.png ~/.openclaw/canvas/
+
+# Push to canvas (Cove transforms the URL automatically)
+openclaw nodes invoke --node <nodeId> --command canvas.present \
+  --params '{"url":"http://127.0.0.1:18789/__openclaw__/canvas/image.png"}'
 ```
-# Copy image to served directory
-cp /path/to/image.png ~/agents/maude/maudeutils/public/canvas/
 
-# Push URL to canvas
-nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson='{"url":"https://utils.maudeco.de/canvas/image.png"}'
+**Using the nodes tool:**
 ```
+nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson='{"url":"http://127.0.0.1:18789/__openclaw__/canvas/image.png"}'
+```
+
+Cove transforms `http://127.0.0.1:*/__openclaw__/canvas/*` URLs to `/canvas-proxy/*`,
+which the server proxies to the local gateway.
 
 ## Limitations
 
