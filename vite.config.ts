@@ -47,38 +47,6 @@ function cspExtensionPlugin(env: Record<string, string>): Plugin {
 }
 
 /**
- * Canvas proxy plugin - proxies requests to the local gateway's canvas host.
- * This bypasses mixed content restrictions (HTTPS Cove → HTTP gateway).
- * Uses shared logic from src/server/canvas-proxy.ts
- */
-function canvasProxyPlugin(env: Record<string, string>): Plugin {
-  return {
-    name: 'cove-canvas-proxy',
-    configureServer(server) {
-      server.middlewares.use('/canvas-proxy', async (req, res) => {
-        const { handleCanvasProxy } = await import('./server/canvas-proxy')
-        const requestPath = req.url || '/'
-        
-        const config = {
-          gatewayHost: env.VITE_GATEWAY_HOST || '127.0.0.1',
-          gatewayPort: env.VITE_GATEWAY_PORT || '18789',
-        }
-        
-        const response = await handleCanvasProxy(requestPath, config)
-        
-        res.writeHead(response.status, {
-          'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream',
-          'Cache-Control': response.headers.get('Cache-Control') || 'no-store',
-        })
-        
-        const buffer = await response.arrayBuffer()
-        res.end(Buffer.from(buffer))
-      })
-    }
-  }
-}
-
-/**
  * Debug logging plugin - accepts POSTs to /__cove_debug and writes to debug.log
  * This lets the AI read client-side logs without needing browser access.
  */
@@ -128,7 +96,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [preact(), tailwindcss(), cspExtensionPlugin(env), canvasProxyPlugin(env), debugLogPlugin()],
+    plugins: [preact(), tailwindcss(), cspExtensionPlugin(env), debugLogPlugin()],
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
@@ -139,6 +107,13 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       allowedHosts: env.VITE_ALLOWED_HOSTS?.split(',').map(h => h.trim()).filter(Boolean) || [],
+      proxy: {
+        '/canvas-proxy': {
+          target: `http://${env.VITE_GATEWAY_HOST || '127.0.0.1'}:${env.VITE_GATEWAY_PORT || '18789'}`,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/canvas-proxy/, '/__openclaw__/canvas'),
+        },
+      },
     },
   }
 })
