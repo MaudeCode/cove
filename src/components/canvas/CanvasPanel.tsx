@@ -14,20 +14,56 @@ import {
 } from "@/lib/node-connection";
 import { canvasPanelOpen } from "@/signals/ui";
 import { X, ExternalLink, GripHorizontal, Minimize2, Maximize2 } from "lucide-preact";
-import { signal, computed } from "@preact/signals";
+import { signal, computed, effect } from "@preact/signals";
 import { useEffect, useRef, useCallback } from "preact/hooks";
 import { IconButton } from "@/components/ui/IconButton";
 import { t } from "@/lib/i18n";
 
+// Storage key for persisting panel state
+const STORAGE_KEY = "cove:canvasPanel";
+
 // Panel state
 type DockPosition = "floating" | "left" | "top" | "right";
 
-const dockPosition = signal<DockPosition>("floating");
-const panelX = signal(100);
-const panelY = signal(100);
-const panelWidth = signal(400);
-const panelHeight = signal(350);
+interface PersistedState {
+  dockPosition: DockPosition;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+// Load persisted state
+function loadPersistedState(): PersistedState | null {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {
+    // Ignore parse errors
+  }
+  return null;
+}
+
+const persisted = loadPersistedState();
+
+const dockPosition = signal<DockPosition>(persisted?.dockPosition ?? "floating");
+const panelX = signal(persisted?.x ?? 100);
+const panelY = signal(persisted?.y ?? 100);
+const panelWidth = signal(persisted?.width ?? 400);
+const panelHeight = signal(persisted?.height ?? 350);
 const isMinimized = signal(false);
+
+// Persist state changes (debounced via effect)
+effect(() => {
+  const state: PersistedState = {
+    dockPosition: dockPosition.value,
+    x: panelX.value,
+    y: panelY.value,
+    width: panelWidth.value,
+    height: panelHeight.value,
+  };
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+});
 
 // Constraints
 const MIN_WIDTH = 280;
@@ -194,6 +230,15 @@ function renderCanvasContent(url: string | null, content: string | null) {
 // Track if actively interacting (for overlay to block iframe)
 const isInteracting = signal(false);
 
+// Helper to get coordinates from mouse or touch event
+function getPointerCoords(e: MouseEvent | TouchEvent): { x: number; y: number } {
+  if ("touches" in e) {
+    const touch = e.touches[0] || e.changedTouches[0];
+    return { x: touch.clientX, y: touch.clientY };
+  }
+  return { x: e.clientX, y: e.clientY };
+}
+
 export function CanvasPanel() {
   const isDragging = useRef(false);
   const isResizing = useRef(false);
@@ -206,28 +251,34 @@ export function CanvasPanel() {
     return canvasVisible.subscribe(syncOpenState);
   }, []);
 
-  // Handle escape key
+  // Handle keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Escape to close
       if (e.key === "Escape" && canvasPanelOpen.value) {
         canvasPanelOpen.value = false;
+      }
+      // Cmd/Ctrl+Shift+C to toggle
+      if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === "c") {
+        e.preventDefault();
+        canvasPanelOpen.value = !canvasPanelOpen.value;
       }
     };
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Drag handling
-  const handleDragStart = useCallback((e: MouseEvent) => {
+  // Drag handling (mouse + touch)
+  const handleDragStart = useCallback((e: MouseEvent | TouchEvent) => {
     if ((e.target as HTMLElement).closest("button")) return;
     e.preventDefault();
     isDragging.current = true;
     isInteracting.value = true;
 
-    // Store mouse position relative to panel for accurate undocking
+    const coords = getPointerCoords(e);
     dragStart.current = {
-      x: e.clientX,
-      y: e.clientY,
+      x: coords.x,
+      y: coords.y,
       panelX: panelX.value,
       panelY: panelY.value,
     };
@@ -236,16 +287,17 @@ export function CanvasPanel() {
     document.body.style.userSelect = "none";
   }, []);
 
-  // Resize handling for floating panel
-  const handleResizeStart = useCallback((e: MouseEvent, direction: string) => {
+  // Resize handling for floating panel (mouse + touch)
+  const handleResizeStart = useCallback((e: MouseEvent | TouchEvent, direction: string) => {
     e.preventDefault();
-    e.stopPropagation();
+    if ("stopPropagation" in e) e.stopPropagation();
     isResizing.current = true;
     isInteracting.value = true;
     resizeDirection.current = direction;
+    const coords = getPointerCoords(e);
     resizeStart.current = {
-      x: e.clientX,
-      y: e.clientY,
+      x: coords.x,
+      y: coords.y,
       width: panelWidth.value,
       height: panelHeight.value,
       panelX: panelX.value,
@@ -312,18 +364,17 @@ export function CanvasPanel() {
   }, []);
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (clientX: number, clientY: number) => {
       if (isDragging.current) {
         const viewportWidth = window.innerWidth;
         const viewportHeight = window.innerHeight;
 
         // When minimized, don't allow docking - just free drag
         if (isMinimized.value) {
-          const dx = e.clientX - dragStart.current.x;
-          const dy = e.clientY - dragStart.current.y;
+          const dx = clientX - dragStart.current.x;
+          const dy = clientY - dragStart.current.y;
           const newX = dragStart.current.panelX + dx;
           const newY = dragStart.current.panelY + dy;
-          // Use minimized dimensions for bounds
           const minWidth = 200;
           panelX.value = Math.max(0, Math.min(newX, viewportWidth - minWidth));
           panelY.value = Math.max(0, Math.min(newY, viewportHeight - HEADER_HEIGHT));
@@ -331,35 +382,31 @@ export function CanvasPanel() {
         }
 
         // Check for dock zones
-        if (e.clientX < DOCK_THRESHOLD) {
+        if (clientX < DOCK_THRESHOLD) {
           dockPosition.value = "left";
-        } else if (e.clientX > viewportWidth - DOCK_THRESHOLD) {
+        } else if (clientX > viewportWidth - DOCK_THRESHOLD) {
           dockPosition.value = "right";
-        } else if (e.clientY < DOCK_THRESHOLD) {
+        } else if (clientY < DOCK_THRESHOLD) {
           dockPosition.value = "top";
         } else {
-          // Transitioning to floating
           if (dockPosition.value !== "floating") {
-            // When undocking, position panel centered on cursor
             panelX.value = Math.max(
               0,
-              Math.min(e.clientX - panelWidth.value / 2, viewportWidth - panelWidth.value),
+              Math.min(clientX - panelWidth.value / 2, viewportWidth - panelWidth.value),
             );
             panelY.value = Math.max(
               0,
-              Math.min(e.clientY - HEADER_HEIGHT / 2, viewportHeight - panelHeight.value),
+              Math.min(clientY - HEADER_HEIGHT / 2, viewportHeight - panelHeight.value),
             );
-            // Update drag start to current position for smooth dragging
             dragStart.current = {
-              x: e.clientX,
-              y: e.clientY,
+              x: clientX,
+              y: clientY,
               panelX: panelX.value,
               panelY: panelY.value,
             };
           } else {
-            // Normal floating drag
-            const dx = e.clientX - dragStart.current.x;
-            const dy = e.clientY - dragStart.current.y;
+            const dx = clientX - dragStart.current.x;
+            const dy = clientY - dragStart.current.y;
             const newX = dragStart.current.panelX + dx;
             const newY = dragStart.current.panelY + dy;
             panelX.value = Math.max(0, Math.min(newX, viewportWidth - panelWidth.value));
@@ -370,8 +417,8 @@ export function CanvasPanel() {
       }
 
       if (isResizing.current && dockPosition.value === "floating") {
-        const dx = e.clientX - resizeStart.current.x;
-        const dy = e.clientY - resizeStart.current.y;
+        const dx = clientX - resizeStart.current.x;
+        const dy = clientY - resizeStart.current.y;
         const dir = resizeDirection.current;
 
         if (dir.includes("e")) {
@@ -395,7 +442,16 @@ export function CanvasPanel() {
       }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseMove = (e: MouseEvent) => handlePointerMove(e.clientX, e.clientY);
+    const handleTouchMove = (e: TouchEvent) => {
+      if (isDragging.current || isResizing.current) {
+        e.preventDefault();
+        const touch = e.touches[0];
+        handlePointerMove(touch.clientX, touch.clientY);
+      }
+    };
+
+    const handlePointerUp = () => {
       isDragging.current = false;
       isResizing.current = false;
       isInteracting.value = false;
@@ -404,10 +460,16 @@ export function CanvasPanel() {
     };
 
     document.addEventListener("mousemove", handleMouseMove);
-    document.addEventListener("mouseup", handleMouseUp);
+    document.addEventListener("mouseup", handlePointerUp);
+    document.addEventListener("touchmove", handleTouchMove, { passive: false });
+    document.addEventListener("touchend", handlePointerUp);
+    document.addEventListener("touchcancel", handlePointerUp);
     return () => {
       document.removeEventListener("mousemove", handleMouseMove);
-      document.removeEventListener("mouseup", handleMouseUp);
+      document.removeEventListener("mouseup", handlePointerUp);
+      document.removeEventListener("touchmove", handleTouchMove);
+      document.removeEventListener("touchend", handlePointerUp);
+      document.removeEventListener("touchcancel", handlePointerUp);
     };
   }, []);
 
@@ -424,6 +486,7 @@ export function CanvasPanel() {
             shadow-soft-xl
             flex flex-col
             overflow-hidden
+            animate-[fade-in-scale_150ms_ease-out]
             ${isMinimized.value ? "rounded-full border-0" : "rounded-xl border border-[var(--color-border)]"}
           `}
       style={{
@@ -441,6 +504,7 @@ export function CanvasPanel() {
               ${isMinimized.value ? "rounded-full" : "border-b border-[var(--color-border)]"}
             `}
         onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
       >
         <GripHorizontal class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0" />
         <span class="text-sm font-medium text-[var(--color-text)] truncate flex-1">
@@ -500,37 +564,44 @@ export function CanvasPanel() {
         <>
           {/* Corners */}
           <div
-            class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10"
+            class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 touch-none"
             onMouseDown={(e) => handleResizeStart(e, "se")}
+            onTouchStart={(e) => handleResizeStart(e, "se")}
           />
           <div
-            class="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10"
+            class="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 touch-none"
             onMouseDown={(e) => handleResizeStart(e, "sw")}
+            onTouchStart={(e) => handleResizeStart(e, "sw")}
           />
           {/* Note: top corners are below header to avoid overlap */}
           <div
-            class="absolute top-11 right-0 w-4 h-4 cursor-ne-resize z-10"
+            class="absolute top-11 right-0 w-4 h-4 cursor-ne-resize z-10 touch-none"
             onMouseDown={(e) => handleResizeStart(e, "ne")}
+            onTouchStart={(e) => handleResizeStart(e, "ne")}
           />
           <div
-            class="absolute top-11 left-0 w-4 h-4 cursor-nw-resize z-10"
+            class="absolute top-11 left-0 w-4 h-4 cursor-nw-resize z-10 touch-none"
             onMouseDown={(e) => handleResizeStart(e, "nw")}
+            onTouchStart={(e) => handleResizeStart(e, "nw")}
           />
           {/* Edges - side edges start below header (44px + 16px for corner) */}
           <div
-            class="absolute right-0 w-2 cursor-e-resize"
+            class="absolute right-0 w-2 cursor-e-resize touch-none"
             style={{ top: "60px", height: "calc(100% - 76px)" }}
             onMouseDown={(e) => handleResizeStart(e, "e")}
+            onTouchStart={(e) => handleResizeStart(e, "e")}
           />
           <div
-            class="absolute left-0 w-2 cursor-w-resize"
+            class="absolute left-0 w-2 cursor-w-resize touch-none"
             style={{ top: "60px", height: "calc(100% - 76px)" }}
             onMouseDown={(e) => handleResizeStart(e, "w")}
+            onTouchStart={(e) => handleResizeStart(e, "w")}
           />
           <div
-            class="absolute bottom-0 h-2 cursor-s-resize"
+            class="absolute bottom-0 h-2 cursor-s-resize touch-none"
             style={{ left: "16px", width: "calc(100% - 32px)" }}
             onMouseDown={(e) => handleResizeStart(e, "s")}
+            onTouchStart={(e) => handleResizeStart(e, "s")}
           />
         </>
       )}

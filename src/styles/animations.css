@@ -109,6 +109,18 @@
   }
 }
 
+/* Fade in with scale (for canvas panel) */
+@keyframes fade-in-scale {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
 /* Scale in bounce (playful) */
 @keyframes scale-in-bounce {
   0% {
