@@ -58,6 +58,40 @@ function revokePreviousBlobUrl() {
   canvasContentType.value = null;
 }
 
+/**
+ * Handle canvas content from invoke params (shared by present/navigate)
+ */
+function handleCanvasContent(cmdParams: Record<string, unknown>): {
+  type: "base64" | "url";
+  detail: string;
+} | null {
+  const url = cmdParams.url as string | undefined;
+  const imageBase64 = cmdParams.imageBase64 as string | undefined;
+  const imageMimeType = (cmdParams.imageMimeType as string) || "image/png";
+
+  revokePreviousBlobUrl();
+
+  if (imageBase64) {
+    try {
+      const blobUrl = createBlobUrlFromBase64(imageBase64, imageMimeType);
+      canvasBlobUrl.value = blobUrl;
+      canvasContentType.value = imageMimeType;
+      canvasUrl.value = null;
+      return { type: "base64", detail: imageMimeType };
+    } catch (e) {
+      log.node.error("Failed to create blob from base64:", e);
+      return null;
+    }
+  }
+
+  if (url) {
+    canvasUrl.value = url;
+    return { type: "url", detail: url };
+  }
+
+  return null;
+}
+
 // Generate a stable node ID for this browser
 function getOrCreateNodeId(): string {
   const storageKey = "cove:nodeId";
@@ -71,16 +105,22 @@ function getOrCreateNodeId(): string {
 
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let pingInterval: ReturnType<typeof setInterval> | null = null;
 let currentAuthMode: "token" | "password" | undefined = undefined;
 let currentCredential: string | undefined = undefined;
-let pendingRequests = new Map<
+
+const PING_INTERVAL_MS = 30000; // Send ping every 30 seconds
+const pendingRequests = new Map<
   string,
   {
     resolve: (value: unknown) => void;
     reject: (error: Error) => void;
+    timeout: ReturnType<typeof setTimeout>;
   }
 >();
 let requestId = 0;
+
+const REQUEST_TIMEOUT_MS = 30000;
 
 function send(method: string, params?: Record<string, unknown>): Promise<unknown> {
   return new Promise((resolve, reject) => {
@@ -89,7 +129,17 @@ function send(method: string, params?: Record<string, unknown>): Promise<unknown
       return;
     }
     const id = String(++requestId);
-    pendingRequests.set(id, { resolve, reject });
+
+    // Set up timeout to clean up stale requests
+    const timeout = setTimeout(() => {
+      const pending = pendingRequests.get(id);
+      if (pending) {
+        pendingRequests.delete(id);
+        pending.reject(new Error("Request timeout"));
+      }
+    }, REQUEST_TIMEOUT_MS);
+
+    pendingRequests.set(id, { resolve, reject, timeout });
     ws.send(JSON.stringify({ type: "req", id, method, params }));
   });
 }
@@ -103,6 +153,7 @@ function handleMessage(data: string) {
       const pending = pendingRequests.get(String(msg.id));
       if (pending) {
         pendingRequests.delete(msg.id);
+        clearTimeout(pending.timeout);
         if (msg.ok) {
           pending.resolve(msg.payload);
         } else {
@@ -132,7 +183,7 @@ function handleEvent(event: string, payload: unknown) {
 
   // Handle connect.challenge - this triggers us to send the connect request
   if (event === "connect.challenge") {
-    log.node.warn("Received connect.challenge, sending connect request");
+    log.node.debug("Received connect.challenge, sending connect request");
     sendConnectRequest();
     return;
   }
@@ -186,17 +237,27 @@ async function sendConnectRequest() {
       }
     }
 
-    log.node.warn("Sending connect with params:", JSON.stringify(params, null, 2));
+    log.node.debug("Sending connect request");
 
     const connectResult = await send("connect", params);
 
-    log.node.warn("Connect result:", connectResult);
+    log.node.debug("Connect result:", connectResult);
 
     nodeConnected.value = true;
     nodePairingStatus.value = "paired"; // Connected with shared auth = effectively paired
-    log.node.warn("Node connected successfully!");
+    log.node.info("Node connected successfully");
+
+    // Start keepalive pings
+    if (pingInterval) clearInterval(pingInterval);
+    pingInterval = setInterval(() => {
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        send("ping", {}).catch(() => {
+          // Ignore ping failures, onclose will handle reconnect
+        });
+      }
+    }, PING_INTERVAL_MS);
   } catch (e) {
-    log.node.warn("Connect failed:", e);
+    log.node.error("Connect failed:", e);
   }
 }
 
@@ -214,11 +275,11 @@ async function handleInvokeRequest(payload: unknown) {
     try {
       cmdParams = JSON.parse(p.paramsJSON);
     } catch {
-      log.node.warn("Failed to parse paramsJSON:", p.paramsJSON);
+      log.node.error("Failed to parse paramsJSON:", p.paramsJSON);
     }
   }
 
-  log.node.warn("Invoke request:", p.command, cmdParams);
+  log.node.debug("Invoke request:", p.command);
 
   let result: unknown = { ok: true };
   let error: { code: string; message: string } | undefined;
@@ -226,71 +287,38 @@ async function handleInvokeRequest(payload: unknown) {
   try {
     switch (p.command) {
       case "canvas.present": {
-        const url = cmdParams.url as string | undefined;
-        const imageBase64 = cmdParams.imageBase64 as string | undefined;
-        const imageMimeType = (cmdParams.imageMimeType as string) || "image/png";
-
-        revokePreviousBlobUrl();
-
-        // If we have base64 image data, use it directly
-        if (imageBase64) {
-          try {
-            const blobUrl = createBlobUrlFromBase64(imageBase64, imageMimeType);
-            canvasBlobUrl.value = blobUrl;
-            canvasContentType.value = imageMimeType;
-            canvasUrl.value = null; // Clear URL since we're using blob
-            log.node.warn("Canvas showing base64 image:", imageMimeType);
-          } catch (e) {
-            log.node.warn("Failed to create blob from base64:", e);
-          }
-        } else if (url) {
-          canvasUrl.value = url;
-          // Note: Direct URL fetch removed due to CORS issues
-          // URLs will be rendered directly (works for public URLs and data URLs)
-        }
-
+        const contentResult = handleCanvasContent(cmdParams);
         canvasVisible.value = true;
-        log.node.warn("Canvas presented:", url || "(base64 image)");
+        if (contentResult) {
+          log.node.debug(
+            `Canvas presented: ${contentResult.type === "base64" ? `(${contentResult.detail})` : contentResult.detail}`,
+          );
+        }
         break;
       }
       case "canvas.hide": {
         canvasVisible.value = false;
-        log.node.warn("Canvas hidden");
+        log.node.debug("Canvas hidden");
         break;
       }
       case "canvas.navigate": {
-        const url = cmdParams.url as string | undefined;
-        const imageBase64 = cmdParams.imageBase64 as string | undefined;
-        const imageMimeType = (cmdParams.imageMimeType as string) || "image/png";
-
-        revokePreviousBlobUrl();
-
-        if (imageBase64) {
-          try {
-            const blobUrl = createBlobUrlFromBase64(imageBase64, imageMimeType);
-            canvasBlobUrl.value = blobUrl;
-            canvasContentType.value = imageMimeType;
-            canvasUrl.value = null;
-            log.node.warn("Canvas navigated to base64 image:", imageMimeType);
-          } catch (e) {
-            log.node.warn("Failed to create blob from base64:", e);
-          }
-        } else if (url) {
-          canvasUrl.value = url;
-        }
-
+        const contentResult = handleCanvasContent(cmdParams);
         canvasVisible.value = true;
-        log.node.warn("Canvas navigated:", url || "(base64 image)");
+        if (contentResult) {
+          log.node.debug(
+            `Canvas navigated: ${contentResult.type === "base64" ? `(${contentResult.detail})` : contentResult.detail}`,
+          );
+        }
         break;
       }
       case "canvas.eval": {
         const js = cmdParams.javaScript as string | undefined;
-        log.node.warn("canvas.eval not fully implemented:", js);
+        log.node.debug("canvas.eval requested:", js?.slice(0, 50));
         result = { result: "eval not implemented in Cove yet" };
         break;
       }
       case "canvas.snapshot": {
-        log.node.warn("canvas.snapshot not implemented yet");
+        log.node.debug("canvas.snapshot requested");
         error = { code: "NOT_IMPLEMENTED", message: "snapshot not implemented in Cove yet" };
         break;
       }
@@ -315,7 +343,7 @@ async function handleInvokeRequest(payload: unknown) {
         error: error ?? undefined,
       },
     };
-    log.node.warn("Sending invoke result:", resultMsg);
+    log.node.debug("Sending invoke result");
     ws.send(JSON.stringify(resultMsg));
   }
 }
@@ -325,37 +353,40 @@ async function connectNode() {
   const auth = getAuth();
   const credential = getSessionCredential();
 
-  log.node.warn("connectNode called, url:", url);
+  log.node.debug("connectNode called");
 
   if (!url) {
-    log.node.warn("No gateway URL in connectNode");
+    log.node.debug("No gateway URL, skipping node connection");
     return;
   }
 
   // Get auth credential (token or password)
-  log.node.warn("Auth mode:", auth?.authMode, "Credential exists:", !!credential);
   currentAuthMode = auth?.authMode;
   currentCredential = credential ?? undefined;
 
   const wsUrl = url.replace(/^http/, "ws");
-  log.node.warn("Connecting to", wsUrl);
+  log.node.debug("Connecting to gateway as node");
 
   ws = new WebSocket(wsUrl);
 
   ws.onopen = () => {
-    log.node.warn("WebSocket connected, waiting for connect.challenge...");
-    // Don't send connect yet - wait for connect.challenge event
+    log.node.debug("WebSocket connected, waiting for connect.challenge");
   };
 
   ws.onmessage = (event) => {
-    log.node.warn("Raw message received:", String(event.data).slice(0, 200));
     handleMessage(String(event.data));
   };
 
   ws.onclose = (event) => {
-    log.node.warn("WebSocket closed:", event.code, event.reason);
+    log.node.debug("WebSocket closed:", event.code, event.reason);
     nodeConnected.value = false;
     ws = null;
+
+    // Clear keepalive
+    if (pingInterval) {
+      clearInterval(pingInterval);
+      pingInterval = null;
+    }
 
     // Reconnect after delay
     if (!reconnectTimer) {
@@ -366,26 +397,35 @@ async function connectNode() {
     }
   };
 
-  ws.onerror = (event) => {
-    log.node.warn("WebSocket error:", event);
+  ws.onerror = () => {
+    log.node.error("WebSocket error");
   };
 }
 
 export function startNodeConnection() {
-  log.node.warn("startNodeConnection called, gatewayUrl:", gatewayUrl.value);
-  // Only start if we have a gateway URL
+  log.node.debug("startNodeConnection called");
   if (gatewayUrl.value) {
     connectNode();
   } else {
-    log.node.warn("No gateway URL, skipping node connection");
+    log.node.debug("No gateway URL, skipping node connection");
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars -- Cleanup function for future use
-function stopNodeConnection() {
+/** Stop the node connection (for cleanup) */
+export function stopNodeConnection() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
+  }
+  if (pingInterval) {
+    clearInterval(pingInterval);
+    pingInterval = null;
+  }
+  // Clean up pending requests
+  for (const [id, pending] of pendingRequests) {
+    clearTimeout(pending.timeout);
+    pending.reject(new Error("Connection closed"));
+    pendingRequests.delete(id);
   }
   if (ws) {
     ws.close();

@@ -1135,7 +1135,9 @@
     "expand": "Expand",
     "openInNewTab": "Open in new tab",
     "iframeTitle": "Canvas content",
-    "noContent": "No content to display"
+    "imageAlt": "Canvas image",
+    "noContent": "No content to display",
+    "noContentHint": "The assistant can push content here."
   },
 
   "accessibility": {

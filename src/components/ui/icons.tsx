@@ -23,6 +23,7 @@ import {
   Search,
   Check,
   Image,
+  MonitorPlay,
 } from "lucide-preact";
 
 type IconProps = {
@@ -47,6 +48,10 @@ export function MenuIcon({ class: className }: IconProps) {
 
 export function SettingsIcon({ class: className }: IconProps) {
   return <Settings class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+export function CanvasIcon({ class: className }: IconProps) {
+  return <MonitorPlay class={className || "w-5 h-5"} aria-hidden="true" />;
 }
 
 // ============================================

@@ -18,9 +18,11 @@ import {
   hasDateFilter,
   clearDateFilter,
 } from "@/signals/chat";
+import { canvasPanelOpen } from "@/signals/ui";
+import { nodeConnected } from "@/lib/node-connection";
 import { IconButton } from "@/components/ui/IconButton";
 import { DatePicker } from "@/components/ui/DatePicker";
-import { SearchIcon, XIcon } from "@/components/ui/icons";
+import { SearchIcon, XIcon, CanvasIcon } from "@/components/ui/icons";
 import { HeartbeatIndicator } from "./HeartbeatIndicator";
 import { hasContent } from "@/lib/utils";
 import { t } from "@/lib/i18n";
@@ -80,6 +82,16 @@ export function SearchBar() {
           class="border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
         />
         <HeartbeatIndicator />
+        {nodeConnected.value && (
+          <IconButton
+            icon={<CanvasIcon />}
+            label={t("canvas.title")}
+            onClick={() => (canvasPanelOpen.value = !canvasPanelOpen.value)}
+            variant="ghost"
+            size="sm"
+            class="border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
+          />
+        )}
       </div>
 
       {/* Expanded state - full search bar */}

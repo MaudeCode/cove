@@ -55,3 +55,10 @@ export const previousRoute = signal<string>("/");
 
 /** Whether the new chat modal is open */
 export const showNewChatModal = signal<boolean>(false);
+
+// ============================================
+// Canvas Panel
+// ============================================
+
+/** Whether the canvas panel is open */
+export const canvasPanelOpen = signal<boolean>(false);
