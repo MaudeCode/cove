@@ -127,7 +127,67 @@
     "noData": "No data",
     "noResults": "No results found",
     "tryAgain": "Try again",
-    "dismiss": "Dismiss"
+    "dismiss": "Dismiss",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "dark": "Dark",
+    "light": "Light"
+  },
+
+  "commandPalette": {
+    "placeholder": "Type a command...",
+    "loading": "Loading...",
+    "noItems": "No items",
+    "noMatches": "No matches",
+    "noCommands": "No commands found",
+    "failedToLoad": "Failed to load",
+    "hints": {
+      "navigate": "↑↓ navigate",
+      "select": "↵ select",
+      "close": "esc close",
+      "back": "esc back"
+    },
+    "categories": {
+      "recent": "Recent",
+      "chat": "Chat",
+      "session": "Session",
+      "model": "Model",
+      "cron": "Automation",
+      "gateway": "Gateway",
+      "settings": "Settings"
+    },
+    "commands": {
+      "chat": {
+        "abort": "Abort response",
+        "clear": "Clear chat",
+        "search": "Search in chat",
+        "export": "Export as Markdown",
+        "copyLast": "Copy last response"
+      },
+      "session": {
+        "switch": "Switch session",
+        "delete": "Delete current session",
+        "copyKey": "Copy session key"
+      },
+      "model": {
+        "change": "Change model"
+      },
+      "cron": {
+        "run": "Run cron job",
+        "toggle": "Toggle cron job"
+      },
+      "gateway": {
+        "restart": "Restart gateway"
+      },
+      "settings": {
+        "theme": "Change theme",
+        "systemTheme": "System (auto)"
+      }
+    },
+    "confirm": {
+      "deleteSession": "Delete this session?",
+      "restartGateway": "Restart the gateway? Connection will drop briefly."
+    }
   },
 
   "auth": {

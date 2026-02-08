@@ -50,6 +50,7 @@ import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { SpotlightTour } from "@/components/tour/SpotlightTour";
 import { getTourSteps } from "@/lib/tour-steps";
 import { appMode } from "@/signals/settings";
+import { CommandPalette, useCommandPaletteShortcut } from "@/components/command";
 
 // Initialize storage synchronously so we can check saved auth immediately
 initStorage();
@@ -71,6 +72,9 @@ export function App() {
       authChecked.value = true;
     });
   }, []);
+
+  // Enable ⌘K / Ctrl+K to open command palette
+  useCommandPaletteShortcut();
 
   // Determine what content to show
   // 1. First-run users without saved auth → onboarding wizard
@@ -125,6 +129,9 @@ export function App() {
         <AppShell>{content}</AppShell>
       </ErrorBoundary>
       <ToastContainer position="top-right" />
+
+      {/* Command palette overlay */}
+      <CommandPalette />
 
       {/* Spotlight tour overlay */}
       {showTour.value && (
