@@ -41,7 +41,8 @@
     "typecheck": "tsc -b --noEmit",
     "knip": "knip",
     "check": "bun run lint && bun run format:check && bun run typecheck && pnpm knip",
-    "prepare": "husky"
+    "prepare": "husky",
+    "serve": "bun run server.ts"
   },
   "dependencies": {
     "@fontsource/geist-sans": "^5.2.5",

@@ -94,36 +94,29 @@ function revokePreviousBlobUrl() {
 }
 
 /**
- * Transform localhost canvas URLs to use the gateway URL base.
- * This handles mixed content issues when Cove is served via HTTPS
- * but receives localhost URLs from the gateway.
+ * Transform localhost canvas URLs to use Cove's server proxy.
+ * This bypasses mixed content and CSP issues by routing through same-origin.
  *
  * Example: http://127.0.0.1:18789/__openclaw__/canvas/image.png
- *       -> https://gateway.example.com/__openclaw__/canvas/image.png
+ *       -> /canvas-proxy/image.png
+ *
+ * The Vite dev server (or production server) proxies /canvas-proxy/* to the gateway.
  */
 function transformCanvasUrl(url: string): string {
   // Check if this is a localhost canvas URL
   const localhostPattern =
-    /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/__openclaw__\/canvas\/.*)/i;
+    /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/__openclaw__\/canvas)(\/.*)?/i;
   const match = url.match(localhostPattern);
 
   if (!match) {
     return url; // Not a localhost canvas URL, return as-is
   }
 
-  const canvasPath = match[3]; // e.g., /__openclaw__/canvas/image.png
-
-  // Use gatewayUrl - it's the URL Cove uses to connect (goes through reverse proxy)
-  if (gatewayUrl.value) {
-    const base = gatewayUrl.value.replace(/\/$/, "");
-    const transformed = base + canvasPath;
-    log.node.debug("Transformed canvas URL via gatewayUrl:", url, "->", transformed);
-    return transformed;
-  }
-
-  // No gateway URL available, return original
-  log.node.warn("Cannot transform localhost canvas URL - no gateway URL available");
-  return url;
+  // Extract the file path after /__openclaw__/canvas
+  const filePath = match[4] || "/";
+  const transformed = `/canvas-proxy${filePath}`;
+  log.node.debug("Transformed canvas URL to proxy:", url, "->", transformed);
+  return transformed;
 }
 
 /**

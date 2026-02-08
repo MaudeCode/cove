@@ -11,24 +11,37 @@ RUN bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
-# Production stage - rootless nginx
-FROM nginxinc/nginx-unprivileged:alpine-slim
+# Production stage - Bun server with canvas proxy
+FROM oven/bun:1-alpine
 
-# Copy built assets
-COPY --from=builder /app/dist /usr/share/nginx/html
+WORKDIR /app
 
-# Copy nginx config
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy only what's needed for production
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/server.ts ./
+COPY --from=builder /app/package.json ./
 
-# Use non-root user (nginx-unprivileged runs as uid 101)
-USER nginx
+# Install only production deps (none needed for server.ts, but keep for future)
+# RUN bun install --production --frozen-lockfile
 
-# Expose unprivileged port
+# Use non-root user
+RUN adduser -D -u 1001 cove
+USER cove
+
+# Expose port
 EXPOSE 8080
+
+# Environment defaults (can be overridden)
+ENV PORT=8080
+ENV GATEWAY_HOST=127.0.0.1
+ENV GATEWAY_PORT=18789
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health || exit 1
+
+# Run the server
+CMD ["bun", "run", "server.ts"]
 
 # Labels
 LABEL org.opencontainers.image.source="https://github.com/MaudeCode/cove"
