@@ -7,6 +7,7 @@
     <!-- CSP: 'unsafe-inline' is needed for theme script to prevent FOUC. In production, use a hash or nonce. -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
+      frame-src *;
       script-src 'self' 'unsafe-inline';
       style-src 'self' 'unsafe-inline';
       img-src 'self' data: blob: https:;

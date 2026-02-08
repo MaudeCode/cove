@@ -32,6 +32,8 @@ import { ToastContainer, toast } from "@/components/ui/Toast";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { initExecApproval } from "@/signals/exec";
+import { startNodeConnection } from "@/lib/node-connection";
+import { CanvasPanel } from "@/components/canvas/CanvasPanel";
 import { ChatView } from "@/views/ChatView";
 import { LoginView } from "@/views/LoginView";
 import { StatusView as OverviewView } from "@/views/StatusView";
@@ -135,6 +137,9 @@ export function App() {
       {/* Command palette overlay */}
       <CommandPalette />
 
+      {/* Canvas panel for agent-pushed content */}
+      <CanvasPanel />
+
       {/* Spotlight tour overlay */}
       {showTour.value && (
         <SpotlightTour steps={getTourSteps(appMode.value)} onComplete={handleTourComplete} />
@@ -236,6 +241,9 @@ async function tryAutoConnect() {
 
     // Initialize exec approval listener
     initExecApproval();
+
+    // Start node connection for canvas support
+    startNodeConnection();
   } catch {
     // Clear invalid session credential
     setSessionCredential("");

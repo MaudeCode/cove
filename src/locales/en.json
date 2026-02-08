@@ -1126,6 +1126,18 @@
     }
   },
 
+  "canvas": {
+    "title": "Canvas",
+    "close": "Close canvas",
+    "minimize": "Minimize",
+    "maximize": "Maximize",
+    "restore": "Restore",
+    "expand": "Expand",
+    "openInNewTab": "Open in new tab",
+    "iframeTitle": "Canvas content",
+    "noContent": "No content to display"
+  },
+
   "accessibility": {
     "skipToContent": "Skip to content",
     "menuOpen": "Open menu",
