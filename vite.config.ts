@@ -47,6 +47,50 @@ function cspExtensionPlugin(env: Record<string, string>): Plugin {
 }
 
 /**
+ * Canvas proxy plugin - proxies requests to the local gateway's canvas host.
+ * This bypasses mixed content restrictions (HTTPS Cove → HTTP gateway).
+ * Usage: /canvas-proxy/path/to/file → http://127.0.0.1:${gatewayPort}/__openclaw__/canvas/path/to/file
+ */
+function canvasProxyPlugin(env: Record<string, string>): Plugin {
+  const gatewayPort = env.VITE_GATEWAY_PORT || '18789'
+  const gatewayHost = env.VITE_GATEWAY_HOST || '127.0.0.1'
+  
+  return {
+    name: 'cove-canvas-proxy',
+    configureServer(server) {
+      server.middlewares.use('/canvas-proxy', async (req, res) => {
+        const targetPath = req.url || '/'
+        const targetUrl = `http://${gatewayHost}:${gatewayPort}/__openclaw__/canvas${targetPath}`
+        
+        try {
+          const response = await fetch(targetUrl)
+          
+          if (!response.ok) {
+            res.writeHead(response.status)
+            res.end(await response.text())
+            return
+          }
+          
+          // Forward content-type header
+          const contentType = response.headers.get('content-type')
+          if (contentType) {
+            res.setHeader('Content-Type', contentType)
+          }
+          
+          // Stream the response body
+          const buffer = await response.arrayBuffer()
+          res.writeHead(200)
+          res.end(Buffer.from(buffer))
+        } catch (err) {
+          res.writeHead(502)
+          res.end(`Canvas proxy error: ${err}`)
+        }
+      })
+    }
+  }
+}
+
+/**
  * Debug logging plugin - accepts POSTs to /__cove_debug and writes to debug.log
  * This lets the AI read client-side logs without needing browser access.
  */
@@ -96,7 +140,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [preact(), tailwindcss(), cspExtensionPlugin(env), debugLogPlugin()],
+    plugins: [preact(), tailwindcss(), cspExtensionPlugin(env), canvasProxyPlugin(env), debugLogPlugin()],
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
     },

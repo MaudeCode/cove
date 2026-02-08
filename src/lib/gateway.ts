@@ -81,6 +81,9 @@ export const gatewayCommit = signal<string | null>(null);
 /** Server host name */
 export const gatewayHost = signal<string | null>(null);
 
+/** Canvas host URL from gateway (for transforming localhost canvas URLs) */
+export const canvasHostUrl = signal<string | null>(null);
+
 /** Tick interval from gateway policy (ms) */
 export const tickIntervalMs = signal<number | null>(null);
 
@@ -328,6 +331,7 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
                 gatewayCommit.value = hello.server?.commit ?? null;
                 gatewayHost.value = hello.server?.host ?? null;
                 connectionId.value = hello.server?.connId ?? null;
+                canvasHostUrl.value = hello.canvasHostUrl ?? null;
 
                 // Features & policy
                 capabilities.value = hello.features?.methods ?? [];

@@ -6,7 +6,7 @@
  */
 
 import { signal } from "@preact/signals";
-import { gatewayUrl } from "./gateway";
+import { gatewayUrl, canvasHostUrl } from "./gateway";
 import { getAuth, getSessionCredential } from "./storage";
 import { log } from "./logger";
 import {
@@ -94,6 +94,48 @@ function revokePreviousBlobUrl() {
 }
 
 /**
+ * Transform localhost canvas URLs to use the gateway URL base.
+ * This handles mixed content issues when Cove is served via HTTPS
+ * but receives localhost URLs from the gateway.
+ *
+ * Example: http://127.0.0.1:18789/__openclaw__/canvas/image.png
+ *       -> https://gateway.example.com/__openclaw__/canvas/image.png
+ */
+function transformCanvasUrl(url: string): string {
+  // Check if this is a localhost canvas URL
+  const localhostPattern =
+    /^https?:\/\/(127\.0\.0\.1|localhost)(:\d+)?(\/__openclaw__\/canvas\/.*)/i;
+  const match = url.match(localhostPattern);
+
+  if (!match) {
+    return url; // Not a localhost canvas URL, return as-is
+  }
+
+  const canvasPath = match[3]; // e.g., /__openclaw__/canvas/image.png
+
+  // Try canvasHostUrl first (if gateway advertised it)
+  if (canvasHostUrl.value) {
+    const base = canvasHostUrl.value.replace(/\/$/, "");
+    // canvasHostUrl should already point to the canvas root
+    const transformed = base + canvasPath.replace("/__openclaw__/canvas", "");
+    log.node.debug("Transformed canvas URL via canvasHostUrl:", url, "->", transformed);
+    return transformed;
+  }
+
+  // Fall back to gatewayUrl (construct canvas URL from it)
+  if (gatewayUrl.value) {
+    const base = gatewayUrl.value.replace(/\/$/, "");
+    const transformed = base + canvasPath;
+    log.node.debug("Transformed canvas URL via gatewayUrl:", url, "->", transformed);
+    return transformed;
+  }
+
+  // No gateway URL available, return original
+  log.node.warn("Cannot transform localhost canvas URL - no gateway URL available");
+  return url;
+}
+
+/**
  * Handle canvas content from invoke params (shared by present/navigate)
  */
 function handleCanvasContent(cmdParams: Record<string, unknown>): {
@@ -123,11 +165,12 @@ function handleCanvasContent(cmdParams: Record<string, unknown>): {
   }
 
   if (url) {
-    canvasUrl.value = url;
+    const transformedUrl = transformCanvasUrl(url);
+    canvasUrl.value = transformedUrl;
     lastBase64 = null;
     lastBase64Mime = null;
     broadcastCanvasContent();
-    return { type: "url", detail: url };
+    return { type: "url", detail: transformedUrl };
   }
 
   return null;
