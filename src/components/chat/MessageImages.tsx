@@ -5,7 +5,7 @@
  * Supports click to expand/zoom and download.
  */
 
-import { useState } from "preact/hooks";
+import { useState, useRef, useEffect } from "preact/hooks";
 import { X, Download } from "lucide-preact";
 import type { MessageImage } from "@/types/messages";
 import { t } from "@/lib/i18n";
@@ -60,6 +60,14 @@ function getFilenameFromUrl(url: string, index: number): string {
 
 export function MessageImages({ images }: MessageImagesProps) {
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null);
+  const lightboxRef = useRef<HTMLDivElement>(null);
+
+  // Focus lightbox when opened for keyboard navigation
+  useEffect(() => {
+    if (expandedIndex !== null) {
+      lightboxRef.current?.focus();
+    }
+  }, [expandedIndex]);
 
   if (images.length === 0) return null;
 
@@ -114,10 +122,11 @@ export function MessageImages({ images }: MessageImagesProps) {
       {/* Lightbox modal */}
       {expandedIndex !== null && (
         <div
+          ref={lightboxRef}
           role="dialog"
           aria-modal="true"
           aria-label={t("chat.imageViewer")}
-          class="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4"
+          class="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4 outline-none"
           onClick={() => setExpandedIndex(null)}
           onKeyDown={(e) => {
             if (e.key === "Escape") setExpandedIndex(null);
