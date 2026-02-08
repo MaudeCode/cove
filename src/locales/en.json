@@ -1036,7 +1036,25 @@
       "tools": "Tools",
       "files": "Files",
       "system": "System Prompt",
-      "other": "Other"
+      "other": "Other",
+      "tabs": {
+        "overview": "Overview",
+        "timeline": "Timeline",
+        "messages": "Messages"
+      },
+      "noTimeline": "No timeline data available for this session",
+      "noMessages": "No message logs available for this session",
+      "cumulativeTokens": "Cumulative Tokens",
+      "requests": "Requests",
+      "totalTokens": "Total Tokens",
+      "totalCost": "Total Cost",
+      "role": {
+        "user": "User",
+        "assistant": "Assistant",
+        "tool": "Tool",
+        "toolResult": "Result"
+      },
+      "tokenCount": "{count} tokens"
     }
   },
 

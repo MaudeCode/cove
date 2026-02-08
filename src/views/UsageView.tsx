@@ -38,8 +38,12 @@ import type {
   HealthSummary,
   SessionsUsageResult,
   SessionUsageEntry,
+  SessionUsageTimeSeries,
+  SessionLogsResult,
+  SessionLogEntry,
 } from "@/types/server-stats";
 import { formatTokenCount, formatCost } from "@/types/server-stats";
+import { Badge } from "@/components/ui/Badge";
 
 import type { RouteProps } from "@/types/routes";
 
@@ -60,6 +64,14 @@ const sessionsSortBy = signal<"cost" | "tokens" | "recent">("recent");
 const sessionsSortDesc = signal<boolean>(true);
 const sessionsPage = signal<number>(0);
 const sessionsPageSize = 5;
+
+// Session detail modal state
+type DetailTab = "overview" | "timeline" | "messages";
+const detailTab = signal<DetailTab>("overview");
+const sessionTimeseries = signal<SessionUsageTimeSeries | null>(null);
+const sessionLogs = signal<SessionLogEntry[]>([]);
+const isLoadingTimeseries = signal<boolean>(false);
+const isLoadingLogs = signal<boolean>(false);
 
 // ============================================
 // Actions
@@ -128,6 +140,43 @@ async function loadSessionsUsage(days: number = 30): Promise<void> {
 
 async function loadAll(): Promise<void> {
   await Promise.all([loadHealth(), loadUsage(usageDays.value)]);
+}
+
+async function loadSessionTimeseries(key: string): Promise<void> {
+  if (isLoadingTimeseries.value) return;
+  isLoadingTimeseries.value = true;
+  sessionTimeseries.value = null;
+
+  try {
+    const result = await send<SessionUsageTimeSeries>("sessions.usage.timeseries", { key });
+    sessionTimeseries.value = result;
+  } catch {
+    // Silently fail - timeseries might not be available
+  } finally {
+    isLoadingTimeseries.value = false;
+  }
+}
+
+async function loadSessionLogs(key: string): Promise<void> {
+  if (isLoadingLogs.value) return;
+  isLoadingLogs.value = true;
+  sessionLogs.value = [];
+
+  try {
+    const result = await send<SessionLogsResult>("sessions.usage.logs", { key, limit: 100 });
+    sessionLogs.value = result?.logs ?? [];
+  } catch {
+    // Silently fail
+  } finally {
+    isLoadingLogs.value = false;
+  }
+}
+
+function clearSessionDetail(): void {
+  selectedSession.value = null;
+  detailTab.value = "overview";
+  sessionTimeseries.value = null;
+  sessionLogs.value = [];
 }
 
 // ============================================
@@ -415,16 +464,26 @@ function SessionUsageTable() {
 
 function SessionDetailModal() {
   const session = selectedSession.value;
-  const contextWeight = session?.contextWeight;
+  const tab = detailTab.value;
+
+  // Load data when tab changes
+  useEffect(() => {
+    if (!session) return;
+    if (tab === "timeline" && !sessionTimeseries.value && !isLoadingTimeseries.value) {
+      loadSessionTimeseries(session.key);
+    } else if (tab === "messages" && sessionLogs.value.length === 0 && !isLoadingLogs.value) {
+      loadSessionLogs(session.key);
+    }
+  }, [session, tab]);
+
+  const tabs: { id: DetailTab; label: string }[] = [
+    { id: "overview", label: t("usage.detail.tabs.overview") },
+    { id: "timeline", label: t("usage.detail.tabs.timeline") },
+    { id: "messages", label: t("usage.detail.tabs.messages") },
+  ];
 
   return (
-    <Modal
-      open={!!session}
-      onClose={() => {
-        selectedSession.value = null;
-      }}
-      title={t("usage.detail.title")}
-    >
+    <Modal open={!!session} onClose={clearSessionDetail} title={t("usage.detail.title")}>
       {session && (
         <div class="space-y-4">
           {/* Session name */}
@@ -432,83 +491,287 @@ function SessionDetailModal() {
             {session.label || session.key}
           </p>
 
-          {/* Token breakdown */}
-          <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-            <div>
-              <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.input")}</div>
-              <div class="font-medium">{formatTokenCount(session.usage.input)}</div>
-            </div>
-            <div>
-              <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.output")}</div>
-              <div class="font-medium">{formatTokenCount(session.usage.output)}</div>
-            </div>
-            <div>
-              <div class="text-xs text-[var(--color-text-muted)]">
-                {t("usage.summary.cacheRead")}
-              </div>
-              <div class="font-medium">{formatTokenCount(session.usage.cacheRead)}</div>
-            </div>
-            <div>
-              <div class="text-xs text-[var(--color-text-muted)]">
-                {t("usage.summary.totalCost")}
-              </div>
-              <div class="font-medium text-[var(--color-success)]">
-                {formatCost(session.usage.totalCost)}
-              </div>
-            </div>
+          {/* Tabs */}
+          <div class="flex gap-1 border-b border-[var(--color-border)]" role="tablist">
+            {tabs.map((tabItem) => (
+              <button
+                key={tabItem.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === tabItem.id}
+                onClick={() => {
+                  detailTab.value = tabItem.id;
+                }}
+                class={`px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
+                  tab === tabItem.id
+                    ? "border-[var(--color-accent)] text-[var(--color-accent)]"
+                    : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                }`}
+              >
+                {tabItem.label}
+              </button>
+            ))}
           </div>
 
-          {/* Context weight breakdown */}
-          {contextWeight && contextWeight.total > 0 && (
-            <div class="pt-4 border-t border-[var(--color-border)]">
-              <h4 class="text-sm font-medium mb-3">{t("usage.detail.contextWeight")}</h4>
-              <div class="space-y-2">
-                {contextWeight.systemPrompt != null && contextWeight.systemPrompt > 0 && (
-                  <ContextWeightBar
-                    label={t("usage.detail.system")}
-                    value={contextWeight.systemPrompt}
-                    total={contextWeight.total}
-                    color="var(--color-accent)"
-                  />
-                )}
-                {contextWeight.skills != null && contextWeight.skills > 0 && (
-                  <ContextWeightBar
-                    label={t("usage.detail.skills")}
-                    value={contextWeight.skills}
-                    total={contextWeight.total}
-                    color="var(--color-success)"
-                  />
-                )}
-                {contextWeight.tools != null && contextWeight.tools > 0 && (
-                  <ContextWeightBar
-                    label={t("usage.detail.tools")}
-                    value={contextWeight.tools}
-                    total={contextWeight.total}
-                    color="var(--color-warning)"
-                  />
-                )}
-                {contextWeight.files != null && contextWeight.files > 0 && (
-                  <ContextWeightBar
-                    label={t("usage.detail.files")}
-                    value={contextWeight.files}
-                    total={contextWeight.total}
-                    color="var(--color-info)"
-                  />
-                )}
-                {contextWeight.other != null && contextWeight.other > 0 && (
-                  <ContextWeightBar
-                    label={t("usage.detail.other")}
-                    value={contextWeight.other}
-                    total={contextWeight.total}
-                    color="var(--color-text-muted)"
-                  />
-                )}
-              </div>
-            </div>
-          )}
+          {/* Tab content */}
+          <div role="tabpanel">
+            {tab === "overview" && <OverviewTab session={session} />}
+            {tab === "timeline" && <TimelineTab />}
+            {tab === "messages" && <MessagesTab />}
+          </div>
         </div>
       )}
     </Modal>
+  );
+}
+
+function OverviewTab({ session }: { session: SessionUsageEntry }) {
+  const contextWeight = session.contextWeight;
+
+  return (
+    <div class="space-y-4">
+      {/* Token breakdown */}
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.input")}</div>
+          <div class="font-medium">{formatTokenCount(session.usage.input)}</div>
+        </div>
+        <div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.output")}</div>
+          <div class="font-medium">{formatTokenCount(session.usage.output)}</div>
+        </div>
+        <div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.cacheRead")}</div>
+          <div class="font-medium">{formatTokenCount(session.usage.cacheRead)}</div>
+        </div>
+        <div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.totalCost")}</div>
+          <div class="font-medium text-[var(--color-success)]">
+            {formatCost(session.usage.totalCost)}
+          </div>
+        </div>
+      </div>
+
+      {/* Context weight breakdown */}
+      {contextWeight && contextWeight.total > 0 && (
+        <div class="pt-4 border-t border-[var(--color-border)]">
+          <h4 class="text-sm font-medium mb-3">{t("usage.detail.contextWeight")}</h4>
+          <div class="space-y-2">
+            {contextWeight.systemPrompt != null && contextWeight.systemPrompt > 0 && (
+              <ContextWeightBar
+                label={t("usage.detail.system")}
+                value={contextWeight.systemPrompt}
+                total={contextWeight.total}
+                color="var(--color-accent)"
+              />
+            )}
+            {contextWeight.skills != null && contextWeight.skills > 0 && (
+              <ContextWeightBar
+                label={t("usage.detail.skills")}
+                value={contextWeight.skills}
+                total={contextWeight.total}
+                color="var(--color-success)"
+              />
+            )}
+            {contextWeight.tools != null && contextWeight.tools > 0 && (
+              <ContextWeightBar
+                label={t("usage.detail.tools")}
+                value={contextWeight.tools}
+                total={contextWeight.total}
+                color="var(--color-warning)"
+              />
+            )}
+            {contextWeight.files != null && contextWeight.files > 0 && (
+              <ContextWeightBar
+                label={t("usage.detail.files")}
+                value={contextWeight.files}
+                total={contextWeight.total}
+                color="var(--color-info)"
+              />
+            )}
+            {contextWeight.other != null && contextWeight.other > 0 && (
+              <ContextWeightBar
+                label={t("usage.detail.other")}
+                value={contextWeight.other}
+                total={contextWeight.total}
+                color="var(--color-text-muted)"
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TimelineTab() {
+  const timeseries = sessionTimeseries.value;
+  const isLoading = isLoadingTimeseries.value;
+
+  if (isLoading) {
+    return (
+      <div class="flex justify-center py-8">
+        <Spinner size="md" />
+      </div>
+    );
+  }
+
+  if (!timeseries || timeseries.points.length === 0) {
+    return (
+      <p class="text-sm text-[var(--color-text-muted)] py-4 text-center">
+        {t("usage.detail.noTimeline")}
+      </p>
+    );
+  }
+
+  const points = timeseries.points;
+  const maxTokens = Math.max(...points.map((p) => p.cumulativeTokens));
+  const maxCost = Math.max(...points.map((p) => p.cumulativeCost));
+
+  // Simple area chart using SVG
+  const width = 400;
+  const height = 120;
+  const padding = { top: 10, right: 10, bottom: 20, left: 40 };
+  const chartWidth = width - padding.left - padding.right;
+  const chartHeight = height - padding.top - padding.bottom;
+
+  const xScale = (i: number) => padding.left + (i / (points.length - 1)) * chartWidth;
+  const yScaleTokens = (v: number) =>
+    padding.top + chartHeight - (v / (maxTokens || 1)) * chartHeight;
+
+  const tokenPath = points
+    .map((p, i) => `${i === 0 ? "M" : "L"} ${xScale(i)} ${yScaleTokens(p.cumulativeTokens)}`)
+    .join(" ");
+
+  const areaPath = `${tokenPath} L ${xScale(points.length - 1)} ${padding.top + chartHeight} L ${padding.left} ${padding.top + chartHeight} Z`;
+
+  return (
+    <div class="space-y-3">
+      <div class="flex items-center justify-between text-xs text-[var(--color-text-muted)]">
+        <span>{t("usage.detail.cumulativeTokens")}</span>
+        <span>{formatTokenCount(maxTokens)} max</span>
+      </div>
+
+      <svg viewBox={`0 0 ${width} ${height}`} class="w-full h-auto">
+        {/* Grid lines */}
+        {[0, 0.25, 0.5, 0.75, 1].map((pct) => (
+          <line
+            key={pct}
+            x1={padding.left}
+            y1={padding.top + chartHeight * (1 - pct)}
+            x2={width - padding.right}
+            y2={padding.top + chartHeight * (1 - pct)}
+            stroke="var(--color-border)"
+            stroke-dasharray="2,2"
+          />
+        ))}
+
+        {/* Area fill */}
+        <path d={areaPath} fill="var(--color-accent)" opacity="0.2" />
+
+        {/* Line */}
+        <path d={tokenPath} fill="none" stroke="var(--color-accent)" stroke-width="2" />
+
+        {/* X-axis labels */}
+        <text
+          x={padding.left}
+          y={height - 2}
+          font-size="10"
+          fill="var(--color-text-muted)"
+          text-anchor="start"
+        >
+          {formatTimestamp(new Date(points[0].timestamp), { relative: false })}
+        </text>
+        <text
+          x={width - padding.right}
+          y={height - 2}
+          font-size="10"
+          fill="var(--color-text-muted)"
+          text-anchor="end"
+        >
+          {formatTimestamp(new Date(points[points.length - 1].timestamp), { relative: false })}
+        </text>
+      </svg>
+
+      {/* Summary stats */}
+      <div class="grid grid-cols-3 gap-4 pt-2 border-t border-[var(--color-border)]">
+        <div class="text-center">
+          <div class="text-lg font-semibold">{points.length}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.detail.requests")}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-lg font-semibold">{formatTokenCount(maxTokens)}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.detail.totalTokens")}</div>
+        </div>
+        <div class="text-center">
+          <div class="text-lg font-semibold text-[var(--color-success)]">{formatCost(maxCost)}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.detail.totalCost")}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MessagesTab() {
+  const logs = sessionLogs.value;
+  const isLoading = isLoadingLogs.value;
+
+  if (isLoading) {
+    return (
+      <div class="flex justify-center py-8">
+        <Spinner size="md" />
+      </div>
+    );
+  }
+
+  if (logs.length === 0) {
+    return (
+      <p class="text-sm text-[var(--color-text-muted)] py-4 text-center">
+        {t("usage.detail.noMessages")}
+      </p>
+    );
+  }
+
+  const roleColors: Record<string, string> = {
+    user: "info",
+    assistant: "success",
+    tool: "warning",
+    toolResult: "default",
+  };
+
+  const roleLabels: Record<string, string> = {
+    user: t("usage.detail.role.user"),
+    assistant: t("usage.detail.role.assistant"),
+    tool: t("usage.detail.role.tool"),
+    toolResult: t("usage.detail.role.toolResult"),
+  };
+
+  return (
+    <div class="space-y-2 max-h-[300px] overflow-y-auto">
+      {logs.map((log, i) => (
+        <div
+          key={i}
+          class="p-2 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)]"
+        >
+          <div class="flex items-center justify-between gap-2 mb-1">
+            <div class="flex items-center gap-2">
+              <Badge variant={roleColors[log.role] as "info" | "success" | "warning" | "default"}>
+                {roleLabels[log.role] || log.role}
+              </Badge>
+              {log.tokens != null && (
+                <span class="text-xs text-[var(--color-text-muted)]">
+                  {t("usage.detail.tokenCount", { count: formatTokenCount(log.tokens) })}
+                </span>
+              )}
+            </div>
+            <span class="text-xs text-[var(--color-text-muted)]">
+              {formatTimestamp(new Date(log.timestamp), { relative: true })}
+            </span>
+          </div>
+          <p class="text-sm text-[var(--color-text-secondary)] line-clamp-2">{log.content}</p>
+        </div>
+      ))}
+    </div>
   );
 }
 

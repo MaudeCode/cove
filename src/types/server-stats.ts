@@ -58,6 +58,43 @@ export interface SessionsUsageResult {
 }
 
 // ============================================
+// Session Timeseries Types
+// ============================================
+
+export interface SessionUsageTimePoint {
+  timestamp: number;
+  input: number;
+  output: number;
+  cacheRead: number;
+  cacheWrite: number;
+  totalTokens: number;
+  cost: number;
+  cumulativeTokens: number;
+  cumulativeCost: number;
+}
+
+export interface SessionUsageTimeSeries {
+  sessionId?: string;
+  points: SessionUsageTimePoint[];
+}
+
+// ============================================
+// Session Logs Types
+// ============================================
+
+export interface SessionLogEntry {
+  timestamp: number;
+  role: "user" | "assistant" | "tool" | "toolResult";
+  content: string;
+  tokens?: number;
+  cost?: number;
+}
+
+export interface SessionLogsResult {
+  logs: SessionLogEntry[];
+}
+
+// ============================================
 // Health Types
 // ============================================
 
