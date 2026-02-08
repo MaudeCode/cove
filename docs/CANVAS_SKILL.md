@@ -90,6 +90,27 @@ nodes action=invoke node=<nodeId> invokeCommand=canvas.navigate invokeParamsJson
 | `imageBase64` | string | Base64-encoded content (image or HTML) |
 | `imageMimeType` | string | MIME type (e.g., `image/png`, `text/html`) |
 
+## Pushing HTML via Data URL (No Base64)
+
+You can push HTML directly using a `data:` URL. The HTML must be URL-encoded:
+
+```bash
+# URL-encode the HTML
+HTML='<html><body style="background:#1a1a1a;color:white"><h1>Hello!</h1></body></html>'
+ENCODED=$(python3 -c "import urllib.parse; print(urllib.parse.quote('$HTML'))")
+
+# Push to canvas
+openclaw nodes invoke --node <nodeId> --command canvas.present \
+  --params "{\"url\":\"data:text/html;charset=utf-8,$ENCODED\"}"
+```
+
+**Using the nodes tool:**
+```
+nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson='{"url":"data:text/html;charset=utf-8,%3Chtml%3E..."}'
+```
+
+**Important:** The HTML must be URL-encoded. Unencoded special characters (quotes, brackets, etc.) will break the data URL.
+
 ## Local Images Without Base64
 
 To avoid base64 encoding large images:
