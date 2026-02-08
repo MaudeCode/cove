@@ -318,13 +318,16 @@ async function handleInvokeRequest(payload: unknown) {
   const p = payload as {
     id?: string;
     command?: string;
+    params?: Record<string, unknown>;
     paramsJSON?: string;
     idempotencyKey?: string;
   };
 
-  // Parse params from JSON string
+  // Parse params - can come as object or JSON string
   let cmdParams: Record<string, unknown> = {};
-  if (p.paramsJSON) {
+  if (p.params && typeof p.params === "object") {
+    cmdParams = p.params;
+  } else if (p.paramsJSON) {
     try {
       cmdParams = JSON.parse(p.paramsJSON);
     } catch {
@@ -332,7 +335,7 @@ async function handleInvokeRequest(payload: unknown) {
     }
   }
 
-  log.node.debug("Invoke request:", p.command);
+  log.node.debug("Invoke request:", p.command, "params keys:", Object.keys(cmdParams));
 
   let result: unknown = { ok: true };
   let error: { code: string; message: string } | undefined;
