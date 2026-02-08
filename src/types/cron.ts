@@ -70,6 +70,15 @@ export interface CronJobState {
 export type CronSessionTarget = "main" | "isolated";
 export type CronWakeMode = "next-heartbeat" | "now";
 
+export type CronDeliveryMode = "none" | "announce";
+
+export interface CronDelivery {
+  mode: CronDeliveryMode;
+  channel?: string;
+  to?: string;
+  bestEffort?: boolean;
+}
+
 export interface CronJob {
   id: string;
   agentId?: string;
@@ -83,6 +92,7 @@ export interface CronJob {
   sessionTarget: CronSessionTarget;
   wakeMode: CronWakeMode;
   payload: CronPayload;
+  delivery?: CronDelivery;
   state: CronJobState;
 }
 
@@ -152,6 +162,7 @@ export interface CronJobsForm {
   editScheduleAtMs: Signal<string>;
   editWakeMode: Signal<CronWakeMode>;
   editSessionTarget: Signal<CronSessionTarget>;
+  editDeliveryAnnounce: Signal<boolean>;
   editPayloadText: Signal<string>;
   editPayloadMessage: Signal<string>;
   editPayloadModel: Signal<string>;

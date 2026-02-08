@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { FormField } from "@/components/ui/FormField";
 import { Textarea } from "@/components/ui/Textarea";
+import { Toggle } from "@/components/ui/Toggle";
 import { ChipButtonGroup } from "@/components/ui/ChipButton";
 import {
   msToDatetimeLocal,
@@ -29,6 +30,7 @@ interface CronJobFormProps {
   editScheduleAtMs: Signal<string>;
   editSessionTarget: Signal<"main" | "isolated">;
   editWakeMode: Signal<"next-heartbeat" | "now">;
+  editDeliveryAnnounce: Signal<boolean>;
   editPayloadText: Signal<string>;
   editPayloadMessage: Signal<string>;
   editPayloadModel: Signal<string>;
@@ -61,6 +63,7 @@ export function CronJobForm({
   editScheduleAtMs,
   editSessionTarget,
   editWakeMode,
+  editDeliveryAnnounce,
   editPayloadText,
   editPayloadMessage,
   editPayloadModel,
@@ -171,6 +174,23 @@ export function CronJobForm({
           />
         </FormField>
       </div>
+
+      {/* Announce Results (isolated only) */}
+      {editSessionTarget.value === "isolated" && (
+        <div class="flex items-center justify-between p-3 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)]">
+          <div>
+            <div class="text-sm font-medium">{t("cron.form.announceResults")}</div>
+            <div class="text-xs text-[var(--color-text-muted)]">
+              {t("cron.form.announceResultsHint")}
+            </div>
+          </div>
+          <Toggle
+            checked={editDeliveryAnnounce.value}
+            onChange={(checked) => (editDeliveryAnnounce.value = checked)}
+            label={t("cron.form.announceResults")}
+          />
+        </div>
+      )}
 
       {/* Payload */}
       <FormField

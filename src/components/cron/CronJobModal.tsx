@@ -44,6 +44,7 @@ interface CronJobModalProps {
   editScheduleAtMs: Signal<string>;
   editSessionTarget: Signal<"main" | "isolated">;
   editWakeMode: Signal<"next-heartbeat" | "now">;
+  editDeliveryAnnounce: Signal<boolean>;
   editPayloadText: Signal<string>;
   editPayloadMessage: Signal<string>;
   editPayloadModel: Signal<string>;
@@ -74,6 +75,7 @@ export function CronJobModal({
   editScheduleAtMs,
   editSessionTarget,
   editWakeMode,
+  editDeliveryAnnounce,
   editPayloadText,
   editPayloadMessage,
   editPayloadModel,
@@ -185,6 +187,7 @@ export function CronJobModal({
           editScheduleAtMs={editScheduleAtMs}
           editSessionTarget={editSessionTarget}
           editWakeMode={editWakeMode}
+          editDeliveryAnnounce={editDeliveryAnnounce}
           editPayloadText={editPayloadText}
           editPayloadMessage={editPayloadMessage}
           editPayloadModel={editPayloadModel}

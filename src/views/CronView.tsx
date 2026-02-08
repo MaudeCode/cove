@@ -271,6 +271,7 @@ export function CronView(_props: RouteProps) {
           editScheduleAtMs={form.editScheduleAtMs}
           editSessionTarget={form.editSessionTarget}
           editWakeMode={form.editWakeMode}
+          editDeliveryAnnounce={form.editDeliveryAnnounce}
           editPayloadText={form.editPayloadText}
           editPayloadMessage={form.editPayloadMessage}
           editPayloadModel={form.editPayloadModel}

@@ -8,7 +8,7 @@ import { t } from "@/lib/i18n";
 import { Badge } from "@/components/ui/Badge";
 import { IconButton } from "@/components/ui/IconButton";
 import { ListCard } from "@/components/ui/ListCard";
-import { Clock, Calendar, Timer, Play, CheckCircle, XCircle } from "lucide-preact";
+import { Clock, Calendar, Timer, Play, CheckCircle, XCircle, Bell } from "lucide-preact";
 import type { CronJob } from "@/types/cron";
 import { formatSchedule, formatNextRun, getJobStatusBadge } from "./cron-helpers";
 
@@ -63,6 +63,7 @@ function CronJobActions({
 /** Mobile card view for a cron job (tap to edit, no inline actions) */
 export function CronJobCard({ job, onEdit }: Pick<CronJobRowProps, "job" | "onEdit">) {
   const status = getJobStatusBadge(job);
+  const hasAnnounce = job.delivery?.mode === "announce";
 
   return (
     <ListCard
@@ -70,9 +71,14 @@ export function CronJobCard({ job, onEdit }: Pick<CronJobRowProps, "job" | "onEd
       iconVariant={!job.enabled ? "default" : status.variant === "error" ? "error" : "success"}
       title={job.name}
       badges={
-        <Badge variant={status.variant} size="sm">
-          {status.label}
-        </Badge>
+        <>
+          {hasAnnounce && (
+            <Bell class="w-3.5 h-3.5 text-[var(--color-info)]" aria-label={t("cron.announces")} />
+          )}
+          <Badge variant={status.variant} size="sm">
+            {status.label}
+          </Badge>
+        </>
       }
       meta={[
         { icon: Calendar, value: formatSchedule(job.schedule) },
@@ -85,6 +91,7 @@ export function CronJobCard({ job, onEdit }: Pick<CronJobRowProps, "job" | "onEd
 
 export function CronJobRow({ job, onEdit, onRun, onToggleEnabled, isRunning }: CronJobRowProps) {
   const status = getJobStatusBadge(job);
+  const hasAnnounce = job.delivery?.mode === "announce";
 
   return (
     <tr
@@ -114,8 +121,14 @@ export function CronJobRow({ job, onEdit, onRun, onToggleEnabled, isRunning }: C
             />
           </div>
           <div class="min-w-0 flex-1">
-            <div class="font-medium truncate" title={job.name}>
+            <div class="font-medium truncate flex items-center gap-1.5" title={job.name}>
               {job.name}
+              {hasAnnounce && (
+                <Bell
+                  class="w-3.5 h-3.5 text-[var(--color-info)] flex-shrink-0"
+                  aria-label={t("cron.announces")}
+                />
+              )}
             </div>
             {job.description && (
               <div class="text-xs text-[var(--color-text-muted)] truncate" title={job.description}>

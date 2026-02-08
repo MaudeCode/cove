@@ -550,6 +550,7 @@
     "disable": "Disable",
     "enabled": "Enabled",
     "disabled": "Disabled",
+    "announces": "Announces results",
     "running": "Running",
     "pending": "Pending",
     "lastOk": "Last OK",
@@ -625,7 +626,9 @@
       "payloadHintIsolated": "Runs as an agent turn in an isolated session.",
       "systemEventPlaceholder": "Text to inject as system event",
       "agentMessagePlaceholder": "Message to send to the agent",
-      "modelPlaceholder": "Model override (optional)"
+      "modelPlaceholder": "Model override (optional)",
+      "announceResults": "Announce Results",
+      "announceResultsHint": "Send job results back to your chat when complete."
     },
     "validation": {
       "nameRequired": "Name is required",

@@ -54,6 +54,7 @@ const editScheduleEveryMs = signal<string>("");
 const editScheduleAtMs = signal<string>("");
 const editWakeMode = signal<"next-heartbeat" | "now">("next-heartbeat");
 const editSessionTarget = signal<"main" | "isolated">("main");
+const editDeliveryAnnounce = signal<boolean>(false);
 const editPayloadText = signal<string>("");
 const editPayloadMessage = signal<string>("");
 const editPayloadModel = signal<string>("");
@@ -161,6 +162,7 @@ function populateEditForm(job: CronJob) {
   }
   editWakeMode.value = job.wakeMode;
   editSessionTarget.value = job.sessionTarget;
+  editDeliveryAnnounce.value = job.delivery?.mode === "announce";
   if (job.payload.kind === "systemEvent") {
     editPayloadText.value = job.payload.text;
   } else {
@@ -181,6 +183,7 @@ function resetEditForm() {
   editScheduleAtMs.value = "";
   editWakeMode.value = "next-heartbeat";
   editSessionTarget.value = "main";
+  editDeliveryAnnounce.value = false;
   editPayloadText.value = "";
   editPayloadMessage.value = "";
   editPayloadModel.value = "";
@@ -292,6 +295,7 @@ async function saveOrCreateJob(): Promise<void> {
         sessionTarget: editSessionTarget.value,
         wakeMode: editWakeMode.value,
         payload: buildPayload(),
+        delivery: { mode: editDeliveryAnnounce.value ? "announce" : "none" },
       };
       await send("cron.update", { jobId: selectedJob.value.id, patch });
     } else {
@@ -303,6 +307,7 @@ async function saveOrCreateJob(): Promise<void> {
         sessionTarget: editSessionTarget.value,
         wakeMode: editWakeMode.value,
         payload: buildPayload(),
+        delivery: { mode: editDeliveryAnnounce.value ? "announce" : "none" },
       };
       await send("cron.add", { job });
     }
@@ -374,6 +379,7 @@ export function useCronJobs(): UseCronJobsResult {
     if (editScheduleKind.value !== job.schedule.kind) return true;
     if (editWakeMode.value !== job.wakeMode) return true;
     if (editSessionTarget.value !== job.sessionTarget) return true;
+    if (editDeliveryAnnounce.value !== (job.delivery?.mode === "announce")) return true;
 
     if (job.schedule.kind === "cron" && editScheduleKind.value === "cron") {
       if (editScheduleExpr.value !== job.schedule.expr) return true;
@@ -423,6 +429,7 @@ export function useCronJobs(): UseCronJobsResult {
       editScheduleAtMs,
       editWakeMode,
       editSessionTarget,
+      editDeliveryAnnounce,
       editPayloadText,
       editPayloadMessage,
       editPayloadModel,
