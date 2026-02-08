@@ -5,10 +5,12 @@
  */
 
 import type { ComponentChildren } from "preact";
+import { useState, useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
+import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Toggle } from "@/components/ui/Toggle";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -23,6 +25,7 @@ import {
   newChatSettings,
   appMode,
   isMultiChatMode,
+  canvasNodeEnabled,
   FONT_SIZE_OPTIONS,
   FONT_FAMILY_OPTIONS,
   TIME_FORMAT_OPTIONS,
@@ -33,6 +36,13 @@ import {
 } from "@/signals/settings";
 import { agentOptions } from "@/signals/agents";
 import { APP_VERSION } from "@/lib/constants";
+import { deviceDisplayName, setDeviceDisplayName, getDeviceIdentity } from "@/lib/device-identity";
+import {
+  nodeConnected,
+  refreshNodeRegistration,
+  startNodeConnection,
+  stopNodeConnection,
+} from "@/lib/node-connection";
 
 // ============================================
 // Helper Components (view-local)
@@ -100,6 +110,85 @@ function InfoRow({ label, value, truncate }: InfoRowProps) {
 }
 
 // ============================================
+// Device Settings Component
+// ============================================
+
+function CanvasNodeSettings() {
+  const [defaultName, setDefaultName] = useState("");
+  const [nameInput, setNameInput] = useState("");
+  const [isDirty, setIsDirty] = useState(false);
+
+  // Load device ID and set initial values
+  useEffect(() => {
+    getDeviceIdentity().then((identity) => {
+      const autoName = `Cove Canvas (${identity.deviceId.slice(0, 8)})`;
+      setDefaultName(autoName);
+      setNameInput(deviceDisplayName.value ?? autoName);
+    });
+  }, []);
+
+  const handleToggle = (enabled: boolean) => {
+    canvasNodeEnabled.value = enabled;
+    if (enabled) {
+      startNodeConnection();
+    } else {
+      stopNodeConnection();
+    }
+  };
+
+  const handleChange = (value: string) => {
+    setNameInput(value);
+    setIsDirty(true);
+  };
+
+  const handleBlur = () => {
+    if (!isDirty) return;
+
+    const oldName = deviceDisplayName.value;
+    let newName: string | null;
+
+    if (!nameInput.trim() || nameInput.trim() === defaultName) {
+      newName = null;
+      setNameInput(defaultName);
+    } else {
+      newName = nameInput.trim();
+    }
+
+    setDeviceDisplayName(newName);
+    setIsDirty(false);
+
+    if (newName !== oldName && nodeConnected.value) {
+      refreshNodeRegistration();
+    }
+  };
+
+  return (
+    <>
+      <SettingRow
+        labelKey="settings.device.enabled"
+        descriptionKey="settings.device.enabledDescription"
+      >
+        <Toggle checked={canvasNodeEnabled.value} onChange={handleToggle} />
+      </SettingRow>
+
+      {canvasNodeEnabled.value && (
+        <SettingRow
+          labelKey="settings.device.name"
+          descriptionKey="settings.device.nameDescription"
+        >
+          <Input
+            value={nameInput}
+            onChange={(e) => handleChange((e.target as HTMLInputElement).value)}
+            onBlur={handleBlur}
+            class="w-[200px]"
+          />
+        </SettingRow>
+      )}
+    </>
+  );
+}
+
+// ============================================
 // Main Component
 // ============================================
 
@@ -159,8 +248,8 @@ export function SettingsView(_props: SettingsViewProps) {
             </div>
           </SettingsSection>
 
-          {/* Preferences Section */}
-          <SettingsSection titleKey="settings.preferences.title">
+          {/* Interface Section */}
+          <SettingsSection titleKey="settings.appMode.title">
             <div class="space-y-6">
               <SettingRow
                 labelKey="settings.preferences.timeFormat"
@@ -179,99 +268,88 @@ export function SettingsView(_props: SettingsViewProps) {
                   width="180px"
                 />
               </SettingRow>
+
+              <SettingRow
+                labelKey="settings.appMode.multiChat"
+                descriptionKey="settings.appMode.multiChatDescription"
+              >
+                <Toggle
+                  checked={appMode.value === "multi"}
+                  onChange={(checked) => {
+                    appMode.value = checked ? "multi" : "single";
+                  }}
+                />
+              </SettingRow>
+
+              {/* New Chat options - only in multi-chat mode */}
+              {isMultiChatMode.value && (
+                <>
+                  <SettingRow
+                    labelKey="settings.newChat.useDefaults"
+                    descriptionKey="settings.newChat.useDefaultsDescription"
+                  >
+                    <Toggle
+                      checked={newChatSettings.value.useDefaults}
+                      onChange={(checked) => {
+                        newChatSettings.value = { ...newChatSettings.value, useDefaults: checked };
+                      }}
+                    />
+                  </SettingRow>
+
+                  <SettingRow
+                    labelKey="settings.newChat.defaultAgent"
+                    descriptionKey="settings.newChat.defaultAgentDescription"
+                  >
+                    <Dropdown
+                      value={newChatSettings.value.defaultAgentId}
+                      onChange={(value) => {
+                        newChatSettings.value = { ...newChatSettings.value, defaultAgentId: value };
+                      }}
+                      options={agentOptions.value}
+                      size="sm"
+                      width="180px"
+                    />
+                  </SettingRow>
+                </>
+              )}
+
+              {/* Canvas Node */}
+              <CanvasNodeSettings />
             </div>
           </SettingsSection>
-
-          {/* App Mode Section */}
-          <SettingsSection titleKey="settings.appMode.title">
-            <SettingRow
-              labelKey="settings.appMode.multiChat"
-              descriptionKey="settings.appMode.multiChatDescription"
-            >
-              <Toggle
-                checked={appMode.value === "multi"}
-                onChange={(checked) => {
-                  appMode.value = checked ? "multi" : "single";
-                }}
-              />
-            </SettingRow>
-          </SettingsSection>
-
-          {/* New Chat Section - only in multi-chat mode */}
-          {isMultiChatMode.value && (
-            <SettingsSection titleKey="settings.newChat.title">
-              <div class="space-y-6">
-                <SettingRow
-                  labelKey="settings.newChat.useDefaults"
-                  descriptionKey="settings.newChat.useDefaultsDescription"
-                >
-                  <Toggle
-                    checked={newChatSettings.value.useDefaults}
-                    onChange={(checked) => {
-                      newChatSettings.value = { ...newChatSettings.value, useDefaults: checked };
-                    }}
-                  />
-                </SettingRow>
-
-                <SettingRow
-                  labelKey="settings.newChat.defaultAgent"
-                  descriptionKey="settings.newChat.defaultAgentDescription"
-                >
-                  <Dropdown
-                    value={newChatSettings.value.defaultAgentId}
-                    onChange={(value) => {
-                      newChatSettings.value = { ...newChatSettings.value, defaultAgentId: value };
-                    }}
-                    options={agentOptions.value}
-                    size="sm"
-                    width="180px"
-                  />
-                </SettingRow>
-              </div>
-            </SettingsSection>
-          )}
 
           {/* About Section */}
           <SettingsSection titleKey="settings.about.title">
-            <div class="space-y-3">
-              <InfoRow label={t("settings.about.cove")} value={`v${APP_VERSION}`} />
-              {gatewayVersion.value && (
-                <InfoRow
-                  label={t("settings.about.gateway")}
-                  value={formatVersion(gatewayVersion.value)}
-                />
-              )}
-              {gatewayUrl.value && (
-                <InfoRow label={t("settings.about.gatewayUrl")} value={gatewayUrl.value} truncate />
-              )}
-            </div>
-          </SettingsSection>
-
-          {/* Reset to Defaults */}
-          <SettingsSection titleKey="settings.data.title">
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <p class="text-sm text-[var(--color-text-muted)]">
-                {t("settings.data.resetDefaultsDescription")}
-              </p>
-              <Button variant="secondary" onClick={() => resetToDefaults()} class="flex-shrink-0">
-                {t("settings.data.resetDefaults")}
-              </Button>
-            </div>
-          </SettingsSection>
-
-          {/* Account Section */}
-          {isConnected.value && (
-            <SettingsSection titleKey="settings.account.title">
-              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <p class="text-sm text-[var(--color-text-primary)]">
-                  {t("settings.account.logoutDescription")}
-                </p>
-                <Button variant="secondary" onClick={() => logout()} class="flex-shrink-0">
-                  {t("actions.logout")}
-                </Button>
+            <div class="space-y-4">
+              <div class="space-y-3">
+                <InfoRow label={t("settings.about.cove")} value={`v${APP_VERSION}`} />
+                {gatewayVersion.value && (
+                  <InfoRow
+                    label={t("settings.about.gateway")}
+                    value={formatVersion(gatewayVersion.value)}
+                  />
+                )}
+                {gatewayUrl.value && (
+                  <InfoRow
+                    label={t("settings.about.gatewayUrl")}
+                    value={gatewayUrl.value}
+                    truncate
+                  />
+                )}
               </div>
-            </SettingsSection>
-          )}
+
+              <div class="border-t border-[var(--color-border)] pt-4 flex flex-wrap justify-end gap-2">
+                <Button variant="secondary" onClick={() => resetToDefaults()}>
+                  {t("settings.data.resetDefaults")}
+                </Button>
+                {isConnected.value && (
+                  <Button variant="secondary" onClick={() => logout()}>
+                    {t("actions.logout")}
+                  </Button>
+                )}
+              </div>
+            </div>
+          </SettingsSection>
         </div>
       </div>
     </ViewErrorBoundary>

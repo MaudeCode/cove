@@ -73,6 +73,7 @@ export const MAX_DOCKED_HEIGHT_PERCENT = 0.6;
 export const DOCK_THRESHOLD = 40;
 export const HEADER_HEIGHT = 44;
 export const TOPBAR_HEIGHT = 56; // h-14 from TopBar
+export const LG_BREAKPOINT = 1024; // Mobile breakpoint
 
 // Computed panel style based on dock position
 export const panelStyle = computed(() => {

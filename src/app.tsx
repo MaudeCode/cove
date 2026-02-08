@@ -80,6 +80,7 @@ const hasSavedAuth = signal(!!(savedAuth?.url && savedAuth.rememberMe));
 const authChecked = signal(false);
 const showOnboarding = signal(!hasCompletedOnboarding() && !savedAuth?.url);
 const showTour = signal(false);
+const tourSteps = signal<ReturnType<typeof getTourSteps> | null>(null);
 
 export function App() {
   // Initialize remaining systems on mount
@@ -106,6 +107,8 @@ export function App() {
     if (consumePendingTour()) {
       // Small delay to let the main UI render first
       setTimeout(() => {
+        // Capture steps at tour start (don't re-evaluate during tour)
+        tourSteps.value = getTourSteps(appMode.value);
         showTour.value = true;
       }, 500);
     }
@@ -117,6 +120,7 @@ export function App() {
 
   const handleTourComplete = () => {
     showTour.value = false;
+    tourSteps.value = null;
   };
 
   // Determine which view to show
@@ -168,8 +172,8 @@ export function App() {
       <LazyCanvasPanel />
 
       {/* Spotlight tour overlay */}
-      {showTour.value && (
-        <SpotlightTour steps={getTourSteps(appMode.value)} onComplete={handleTourComplete} />
+      {showTour.value && tourSteps.value && (
+        <SpotlightTour steps={tourSteps.value} onComplete={handleTourComplete} />
       )}
     </TooltipProvider>
   );
@@ -269,8 +273,12 @@ async function tryAutoConnect() {
     // Initialize exec approval listener
     initExecApproval();
 
-    // Start node connection for canvas support
-    import("@/lib/node-connection").then((mod) => mod.startNodeConnection());
+    // Start node connection for canvas support (if enabled)
+    import("@/signals/settings").then(({ canvasNodeEnabled }) => {
+      if (canvasNodeEnabled.value) {
+        import("@/lib/node-connection").then((mod) => mod.startNodeConnection());
+      }
+    });
   } catch {
     // Clear invalid session credential
     setSessionCredential("");

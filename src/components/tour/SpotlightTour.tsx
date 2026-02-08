@@ -24,6 +24,8 @@ export interface TourStep {
   placement?: "top" | "bottom" | "left" | "right";
   /** Action to perform before showing this step */
   beforeShow?: () => void | Promise<void>;
+  /** If provided, auto-advance to next step when this returns true (polled) */
+  autoAdvanceWhen?: () => boolean;
 }
 
 interface SpotlightTourProps {
@@ -69,9 +71,21 @@ export function SpotlightTour({
   const isFirst = currentIndex.value === 0;
   const isLast = currentIndex.value === steps.length - 1;
 
+  // Track the currently highlighted element to restore its z-index
+  const highlightedElement = useRef<HTMLElement | null>(null);
+  const originalZIndex = useRef<string>("");
+  const originalPosition = useRef<string>("");
+
   // Find and highlight target element
   const updateTarget = useCallback(async () => {
     if (!currentStep) return;
+
+    // Restore previous element's z-index
+    if (highlightedElement.current) {
+      highlightedElement.current.style.zIndex = originalZIndex.current;
+      highlightedElement.current.style.position = originalPosition.current;
+      highlightedElement.current = null;
+    }
 
     // Wait for fade out to complete before updating content
     await new Promise((r) => setTimeout(r, FADE_DURATION_MS));
@@ -85,13 +99,30 @@ export function SpotlightTour({
     // Small delay to let DOM update
     await new Promise((r) => setTimeout(r, DOM_UPDATE_WAIT_MS));
 
-    const element = document.querySelector(currentStep.target);
+    // Find the first VISIBLE matching element (handles responsive duplicates)
+    const elements = document.querySelectorAll(currentStep.target);
+    let element: HTMLElement | null = null;
+    for (const el of elements) {
+      if (el instanceof HTMLElement && el.offsetParent !== null) {
+        element = el;
+        break;
+      }
+    }
     if (element) {
       // Scroll element into view
       element.scrollIntoView({ behavior: "smooth", block: "center" });
 
       // Wait for scroll
       await new Promise((r) => setTimeout(r, SCROLL_WAIT_MS));
+
+      // Boost element above overlay so it's clickable
+      originalZIndex.current = element.style.zIndex;
+      originalPosition.current = element.style.position;
+      highlightedElement.current = element;
+      if (!element.style.position || element.style.position === "static") {
+        element.style.position = "relative";
+      }
+      element.style.zIndex = "10000";
 
       const rect = element.getBoundingClientRect();
       targetRect.value = rect;
@@ -205,6 +236,33 @@ export function SpotlightTour({
     return () => window.removeEventListener("resize", handleResize);
   }, [updateTarget]);
 
+  // Cleanup highlighted element z-index on unmount
+  useEffect(() => {
+    return () => {
+      if (highlightedElement.current) {
+        highlightedElement.current.style.zIndex = originalZIndex.current;
+        highlightedElement.current.style.position = originalPosition.current;
+      }
+    };
+  }, []);
+
+  // Poll autoAdvanceWhen condition
+  useEffect(() => {
+    if (!currentStep?.autoAdvanceWhen) return;
+
+    const interval = setInterval(() => {
+      if (currentStep.autoAdvanceWhen?.()) {
+        if (isLast) {
+          onComplete();
+        } else {
+          currentIndex.value++;
+        }
+      }
+    }, 500);
+
+    return () => clearInterval(interval);
+  }, [currentStep, isLast, onComplete]);
+
   // Handle escape key
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -242,9 +300,9 @@ export function SpotlightTour({
   const pos = tooltipPosition.value;
 
   return createPortal(
-    <div class="fixed inset-0 z-[9999]">
-      {/* Overlay with spotlight cutout */}
-      <svg class="absolute inset-0 w-full h-full">
+    <div class="fixed inset-0 z-[9999] pointer-events-none">
+      {/* Overlay with spotlight cutout - pointer-events-none so clicks pass through to spotlighted element */}
+      <svg class="absolute inset-0 w-full h-full pointer-events-none">
         <defs>
           <mask id="spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />

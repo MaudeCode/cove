@@ -19,7 +19,7 @@ import {
   clearDateFilter,
 } from "@/signals/chat";
 import { canvasPanelOpen } from "@/signals/ui";
-import { nodeConnected } from "@/lib/node-connection";
+import { canvasNodeEnabled } from "@/signals/settings";
 import { IconButton } from "@/components/ui/IconButton";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { SearchIcon, XIcon, CanvasIcon } from "@/components/ui/icons";
@@ -82,7 +82,7 @@ export function SearchBar() {
           class="border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
         />
         <HeartbeatIndicator />
-        {nodeConnected.value && (
+        <div data-tour="canvas" class={canvasNodeEnabled.value ? undefined : "hidden"}>
           <IconButton
             icon={<CanvasIcon />}
             label={t("canvas.title")}
@@ -91,7 +91,7 @@ export function SearchBar() {
             size="sm"
             class="border border-[var(--color-border)] bg-[var(--color-bg-surface)]"
           />
-        )}
+        </div>
       </div>
 
       {/* Expanded state - full search bar */}

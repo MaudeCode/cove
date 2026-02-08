@@ -22,7 +22,7 @@ import {
   Maximize2,
   PictureInPicture2,
 } from "lucide-preact";
-import { useEffect } from "preact/hooks";
+import { useEffect, useState, useRef } from "preact/hooks";
 import { IconButton } from "@/components/ui/IconButton";
 import { t } from "@/lib/i18n";
 import { isImageContentType, isImageUrl } from "@/lib/canvas-utils";
@@ -35,8 +35,10 @@ import {
   isInteracting,
   panelStyle,
   HEADER_HEIGHT,
+  LG_BREAKPOINT,
 } from "./canvas-panel-state";
 import { usePanelInteraction } from "./usePanelInteraction";
+import { signal } from "@preact/signals";
 
 // Sync panel visibility with canvas state
 function syncOpenState() {
@@ -126,15 +128,33 @@ function renderCanvasContent(url: string | null, content: string | null) {
   );
 }
 
+// Track mobile state (module-level so it stays in sync even when component unmounted)
+const isMobile = signal(typeof window !== "undefined" && window.innerWidth < LG_BREAKPOINT);
+
+// Keep mobile state in sync with window size
+if (typeof window !== "undefined") {
+  window.addEventListener("resize", () => {
+    isMobile.value = window.innerWidth < LG_BREAKPOINT;
+  });
+}
+
+// Threshold for dismissing bottom sheet (pixels)
+const DISMISS_THRESHOLD = 100;
+
 export function CanvasPanel() {
   const { handleDragStart, handleResizeStart, handleDockedResizeStart } = usePanelInteraction();
+
+  // Mobile bottom sheet drag state
+  const [sheetOffset, setSheetOffset] = useState(0);
+  const [isDraggingSheet, setIsDraggingSheet] = useState(false);
+  const touchStartY = useRef(0);
 
   // Auto-open when canvas becomes visible
   useEffect(() => {
     return canvasVisible.subscribe(syncOpenState);
   }, []);
 
-  // Handle keyboard shortcuts
+  // Handle keyboard shortcuts (desktop only)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && canvasPanelOpen.value) {
@@ -153,6 +173,81 @@ export function CanvasPanel() {
   const content = canvasContent.value;
 
   if (!canvasPanelOpen.value) return null;
+
+  // Mobile bottom sheet touch handlers
+  const handleSheetTouchStart = (e: TouchEvent) => {
+    touchStartY.current = e.touches[0].clientY;
+    setIsDraggingSheet(true);
+  };
+
+  const handleSheetTouchMove = (e: TouchEvent) => {
+    if (!isDraggingSheet) return;
+    const deltaY = e.touches[0].clientY - touchStartY.current;
+    // Only allow dragging down (positive delta)
+    setSheetOffset(Math.max(0, deltaY));
+  };
+
+  const handleSheetTouchEnd = () => {
+    setIsDraggingSheet(false);
+    if (sheetOffset > DISMISS_THRESHOLD) {
+      // Dismiss
+      canvasPanelOpen.value = false;
+    }
+    // Reset offset (with or without dismiss, the animation handles it)
+    setSheetOffset(0);
+  };
+
+  // Mobile: bottom sheet
+  if (isMobile.value) {
+    return (
+      <div
+        class={`fixed inset-x-0 bottom-0 z-50 bg-[var(--color-bg-surface)] rounded-t-2xl border-t border-[var(--color-border)] shadow-soft-xl flex flex-col ${isDraggingSheet ? "" : "transition-transform duration-200"}`}
+        style={{
+          height: "70vh",
+          maxHeight: "70vh",
+          transform: `translateY(${sheetOffset}px)`,
+        }}
+      >
+        {/* Drag handle area */}
+        <div
+          class="flex flex-col items-center pt-2 pb-1 cursor-grab active:cursor-grabbing touch-none"
+          onTouchStart={handleSheetTouchStart}
+          onTouchMove={handleSheetTouchMove}
+          onTouchEnd={handleSheetTouchEnd}
+        >
+          <div class="w-10 h-1 bg-[var(--color-border)] rounded-full" />
+        </div>
+
+        {/* Header */}
+        <div class="flex items-center justify-between px-4 py-2 border-b border-[var(--color-border)]">
+          <span class="text-sm font-medium text-[var(--color-text-primary)]">
+            {t("canvas.title")}
+          </span>
+          <div class="flex items-center gap-1">
+            {url && (
+              <IconButton
+                icon={<ExternalLink />}
+                label={t("canvas.openUrlInNewTab")}
+                size="sm"
+                onClick={() => window.open(url, "_blank")}
+              />
+            )}
+            <IconButton
+              icon={<X />}
+              label={t("canvas.close")}
+              size="sm"
+              onClick={() => (canvasPanelOpen.value = false)}
+            />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div class="flex-1 overflow-hidden">{renderCanvasContent(url, content)}</div>
+      </div>
+    );
+  }
+
+  // Desktop: floating/dockable panel
 
   return (
     <div

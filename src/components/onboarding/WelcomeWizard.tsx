@@ -5,6 +5,7 @@
  * Guides through gateway connection setup.
  */
 
+import { useLayoutEffect, useRef } from "preact/hooks";
 import { useSignal, useComputed, useSignalEffect } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
@@ -38,8 +39,10 @@ import {
   AlertCircle,
   MessageSquare,
   LayoutGrid,
+  MonitorPlay,
 } from "lucide-preact";
-import { appMode, type AppMode } from "@/signals/settings";
+import { appMode, canvasNodeEnabled, type AppMode } from "@/signals/settings";
+import { startNodeConnection, stopNodeConnection } from "@/lib/node-connection";
 import { WizardNav } from "./WizardNav";
 import { WizardProgress } from "./WizardProgress";
 
@@ -75,6 +78,15 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
       return false;
     }
   });
+
+  // Default canvas to enabled for wizard users (manual connect keeps default off)
+  const canvasInitialized = useRef(false);
+  useLayoutEffect(() => {
+    if (!canvasInitialized.current) {
+      canvasInitialized.current = true;
+      canvasNodeEnabled.value = true;
+    }
+  }, []);
 
   // Auto-probe gateway when URL is valid (debounced)
   useSignalEffect(() => {
@@ -642,6 +654,44 @@ function ConnectStep({
                 </div>
               </button>
             </div>
+          </div>
+
+          {/* Canvas Node Option */}
+          <div class="mb-4 sm:mb-6">
+            <button
+              type="button"
+              onClick={() => {
+                const newValue = !canvasNodeEnabled.value;
+                canvasNodeEnabled.value = newValue;
+                if (newValue) {
+                  startNodeConnection();
+                } else {
+                  stopNodeConnection();
+                }
+              }}
+              class={`w-full p-3 sm:p-4 rounded-lg border-2 text-left transition-colors flex items-start gap-3 ${
+                canvasNodeEnabled.value
+                  ? "border-[var(--color-accent)] bg-[var(--color-accent)]/10"
+                  : "border-[var(--color-border)] hover:border-[var(--color-accent)]/50"
+              }`}
+            >
+              <MonitorPlay class="w-5 h-5 flex-shrink-0 text-[var(--color-accent)]" />
+              <div class="flex-1">
+                <div class="text-xs sm:text-sm font-medium">{t("onboarding.canvasTitle")}</div>
+                <div class="text-xs text-[var(--color-text-muted)] mt-0.5 sm:mt-1">
+                  {t("onboarding.canvasDesc")}
+                </div>
+              </div>
+              <div
+                class={`w-4 h-4 rounded-full border-2 flex-shrink-0 flex items-center justify-center ${
+                  canvasNodeEnabled.value
+                    ? "border-[var(--color-accent)] bg-[var(--color-accent)]"
+                    : "border-[var(--color-border)]"
+                }`}
+              >
+                {canvasNodeEnabled.value && <Check class="w-3 h-3 text-white" />}
+              </div>
+            </button>
           </div>
 
           <div class="mb-4 sm:mb-6">

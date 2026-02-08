@@ -21,6 +21,8 @@ import {
   setNewChatSettings,
   getAppMode,
   setAppMode,
+  getCanvasNodeEnabled,
+  setCanvasNodeEnabled,
 } from "@/lib/storage";
 
 // Re-export types for consumers
@@ -45,6 +47,9 @@ export const newChatSettings = signal<NewChatSettings>(getNewChatSettings());
 /** App interface mode (single-chat vs multi-chat) */
 export const appMode = signal<AppMode>(getAppMode());
 
+/** Whether to register as a canvas node (allows agent to push content) */
+export const canvasNodeEnabled = signal<boolean>(getCanvasNodeEnabled());
+
 // ============================================
 // Computed
 // ============================================
@@ -64,6 +69,31 @@ effect(() => setFontSize(fontSize.value));
 effect(() => setFontFamily(fontFamily.value));
 effect(() => setNewChatSettings(newChatSettings.value));
 effect(() => setAppMode(appMode.value));
+effect(() => setCanvasNodeEnabled(canvasNodeEnabled.value));
+
+// ============================================
+// Cross-Tab Sync
+// ============================================
+
+// Listen for storage changes from other tabs
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key === "cove:canvas-node-enabled") {
+      const newValue = e.newValue === "true";
+      if (canvasNodeEnabled.value !== newValue) {
+        canvasNodeEnabled.value = newValue;
+        // Start/stop node connection based on new value
+        import("@/lib/node-connection").then((mod) => {
+          if (newValue) {
+            mod.startNodeConnection();
+          } else {
+            mod.stopNodeConnection();
+          }
+        });
+      }
+    }
+  });
+}
 
 // ============================================
 // DOM Application Effects

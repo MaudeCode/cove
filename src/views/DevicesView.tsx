@@ -442,7 +442,7 @@ export function DevicesView(_props: RouteProps) {
 
               {/* Pending pairing requests */}
               {pending.length > 0 && (
-                <div class="space-y-3">
+                <div class="space-y-3" data-tour="pending-requests">
                   <h2 class="text-lg font-semibold">{t("devices.pendingRequests")}</h2>
                   {pending.map((req) => (
                     <PendingRequestCard key={req.requestId} request={req} />

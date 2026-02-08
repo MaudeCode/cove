@@ -7,13 +7,14 @@
 import { route, getCurrentUrl } from "preact-router";
 import { t } from "@/lib/i18n";
 import { connectionState, isConnected, gatewayVersion } from "@/lib/gateway";
-import { sidebarOpen, previousRoute } from "@/signals/ui";
+import { sidebarOpen, previousRoute, canvasPanelOpen } from "@/signals/ui";
 import { isSearchOpen } from "@/signals/chat";
 import { HeartbeatIndicator } from "@/components/chat/HeartbeatIndicator";
 import { IconButton } from "@/components/ui/IconButton";
 import { CoveLogo } from "@/components/ui/CoveLogo";
-import { XIcon, MenuIcon, SettingsIcon, SearchIcon } from "@/components/ui/icons";
+import { XIcon, MenuIcon, SettingsIcon, SearchIcon, CanvasIcon } from "@/components/ui/icons";
 import { UsageBadge } from "@/components/usage/UsageBadge";
+import { canvasNodeEnabled } from "@/signals/settings";
 
 export function TopBar() {
   return (
@@ -62,9 +63,20 @@ export function TopBar() {
             );
           })()}
 
-          {/* Search + Heartbeat - mobile only */}
-          <div class="sm:hidden flex items-center gap-2">
+          {/* Search + Heartbeat + Canvas - mobile only */}
+          <div class="sm:hidden flex items-center gap-1">
             <HeartbeatIndicator />
+            {canvasNodeEnabled.value && (
+              <div data-tour="canvas">
+                <IconButton
+                  icon={<CanvasIcon />}
+                  label={t("canvas.title")}
+                  onClick={() => (canvasPanelOpen.value = !canvasPanelOpen.value)}
+                  variant="ghost"
+                  size="md"
+                />
+              </div>
+            )}
             <IconButton
               icon={<SearchIcon />}
               label={t("chat.search")}

@@ -372,6 +372,18 @@ export function setAppMode(mode: AppMode): void {
 }
 
 // ============================================
+// Canvas Node
+// ============================================
+
+export function getCanvasNodeEnabled(): boolean {
+  return getRaw<boolean>("canvas-node-enabled") ?? false;
+}
+
+export function setCanvasNodeEnabled(enabled: boolean): void {
+  setRaw("canvas-node-enabled", enabled);
+}
+
+// ============================================
 // Heartbeat
 // ============================================
 

@@ -9,6 +9,12 @@ import { signal } from "@preact/signals";
 import { gatewayUrl } from "./gateway";
 import { getAuth, getSessionCredential } from "./storage";
 import { log } from "./logger";
+import {
+  buildDeviceConnectParams,
+  getDeviceIdentity,
+  getDeviceDisplayName,
+} from "./device-identity";
+import { createBlobUrlFromBase64 } from "./canvas-utils";
 
 // Connection state
 export const nodeConnected = signal(false);
@@ -77,31 +83,6 @@ canvasChannel?.addEventListener("message", (e) => {
 });
 
 /**
- * Create a blob URL from base64 data
- */
-function createBlobUrlFromBase64(base64: string, mimeType: string): string {
-  // Handle data URL format or raw base64
-  let rawBase64 = base64;
-  let detectedMime = mimeType;
-
-  if (base64.startsWith("data:")) {
-    const match = base64.match(/^data:([^;]+);base64,(.+)$/);
-    if (match) {
-      detectedMime = match[1];
-      rawBase64 = match[2];
-    }
-  }
-
-  const binary = atob(rawBase64);
-  const bytes = new Uint8Array(binary.length);
-  for (let i = 0; i < binary.length; i++) {
-    bytes[i] = binary.charCodeAt(i);
-  }
-  const blob = new Blob([bytes], { type: detectedMime });
-  return URL.createObjectURL(blob);
-}
-
-/**
  * Revoke the previous blob URL to prevent memory leaks
  */
 function revokePreviousBlobUrl() {
@@ -151,18 +132,6 @@ function handleCanvasContent(cmdParams: Record<string, unknown>): {
 
   return null;
 }
-
-// Generate a stable node ID for this browser
-function getOrCreateNodeId(): string {
-  const storageKey = "cove:nodeId";
-  let id = localStorage.getItem(storageKey);
-  if (!id) {
-    id = `cove-${crypto.randomUUID().slice(0, 8)}`;
-    localStorage.setItem(storageKey, id);
-  }
-  return id;
-}
-
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let pingInterval: ReturnType<typeof setInterval> | null = null;
@@ -243,8 +212,10 @@ function handleEvent(event: string, payload: unknown) {
 
   // Handle connect.challenge - this triggers us to send the connect request
   if (event === "connect.challenge") {
-    log.node.debug("Received connect.challenge, sending connect request");
-    sendConnectRequest();
+    const p = payload as { nonce?: string; ts?: number };
+    const nonce = typeof p.nonce === "string" ? p.nonce : undefined;
+    log.node.debug("Received connect.challenge with nonce:", nonce?.slice(0, 8) + "...");
+    sendConnectRequest(nonce);
     return;
   }
 
@@ -252,7 +223,9 @@ function handleEvent(event: string, payload: unknown) {
     const p = payload as { status?: string };
     if (p.status === "approved") {
       nodePairingStatus.value = "paired";
-      log.node.debug("Pairing approved!");
+      log.node.debug("Pairing approved! Reconnecting...");
+      // Reconnect now that we're paired
+      refreshNodeRegistration();
     } else {
       nodePairingStatus.value = "unpaired";
       log.node.debug("Pairing rejected");
@@ -260,23 +233,35 @@ function handleEvent(event: string, payload: unknown) {
   }
 }
 
-async function sendConnectRequest() {
-  const id = getOrCreateNodeId();
-  nodeId.value = id;
-
+async function sendConnectRequest(nonce?: string) {
   try {
-    // Connect as a node - use node-host client ID per gateway protocol
+    // Get or create persistent device identity (Ed25519 keys stored in localStorage)
+    const identity = await getDeviceIdentity();
+    const displayName = await getDeviceDisplayName();
+    nodeId.value = identity.deviceId;
+
+    // Build signed device params for proper node registration
+    const device = await buildDeviceConnectParams({
+      clientId: "node-host",
+      clientMode: "node",
+      role: "node",
+      scopes: [],
+      token: currentCredential ?? null,
+      nonce, // Include challenge nonce in signature
+    });
+
     const params: Record<string, unknown> = {
       minProtocol: 3,
       maxProtocol: 3,
       role: "node",
       client: {
-        id: "node-host", // Must be a predefined client ID
-        displayName: `Cove Canvas (${id})`,
+        id: "node-host",
+        displayName,
         mode: "node",
         version: "1.0.0",
-        platform: "macos", // Use macos for better command allowlist defaults
+        platform: navigator.platform?.toLowerCase().includes("mac") ? "macos" : "web",
       },
+      device, // Signed device identity - device.id becomes the nodeId
       caps: ["canvas"],
       // Must declare commands we support
       commands: [
@@ -297,15 +282,15 @@ async function sendConnectRequest() {
       }
     }
 
-    log.node.debug("Sending connect request");
+    log.node.debug("Sending connect request with device:", device.id.slice(0, 16) + "...");
 
     const connectResult = await send("connect", params);
 
     log.node.debug("Connect result:", connectResult);
 
     nodeConnected.value = true;
-    nodePairingStatus.value = "paired"; // Connected with shared auth = effectively paired
-    log.node.info("Node connected successfully");
+    nodePairingStatus.value = "paired";
+    log.node.info("Node connected as device:", identity.deviceId.slice(0, 16) + "...");
 
     // Start keepalive pings (only if not already running)
     startKeepalive();
@@ -409,13 +394,13 @@ async function handleInvokeRequest(payload: unknown) {
       method: "node.invoke.result",
       params: {
         id: p.id, // The invoke request ID
-        nodeId: "node-host", // Must match our node ID
+        nodeId: nodeId.value, // Our device ID
         ok: !error,
         payload: error ? undefined : result,
         error: error ?? undefined,
       },
     };
-    log.node.debug("Sending invoke result");
+    log.node.debug("Sending invoke result for node:", nodeId.value?.slice(0, 8));
     ws.send(JSON.stringify(resultMsg));
   }
 }

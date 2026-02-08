@@ -48,11 +48,39 @@
     "modeSingle": "Single chat",
     "modeSingleDesc": "One focused conversation",
     "modeMulti": "Multi-chat (Beta)",
-    "modeMultiDesc": "Multiple conversations"
+    "modeMultiDesc": "Multiple conversations",
+    "canvasTitle": "Enable Canvas",
+    "canvasDesc": "Let the agent push images and content to your browser"
   },
 
   "tour": {
     "skipTour": "Skip tour",
+    "steps": {
+      "sessions": {
+        "title": "Your Conversations",
+        "content": "All your chat sessions live here. Create new ones, rename them, or filter by type. Each session maintains its own context."
+      },
+      "chatInput": {
+        "title": "Chat Input",
+        "content": "Type your message here. Press Enter to send, Shift+Enter for a new line. You can also drag & drop files or paste images."
+      },
+      "modelPicker": {
+        "title": "Model Selection",
+        "content": "Switch between different AI models per session. Each model has different capabilities and response styles."
+      },
+      "settings": {
+        "title": "Settings",
+        "content": "Customize your experience with 12+ themes, font sizes, time formats, and more. Preferences are saved automatically."
+      },
+      "canvasPairing": {
+        "title": "Approve Your Device",
+        "content": "Your browser needs to be approved as a canvas device. Click the approve button to allow your agent to push content here."
+      },
+      "canvasButton": {
+        "title": "Canvas",
+        "content": "Your agent can push images, diagrams, and content directly here. Click to open the canvas panel."
+      }
+    },
     "startChatting": "Start Chatting",
     "themesTitle": "Personalize Your Experience",
     "themesDesc": "Choose from multiple themes to match your style.",
@@ -84,6 +112,8 @@
     "cancel": "Cancel",
     "close": "Close",
     "save": "Save",
+    "saved": "Saved",
+    "clear": "Clear",
     "create": "Create",
     "new": "New",
     "delete": "Delete",
@@ -500,6 +530,17 @@
       "cove": "Cove",
       "gateway": "Gateway",
       "gatewayUrl": "Gateway URL"
+    },
+    "device": {
+      "title": "Canvas Node",
+      "enabled": "Enable Canvas",
+      "enabledDescription": "Register as a node so the agent can push content to this browser",
+      "id": "Device ID",
+      "name": "Display Name",
+      "nameDescription": "Custom name shown in node list",
+      "status": "Status",
+      "connected": "Connected",
+      "disconnected": "Not connected"
     },
     "links": {
       "title": "Links",
