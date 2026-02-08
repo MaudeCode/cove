@@ -30,6 +30,7 @@
 - **File upload** — Drag & drop or paste images directly into chat
 - **Message search** — Find anything with text search and date filters
 - **Session management** — Create, rename, delete, and organize conversations
+- **Command palette** — Press ⌘K to access any action instantly
 
 ### 🎛️ Operations Dashboard
 - **Cron Jobs** — Create and manage scheduled tasks with visual editors
@@ -40,6 +41,8 @@
 - **Devices** — Manage paired devices, approve pairing requests
 - **Logs** — Real-time log viewer with level filtering and search
 - **Debug** — RPC tester, event stream, connection diagnostics
+- **Workspace** — Browse and edit agent configuration files with token counts
+- **Usage** — Per-session analytics with timeline and cost breakdown
 
 ### 🎨 Customization
 - **12 themes** — Light, Dark, Nord, Dracula, Catppuccin, Tokyo Night, and more
