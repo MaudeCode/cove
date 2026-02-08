@@ -46,12 +46,18 @@ serve({
     }
 
     // Canvas proxy - forward to gateway
-    if (pathname.startsWith("/canvas-proxy/") || pathname === "/canvas-proxy") {
-      const targetPath = pathname.replace("/canvas-proxy", "") || "/";
+    // Strips forwarding headers that cause gateway to reject requests
+    if (pathname.startsWith("/_canvas/") || pathname === "/_canvas") {
+      const targetPath = pathname.replace("/_canvas", "") || "/";
       const targetUrl = `http://${GATEWAY_HOST}:${GATEWAY_PORT}/__openclaw__/canvas${targetPath}`;
 
       try {
-        const response = await fetch(targetUrl);
+        // Create clean headers without forwarding headers that gateway rejects
+        const headers = new Headers();
+        headers.set("Host", `${GATEWAY_HOST}:${GATEWAY_PORT}`);
+        headers.set("Accept", req.headers.get("Accept") || "*/*");
+
+        const response = await fetch(targetUrl, { headers });
         return new Response(response.body, {
           status: response.status,
           headers: {
@@ -119,4 +125,4 @@ console.log(`   Mode: ${DEV ? "development" : "production"}`);
 if (DEV) {
   console.log(`   Vite: http://127.0.0.1:${VITE_PORT}`);
 }
-console.log(`   Canvas proxy: /canvas-proxy/* → http://${GATEWAY_HOST}:${GATEWAY_PORT}/__openclaw__/canvas/*`);
+console.log(`   Canvas proxy: /_canvas/* → http://${GATEWAY_HOST}:${GATEWAY_PORT}/__openclaw__/canvas/*`);

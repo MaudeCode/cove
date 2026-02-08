@@ -109,12 +109,12 @@ export default defineConfig(({ mode }) => {
       allowedHosts: env.VITE_ALLOWED_HOSTS?.split(',').map(h => h.trim()).filter(Boolean) || [],
       proxy: {
         '/_canvas': {
-          target: 'http://127.0.0.1:18789',
-          changeOrigin: true,  // Sets Host to target (127.0.0.1:18789)
+          target: `http://${env.VITE_GATEWAY_HOST || '127.0.0.1'}:${env.VITE_GATEWAY_PORT || '18789'}`,
+          changeOrigin: true,  // Sets Host header to target
           rewrite: (path) => path.replace(/^\/_canvas/, '/__openclaw__/canvas'),
           configure: (proxy) => {
             proxy.on('proxyReq', (proxyReq) => {
-              // Strip headers that cause gateway to reject
+              // Strip headers that cause gateway to reject requests
               proxyReq.removeHeader('x-forwarded-for');
               proxyReq.removeHeader('x-forwarded-host');
               proxyReq.removeHeader('x-real-ip');
