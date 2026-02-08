@@ -113,7 +113,7 @@ nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson=
 
 ## Local Images Without Base64
 
-Cove includes a server proxy that routes `/canvas-proxy/*` to the gateway's canvas host.
+Cove includes a server proxy that routes `/_canvas/*` to the gateway's canvas host.
 This bypasses mixed content and CSP issues.
 
 **How it works:**
@@ -136,8 +136,18 @@ openclaw nodes invoke --node <nodeId> --command canvas.present \
 nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson='{"url":"http://127.0.0.1:18789/__openclaw__/canvas/image.png"}'
 ```
 
-Cove transforms `http://127.0.0.1:*/__openclaw__/canvas/*` URLs to `/canvas-proxy/*`,
+Cove transforms `http://127.0.0.1:*/__openclaw__/canvas/*` URLs to `/_canvas/*`,
 which the server proxies to the local gateway.
+
+**Docker/Production Configuration:**
+
+Set these environment variables to point to your gateway:
+- `GATEWAY_HOST` — Gateway hostname (default: `127.0.0.1`)
+- `GATEWAY_PORT` — Gateway port (default: `18789`)
+
+For development with Vite:
+- `VITE_GATEWAY_HOST` — Gateway hostname (default: `127.0.0.1`)
+- `VITE_GATEWAY_PORT` — Gateway port (default: `18789`)
 
 ## Limitations
 
