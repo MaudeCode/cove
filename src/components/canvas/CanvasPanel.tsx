@@ -53,11 +53,15 @@ function syncOpenState() {
 
 /**
  * Render the canvas content based on type
+ * NOTE: All signal values must be passed as params (not accessed inside)
+ * to ensure Preact creates proper subscriptions in the component render.
  */
-function renderCanvasContent(url: string | null, content: string | null) {
-  const blobUrl = canvasBlobUrl.value;
-  const contentType = canvasContentType.value;
-
+function renderCanvasContent(
+  url: string | null,
+  blobUrl: string | null,
+  contentType: string | null,
+  content: string | null,
+) {
   // If we have a blob URL, use it
   if (blobUrl) {
     if (isImageContentType(contentType) || isImageUrl(url)) {
@@ -169,7 +173,10 @@ export function CanvasPanel() {
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, []);
 
+  // Read all canvas signals in component body to create subscriptions
   const url = canvasUrl.value;
+  const blobUrl = canvasBlobUrl.value;
+  const contentType = canvasContentType.value;
   const content = canvasContent.value;
 
   if (!canvasPanelOpen.value) return null;
@@ -242,7 +249,9 @@ export function CanvasPanel() {
         </div>
 
         {/* Content */}
-        <div class="flex-1 overflow-hidden">{renderCanvasContent(url, content)}</div>
+        <div class="flex-1 overflow-hidden">
+          {renderCanvasContent(url, blobUrl, contentType, content)}
+        </div>
       </div>
     );
   }
@@ -329,7 +338,7 @@ export function CanvasPanel() {
       {/* Content */}
       {!isMinimized.value && (
         <div class="flex-1 overflow-hidden relative">
-          {renderCanvasContent(url, content)}
+          {renderCanvasContent(url, blobUrl, contentType, content)}
           {isInteracting.value && <div class="absolute inset-0 z-10" />}
         </div>
       )}
