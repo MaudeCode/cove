@@ -121,6 +121,10 @@ export function MessageList({
     // Also always scroll when new messages are queued (so user can see queue + typing indicator)
     // Otherwise respect auto-scroll preference
     if (isNewUserMessage || queuedCount > 0 || isAutoScrolling.current) {
+      // Reset auto-scroll when user sends a message (they want to see it + response)
+      if (isNewUserMessage) {
+        isAutoScrolling.current = true;
+      }
       scrollToBottom(false);
     }
 
@@ -139,6 +143,26 @@ export function MessageList({
    */
   useEffect(() => {
     scrollToBottom(false);
+  }, [scrollToBottom]);
+
+  /**
+   * Re-scroll when images load (they change content height after initial render)
+   */
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const handleImageLoad = () => {
+      // Re-scroll if we should be at bottom
+      if (isAutoScrolling.current) {
+        scrollToBottom(false);
+      }
+    };
+
+    // Listen for load events on images (they bubble)
+    const container = containerRef.current;
+    container.addEventListener("load", handleImageLoad, true);
+
+    return () => container.removeEventListener("load", handleImageLoad, true);
   }, [scrollToBottom]);
 
   /**
