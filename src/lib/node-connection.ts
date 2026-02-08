@@ -118,7 +118,7 @@ function transformCanvasUrl(url: string): string {
 
   // Extract the file path after /__openclaw__/canvas
   const filePath = match[4] || "/";
-  const transformed = `/media${filePath}`;
+  const transformed = `/_canvas${filePath}`;
   log.node.debug("Transformed canvas URL to proxy:", url, "->", transformed);
   return transformed;
 }
