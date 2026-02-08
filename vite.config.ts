@@ -107,6 +107,21 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       allowedHosts: env.VITE_ALLOWED_HOSTS?.split(',').map(h => h.trim()).filter(Boolean) || [],
+      proxy: {
+        '/media': {
+          target: 'http://127.0.0.1:18789',
+          changeOrigin: true,  // This sets Host to the target (127.0.0.1:18789)
+          rewrite: (path) => path.replace(/^\/media/, '/__openclaw__/canvas'),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              // Strip headers that cause gateway to reject
+              proxyReq.removeHeader('x-forwarded-for');
+              proxyReq.removeHeader('x-forwarded-host');
+              proxyReq.removeHeader('x-real-ip');
+            });
+          },
+        },
+      },
     },
   }
 })

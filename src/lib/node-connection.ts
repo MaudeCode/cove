@@ -94,6 +94,10 @@ function revokePreviousBlobUrl() {
 }
 
 /**
+ * Fetch an image URL with credentials and return a blob URL.
+ * This ensures cookies (like CF Access tokens) are sent with the request.
+ */
+/**
  * Transform localhost canvas URLs to use Cove's server proxy.
  * This bypasses mixed content and CSP issues by routing through same-origin.
  *
@@ -114,7 +118,7 @@ function transformCanvasUrl(url: string): string {
 
   // Extract the file path after /__openclaw__/canvas
   const filePath = match[4] || "/";
-  const transformed = `/canvas-proxy${filePath}`;
+  const transformed = `/media${filePath}`;
   log.node.debug("Transformed canvas URL to proxy:", url, "->", transformed);
   return transformed;
 }
