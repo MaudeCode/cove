@@ -1021,8 +1021,8 @@ Interactive approval for shell commands when `exec.ask` is enabled.
 
 ## Phase 4: Nice to Have
 
-### 4.0 Workspace Page ✅
-- [x] List all agent configuration files (AGENTS.md, SOUL.md, etc.)
+### 4.1 Workspace / Memory Browser ✅
+- [x] List all agent configuration files (AGENTS.md, SOUL.md, MEMORY.md, etc.)
 - [x] File metadata (size, tokens, last modified)
 - [x] Total token count showing context budget per conversation
 - [x] Agent switcher dropdown (for multi-agent setups)
@@ -1030,12 +1030,8 @@ Interactive approval for shell commands when `exec.ask` is enabled.
 - [x] Cmd+S keyboard shortcut to save
 - [x] Mobile-friendly layout
 
-### 4.1 Memory Browser
-> **Partially blocked**: Gateway only exposes MEMORY.md, not memory/*.md subdirectory
-
-- [ ] Tree view of MEMORY.md + memory/*.md (needs gateway enhancement)
-- [x] View file contents (MEMORY.md only)
-- [x] Edit in-place (MEMORY.md only)
+**Not implemented (needs gateway enhancement):**
+- [ ] Tree view of memory/*.md subdirectory
 - [ ] Search across memory files
 - [ ] Git history view (if repo)
 
