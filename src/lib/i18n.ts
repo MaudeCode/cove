@@ -235,3 +235,31 @@ export function formatTimestampCompact(date: Date | number): string {
   }
   return formatRelativeTimeCompact(date);
 }
+
+/**
+ * Format bytes to human readable string
+ *
+ * @example
+ * formatBytes(1024)      // "1.0 KB"
+ * formatBytes(1048576)   // "1.0 MB"
+ * formatBytes(500)       // "500 B"
+ */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+/**
+ * Format a token count for display.
+ *
+ * @example
+ * formatTokens(500)       // "500"
+ * formatTokens(1500)      // "1.5K"
+ * formatTokens(15000)     // "15K"
+ */
+export function formatTokens(tokens: number): string {
+  if (tokens < 1000) return `${tokens}`;
+  if (tokens < 10000) return `${(tokens / 1000).toFixed(1)}K`;
+  return `${Math.round(tokens / 1000)}K`;
+}

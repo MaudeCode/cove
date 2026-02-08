@@ -1099,15 +1099,18 @@ Interactive approval for shell commands when `exec.ask` is enabled.
 - [ ] Notifications (desktop/browser)
 - [ ] Sound toggle for notifications
 
-### 4.14 Command Palette
-- [ ] Cmd/Ctrl+K to open command palette
-- [ ] Fuzzy search across commands
-- [ ] Navigation commands (go to view, switch session)
-- [ ] Action commands (new chat, logout, toggle theme)
-- [ ] Search sessions/messages
-- [ ] Quick settings toggles
-- [ ] Keyboard navigation (arrow keys, enter to select)
-- [ ] Recent commands history
+### 4.14 Command Palette ✅
+- [x] Cmd/Ctrl+K to open command palette
+- [x] Fuzzy search across commands, keywords, categories
+- [x] Action commands (abort, clear chat, export, copy, switch session, change model, run cron, etc.)
+- [x] Submenu support with filtering (themes, models, cron jobs, sessions)
+- [x] Quick settings toggles (theme picker with 20+ options)
+- [x] Keyboard navigation (arrow keys, enter to select, escape to close/back)
+- [x] Recent commands history (localStorage)
+- [x] Full i18n (60+ strings)
+- [x] Full a11y (ARIA roles, aria-selected, aria-activedescendant)
+- [x] Context-aware (hides session commands in single-chat mode)
+- **Not included (by design):** Navigation commands (actionable commands only)
 
 ### 4.11 Device Pairing for Cove
 - [ ] Generate keypair in browser (persist in localStorage)

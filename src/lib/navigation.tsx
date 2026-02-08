@@ -22,6 +22,7 @@ import {
   Github,
   MessageCircle,
   BarChart3,
+  FolderOpen,
 } from "lucide-preact";
 import { EXTERNAL_URLS } from "@/lib/constants";
 
@@ -62,6 +63,7 @@ const InstancesIcon = () => <Wifi class={iconClass} aria-hidden="true" />;
 const SessionsIcon = () => <Layers class={iconClass} aria-hidden="true" />;
 const CronIcon = () => <Clock class={iconClass} aria-hidden="true" />;
 const SkillsIcon = () => <Zap class={iconClass} aria-hidden="true" />;
+const WorkspaceIcon = () => <FolderOpen class={iconClass} aria-hidden="true" />;
 const DevicesIcon = () => <Smartphone class={iconClass} aria-hidden="true" />;
 const ConfigIcon = () => <Settings class={iconClass} aria-hidden="true" />;
 const DebugIcon = () => <SlidersHorizontal class={iconClass} aria-hidden="true" />;
@@ -124,6 +126,12 @@ export const navigation: NavSection[] = [
         id: "skills",
         labelKey: "nav.skills",
         icon: SkillsIcon,
+        requiresConnection: true,
+      },
+      {
+        id: "workspace",
+        labelKey: "nav.workspace",
+        icon: WorkspaceIcon,
         requiresConnection: true,
       },
       {

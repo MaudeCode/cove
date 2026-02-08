@@ -42,6 +42,8 @@ import { DebugView } from "@/views/DebugView";
 import { LogsView } from "@/views/LogsView";
 import { DevicesView } from "@/views/DevicesView";
 import { SkillsView } from "@/views/SkillsView";
+import { WorkspaceView } from "@/views/WorkspaceView";
+import { WorkspaceEditorView } from "@/views/WorkspaceEditorView";
 import { UsageView } from "@/views/UsageView";
 import { ChannelsView } from "@/views/ChannelsView";
 import { InstancesView } from "@/views/InstancesView";
@@ -174,6 +176,8 @@ function MainRouter() {
 
       {/* Agent */}
       <SkillsView path="/skills" />
+      <WorkspaceView path="/workspace" />
+      <WorkspaceEditorView path="/workspace/:filename" />
       <DevicesView path="/devices" />
 
       {/* Settings */}

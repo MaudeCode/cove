@@ -22,6 +22,7 @@ export interface Agent {
   id: string;
   name?: string;
   identity?: AgentIdentity;
+  workspace?: string;
 }
 
 /**

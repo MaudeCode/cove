@@ -286,6 +286,7 @@
     "settings": "Cove Settings",
     "memory": "Memory",
     "skills": "Skills",
+    "workspace": "Workspace",
     "nodes": "Nodes",
     "devices": "Devices",
     "sections": {
@@ -890,6 +891,43 @@
       "noResults": "No Skills Found",
       "tryDifferentSearch": "Try a different search term.",
       "notYetSupported": "ClawHub installation coming soon! Install manually: openclaw skills install {slug}"
+    }
+  },
+
+  "workspace": {
+    "title": "Workspace",
+    "description": "View and edit agent configuration files.",
+    "agent": "Agent",
+    "selectAgent": "Select agent",
+    "totalTokens": "~{count} tokens injected per run",
+    "loadError": "Failed to load workspace files",
+    "loadFileError": "Failed to load file",
+    "saveError": "Failed to save file",
+    "saved": "File saved",
+    "missing": "Missing",
+    "create": "Create",
+    "edit": "Edit",
+    "view": "View",
+    "unsaved": "Unsaved",
+    "unsavedWarning": "You have unsaved changes. Are you sure you want to leave?",
+    "backToList": "Back to Workspace",
+    "emptyFile": "This file is empty.",
+    "editPlaceholder": "Enter file content...",
+    "memoryHint": {
+      "title": "About Memory Files",
+      "line1": "Files in the memory/ folder are not editable here.",
+      "line2": "Use the chat to update memory/*.md files."
+    },
+    "files": {
+      "agents": "Agent behavior and workspace rules",
+      "soul": "Persona and communication style",
+      "tools": "Tool usage notes and conventions",
+      "identity": "Agent identity (name, email, accounts)",
+      "user": "User profile and preferences",
+      "heartbeat": "Heartbeat checklist and reminders",
+      "bootstrap": "First-run ritual (deleted after completion)",
+      "memory": "Durable facts, preferences, and context",
+      "unknown": "Configuration file"
     }
   },
 
