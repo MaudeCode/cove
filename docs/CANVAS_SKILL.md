@@ -153,30 +153,31 @@ nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson=
 ## Local Images Without Base64
 
 Cove includes a server proxy that routes `/_canvas/*` to the gateway's canvas host.
-This bypasses mixed content and CSP issues.
+This bypasses mixed content, CORS, and CSP issues.
 
 **How it works:**
 1. Copy image to `~/.openclaw/canvas/`
-2. Push the localhost URL — Cove transforms it automatically
-3. Cove's server proxies to the gateway
+2. Push URL using the `/_canvas/` path
+3. Cove's server proxies to the local gateway
 
 **Example:**
 ```bash
 # Copy image to gateway canvas directory
 cp /path/to/image.png ~/.openclaw/canvas/
 
-# Push to canvas (Cove transforms the URL automatically)
+# Push to canvas using the proxy path
 openclaw nodes invoke --node <nodeId> --command canvas.present \
-  --params '{"url":"http://127.0.0.1:18789/__openclaw__/canvas/image.png"}'
+  --params '{"url":"/_canvas/image.png"}'
 ```
 
 **Using the nodes tool:**
 ```
-nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson='{"url":"http://127.0.0.1:18789/__openclaw__/canvas/image.png"}'
+nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson='{"url":"/_canvas/image.png"}'
 ```
 
-Cove transforms `http://127.0.0.1:*/__openclaw__/canvas/*` URLs to `/_canvas/*`,
-which the server proxies to the local gateway.
+The `/_canvas/*` path is proxied to the gateway's `/__openclaw__/canvas/*` endpoint.
+Cove also auto-transforms localhost gateway URLs (e.g., `http://127.0.0.1:18789/__openclaw__/canvas/...`)
+to the proxy path for backwards compatibility.
 
 **Configuration:**
 
@@ -188,6 +189,7 @@ which the server proxies to the local gateway.
 **Common setups:**
 - **Co-located (Cove + gateway same machine):** Works out of the box with defaults
 - **Remote gateway:** Set `GATEWAY_HOST=your-gateway.local` to point to a different host
+- **Behind Cloudflare/nginx:** The proxy strips `X-Forwarded-*` and `CF-*` headers so the gateway accepts the request as localhost
 
 ## Limitations
 
