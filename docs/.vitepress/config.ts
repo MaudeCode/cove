@@ -3,6 +3,7 @@ import { defineConfig } from 'vitepress'
 export default defineConfig({
   title: 'Cove',
   description: 'A beautiful WebUI for OpenClaw',
+  base: '/cove/',
   
   vite: {
     server: {
