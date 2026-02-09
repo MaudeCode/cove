@@ -139,15 +139,16 @@ nodes action=invoke node=<nodeId> invokeCommand=canvas.present invokeParamsJson=
 Cove transforms `http://127.0.0.1:*/__openclaw__/canvas/*` URLs to `/_canvas/*`,
 which the server proxies to the local gateway.
 
-**Docker/Production Configuration:**
+**Configuration:**
 
-Set these environment variables to point to your gateway:
-- `GATEWAY_HOST` — Gateway hostname (default: `127.0.0.1`)
-- `GATEWAY_PORT` — Gateway port (default: `18789`)
+| Env Var | Default | Description |
+|---------|---------|-------------|
+| `GATEWAY_HOST` | `127.0.0.1` | Gateway hostname for canvas proxy |
+| `GATEWAY_PORT` | `18789` | Gateway port |
 
-For development with Vite:
-- `VITE_GATEWAY_HOST` — Gateway hostname (default: `127.0.0.1`)
-- `VITE_GATEWAY_PORT` — Gateway port (default: `18789`)
+**Common setups:**
+- **Co-located (Cove + gateway same machine):** Works out of the box with defaults
+- **Remote gateway:** Set `GATEWAY_HOST=your-gateway.local` to point to a different host
 
 ## Limitations
 

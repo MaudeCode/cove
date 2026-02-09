@@ -1,128 +1,212 @@
 /**
  * Cove Server
  *
- * Single server for both dev and production:
- * - Dev: Proxies to Vite for HMR, handles /canvas-proxy
- * - Prod: Serves static files from dist/, handles /canvas-proxy
+ * Single entry point for both dev and production:
+ * - Dev: Vite middleware mode for HMR
+ * - Prod: Static file serving
+ * - Both: Same /_canvas proxy to gateway
  */
 
-import { serve } from "bun";
-import { readFileSync, existsSync, statSync } from "fs";
-import { join, extname } from "path";
+import { readFileSync, existsSync, statSync } from 'fs';
+import { join, extname } from 'path';
+import type { ViteDevServer } from 'vite';
 
-const PORT = parseInt(process.env.PORT || "8080", 10);
-const DEV = process.env.NODE_ENV !== "production";
-const VITE_PORT = parseInt(process.env.VITE_PORT || "5173", 10);
-const DIST_DIR = join(import.meta.dir, "dist");
-const GATEWAY_HOST = process.env.GATEWAY_HOST || "127.0.0.1";
-const GATEWAY_PORT = process.env.GATEWAY_PORT || "18789";
+const DEV = process.env.NODE_ENV !== 'production';
+const PORT = parseInt(process.env.PORT || (DEV ? '5173' : '8080'), 10);
+const DIST_DIR = join(import.meta.dir, 'dist');
+// Default to localhost for co-located setups
+// Set GATEWAY_HOST to point to a remote gateway if needed
+const GATEWAY_HOST = process.env.GATEWAY_HOST || '127.0.0.1';
+const GATEWAY_PORT = process.env.GATEWAY_PORT || '18789';
 
 const MIME_TYPES: Record<string, string> = {
-  ".html": "text/html",
-  ".js": "application/javascript",
-  ".css": "text/css",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".gif": "image/gif",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".ttf": "font/ttf",
-  ".webp": "image/webp",
+  '.html': 'text/html',
+  '.js': 'application/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf',
+  '.webp': 'image/webp',
 };
 
-serve({
-  port: PORT,
-  async fetch(req) {
-    const url = new URL(req.url);
-    const pathname = url.pathname;
+/**
+ * Canvas proxy handler - forwards /_canvas/* to gateway
+ * Strips headers that cause gateway to reject requests
+ */
+async function handleCanvasProxy(pathname: string): Promise<Response | null> {
+  if (!pathname.startsWith('/_canvas')) return null;
 
-    // Health check
-    if (pathname === "/health") {
-      return new Response("OK", { status: 200 });
-    }
+  const targetPath = pathname.replace('/_canvas', '') || '/';
+  const targetUrl = `http://${GATEWAY_HOST}:${GATEWAY_PORT}/__openclaw__/canvas${targetPath}`;
 
-    // Canvas proxy - forward to gateway
-    // Strips forwarding headers that cause gateway to reject requests
-    if (pathname.startsWith("/_canvas/") || pathname === "/_canvas") {
-      const targetPath = pathname.replace("/_canvas", "") || "/";
-      const targetUrl = `http://${GATEWAY_HOST}:${GATEWAY_PORT}/__openclaw__/canvas${targetPath}`;
-
-      try {
-        // Create clean headers without forwarding headers that gateway rejects
-        const headers = new Headers();
-        headers.set("Host", `${GATEWAY_HOST}:${GATEWAY_PORT}`);
-        headers.set("Accept", req.headers.get("Accept") || "*/*");
-
-        const response = await fetch(targetUrl, { headers });
-        return new Response(response.body, {
-          status: response.status,
-          headers: {
-            "Content-Type": response.headers.get("Content-Type") || "application/octet-stream",
-            "Cache-Control": "no-store",
-          },
-        });
-      } catch (err) {
-        console.error("Canvas proxy error:", err);
-        return new Response(`Canvas proxy error: ${err}`, { status: 502 });
-      }
-    }
-
-    // Dev mode: proxy everything else to Vite
-    if (DEV) {
-      try {
-        const viteUrl = `http://127.0.0.1:${VITE_PORT}${pathname}${url.search}`;
-        const response = await fetch(viteUrl, {
-          method: req.method,
-          headers: req.headers,
-          body: req.body,
-        });
-        return new Response(response.body, {
-          status: response.status,
-          headers: response.headers,
-        });
-      } catch (err) {
-        return new Response(`Vite proxy error: ${err}`, { status: 502 });
-      }
-    }
-
-    // Production: serve static files
-    let filePath = join(DIST_DIR, pathname);
-
-    if (existsSync(filePath) && statSync(filePath).isDirectory()) {
-      filePath = join(filePath, "index.html");
-    }
-
-    if (!existsSync(filePath)) {
-      filePath = join(DIST_DIR, "index.html");
-    }
-
-    if (existsSync(filePath)) {
-      const ext = extname(filePath);
-      const contentType = MIME_TYPES[ext] || "application/octet-stream";
-      const content = readFileSync(filePath);
-      const cacheControl = ext === ".html" ? "no-cache" : "public, max-age=31536000, immutable";
-
-      return new Response(content, {
-        status: 200,
-        headers: {
-          "Content-Type": contentType,
-          "Cache-Control": cacheControl,
-          "X-Content-Type-Options": "nosniff",
-        },
-      });
-    }
-
-    return new Response("Not Found", { status: 404 });
-  },
-});
-
-console.log(`🦞 Cove server running on http://0.0.0.0:${PORT}`);
-console.log(`   Mode: ${DEV ? "development" : "production"}`);
-if (DEV) {
-  console.log(`   Vite: http://127.0.0.1:${VITE_PORT}`);
+  try {
+    const response = await fetch(targetUrl, {
+      headers: {
+        'Host': `${GATEWAY_HOST}:${GATEWAY_PORT}`,
+        'Accept': '*/*',
+      },
+    });
+    return new Response(response.body, {
+      status: response.status,
+      headers: {
+        'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream',
+        'Cache-Control': 'no-store',
+      },
+    });
+  } catch (err) {
+    console.error('Canvas proxy error:', err);
+    return new Response(`Canvas proxy error: ${err}`, { status: 502 });
+  }
 }
-console.log(`   Canvas proxy: /_canvas/* → http://${GATEWAY_HOST}:${GATEWAY_PORT}/__openclaw__/canvas/*`);
+
+/**
+ * Static file handler for production
+ */
+function handleStaticFile(pathname: string): Response | null {
+  let filePath = join(DIST_DIR, pathname);
+
+  if (existsSync(filePath) && statSync(filePath).isDirectory()) {
+    filePath = join(filePath, 'index.html');
+  }
+
+  if (!existsSync(filePath)) {
+    filePath = join(DIST_DIR, 'index.html');
+  }
+
+  if (existsSync(filePath)) {
+    const ext = extname(filePath);
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const content = readFileSync(filePath);
+    const cacheControl = ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable';
+
+    return new Response(content, {
+      status: 200,
+      headers: {
+        'Content-Type': contentType,
+        'Cache-Control': cacheControl,
+        'X-Content-Type-Options': 'nosniff',
+      },
+    });
+  }
+
+  return null;
+}
+
+async function startServer() {
+  let vite: ViteDevServer | null = null;
+
+  if (DEV) {
+    // Dynamic import - Vite is only installed in dev
+    const { createServer: createViteServer } = await import('vite');
+    vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+  }
+
+  const server = Bun.serve({
+    port: PORT,
+    async fetch(req) {
+      const url = new URL(req.url);
+      const pathname = url.pathname;
+
+      // Health check
+      if (pathname === '/health') {
+        return new Response('OK', { status: 200 });
+      }
+
+      // Canvas proxy - same in dev and prod
+      const canvasResponse = await handleCanvasProxy(pathname);
+      if (canvasResponse) return canvasResponse;
+
+      if (DEV && vite) {
+        // Dev mode: use Vite middleware
+        return new Promise<Response>((resolve) => {
+          // Convert Bun request to Node-compatible format for Vite
+          const nodeReq = {
+            url: pathname + url.search,
+            method: req.method,
+            headers: Object.fromEntries(req.headers.entries()),
+          };
+
+          const nodeRes = {
+            statusCode: 200,
+            headers: {} as Record<string, string>,
+            body: [] as Buffer[],
+            setHeader(name: string, value: string) {
+              this.headers[name.toLowerCase()] = value;
+            },
+            getHeader(name: string) {
+              return this.headers[name.toLowerCase()];
+            },
+            writeHead(status: number, headers?: Record<string, string>) {
+              this.statusCode = status;
+              if (headers) Object.assign(this.headers, headers);
+            },
+            write(chunk: Buffer | string) {
+              this.body.push(Buffer.from(chunk));
+              return true;
+            },
+            end(chunk?: Buffer | string) {
+              if (chunk) this.body.push(Buffer.from(chunk));
+              resolve(
+                new Response(Buffer.concat(this.body), {
+                  status: this.statusCode,
+                  headers: this.headers,
+                })
+              );
+            },
+          };
+
+          vite!.middlewares(nodeReq as any, nodeRes as any, () => {
+            // Fallback: serve index.html for SPA routing
+            try {
+              const html = readFileSync(join(import.meta.dir, 'index.html'), 'utf-8');
+              vite!.transformIndexHtml(pathname, html).then((transformed) => {
+                resolve(
+                  new Response(transformed, {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/html' },
+                  })
+                );
+              }).catch((err) => {
+                console.error('Vite transform error:', err);
+                resolve(new Response('Internal Server Error', { status: 500 }));
+              });
+            } catch (err) {
+              console.error('Failed to read index.html:', err);
+              resolve(new Response('Internal Server Error', { status: 500 }));
+            }
+          });
+        });
+      } else {
+        // Production: serve static files
+        const staticResponse = handleStaticFile(pathname);
+        if (staticResponse) return staticResponse;
+        return new Response('Not Found', { status: 404 });
+      }
+    },
+  });
+
+  console.log(`🏖️  Cove v${process.env.npm_package_version || 'dev'} is running!`);
+  console.log('');
+  console.log(`   Local:  http://localhost:${PORT}`);
+  console.log('');
+  console.log(`   Mode: ${DEV ? 'development' : 'production'}`);
+  console.log(`   Canvas proxy: /_canvas/* → http://${GATEWAY_HOST}:${GATEWAY_PORT}/__openclaw__/canvas/*`);
+  console.log('');
+  console.log('   Connect to your OpenClaw gateway to get started.');
+  if (DEV) {
+    console.log('   HMR enabled via Vite middleware.');
+  }
+  console.log('');
+}
+
+startServer().catch(console.error);

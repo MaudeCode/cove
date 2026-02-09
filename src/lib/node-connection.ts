@@ -94,17 +94,12 @@ function revokePreviousBlobUrl() {
 }
 
 /**
- * Fetch an image URL with credentials and return a blob URL.
- * This ensures cookies (like CF Access tokens) are sent with the request.
- */
-/**
- * Transform localhost canvas URLs to use Cove's server proxy.
- * This bypasses mixed content and CSP issues by routing through same-origin.
+ * Transform localhost canvas URLs to use the server proxy.
  *
  * Example: http://127.0.0.1:18789/__openclaw__/canvas/image.png
- *       -> /canvas-proxy/image.png
+ *       -> /_canvas/image.png
  *
- * The Vite dev server (or production server) proxies /canvas-proxy/* to the gateway.
+ * The server proxies /_canvas/* to the gateway via GATEWAY_HOST env var.
  */
 function transformCanvasUrl(url: string): string {
   // Check if this is a localhost canvas URL
