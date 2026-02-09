@@ -32,21 +32,6 @@ export const agentsError = signal<string | null>(null);
 // Computed
 // ============================================================================
 
-/** Get agent by ID */
-export const getAgentById = (id: string): Agent | undefined => {
-  return agents.value.find((a) => a.id === id);
-};
-
-/** Default agent object */
-export const defaultAgent = computed(() => {
-  return getAgentById(defaultAgentId.value) || agents.value[0];
-});
-
-/** Check if agents are loaded */
-export const agentsLoaded = computed(() => {
-  return agents.value.length > 0;
-});
-
 /** Agent options for dropdowns (id + formatted label) */
 export const agentOptions = computed(() => {
   return agents.value.map((agent) => ({
@@ -101,14 +86,4 @@ export async function loadAgents(): Promise<void> {
   } finally {
     agentsLoading.value = false;
   }
-}
-
-/**
- * Clear agents state (on disconnect)
- */
-export function clearAgents(): void {
-  agents.value = [];
-  defaultAgentId.value = "main";
-  mainSessionKey.value = "main";
-  agentsError.value = null;
 }
