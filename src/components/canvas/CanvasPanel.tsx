@@ -24,11 +24,10 @@ import {
   Maximize2,
   PictureInPicture2,
 } from "lucide-preact";
-import type { RefObject } from "preact";
 import { useEffect, useState, useRef } from "preact/hooks";
 import { IconButton } from "@/components/ui/IconButton";
 import { t } from "@/lib/i18n";
-import { isImageContentType, isImageUrl } from "@/lib/canvas-utils";
+import { CanvasContent } from "./CanvasContent";
 import {
   dockPosition,
   panelX,
@@ -52,95 +51,6 @@ function syncOpenState() {
   } else if (!canvasVisible.value && canvasPanelOpen.value) {
     canvasPanelOpen.value = false;
   }
-}
-
-/**
- * Render the canvas content based on type
- * NOTE: All signal values must be passed as params (not accessed inside)
- * to ensure Preact creates proper subscriptions in the component render.
- */
-function renderCanvasContent(
-  url: string | null,
-  blobUrl: string | null,
-  contentType: string | null,
-  content: string | null,
-  iframeRef?: RefObject<HTMLIFrameElement>,
-  imgRef?: RefObject<HTMLImageElement>,
-) {
-  // If we have a blob URL, use it
-  if (blobUrl) {
-    if (isImageContentType(contentType) || isImageUrl(url)) {
-      return (
-        <div class="w-full h-full flex items-center justify-center bg-[var(--color-bg-tertiary)] p-4 overflow-auto">
-          <img
-            ref={imgRef}
-            src={blobUrl}
-            alt={t("canvas.imageAlt")}
-            class="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-            crossOrigin="anonymous"
-          />
-        </div>
-      );
-    }
-    return (
-      <div class="w-full h-full overflow-hidden">
-        <iframe
-          ref={iframeRef}
-          src={blobUrl}
-          class="w-full h-full border-0"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          title={t("canvas.iframeTitle")}
-        />
-      </div>
-    );
-  }
-
-  // Fall back to direct URL
-  if (url) {
-    if (isImageUrl(url)) {
-      return (
-        <div class="w-full h-full flex items-center justify-center bg-[var(--color-bg-tertiary)] p-4 overflow-auto">
-          <img
-            ref={imgRef}
-            src={url}
-            alt={t("canvas.imageAlt")}
-            class="max-w-full max-h-full object-contain rounded-lg shadow-lg"
-            crossOrigin="anonymous"
-          />
-        </div>
-      );
-    }
-    return (
-      <div class="w-full h-full overflow-hidden">
-        <iframe
-          ref={iframeRef}
-          src={url}
-          class="w-full h-full border-0"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-          title={t("canvas.iframeTitle")}
-        />
-      </div>
-    );
-  }
-
-  // HTML content (legacy)
-  if (content) {
-    return (
-      <div
-        class="w-full h-full p-4 overflow-auto bg-[var(--color-bg-tertiary)]"
-        // eslint-disable-next-line react/no-danger
-        dangerouslySetInnerHTML={{ __html: content }}
-      />
-    );
-  }
-
-  // Empty state
-  return (
-    <div class="flex flex-col items-center justify-center h-full gap-3 text-[var(--color-text-muted)] px-6 text-center">
-      <p class="text-sm">{t("canvas.noContent")}</p>
-      <p class="text-xs opacity-70">{t("canvas.noContentHint")}</p>
-    </div>
-  );
 }
 
 // Track mobile state (module-level so it stays in sync even when component unmounted)
@@ -346,7 +256,14 @@ export function CanvasPanel() {
 
         {/* Content */}
         <div class="flex-1 overflow-hidden">
-          {renderCanvasContent(url, blobUrl, contentType, content, iframeRef, imgRef)}
+          <CanvasContent
+            url={url}
+            blobUrl={blobUrl}
+            contentType={contentType}
+            content={content}
+            iframeRef={iframeRef}
+            imgRef={imgRef}
+          />
         </div>
       </div>
     );
@@ -434,7 +351,14 @@ export function CanvasPanel() {
       {/* Content */}
       {!isMinimized.value && (
         <div class="flex-1 overflow-hidden relative">
-          {renderCanvasContent(url, blobUrl, contentType, content, iframeRef, imgRef)}
+          <CanvasContent
+            url={url}
+            blobUrl={blobUrl}
+            contentType={contentType}
+            content={content}
+            iframeRef={iframeRef}
+            imgRef={imgRef}
+          />
           {isInteracting.value && <div class="absolute inset-0 z-10" />}
         </div>
       )}
