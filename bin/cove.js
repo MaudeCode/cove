@@ -19,6 +19,8 @@ const version = packageJson.version;
 const args = process.argv.slice(2);
 let port = 8080;
 let open = false;
+let gatewayHost = process.env.GATEWAY_HOST || "127.0.0.1";
+let gatewayPort = process.env.GATEWAY_PORT || "18789";
 
 for (let i = 0; i < args.length; i++) {
   if (args[i] === "--port" || args[i] === "-p") {
@@ -77,6 +79,40 @@ function isPathSafe(requestedPath, baseDir) {
   return fullPath === baseDir || fullPath.startsWith(baseDir + "/");
 }
 
+/**
+ * Proxy /_canvas/* requests to gateway's canvas host
+ */
+async function handleCanvasProxy(req, res, urlPath) {
+  if (!urlPath.startsWith("/_canvas")) return false;
+
+  const targetPath = urlPath.replace("/_canvas", "") || "/";
+  const targetUrl = `http://${gatewayHost}:${gatewayPort}/__openclaw__/canvas${targetPath}`;
+
+  try {
+    const response = await fetch(targetUrl, {
+      headers: {
+        Host: `${gatewayHost}:${gatewayPort}`,
+        Accept: "*/*",
+      },
+    });
+
+    const contentType = response.headers.get("Content-Type") || "application/octet-stream";
+    const buffer = Buffer.from(await response.arrayBuffer());
+
+    res.writeHead(response.status, {
+      "Content-Type": contentType,
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": "*",
+    });
+    res.end(buffer);
+  } catch (err) {
+    console.error("Canvas proxy error:", err.message);
+    res.writeHead(502);
+    res.end(`Canvas proxy error: ${err.message}`);
+  }
+  return true;
+}
+
 // Serve static files
 const server = createServer(async (req, res) => {
   try {
@@ -87,6 +123,11 @@ const server = createServer(async (req, res) => {
     if (urlPath === "/health") {
       res.writeHead(200, { "Content-Type": "text/plain" });
       res.end("OK");
+      return;
+    }
+
+    // Canvas proxy
+    if (await handleCanvasProxy(req, res, urlPath)) {
       return;
     }
 
@@ -140,6 +181,7 @@ server.listen(port, () => {
 🏖️  Cove v${version} is running!
 
    Local:  ${url}
+   Proxy:  /_canvas/* → http://${gatewayHost}:${gatewayPort}/__openclaw__/canvas/*
 
    Connect to your OpenClaw gateway to get started.
    Press Ctrl+C to stop.
