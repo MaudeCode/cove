@@ -107,6 +107,14 @@ export default defineConfig(({ mode }) => {
     },
     server: {
       allowedHosts: env.VITE_ALLOWED_HOSTS?.split(',').map(h => h.trim()).filter(Boolean) || [],
+      proxy: {
+        // Canvas proxy - forwards to gateway for local images
+        '/_canvas': {
+          target: `http://${env.VITE_GATEWAY_HOST || '127.0.0.1'}:${env.VITE_GATEWAY_PORT || '18789'}`,
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/_canvas/, '/__openclaw__/canvas'),
+        },
+      },
     },
   }
 })

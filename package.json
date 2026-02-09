@@ -31,7 +31,8 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "bun run server.ts",
+    "dev": "vite",
+    "dev:prod": "NODE_ENV=production bun run server.ts",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "oxlint src/",
