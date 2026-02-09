@@ -109,10 +109,25 @@ export default defineConfig(({ mode }) => {
       allowedHosts: env.VITE_ALLOWED_HOSTS?.split(',').map(h => h.trim()).filter(Boolean) || [],
       proxy: {
         // Canvas proxy - forwards to gateway for local images
+        // Strip forwarded/proxy headers so gateway sees this as localhost
         '/_canvas': {
           target: `http://${env.GATEWAY_HOST || '127.0.0.1'}:${env.GATEWAY_PORT || '18789'}`,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/_canvas/, '/__openclaw__/canvas'),
+          configure: (proxy) => {
+            proxy.on('proxyReq', (proxyReq) => {
+              // Strip headers that would reveal external origin
+              proxyReq.removeHeader('x-forwarded-for')
+              proxyReq.removeHeader('x-forwarded-proto')
+              proxyReq.removeHeader('x-forwarded-host')
+              proxyReq.removeHeader('x-real-ip')
+              proxyReq.removeHeader('cf-connecting-ip')
+              proxyReq.removeHeader('cf-ipcountry')
+              proxyReq.removeHeader('cf-ray')
+              proxyReq.removeHeader('cf-visitor')
+              proxyReq.setHeader('host', 'localhost')
+            })
+          },
         },
       },
     },
