@@ -82,6 +82,45 @@ Update the canvas content (same parameters as `canvas.present`):
 nodes action=invoke node=<nodeId> invokeCommand=canvas.navigate invokeParamsJson='{"url":"https://example.com"}'
 ```
 
+### canvas.eval
+
+Execute JavaScript in the canvas iframe and return the result:
+```
+nodes action=invoke node=<nodeId> invokeCommand=canvas.eval invokeParamsJson='{"javaScript":"document.title"}'
+```
+
+**Returns:** `{ ok: true, result: "Page Title" }` or `{ ok: false, error: "..." }`
+
+**Limitations:**
+- Only works on same-origin content (URLs loaded through the `/_canvas/` proxy)
+- Cross-origin iframes (external URLs, data: URLs) will fail due to browser security
+- For cross-origin content, use `canvas.snapshot` instead
+
+### canvas.snapshot
+
+Capture a screenshot of the current canvas content:
+```
+nodes action=invoke node=<nodeId> invokeCommand=canvas.snapshot invokeParamsJson='{}'
+```
+
+**Optional parameters:**
+```
+nodes action=invoke node=<nodeId> invokeCommand=canvas.snapshot invokeParamsJson='{"maxWidth":1200,"quality":0.9,"outputFormat":"png"}'
+```
+
+**Returns:** `{ ok: true, dataUrl: "data:image/jpeg;base64,..." }` or `{ ok: false, error: "..." }`
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `maxWidth` | number | 800 | Maximum width in pixels (scales proportionally) |
+| `quality` | number | 0.8 | JPEG quality (0.0-1.0, ignored for PNG) |
+| `outputFormat` | string | `jpeg` | Output format: `jpeg`, `jpg`, or `png` |
+
+**Notes:**
+- Works on both same-origin and cross-origin content (uses canvas capture)
+- Larger images produce larger base64 strings — keep `maxWidth` reasonable
+- JPEG at 0.8 quality is a good balance of size vs. quality
+
 ## Parameters
 
 | Parameter | Type | Description |

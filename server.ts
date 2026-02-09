@@ -58,6 +58,7 @@ async function handleCanvasProxy(pathname: string): Promise<Response | null> {
       headers: {
         'Content-Type': response.headers.get('Content-Type') || 'application/octet-stream',
         'Cache-Control': 'no-store',
+        'Access-Control-Allow-Origin': '*',
       },
     });
   } catch (err) {
@@ -166,6 +167,24 @@ async function startServer() {
           };
 
           vite!.middlewares(nodeReq as any, nodeRes as any, () => {
+            // Check for static file in public/ first
+            const publicPath = join(import.meta.dir, 'public', pathname);
+            if (existsSync(publicPath) && !statSync(publicPath).isDirectory()) {
+              const ext = extname(publicPath);
+              const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+              const content = readFileSync(publicPath);
+              resolve(
+                new Response(content, {
+                  status: 200,
+                  headers: {
+                    'Content-Type': contentType,
+                    'Cache-Control': 'public, max-age=31536000, immutable',
+                  },
+                })
+              );
+              return;
+            }
+
             // Fallback: serve index.html for SPA routing
             try {
               const html = readFileSync(join(import.meta.dir, 'index.html'), 'utf-8');

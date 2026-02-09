@@ -12,6 +12,8 @@ import {
   canvasBlobUrl,
   canvasContentType,
   standaloneCanvasOpen,
+  pendingCanvasEval,
+  pendingCanvasSnapshot,
 } from "@/lib/node-connection";
 import { canvasPanelOpen } from "@/signals/ui";
 import {
@@ -22,6 +24,7 @@ import {
   Maximize2,
   PictureInPicture2,
 } from "lucide-preact";
+import type { RefObject } from "preact";
 import { useEffect, useState, useRef } from "preact/hooks";
 import { IconButton } from "@/components/ui/IconButton";
 import { t } from "@/lib/i18n";
@@ -61,6 +64,8 @@ function renderCanvasContent(
   blobUrl: string | null,
   contentType: string | null,
   content: string | null,
+  iframeRef?: RefObject<HTMLIFrameElement>,
+  imgRef?: RefObject<HTMLImageElement>,
 ) {
   // If we have a blob URL, use it
   if (blobUrl) {
@@ -68,9 +73,11 @@ function renderCanvasContent(
       return (
         <div class="w-full h-full flex items-center justify-center bg-[var(--color-bg-tertiary)] p-4 overflow-auto">
           <img
+            ref={imgRef}
             src={blobUrl}
             alt={t("canvas.imageAlt")}
             class="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+            crossOrigin="anonymous"
           />
         </div>
       );
@@ -78,6 +85,7 @@ function renderCanvasContent(
     return (
       <div class="w-full h-full overflow-hidden">
         <iframe
+          ref={iframeRef}
           src={blobUrl}
           class="w-full h-full border-0"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
@@ -93,9 +101,11 @@ function renderCanvasContent(
       return (
         <div class="w-full h-full flex items-center justify-center bg-[var(--color-bg-tertiary)] p-4 overflow-auto">
           <img
+            ref={imgRef}
             src={url}
             alt={t("canvas.imageAlt")}
             class="max-w-full max-h-full object-contain rounded-lg shadow-lg"
+            crossOrigin="anonymous"
           />
         </div>
       );
@@ -103,6 +113,7 @@ function renderCanvasContent(
     return (
       <div class="w-full h-full overflow-hidden">
         <iframe
+          ref={iframeRef}
           src={url}
           class="w-full h-full border-0"
           sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
@@ -153,9 +164,96 @@ export function CanvasPanel() {
   const [isDraggingSheet, setIsDraggingSheet] = useState(false);
   const touchStartY = useRef(0);
 
+  // Ref for iframe/img element for eval/snapshot
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+
   // Auto-open when canvas becomes visible
   useEffect(() => {
     return canvasVisible.subscribe(syncOpenState);
+  }, []);
+
+  // Handle canvas.eval requests
+  useEffect(() => {
+    return pendingCanvasEval.subscribe((pending) => {
+      if (!pending) return;
+
+      const { js, resolve, reject } = pending;
+      pendingCanvasEval.value = null;
+
+      const iframe = iframeRef.current;
+      if (!iframe?.contentWindow) {
+        reject("No iframe available for eval");
+        return;
+      }
+
+      try {
+        // Execute JS in iframe context
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const result = (iframe.contentWindow as any).eval(js);
+        resolve(result);
+      } catch (e) {
+        reject(String(e));
+      }
+    });
+  }, []);
+
+  // Handle canvas.snapshot requests
+  useEffect(() => {
+    return pendingCanvasSnapshot.subscribe((pending) => {
+      if (!pending) return;
+
+      const { resolve, reject } = pending;
+      pendingCanvasSnapshot.value = null;
+
+      try {
+        // Try image first
+        const img = imgRef.current;
+
+        if (img && img.complete) {
+          const canvas = document.createElement("canvas");
+          // Limit size to avoid huge data URLs
+          const maxDim = 800;
+          let width = img.naturalWidth || img.width || 100;
+          let height = img.naturalHeight || img.height || 100;
+          if (width > maxDim || height > maxDim) {
+            const scale = maxDim / Math.max(width, height);
+            width = Math.round(width * scale);
+            height = Math.round(height * scale);
+          }
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.drawImage(img, 0, 0, width, height);
+            // Use JPEG for smaller size
+            const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+            resolve(dataUrl);
+            return;
+          }
+        }
+
+        // Try iframe
+        const iframe = iframeRef.current;
+        if (!iframe?.contentWindow) {
+          reject("No canvas content available for snapshot (no img or iframe ref)");
+          return;
+        }
+
+        // For same-origin iframes, we can capture the document
+        const doc = iframe.contentDocument;
+        if (!doc) {
+          reject("Cannot access iframe document (cross-origin?)");
+          return;
+        }
+
+        // For HTML content, just return a placeholder for now
+        // Full HTML-to-canvas is complex and requires libraries like html2canvas
+        reject("HTML snapshot not yet implemented - use images for now");
+      } catch (e) {
+        reject(`Snapshot failed: ${e}`);
+      }
+    });
   }, []);
 
   // Handle keyboard shortcuts (desktop only)
@@ -250,7 +348,7 @@ export function CanvasPanel() {
 
         {/* Content */}
         <div class="flex-1 overflow-hidden">
-          {renderCanvasContent(url, blobUrl, contentType, content)}
+          {renderCanvasContent(url, blobUrl, contentType, content, iframeRef, imgRef)}
         </div>
       </div>
     );
@@ -338,7 +436,7 @@ export function CanvasPanel() {
       {/* Content */}
       {!isMinimized.value && (
         <div class="flex-1 overflow-hidden relative">
-          {renderCanvasContent(url, blobUrl, contentType, content)}
+          {renderCanvasContent(url, blobUrl, contentType, content, iframeRef, imgRef)}
           {isInteracting.value && <div class="absolute inset-0 z-10" />}
         </div>
       )}

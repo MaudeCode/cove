@@ -29,6 +29,18 @@ export const canvasBlobUrl = signal<string | null>(null);
 export const canvasContentType = signal<string | null>(null);
 export const standaloneCanvasOpen = signal(false);
 
+// Canvas eval/snapshot - set by node-connection, consumed by CanvasPanel
+export const pendingCanvasEval = signal<{
+  js: string;
+  resolve: (result: unknown) => void;
+  reject: (error: string) => void;
+} | null>(null);
+
+export const pendingCanvasSnapshot = signal<{
+  resolve: (dataUrl: string) => void;
+  reject: (error: string) => void;
+} | null>(null);
+
 // Cross-tab broadcast for canvas content
 const canvasChannel =
   typeof BroadcastChannel !== "undefined" ? new BroadcastChannel("cove:canvas") : null;
@@ -400,12 +412,51 @@ async function handleInvokeRequest(payload: unknown) {
       case "canvas.eval": {
         const js = cmdParams.javaScript as string | undefined;
         log.node.debug("canvas.eval requested:", js?.slice(0, 50));
-        result = { result: "eval not implemented in Cove yet" };
+        if (!js) {
+          error = { code: "INVALID_PARAMS", message: "javaScript parameter required" };
+          break;
+        }
+        try {
+          const evalResult = await new Promise<unknown>((resolve, reject) => {
+            pendingCanvasEval.value = {
+              js,
+              resolve,
+              reject: (msg) => reject(new Error(msg)),
+            };
+            // Timeout after 10 seconds
+            setTimeout(() => {
+              if (pendingCanvasEval.value?.js === js) {
+                pendingCanvasEval.value = null;
+                reject(new Error("Canvas eval timeout"));
+              }
+            }, 10000);
+          });
+          result = { result: evalResult };
+        } catch (e) {
+          error = { code: "EVAL_ERROR", message: String(e) };
+        }
         break;
       }
       case "canvas.snapshot": {
         log.node.debug("canvas.snapshot requested");
-        error = { code: "NOT_IMPLEMENTED", message: "snapshot not implemented in Cove yet" };
+        try {
+          const dataUrl = await new Promise<string>((resolve, reject) => {
+            pendingCanvasSnapshot.value = {
+              resolve,
+              reject: (msg) => reject(new Error(msg)),
+            };
+            // Timeout after 10 seconds
+            setTimeout(() => {
+              if (pendingCanvasSnapshot.value) {
+                pendingCanvasSnapshot.value = null;
+                reject(new Error("Canvas snapshot timeout"));
+              }
+            }, 10000);
+          });
+          result = { dataUrl };
+        } catch (e) {
+          error = { code: "SNAPSHOT_ERROR", message: String(e) };
+        }
         break;
       }
       default:
