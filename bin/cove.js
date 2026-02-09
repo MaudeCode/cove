@@ -43,6 +43,10 @@ Options:
   -v, --version      Show version number
   -h, --help         Show this help message
 
+Environment Variables:
+  GATEWAY_HOST       Gateway hostname for canvas proxy (default: 127.0.0.1)
+  GATEWAY_PORT       Gateway port for canvas proxy (default: 18789)
+
 Examples:
   npx @maudecode/cove
   npx @maudecode/cove --port 3000

@@ -37,6 +37,9 @@ export const pendingCanvasEval = signal<{
 } | null>(null);
 
 export const pendingCanvasSnapshot = signal<{
+  maxWidth: number;
+  quality: number;
+  outputFormat: "jpeg" | "png";
   resolve: (dataUrl: string) => void;
   reject: (error: string) => void;
 } | null>(null);
@@ -177,6 +180,7 @@ let currentAuthMode: "token" | "password" | undefined = undefined;
 let currentCredential: string | undefined = undefined;
 
 const PING_INTERVAL_MS = 15000; // Send ping every 15 seconds
+const CANVAS_OPERATION_TIMEOUT_MS = 10000; // Timeout for eval/snapshot operations
 const pendingRequests = new Map<
   string,
   {
@@ -423,13 +427,12 @@ async function handleInvokeRequest(payload: unknown) {
               resolve,
               reject: (msg) => reject(new Error(msg)),
             };
-            // Timeout after 10 seconds
             setTimeout(() => {
               if (pendingCanvasEval.value?.js === js) {
                 pendingCanvasEval.value = null;
                 reject(new Error("Canvas eval timeout"));
               }
-            }, 10000);
+            }, CANVAS_OPERATION_TIMEOUT_MS);
           });
           result = { result: evalResult };
         } catch (e) {
@@ -438,20 +441,26 @@ async function handleInvokeRequest(payload: unknown) {
         break;
       }
       case "canvas.snapshot": {
-        log.node.debug("canvas.snapshot requested");
+        const maxWidth = (cmdParams.maxWidth as number) || 800;
+        const quality = (cmdParams.quality as number) || 0.8;
+        const formatParam = (cmdParams.outputFormat as string) || "jpeg";
+        const outputFormat = formatParam === "png" ? "png" : "jpeg";
+        log.node.debug("canvas.snapshot requested:", { maxWidth, quality, outputFormat });
         try {
           const dataUrl = await new Promise<string>((resolve, reject) => {
             pendingCanvasSnapshot.value = {
+              maxWidth,
+              quality,
+              outputFormat,
               resolve,
               reject: (msg) => reject(new Error(msg)),
             };
-            // Timeout after 10 seconds
             setTimeout(() => {
               if (pendingCanvasSnapshot.value) {
                 pendingCanvasSnapshot.value = null;
                 reject(new Error("Canvas snapshot timeout"));
               }
-            }, 10000);
+            }, CANVAS_OPERATION_TIMEOUT_MS);
           });
           result = { dataUrl };
         } catch (e) {

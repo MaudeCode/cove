@@ -38,7 +38,13 @@ export function createBlobUrlFromBase64(base64: string, mimeType: string): strin
     }
   }
 
-  const binary = atob(rawBase64);
+  let binary: string;
+  try {
+    binary = atob(rawBase64);
+  } catch {
+    throw new Error("Invalid base64 data");
+  }
+
   const bytes = new Uint8Array(binary.length);
   for (let i = 0; i < binary.length; i++) {
     bytes[i] = binary.charCodeAt(i);

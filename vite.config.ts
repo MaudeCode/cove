@@ -110,7 +110,7 @@ export default defineConfig(({ mode }) => {
       proxy: {
         // Canvas proxy - forwards to gateway for local images
         '/_canvas': {
-          target: `http://${env.VITE_GATEWAY_HOST || '127.0.0.1'}:${env.VITE_GATEWAY_PORT || '18789'}`,
+          target: `http://${env.GATEWAY_HOST || '127.0.0.1'}:${env.GATEWAY_PORT || '18789'}`,
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/_canvas/, '/__openclaw__/canvas'),
         },

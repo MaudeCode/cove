@@ -203,7 +203,7 @@ export function CanvasPanel() {
     return pendingCanvasSnapshot.subscribe((pending) => {
       if (!pending) return;
 
-      const { resolve, reject } = pending;
+      const { maxWidth, quality, outputFormat, resolve, reject } = pending;
       pendingCanvasSnapshot.value = null;
 
       try {
@@ -212,12 +212,10 @@ export function CanvasPanel() {
 
         if (img && img.complete) {
           const canvas = document.createElement("canvas");
-          // Limit size to avoid huge data URLs
-          const maxDim = 800;
           let width = img.naturalWidth || img.width || 100;
           let height = img.naturalHeight || img.height || 100;
-          if (width > maxDim || height > maxDim) {
-            const scale = maxDim / Math.max(width, height);
+          if (width > maxWidth || height > maxWidth) {
+            const scale = maxWidth / Math.max(width, height);
             width = Math.round(width * scale);
             height = Math.round(height * scale);
           }
@@ -226,8 +224,8 @@ export function CanvasPanel() {
           const ctx = canvas.getContext("2d");
           if (ctx) {
             ctx.drawImage(img, 0, 0, width, height);
-            // Use JPEG for smaller size
-            const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
+            const mimeType = outputFormat === "png" ? "image/png" : "image/jpeg";
+            const dataUrl = canvas.toDataURL(mimeType, quality);
             resolve(dataUrl);
             return;
           }
