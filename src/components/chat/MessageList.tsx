@@ -18,7 +18,15 @@ import { CoveLogo } from "@/components/ui/CoveLogo";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { isAvatarUrl } from "@/lib/utils";
-import { searchQuery, isSearchOpen, scrollToMessageId } from "@/signals/chat";
+import {
+  searchQuery,
+  isSearchOpen,
+  scrollToMessageId,
+  isCompacting,
+  showCompletedCompaction,
+  lastCompactionSummary,
+  compactionInsertIndex,
+} from "@/signals/chat";
 import { groupMessages } from "@/lib/message-grouping";
 import { isNoReplyContent } from "@/lib/message-detection";
 
@@ -207,6 +215,29 @@ export function MessageList({
   // Group messages for display (filters heartbeats, collapses compaction summaries)
   const messageGroups = useMemo(() => groupMessages(messages), [messages]);
 
+  // Find the group index where the ephemeral compaction divider should be inserted.
+  // compactionInsertIndex is a message index; we need to find which group contains it.
+  const ephemeralDividerGroupIdx = useMemo(() => {
+    const insertAt = compactionInsertIndex.value;
+    if (insertAt < 0 || !showCompletedCompaction.value) return -1;
+
+    // Find the first group whose source message index >= insertAt
+    for (let i = 0; i < messageGroups.length; i++) {
+      const g = messageGroups[i];
+      const srcMsg =
+        g.type === "message" || g.type === "cron"
+          ? g.message
+          : g.type === "compaction" && g.messages.length > 0
+            ? g.messages[0]
+            : null;
+      if (srcMsg) {
+        const msgIdx = messages.indexOf(srcMsg);
+        if (msgIdx >= insertAt) return i;
+      }
+    }
+    return messageGroups.length; // past all groups → render at end
+  }, [messageGroups, compactionInsertIndex.value, showCompletedCompaction.value]);
+
   return (
     <div class="relative flex-1 flex flex-col overflow-hidden">
       {/* Search bar overlay - zero-height wrapper to not affect flex layout */}
@@ -296,50 +327,78 @@ export function MessageList({
           {/* Messages */}
           <div class="space-y-6">
             {messageGroups.map((group, idx) => {
+              // Render ephemeral completed divider at its anchored position
+              const showEphemeralHere =
+                !isCompacting.value &&
+                showCompletedCompaction.value &&
+                ephemeralDividerGroupIdx === idx;
+
+              const rendered = [];
+
+              if (showEphemeralHere) {
+                rendered.push(
+                  <CompactionDivider
+                    key="compaction-ephemeral"
+                    summary={lastCompactionSummary.value}
+                  />,
+                );
+              }
+
               if (group.type === "compaction") {
-                return <CompactionDivider key={`compaction-${idx}`} messages={group.messages} />;
+                rendered.push(
+                  <CompactionDivider key={`compaction-${idx}`} messages={group.messages} />,
+                );
+              } else if (group.type === "cron") {
+                rendered.push(<CollapsedMessage key={`cron-${idx}`} messages={[group.message]} />);
+              } else {
+                const message = group.message;
+                const handleNavigate = isSearchOpen.value
+                  ? () => {
+                      scrollToMessageId.value = message.id;
+                      searchQuery.value = "";
+                      isSearchOpen.value = false;
+                    }
+                  : undefined;
+
+                rendered.push(
+                  <div
+                    key={message.id}
+                    data-message-id={message.id}
+                    onClick={handleNavigate}
+                    onKeyDown={
+                      handleNavigate
+                        ? (e: KeyboardEvent) => {
+                            if (e.key === "Enter") handleNavigate();
+                          }
+                        : undefined
+                    }
+                    role={isSearchOpen.value ? "button" : undefined}
+                    tabIndex={isSearchOpen.value ? 0 : undefined}
+                    class={`-mx-2 px-2 py-1 rounded-lg ${isSearchOpen.value ? MESSAGE_HIGHLIGHT_HOVER : ""}`}
+                  >
+                    <ChatMessage
+                      message={message}
+                      assistantName={assistantName}
+                      assistantAvatar={assistantAvatar}
+                      userName={userName}
+                      userAvatar={userAvatar}
+                    />
+                  </div>,
+                );
               }
 
-              if (group.type === "cron") {
-                return <CollapsedMessage key={`cron-${idx}`} messages={[group.message]} />;
-              }
-
-              const message = group.message;
-              const handleNavigate = isSearchOpen.value
-                ? () => {
-                    // Clear search and scroll to this message in full context
-                    scrollToMessageId.value = message.id;
-                    searchQuery.value = "";
-                    isSearchOpen.value = false;
-                  }
-                : undefined;
-
-              return (
-                <div
-                  key={message.id}
-                  data-message-id={message.id}
-                  onClick={handleNavigate}
-                  onKeyDown={
-                    handleNavigate
-                      ? (e) => {
-                          if (e.key === "Enter") handleNavigate();
-                        }
-                      : undefined
-                  }
-                  role={isSearchOpen.value ? "button" : undefined}
-                  tabIndex={isSearchOpen.value ? 0 : undefined}
-                  class={`-mx-2 px-2 py-1 rounded-lg ${isSearchOpen.value ? MESSAGE_HIGHLIGHT_HOVER : ""}`}
-                >
-                  <ChatMessage
-                    message={message}
-                    assistantName={assistantName}
-                    assistantAvatar={assistantAvatar}
-                    userName={userName}
-                    userAvatar={userAvatar}
-                  />
-                </div>
-              );
+              return rendered;
             })}
+
+            {/* Ephemeral divider at end (when insert index is past all groups) */}
+            {!isCompacting.value &&
+              showCompletedCompaction.value &&
+              ephemeralDividerGroupIdx >= messageGroups.length && (
+                <CompactionDivider summary={lastCompactionSummary.value} />
+              )}
+
+            {/* Active compaction divider — always at bottom with spinner */}
+            {isCompacting.value && <CompactionDivider active />}
 
             {/* Streaming message */}
             {streamingMessage && (

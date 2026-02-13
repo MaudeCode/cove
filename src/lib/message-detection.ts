@@ -87,6 +87,45 @@ export function isSystemEvent(message: Message): boolean {
   return SYSTEM_EVENT_PATTERNS.some((pattern) => pattern.test(message.content));
 }
 
+/**
+ * Strip envelope metadata that the gateway injects into user messages.
+ * Handles both formats:
+ *  - Legacy: `[WebChat 2026-02-12T23:11Z] actual message`
+ *  - New:    `Conversation info (untrusted metadata):\n```json\n{...}\n```\n\nactual message`
+ *
+ * Also strips `[message_id: ...]` lines.
+ */
+export function stripEnvelopeMetadata(text: string): string {
+  let result = text;
+
+  // New format: "Conversation info (untrusted metadata):" block followed by JSON fence
+  result = result.replace(
+    /^Conversation info \(untrusted metadata\):\s*```json\s*\{[^}]*\}\s*```\s*/s,
+    "",
+  );
+
+  // Legacy format: [Channel YYYY-MM-DD...] prefix
+  const legacyMatch = result.match(/^\[([^\]]+)\]\s*/);
+  if (legacyMatch) {
+    const header = legacyMatch[1] ?? "";
+    const isEnvelope =
+      /\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(header) || /\d{4}-\d{2}-\d{2} \d{2}:\d{2}/.test(header);
+    if (isEnvelope) {
+      result = result.slice(legacyMatch[0].length);
+    }
+  }
+
+  // Strip [message_id: ...] lines
+  if (result.includes("[message_id:")) {
+    result = result
+      .split(/\r?\n/)
+      .filter((line) => !/^\s*\[message_id:\s*[^\]]+\]\s*$/i.test(line))
+      .join("\n");
+  }
+
+  return result.trim();
+}
+
 /** Compaction summary patterns */
 const COMPACTION_PATTERNS = [
   /^<summary>/i,

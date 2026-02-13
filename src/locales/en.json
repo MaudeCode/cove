@@ -383,7 +383,7 @@
     "heartbeats_plural": "{count} heartbeats",
     "heartbeatsTitle": "Heartbeats",
     "noHeartbeats": "No heartbeats yet",
-    "compacting": "Compacting conversation...",
+    "compacting": "Compacting…",
     "conversationCompacted": "Conversation compacted",
     "compactionLabel": "Compacted",
     "cronJobCompleted": "Cron job completed",

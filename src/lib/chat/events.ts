@@ -4,6 +4,7 @@
  * Handling streaming events from the gateway.
  */
 
+import { batch } from "@preact/signals";
 import { on } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import { isChatEvent, isAgentEvent } from "@/lib/type-guards";
@@ -16,6 +17,10 @@ import {
   errorRun,
   abortRun as abortRunSignal,
   isCompacting,
+  lastCompactionSummary,
+  showCompletedCompaction,
+  compactionInsertIndex,
+  messages,
 } from "@/signals/chat";
 import { isForActiveSession } from "@/signals/sessions";
 import type { Message, ToolCall } from "@/types/messages";
@@ -28,6 +33,9 @@ import { extractToolResultContent } from "@/lib/tool-utils";
 
 let chatEventUnsubscribe: (() => void) | null = null;
 let agentEventUnsubscribe: (() => void) | null = null;
+
+/** Track runIds that belong to compaction — lifecycle handlers should ignore these */
+const compactionRunIds = new Set<string>();
 
 /**
  * Subscribe to chat events from the gateway.
@@ -83,6 +91,7 @@ export function unsubscribeFromChatEvents(): void {
     agentEventUnsubscribe();
     agentEventUnsubscribe = null;
   }
+  compactionRunIds.clear();
 }
 
 /**
@@ -95,6 +104,9 @@ function handleLifecycleStart(evt: AgentEvent): void {
   if (!isForActiveSession(sessionKey)) {
     return;
   }
+
+  // Skip compaction runs — they don't produce user-visible messages
+  if (compactionRunIds.has(runId)) return;
 
   const existingRun = activeRuns.value.get(runId);
 
@@ -114,6 +126,21 @@ function handleLifecycleEnd(evt: AgentEvent): void {
 
   // Filter out events from other sessions
   if (!isForActiveSession(sessionKey)) {
+    return;
+  }
+
+  // Skip compaction runs — handled by handleCompactionEvent
+  // Also clear isCompacting as a safety fallback in case the compaction stream
+  // "end" event was missed or arrived out of order.
+  if (compactionRunIds.has(runId)) {
+    compactionRunIds.delete(runId);
+    if (isCompacting.value) {
+      log.chat.warn("Clearing stale isCompacting flag via lifecycle end for run:", runId);
+      batch(() => {
+        isCompacting.value = false;
+        showCompletedCompaction.value = true;
+      });
+    }
     return;
   }
 
@@ -160,15 +187,47 @@ function handleLifecycleEnd(evt: AgentEvent): void {
 
 /**
  * Handle compaction events from the agent stream.
+ * On "end", transitions the inline divider from active → completed state.
+ * On reload, the gateway's __openclaw compaction marker in history handles it.
  */
 function handleCompactionEvent(evt: AgentEvent): void {
   const phase = evt.data?.phase;
-  log.chat.info("Compaction event:", phase);
+  log.chat.info(
+    "Compaction event:",
+    phase,
+    "runId:",
+    evt.runId,
+    "isCompacting:",
+    isCompacting.value,
+  );
+
+  // Track this runId so lifecycle handlers don't create a ghost run/message
+  if (evt.runId) {
+    compactionRunIds.add(evt.runId);
+  }
 
   if (phase === "start") {
+    // Clean up any ghost run created by handleLifecycleStart before we registered the runId
+    if (evt.runId && activeRuns.value.has(evt.runId)) {
+      log.chat.debug("Removing ghost run created before compaction registration:", evt.runId);
+      const newRuns = new Map(activeRuns.value);
+      newRuns.delete(evt.runId);
+      activeRuns.value = newRuns;
+    }
     isCompacting.value = true;
   } else if (phase === "end") {
-    isCompacting.value = false;
+    // Capture where the divider should be rendered (current message count)
+    const insertIdx = messages.value.length;
+
+    const summary = typeof evt.data?.summary === "string" ? evt.data.summary : undefined;
+
+    batch(() => {
+      isCompacting.value = false;
+      lastCompactionSummary.value = summary;
+      showCompletedCompaction.value = true;
+      compactionInsertIndex.value = insertIdx;
+    });
+    log.chat.info("Compaction ended, divider at index:", insertIdx);
   }
 }
 
@@ -184,6 +243,9 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
   const text = typeof data?.text === "string" ? data.text : null;
 
   if (!text) return;
+
+  // Skip compaction runs
+  if (compactionRunIds.has(runId)) return;
 
   // Session filter - only process events for the active session
   if (!isForActiveSession(sessionKey)) {
@@ -218,6 +280,9 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
 function handleToolEvent(evt: AgentEvent): void {
   const { runId, sessionKey, data } = evt;
   if (!data) return;
+
+  // Skip compaction runs
+  if (compactionRunIds.has(runId)) return;
 
   // Filter out events from other sessions
   if (!isForActiveSession(sessionKey)) {
@@ -344,6 +409,12 @@ function handleToolEvent(evt: AgentEvent): void {
  */
 function handleChatEvent(event: ChatEvent): void {
   const { runId, state, errorMessage } = event;
+
+  // Skip compaction runs — they don't produce user-visible messages
+  if (compactionRunIds.has(runId)) {
+    log.chat.debug("Skipping chat event for compaction run:", runId, state);
+    return;
+  }
 
   log.chat.debug("Chat event:", state, runId, "session:", event.sessionKey);
 

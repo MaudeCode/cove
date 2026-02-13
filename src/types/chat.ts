@@ -5,6 +5,7 @@
  */
 
 import type { Message, ToolCall, MessageImage } from "./messages";
+import { stripEnvelopeMetadata } from "@/lib/message-detection";
 
 // ============================================
 // Content Block Types (Discriminated Union)
@@ -139,6 +140,7 @@ export interface AgentEvent {
     meta?: string;
     text?: string;
     delta?: string;
+    summary?: string;
   };
 }
 
@@ -263,10 +265,12 @@ export function normalizeMessage(raw: RawMessage, id: string): Message {
   const parsed = parseMessageContent(raw.content);
   // Filter role - toolResult should not be passed here (they're merged into assistant messages)
   const role = raw.role === "toolResult" ? "assistant" : raw.role;
+  // Strip gateway envelope metadata from user messages
+  const content = role === "user" ? stripEnvelopeMetadata(parsed.text) : parsed.text;
   const msg: Message = {
     id,
     role,
-    content: parsed.text,
+    content,
     images: parsed.images.length > 0 ? parsed.images : undefined,
     toolCalls: parsed.toolCalls.length > 0 ? parsed.toolCalls : undefined,
     timestamp: raw.timestamp ?? Date.now(),

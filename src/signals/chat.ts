@@ -66,6 +66,12 @@ export const thinkingLevel = signal<string>("off");
 
 /** Whether the session is currently being compacted */
 export const isCompacting = signal<boolean>(false);
+/** Summary text from the last completed compaction (current session only) */
+export const lastCompactionSummary = signal<string | undefined>(undefined);
+/** Whether we have a just-completed compaction to show (before it's in message history) */
+export const showCompletedCompaction = signal<boolean>(false);
+/** Message index where the completed compaction divider should be rendered */
+export const compactionInsertIndex = signal<number>(-1);
 
 // ============================================
 // Heartbeat Tracking
@@ -285,9 +291,12 @@ export function clearMessages(): void {
   historyError.value = null;
 }
 
-/** Set messages (replaces all) */
+/** Set messages (replaces all) — clears ephemeral compaction state since history has its own markers */
 export function setMessages(newMessages: Message[]): void {
   messages.value = newMessages;
+  showCompletedCompaction.value = false;
+  lastCompactionSummary.value = undefined;
+  compactionInsertIndex.value = -1;
 }
 
 /** Add a message to the list (deduplicates by ID) */

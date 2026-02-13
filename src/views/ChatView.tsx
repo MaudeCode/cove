@@ -36,7 +36,6 @@ import { isSingleChatMode } from "@/signals/settings";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ConnectionBanner } from "@/components/chat/ConnectionBanner";
-import { CompactionBanner } from "@/components/chat/CompactionBanner";
 
 interface ChatViewProps {
   /** Route path (from preact-router) */
@@ -157,9 +156,6 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     <div class="flex-1 flex flex-col overflow-hidden relative">
       {/* Connection status banner */}
       <ConnectionBanner />
-
-      {/* Compaction status banner (floating overlay) */}
-      <CompactionBanner />
 
       <MessageList
         messages={filteredMessages.value}
