@@ -385,6 +385,7 @@
     "noHeartbeats": "No heartbeats yet",
     "compacting": "Compacting conversation...",
     "conversationCompacted": "Conversation compacted",
+    "compactionLabel": "Compacted",
     "cronJobCompleted": "Cron job completed",
     "dateFrom": "From",
     "dateTo": "To",

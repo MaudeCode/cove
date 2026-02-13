@@ -9,6 +9,7 @@ import { useSignal } from "@preact/signals";
 import type { Message, ToolCall } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
 import { CollapsedMessage } from "./CollapsedMessage";
+import { CompactionDivider } from "./CompactionDivider";
 import { SearchBar } from "./SearchBar";
 import { IconButton } from "@/components/ui/IconButton";
 import { Spinner } from "@/components/ui/Spinner";
@@ -296,19 +297,11 @@ export function MessageList({
           <div class="space-y-6">
             {messageGroups.map((group, idx) => {
               if (group.type === "compaction") {
-                return (
-                  <CollapsedMessage
-                    key={`compaction-${idx}`}
-                    messages={group.messages}
-                    type="compaction"
-                  />
-                );
+                return <CompactionDivider key={`compaction-${idx}`} messages={group.messages} />;
               }
 
               if (group.type === "cron") {
-                return (
-                  <CollapsedMessage key={`cron-${idx}`} messages={[group.message]} type="cron" />
-                );
+                return <CollapsedMessage key={`cron-${idx}`} messages={[group.message]} />;
               }
 
               const message = group.message;

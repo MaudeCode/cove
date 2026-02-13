@@ -83,6 +83,11 @@ export interface RawMessage {
     output?: number;
     totalTokens?: number;
   };
+  /** OpenClaw metadata (e.g., compaction markers injected by gateway) */
+  __openclaw?: {
+    kind?: string;
+    id?: string;
+  };
 }
 
 /** Chat history response */
@@ -258,7 +263,7 @@ export function normalizeMessage(raw: RawMessage, id: string): Message {
   const parsed = parseMessageContent(raw.content);
   // Filter role - toolResult should not be passed here (they're merged into assistant messages)
   const role = raw.role === "toolResult" ? "assistant" : raw.role;
-  return {
+  const msg: Message = {
     id,
     role,
     content: parsed.text,
@@ -267,6 +272,13 @@ export function normalizeMessage(raw: RawMessage, id: string): Message {
     timestamp: raw.timestamp ?? Date.now(),
     isStreaming: false,
   };
+
+  // Carry through structured compaction markers from gateway
+  if (raw.__openclaw?.kind === "compaction") {
+    msg.kind = "compaction";
+  }
+
+  return msg;
 }
 
 /**

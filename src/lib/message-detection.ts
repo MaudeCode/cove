@@ -71,11 +71,26 @@ export function isHeartbeatMessage(message: Message): boolean {
   return isHeartbeatPrompt(message) || isHeartbeatResponse(message);
 }
 
+/** Internal system event patterns — injected by gateway, never shown to user */
+const SYSTEM_EVENT_PATTERNS = [
+  /^pre-compaction memory flush/i,
+  /^read heartbeat\.md if it exists/i,
+];
+
+/**
+ * Check if a message is an internal system event that should be hidden.
+ * These are gateway-injected prompts (compaction triggers, heartbeat prompts, etc.)
+ * that duplicate what isHeartbeatMessage already catches, plus compaction-related events.
+ */
+export function isSystemEvent(message: Message): boolean {
+  if (message.role !== "user") return false;
+  return SYSTEM_EVENT_PATTERNS.some((pattern) => pattern.test(message.content));
+}
+
 /** Compaction summary patterns */
 const COMPACTION_PATTERNS = [
   /^<summary>/i,
   /the conversation.*compacted/i,
-  /pre-compaction memory flush/i,
   /context was summarized/i,
 ];
 

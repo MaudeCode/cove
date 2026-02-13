@@ -48,6 +48,9 @@ export interface Message {
 
   /** Session key (for retry) */
   sessionKey?: string;
+
+  /** Message kind for special rendering (e.g., compaction dividers) */
+  kind?: "compaction";
 }
 
 export interface ToolCall {
