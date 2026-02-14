@@ -24,6 +24,7 @@ import {
   Check,
   Image,
   MonitorPlay,
+  Maximize2,
 } from "lucide-preact";
 
 type IconProps = {
@@ -52,6 +53,10 @@ export function SettingsIcon({ class: className }: IconProps) {
 
 export function CanvasIcon({ class: className }: IconProps) {
   return <MonitorPlay class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+export function MaximizeIcon({ class: className }: IconProps) {
+  return <Maximize2 class={className || "w-5 h-5"} aria-hidden="true" />;
 }
 
 // ============================================
