@@ -11,6 +11,7 @@ import { MessageContent } from "./MessageContent";
 import { MessageImages } from "./MessageImages";
 import { MessageActions } from "./MessageActions";
 import { ToolCall as ToolCallComponent } from "./ToolCall";
+import { ThinkingBlock } from "./ThinkingBlock";
 import { BouncingDots } from "@/components/ui/BouncingDots";
 import { formatTimestamp, t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
@@ -131,7 +132,7 @@ export function AssistantMessage({
 
   // Build content blocks using cleaned text (MEDIA: lines removed)
   const blocks = buildContentBlocks(parsedMedia.text, message.toolCalls ?? []);
-  const hasContent = blocks.length > 0 || isStreaming || allImages.length > 0;
+  const hasContent = blocks.length > 0 || isStreaming || allImages.length > 0 || !!message.thinking;
 
   // Debug: log every render to track reactivity issues
   log.chat.debug("AssistantMessage render", {
@@ -186,6 +187,11 @@ export function AssistantMessage({
 
       {/* Message Content - interleaved blocks */}
       <div class="space-y-3">
+        {/* Thinking/reasoning block (collapsible) */}
+        {message.thinking && (
+          <ThinkingBlock content={message.thinking} timestamp={message.timestamp} />
+        )}
+
         {blocks.map((block, idx) => {
           log.chat.debug("Rendering block", {
             idx,

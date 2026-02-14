@@ -126,7 +126,7 @@ export interface ChatEvent {
 export interface AgentEvent {
   runId: string;
   sessionKey?: string;
-  stream: "lifecycle" | "assistant" | "tool" | "error" | "compaction";
+  stream: "lifecycle" | "assistant" | "tool" | "error" | "compaction" | "thinking";
   seq: number;
   ts: number;
   data?: {
@@ -167,10 +167,12 @@ export interface ParsedContent {
   text: string;
   toolCalls: ToolCall[];
   images: MessageImage[];
+  /** Thinking/reasoning content extracted from thinking blocks */
+  thinking?: string;
 }
 
 /**
- * Parse raw message content into text, tool calls, and images
+ * Parse raw message content into text, tool calls, images, and thinking
  * Also calculates insertedAtContentLength for proper interleaved rendering
  */
 export function parseMessageContent(content: string | ContentBlock[]): ParsedContent {
@@ -181,6 +183,7 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
   const textParts: string[] = [];
   const toolCalls: ToolCall[] = [];
   const images: MessageImage[] = [];
+  const thinkingParts: string[] = [];
   let currentTextLength = 0;
 
   for (const block of content) {
@@ -244,16 +247,24 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
         break;
       }
 
-      case "thinking":
-        // Ignore thinking blocks for now
+      case "thinking": {
+        // Extract thinking/reasoning content
+        const thinkingText = block.thinking?.trim();
+        if (thinkingText) {
+          thinkingParts.push(thinkingText);
+        }
         break;
+      }
     }
   }
+
+  const thinking = thinkingParts.length > 0 ? thinkingParts.join("\n\n") : undefined;
 
   return {
     text: textParts.join("\n"),
     toolCalls,
     images,
+    thinking,
   };
 }
 
@@ -273,6 +284,7 @@ export function normalizeMessage(raw: RawMessage, id: string): Message {
     content,
     images: parsed.images.length > 0 ? parsed.images : undefined,
     toolCalls: parsed.toolCalls.length > 0 ? parsed.toolCalls : undefined,
+    thinking: parsed.thinking,
     timestamp: raw.timestamp ?? Date.now(),
     isStreaming: false,
   };

@@ -56,11 +56,20 @@ export function subscribeToChatEvents(): () => void {
   });
 
   agentEventUnsubscribe = on("agent", (payload) => {
+    // Debug: log ALL agent events before type guard
+    const rawStream = (payload as Record<string, unknown>)?.stream;
+    log.chat.info("📡 RAW AGENT EVENT stream:", rawStream);
+
     if (!isAgentEvent(payload)) {
       log.chat.warn("Invalid agent event payload:", payload);
       return;
     }
     const evt = payload;
+    // Debug: log thinking events to confirm they're streaming
+    if ((evt as { stream: string }).stream === "thinking") {
+      log.chat.info("🧠 THINKING EVENT:", evt.data);
+    }
+
     if (evt.stream === "tool") {
       handleToolEvent(evt);
     } else if (evt.stream === "lifecycle") {

@@ -34,6 +34,9 @@ export interface Message {
   /** Tool calls made in this message (assistant only) */
   toolCalls?: ToolCall[];
 
+  /** Thinking/reasoning content (assistant only) */
+  thinking?: string;
+
   /** When the message was created */
   timestamp: number;
 
