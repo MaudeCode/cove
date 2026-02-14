@@ -10,6 +10,12 @@ Watch responses flow in with live markdown rendering. No waiting for the full re
 ### Tool Call Visualization
 See what your assistant is doing with expandable tool details. Each tool call shows the input, output, and execution time.
 
+### Thinking Blocks
+When using models with extended thinking (like Claude with reasoning enabled), the model's internal reasoning is displayed as collapsible blocks. They're collapsed by default to keep the chat clean, but you can expand them to see how the model arrived at its answer. Token counts are shown without needing to expand.
+
+### Compaction Indicator
+When a conversation grows too long and OpenClaw compacts the context, Cove shows a subtle divider where the compaction occurred. This helps you understand where older messages were summarized and why the model might not remember something from earlier.
+
 ### Syntax Highlighting
 Beautiful code blocks with automatic language detection and one-click copy. Supports 50+ languages.
 
@@ -74,12 +80,14 @@ Real-time log viewer:
 - Live tailing
 - Export logs
 
-### Workspace
-Browse and edit agent configuration files:
-- YAML/JSON editing
-- Token counts for each file
-- Quick navigation
-- Memory file browser
+### Agents
+Full management interface for your OpenClaw agents:
+
+- **Overview** — See agent identity, avatar, workspace path, and model at a glance. Edit name, avatar, workspace, and model settings.
+- **Files** — Browse and edit workspace files (AGENTS.md, SOUL.md, MEMORY.md, etc.) with token counts showing context budget usage.
+- **Tools** — Configure tool access with profile presets (full, standard, minimal) and per-tool enable/disable toggles.
+- **Skills** — Enable or disable skills per-agent with allowlist management.
+- **Create/Delete** — Add new agents or remove existing ones directly from the UI.
 
 ### Usage Analytics
 Per-session analytics:
