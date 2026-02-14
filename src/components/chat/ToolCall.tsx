@@ -12,15 +12,26 @@ import { useState, useEffect } from "preact/hooks";
 import type { ToolCall as ToolCallType } from "@/types/messages";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/Spinner";
-import { JsonBlock } from "@/components/debug/JsonBlock";
 import { Button } from "@/components/ui/Button";
+import { t } from "@/lib/i18n";
 import {
   execApprovalBusy,
   execApprovalError,
   resolvedApprovalIds,
   handleExecApprovalDecisionDirect,
 } from "@/signals/exec";
-import { t } from "@/lib/i18n";
+import {
+  CodeBlock,
+  ReadInputBlock,
+  WriteInputBlock,
+  ExecCommandBlock,
+  EditDiffBlock,
+  SearchInputBlock,
+  UrlInputBlock,
+  ImageInputBlock,
+  ResultBlock,
+  parseErrorResult,
+} from "./tool-blocks";
 
 interface ToolCallProps {
   toolCall: ToolCallType;
@@ -64,7 +75,11 @@ export function ToolCall({ toolCall }: ToolCallProps) {
   const duration =
     toolCall.completedAt && toolCall.startedAt ? toolCall.completedAt - toolCall.startedAt : null;
 
-  const statusConfig = getStatusConfig(toolCall.status, approvalPending);
+  // Check if result is an error (even if status says "complete")
+  const hasErrorResult =
+    toolCall.result !== undefined && parseErrorResult(toolCall.result) !== null;
+  const effectiveStatus = hasErrorResult ? "error" : toolCall.status;
+  const statusConfig = getStatusConfig(effectiveStatus, approvalPending);
 
   return (
     <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden">
@@ -105,10 +120,10 @@ export function ToolCall({ toolCall }: ToolCallProps) {
       {/* Expanded details */}
       {expanded && (
         <div class="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] space-y-3">
-          {/* Arguments */}
+          {/* Arguments - special handling for specific tools */}
           {toolCall.args && Object.keys(toolCall.args).length > 0 && (
             <ToolSection label="Input">
-              <CodeBlock content={toolCall.args} />
+              <InputBlock toolCall={toolCall} />
             </ToolSection>
           )}
 
@@ -123,10 +138,14 @@ export function ToolCall({ toolCall }: ToolCallProps) {
           {/* Result (hide when approval pending - the command output isn't ready yet) */}
           {toolCall.result !== undefined && !approvalPending && (
             <ToolSection label="Output">
-              <CodeBlock
-                content={toolCall.result}
-                maxLines={20}
+              <ResultBlock
+                result={toolCall.result}
                 error={toolCall.status === "error"}
+                toolName={toolCall.name}
+                filePath={
+                  (toolCall.args?.path as string | undefined) ??
+                  (toolCall.args?.file_path as string | undefined)
+                }
               />
             </ToolSection>
           )}
@@ -139,6 +158,39 @@ export function ToolCall({ toolCall }: ToolCallProps) {
       )}
     </div>
   );
+}
+
+// ============================================
+// Input Block Dispatcher
+// ============================================
+
+function InputBlock({ toolCall }: { toolCall: ToolCallType }) {
+  const name = toolCall.name.toLowerCase();
+  const args = toolCall.args as Record<string, unknown>;
+
+  if (name === "edit") {
+    return <EditDiffBlock args={args} />;
+  }
+  if (name === "exec" && args.command) {
+    return <ExecCommandBlock args={args} />;
+  }
+  if (name === "read") {
+    return <ReadInputBlock args={args} />;
+  }
+  if (name === "write") {
+    return <WriteInputBlock args={args} />;
+  }
+  if (toolCall.name === "web_search" || toolCall.name === "memory_search") {
+    return <SearchInputBlock args={args} />;
+  }
+  if (toolCall.name === "web_fetch") {
+    return <UrlInputBlock args={args} />;
+  }
+  if (toolCall.name === "image") {
+    return <ImageInputBlock args={args} />;
+  }
+
+  return <CodeBlock content={args} />;
 }
 
 // ============================================
@@ -262,51 +314,6 @@ function ToolSection({ label, children }: ToolSectionProps) {
       </div>
       {children}
     </div>
-  );
-}
-
-interface CodeBlockProps {
-  content: unknown;
-  maxLines?: number;
-  error?: boolean;
-}
-
-function CodeBlock({ content, maxLines = 30, error = false }: CodeBlockProps) {
-  // For JSON objects, use the syntax-highlighted JsonBlock
-  if (typeof content === "object" && content !== null) {
-    const json = JSON.stringify(content, null, 2);
-    const lines = json.split("\n");
-    const truncated = lines.length > maxLines;
-    const displayText = truncated ? lines.slice(0, maxLines).join("\n") + "\n..." : json;
-
-    if (error) {
-      // Error styling takes precedence - use simple display
-      return (
-        <pre class="text-xs p-2 rounded-md overflow-x-auto font-mono leading-relaxed bg-[var(--color-error)]/10 text-[var(--color-error)] max-h-[300px]">
-          {displayText}
-        </pre>
-      );
-    }
-
-    return <JsonBlock value={displayText} maxHeight="max-h-[300px]" />;
-  }
-
-  // For plain text content
-  const text = String(content);
-  const lines = text.split("\n");
-  const truncated = lines.length > maxLines;
-  const displayText = truncated ? lines.slice(0, maxLines).join("\n") + "\n..." : text;
-
-  return (
-    <pre
-      class={`text-xs p-2 rounded-md overflow-x-auto font-mono leading-relaxed max-h-[300px] whitespace-pre-wrap ${
-        error
-          ? "bg-[var(--color-error)]/10 text-[var(--color-error)]"
-          : "bg-[var(--color-bg-primary)] text-[var(--color-text-primary)]"
-      }`}
-    >
-      {displayText}
-    </pre>
   );
 }
 
