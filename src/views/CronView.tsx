@@ -8,6 +8,7 @@
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
+import { useQueryParam, pushQueryState } from "@/hooks/useQueryParam";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -20,25 +21,52 @@ import { CronJobRow, CronJobCard, CronJobModal } from "@/components/cron";
 import { useCronJobs } from "@/hooks/useCronJobs";
 import { RefreshCw, Search, Plus, Clock, CheckCircle, XCircle, Zap } from "lucide-preact";
 import type { RouteProps } from "@/types/routes";
+import type { CronJob } from "@/types/cron";
 
 export function CronView(_props: RouteProps) {
   const { state, modal, form, computed, actions } = useCronJobs();
 
-  // Handle deep link: ?job=jobId opens the edit modal
+  // URL query param as source of truth for selected job
+  // Wait until jobs are loaded before syncing (avoids clearing param prematurely)
+  const jobsReady = !state.isLoading.value && state.cronJobs.value.length > 0;
+  const [jobParam, setJobParam, jobParamInitialized] = useQueryParam("job", { ready: jobsReady });
+
+  // Sync URL → modal: when jobParam changes, open/close modal
   useEffect(() => {
-    if (!state.isLoading.value && state.cronJobs.value.length > 0) {
-      const params = new URLSearchParams(window.location.search);
-      const jobId = params.get("job");
-      if (jobId) {
-        const job = state.cronJobs.value.find((j) => j.id === jobId);
-        if (job) {
+    if (jobsReady) {
+      if (jobParam.value) {
+        const job = state.cronJobs.value.find((j) => j.id === jobParam.value);
+        if (job && modal.selectedJob.value?.id !== job.id) {
           actions.openJobModal("edit", job);
         }
-        // Clear the query param to avoid re-triggering
-        window.history.replaceState({}, "", window.location.pathname);
+      } else if (modal.selectedJob.value && modal.modalMode.value === "edit") {
+        // URL cleared but modal open - close it (browser back)
+        actions.closeModal();
       }
     }
-  }, [state.isLoading.value, state.cronJobs.value]);
+  }, [jobParam.value, jobsReady]);
+
+  // Sync modal → URL: when modal closes, clear param
+  useEffect(() => {
+    if (jobParamInitialized.value && !modal.selectedJob.value && jobParam.value) {
+      setJobParam(null);
+    }
+  }, [modal.selectedJob.value, jobParamInitialized.value]);
+
+  // Wrap openJobModal to also set URL param
+  const openJobWithUrl = (mode: "create" | "edit", job?: CronJob) => {
+    if (mode === "edit" && job) {
+      setJobParam(job.id);
+      pushQueryState(); // Push to history for back button
+    }
+    actions.openJobModal(mode, job);
+  };
+
+  // Wrap closeModal to also clear URL param
+  const closeModalWithUrl = () => {
+    setJobParam(null);
+    actions.closeModal();
+  };
 
   const counts = computed.jobCounts.value;
 
@@ -64,7 +92,7 @@ export function CronView(_props: RouteProps) {
             )}
             <Button
               icon={<Plus class="w-4 h-4" />}
-              onClick={() => actions.openJobModal("create")}
+              onClick={() => openJobWithUrl("create")}
               disabled={!isConnected.value}
             >
               <span class="hidden sm:inline">{t("cron.createJob")}</span>
@@ -156,11 +184,7 @@ export function CronView(_props: RouteProps) {
           {/* Mobile: Card list (tap to edit) */}
           <div class="md:hidden space-y-2">
             {computed.filteredJobs.value.map((job) => (
-              <CronJobCard
-                key={job.id}
-                job={job}
-                onEdit={actions.openJobModal.bind(null, "edit")}
-              />
+              <CronJobCard key={job.id} job={job} onEdit={openJobWithUrl.bind(null, "edit")} />
             ))}
           </div>
 
@@ -182,7 +206,7 @@ export function CronView(_props: RouteProps) {
                   <CronJobRow
                     key={job.id}
                     job={job}
-                    onEdit={actions.openJobModal.bind(null, "edit")}
+                    onEdit={openJobWithUrl.bind(null, "edit")}
                     onRun={actions.runJobNow}
                     onToggleEnabled={actions.toggleJobEnabled}
                     isRunning={modal.isRunning.value}
@@ -204,10 +228,7 @@ export function CronView(_props: RouteProps) {
               <Clock class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
               <h3 class="text-lg font-medium mb-2">{t("cron.emptyTitle")}</h3>
               <p class="text-[var(--color-text-muted)] mb-4">{t("cron.emptyDescription")}</p>
-              <Button
-                icon={<Plus class="w-4 h-4" />}
-                onClick={() => actions.openJobModal("create")}
-              >
+              <Button icon={<Plus class="w-4 h-4" />} onClick={() => openJobWithUrl("create")}>
                 {t("cron.createJob")}
               </Button>
             </div>
@@ -260,7 +281,7 @@ export function CronView(_props: RouteProps) {
         isSaving={modal.isSaving.value}
         isRunning={modal.isRunning.value}
         hasChanges={computed.hasFormChanges.value}
-        onClose={actions.closeModal}
+        onClose={closeModalWithUrl}
         onSave={actions.saveOrCreateJob}
         onDelete={actions.deleteJob}
         onRun={actions.runJobNow}

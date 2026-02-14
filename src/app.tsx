@@ -183,15 +183,18 @@ export function App() {
  * Handle route changes - sync to signal for sidebar active state
  */
 function handleRouteChange(e: { url: string }) {
-  // Strip query params for sidebar active state matching
-  const pathWithoutQuery = e.url.split("?")[0];
+  // Strip query params for sidebar path matching only
+  const pathOnly = e.url.split("?")[0];
 
   // Track previous route for "back" navigation (e.g., settings toggle)
   // Only update if navigating TO settings from a non-settings page
-  if (pathWithoutQuery === "/settings" && currentPath.value !== "/settings") {
+  if (pathOnly === "/settings" && !currentPath.value.startsWith("/settings")) {
     previousRoute.value = currentPath.value;
   }
-  currentPath.value = pathWithoutQuery;
+
+  // Store path without query for sidebar active state
+  // (sidebar matches /cron, not /cron?job=abc)
+  currentPath.value = pathOnly;
 }
 
 /**

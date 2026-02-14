@@ -24,10 +24,10 @@
     overflow: hidden;
   }
 
-  /* Prevent overscroll/bounce on iOS PWA */
+  /* Prevent vertical overscroll/bounce on iOS PWA, but allow horizontal for browser back/forward swipe */
   html,
   body {
-    overscroll-behavior: none;
+    overscroll-behavior-y: none;
   }
 
   /* Monospace text */
