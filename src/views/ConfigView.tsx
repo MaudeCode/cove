@@ -274,7 +274,7 @@ export function ConfigView(_props: RouteProps) {
 
       {/* Desktop Layout */}
       <div class="hidden md:flex md:flex-1 md:overflow-y-auto p-6">
-        <div class="max-w-6xl mx-auto w-full space-y-6">
+        <div class="max-w-5xl mx-auto w-full space-y-6">
           <PageHeader
             title={t("config.title")}
             subtitle={t("config.description")}
