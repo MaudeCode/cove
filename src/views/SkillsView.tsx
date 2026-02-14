@@ -20,7 +20,17 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { HintBox } from "@/components/ui/HintBox";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Modal } from "@/components/ui/Modal";
-import { RefreshCw, Search, Puzzle, CheckCircle, XCircle, AlertTriangle } from "lucide-preact";
+import {
+  RefreshCw,
+  Search,
+  Puzzle,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+  Package,
+  Globe,
+} from "lucide-preact";
+import { TabNav } from "@/components/ui/TabNav";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { SkillStatusReport, SkillStatusEntry, SkillStatus, SkillSource } from "@/types/skills";
 import { getSkillStatus } from "@/types/skills";
@@ -175,25 +185,10 @@ function clearFilters(): void {
 // Sub-Components
 // ============================================
 
-function TabButton({ tab, label, active }: { tab: SkillsTab; label: string; active: boolean }) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={() => {
-        activeTab.value = tab;
-      }}
-      class={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-        active
-          ? "bg-[var(--color-accent)] text-white"
-          : "text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-tertiary)]"
-      }`}
-    >
-      {label}
-    </button>
-  );
-}
+const SKILLS_TABS = [
+  { id: "installed", label: "Installed", icon: <Package class="w-4 h-4" /> },
+  { id: "clawhub", label: "ClawHub", icon: <Globe class="w-4 h-4" /> },
+] as const;
 
 function EmptyState({ hasFilters }: { hasFilters: boolean }) {
   return (
@@ -225,7 +220,22 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
 export function SkillsView(_props: RouteProps) {
   useEffect(() => {
     if (isConnected.value && activeTab.value === "installed") {
-      loadSkills();
+      loadSkills().then(() => {
+        // Handle deep link: ?expand=skillKey or ?skill=skillKey
+        const params = new URLSearchParams(window.location.search);
+        const expandKey = params.get("expand") || params.get("skill");
+        if (expandKey) {
+          // Expand the skill
+          expandedSkills.value = new Set([expandKey]);
+          // Scroll to it after a brief delay for render
+          setTimeout(() => {
+            const el = document.querySelector(`[data-skill-key="${expandKey}"]`);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 100);
+          // Clear the query param to avoid re-triggering
+          window.history.replaceState({}, "", window.location.pathname);
+        }
+      });
     }
   }, [isConnected.value]);
 
@@ -255,14 +265,11 @@ export function SkillsView(_props: RouteProps) {
           />
 
           {/* Tabs */}
-          <div class="flex gap-2" role="tablist">
-            <TabButton
-              tab="installed"
-              label={t("skills.tabs.installed")}
-              active={tab === "installed"}
-            />
-            <TabButton tab="clawhub" label={t("skills.tabs.clawhub")} active={tab === "clawhub"} />
-          </div>
+          <TabNav
+            items={SKILLS_TABS.map((t) => ({ ...t, label: t.label }))}
+            activeId={tab}
+            onChange={(id) => (activeTab.value = id as SkillsTab)}
+          />
 
           {/* ClawHub Tab */}
           {tab === "clawhub" && <ClawHubBrowser />}
@@ -381,16 +388,17 @@ export function SkillsView(_props: RouteProps) {
                       {/* Desktop: Row list with expand/collapse */}
                       <Card padding="none" class="hidden md:block overflow-hidden">
                         {filtered.map((skill) => (
-                          <SkillRow
-                            key={skill.skillKey}
-                            skill={skill}
-                            isExpanded={expandedSkills.value.has(skill.skillKey)}
-                            onToggleExpand={() => toggleExpanded(skill.skillKey)}
-                            onToggleEnabled={() => toggleSkillEnabled(skill)}
-                            onInstall={(s) => {
-                              installModal.value = s;
-                            }}
-                          />
+                          <div key={skill.skillKey} data-skill-key={skill.skillKey}>
+                            <SkillRow
+                              skill={skill}
+                              isExpanded={expandedSkills.value.has(skill.skillKey)}
+                              onToggleExpand={() => toggleExpanded(skill.skillKey)}
+                              onToggleEnabled={() => toggleSkillEnabled(skill)}
+                              onInstall={(s) => {
+                                installModal.value = s;
+                              }}
+                            />
+                          </div>
                         ))}
                       </Card>
                     </>
