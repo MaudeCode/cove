@@ -314,7 +314,7 @@ export function ChannelsView(_props: RouteProps) {
   const statValues = stats.value;
 
   return (
-    <PageLayout viewName={t("nav.channels")} maxWidth="4xl">
+    <PageLayout viewName={t("nav.channels")}>
       <PageHeader
         title={t("channels.title")}
         subtitle={t("channels.description")}

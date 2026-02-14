@@ -28,7 +28,7 @@ import {
   ChevronRight,
   MessageSquare,
 } from "lucide-preact";
-import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
+import { PageLayout } from "@/components/ui/PageLayout";
 import { ListCard } from "@/components/ui/ListCard";
 import { Modal } from "@/components/ui/Modal";
 import { GatewayInfoCard, UsageSummaryCard, DailyUsageChart, AgentsCard } from "@/components/usage";
@@ -816,81 +816,77 @@ export function UsageView(_props: RouteProps) {
   }, [isConnected.value]);
 
   return (
-    <ViewErrorBoundary viewName={t("nav.usage")}>
-      <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
-        <div class="max-w-4xl mx-auto space-y-6 min-w-0">
-          <PageHeader
-            title={t("usage.title")}
-            subtitle={t("usage.description")}
-            actions={
-              <IconButton
-                icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
-                label={t("actions.refresh")}
-                onClick={() => loadAll()}
-                disabled={isLoading.value || !isConnected.value}
-                variant="ghost"
-              />
-            }
+    <PageLayout viewName={t("nav.usage")}>
+      <PageHeader
+        title={t("usage.title")}
+        subtitle={t("usage.description")}
+        actions={
+          <IconButton
+            icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+            label={t("actions.refresh")}
+            onClick={() => loadAll()}
+            disabled={isLoading.value || !isConnected.value}
+            variant="ghost"
           />
+        }
+      />
 
-          {/* Error */}
-          {error.value && (
-            <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
-              {error.value}
-            </div>
-          )}
-
-          {/* Loading / Connecting */}
-          {(isLoading.value && !healthData.value) || !isConnected.value ? (
-            <div class="flex justify-center py-16">
-              <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
-            </div>
-          ) : (
-            <div class="grid gap-6 md:grid-cols-2">
-              {/* Gateway Info */}
-              <GatewayInfoCard healthData={healthData.value} />
-
-              {/* Usage Summary */}
-              <UsageSummaryCard usage={usageData.value} isLoading={isLoadingUsage.value} />
-
-              {/* Daily Usage Chart */}
-              <div class="md:col-span-2">
-                <DailyUsageChart usage={usageData.value} />
-              </div>
-
-              {/* Per-Session Usage */}
-              <div class="md:col-span-2 min-w-0">
-                <SessionUsageTable />
-              </div>
-
-              {/* Agents */}
-              <div class="md:col-span-2">
-                <AgentsCard healthData={healthData.value} />
-              </div>
-            </div>
-          )}
-
-          {/* Usage Period Selector */}
-          {usageData.value && (
-            <div class="flex justify-center gap-2">
-              {[7, 14, 30, 90].map((days) => (
-                <Button
-                  key={days}
-                  variant={usageDays.value === days ? "primary" : "ghost"}
-                  size="sm"
-                  onClick={() => loadUsage(days)}
-                  disabled={isLoadingUsage.value}
-                >
-                  {days}d
-                </Button>
-              ))}
-            </div>
-          )}
+      {/* Error */}
+      {error.value && (
+        <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+          {error.value}
         </div>
-      </div>
+      )}
+
+      {/* Loading / Connecting */}
+      {(isLoading.value && !healthData.value) || !isConnected.value ? (
+        <div class="flex justify-center py-16">
+          <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
+        </div>
+      ) : (
+        <div class="grid gap-6 md:grid-cols-2">
+          {/* Gateway Info */}
+          <GatewayInfoCard healthData={healthData.value} />
+
+          {/* Usage Summary */}
+          <UsageSummaryCard usage={usageData.value} isLoading={isLoadingUsage.value} />
+
+          {/* Daily Usage Chart */}
+          <div class="md:col-span-2">
+            <DailyUsageChart usage={usageData.value} />
+          </div>
+
+          {/* Per-Session Usage */}
+          <div class="md:col-span-2 min-w-0">
+            <SessionUsageTable />
+          </div>
+
+          {/* Agents */}
+          <div class="md:col-span-2">
+            <AgentsCard healthData={healthData.value} />
+          </div>
+        </div>
+      )}
+
+      {/* Usage Period Selector */}
+      {usageData.value && (
+        <div class="flex justify-center gap-2">
+          {[7, 14, 30, 90].map((days) => (
+            <Button
+              key={days}
+              variant={usageDays.value === days ? "primary" : "ghost"}
+              size="sm"
+              onClick={() => loadUsage(days)}
+              disabled={isLoadingUsage.value}
+            >
+              {days}d
+            </Button>
+          ))}
+        </div>
+      )}
 
       {/* Session Detail Modal */}
       <SessionDetailModal />
-    </ViewErrorBoundary>
+    </PageLayout>
   );
 }
