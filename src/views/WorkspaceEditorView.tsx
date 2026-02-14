@@ -1,8 +1,8 @@
 /**
- * WorkspaceEditorView
+ * AgentFileEditorView
  *
- * View and edit a single workspace file.
- * Route: /workspace/:filename
+ * View and edit a single agent workspace file.
+ * Route: /agents/edit/:filename
  */
 
 import { signal, computed } from "@preact/signals";
@@ -51,7 +51,7 @@ const meta = computed(() => {
   return (
     WORKSPACE_FILE_META[normalized] ?? {
       icon: "📄",
-      description: "workspace.files.unknown",
+      description: "agents.files.meta.unknown",
     }
   );
 });
@@ -86,8 +86,8 @@ async function loadFile(filename: string, agentId: string): Promise<void> {
     // Default to edit mode if file is missing/empty
     mode.value = result.file.missing || !content ? "edit" : "view";
   } catch (err) {
-    error.value = err instanceof Error ? err.message : t("workspace.loadFileError");
-    toast.error(t("workspace.loadFileError"));
+    error.value = err instanceof Error ? err.message : t("agents.files.loadFileError");
+    toast.error(t("agents.files.loadFileError"));
   } finally {
     isLoading.value = false;
   }
@@ -113,9 +113,9 @@ async function saveFile(): Promise<void> {
       size: new Blob([editedContent.value]).size,
       updatedAtMs: Date.now(),
     };
-    toast.success(t("workspace.saved"));
+    toast.success(t("agents.files.saved"));
   } catch {
-    toast.error(t("workspace.saveError"));
+    toast.error(t("agents.files.saveError"));
   } finally {
     isSaving.value = false;
   }
@@ -123,7 +123,7 @@ async function saveFile(): Promise<void> {
 
 function goBack(): void {
   if (hasChanges.value) {
-    const confirmed = window.confirm(t("workspace.unsavedWarning"));
+    const confirmed = window.confirm(t("agents.files.unsavedWarning"));
     if (!confirmed) return;
   }
   // Reset state
@@ -131,7 +131,7 @@ function goBack(): void {
   originalContent.value = "";
   editedContent.value = "";
   mode.value = "view";
-  route("/workspace");
+  route("/agents");
 }
 
 // ============================================
@@ -193,14 +193,14 @@ export function WorkspaceEditorView({ filename }: WorkspaceEditorViewProps) {
   }, []);
 
   return (
-    <ViewErrorBoundary viewName={decodedFilename || t("nav.workspace")}>
+    <ViewErrorBoundary viewName={decodedFilename || t("nav.agents")}>
       <div class="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div class="flex items-center justify-between gap-4 px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
           <div class="flex items-center gap-3 min-w-0">
             <IconButton
               icon={<ArrowLeft class="w-4 h-4" />}
-              label={t("workspace.backToList")}
+              label={t("agents.files.backToList")}
               onClick={goBack}
               variant="ghost"
             />
@@ -211,7 +211,7 @@ export function WorkspaceEditorView({ filename }: WorkspaceEditorViewProps) {
               <h1 class="font-semibold truncate">{filename}</h1>
               {hasChanges.value && (
                 <Badge variant="warning" size="sm">
-                  {t("workspace.unsaved")}
+                  {t("agents.files.unsaved")}
                 </Badge>
               )}
             </div>
@@ -258,13 +258,13 @@ export function WorkspaceEditorView({ filename }: WorkspaceEditorViewProps) {
             active={mode.value === "view"}
             onClick={() => (mode.value = "view")}
             icon={<Eye class="w-4 h-4" />}
-            label={t("workspace.view")}
+            label={t("agents.files.view")}
           />
           <ModeTab
             active={mode.value === "edit"}
             onClick={() => (mode.value = "edit")}
             icon={<Pencil class="w-4 h-4" />}
-            label={t("workspace.edit")}
+            label={t("agents.files.edit")}
             indicator={hasChanges.value}
           />
         </div>
@@ -289,7 +289,7 @@ export function WorkspaceEditorView({ filename }: WorkspaceEditorViewProps) {
               {editedContent.value ? (
                 <MessageContent content={editedContent.value} />
               ) : (
-                <p class="text-[var(--color-text-muted)] italic">{t("workspace.emptyFile")}</p>
+                <p class="text-[var(--color-text-muted)] italic">{t("agents.files.emptyFile")}</p>
               )}
             </div>
           ) : (
@@ -298,7 +298,7 @@ export function WorkspaceEditorView({ filename }: WorkspaceEditorViewProps) {
               <Textarea
                 value={editedContent.value}
                 onInput={(e) => (editedContent.value = (e.target as HTMLTextAreaElement).value)}
-                placeholder={t("workspace.editPlaceholder")}
+                placeholder={t("agents.files.editPlaceholder")}
                 class="font-mono text-sm h-full min-h-[400px] resize-none"
                 fullWidth
               />
