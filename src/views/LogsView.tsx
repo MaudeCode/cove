@@ -9,6 +9,13 @@ import { signal, computed } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
+import {
+  useQueryParam,
+  useQueryParamSet,
+  useSyncToParam,
+  useInitFromParam,
+  pushQueryState,
+} from "@/hooks/useQueryParam";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
@@ -277,6 +284,60 @@ export function LogsView(_props: RouteProps) {
   const shouldAutoScroll = useRef(true);
   const mobileShouldAutoScroll = useRef(true);
 
+  // URL query params as source of truth
+  const logsReady = !isLoading.value && logLines.value.length > 0;
+  const [searchParam, setSearchParam] = useQueryParam("q");
+  const [levelParam, setLevelParam] = useQueryParamSet<LogLevel>("level");
+  const [liveParam, setLiveParam] = useQueryParam("live");
+  const [expandedParam, setExpandedParam, expandedInitialized] = useQueryParamSet<number>("log", {
+    ready: logsReady,
+    parse: (s) => parseInt(s, 10),
+  });
+
+  // Sync URL → state on mount
+  useInitFromParam(searchParam, searchQuery, (s) => s);
+  useEffect(() => {
+    if (levelParam.value.size > 0) selectedLevels.value = levelParam.value;
+    if (liveParam.value === "0") isLive.value = false;
+  }, []);
+
+  // Sync state → URL
+  useSyncToParam(searchQuery, setSearchParam);
+
+  useEffect(() => {
+    setLevelParam(selectedLevels.value);
+  }, [selectedLevels.value]);
+
+  useEffect(() => {
+    setLiveParam(isLive.value ? null : "0");
+  }, [isLive.value]);
+
+  // Sync URL → expanded log
+  useEffect(() => {
+    if (logsReady && expandedParam.value.size > 0) {
+      const validIds = Array.from(expandedParam.value).filter((id) =>
+        logLines.value.some((l) => l.id === id),
+      );
+      const newIds = validIds.filter((id) => !expandedLogs.value.has(id));
+      if (newIds.length > 0) {
+        expandedLogs.value = new Set([...expandedLogs.value, ...validIds]);
+        // Scroll to the first new one
+        setTimeout(() => {
+          document
+            .querySelector(`#log-${newIds[0]}`)
+            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
+    }
+  }, [expandedParam.value, logsReady]);
+
+  // Sync expanded → URL
+  useEffect(() => {
+    if (expandedInitialized.value) {
+      setExpandedParam(expandedLogs.value);
+    }
+  }, [expandedLogs.value, expandedInitialized.value]);
+
   // Initial fetch
   useEffect(() => {
     if (isConnected.value) {
@@ -504,12 +565,18 @@ export function LogsView(_props: RouteProps) {
                   aria-live="polite"
                 >
                   {lines.map((line) => (
-                    <LogLine
-                      key={line.id}
-                      line={line}
-                      expanded={expandedLogs.value.has(line.id)}
-                      onToggle={() => toggleExpanded(line.id)}
-                    />
+                    <div key={line.id} id={`log-${line.id}`}>
+                      <LogLine
+                        line={line}
+                        expanded={expandedLogs.value.has(line.id)}
+                        onToggle={() => {
+                          toggleExpanded(line.id);
+                          if (!expandedLogs.value.has(line.id)) {
+                            pushQueryState(); // Push to history when expanding
+                          }
+                        }}
+                      />
+                    </div>
                   ))}
                 </div>
               </>

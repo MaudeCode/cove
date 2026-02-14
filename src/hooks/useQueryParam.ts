@@ -144,3 +144,69 @@ export function useQueryParam(
 export function pushQueryState() {
   window.history.pushState({}, "", window.location.href);
 }
+
+/**
+ * Hook for Set-based query params (comma-separated in URL)
+ * Great for expanded items, multi-select filters, etc.
+ */
+export function useQueryParamSet<T extends string | number>(
+  key: string,
+  options: UseQueryParamOptions & {
+    /** Convert string to item type (default: identity for strings) */
+    parse?: (s: string) => T;
+    /** Convert item to string (default: String()) */
+    serialize?: (v: T) => string;
+  } = {},
+): [Signal<Set<T>>, (set: Set<T>) => void, Signal<boolean>] {
+  const { parse = (s) => s as T, serialize = String, ...rest } = options;
+  const [param, setParam, initialized] = useQueryParam(key, rest);
+
+  // Derived Set signal
+  const setSignal = useMemo(() => {
+    const items = param.value ? param.value.split(",").map(parse).filter(Boolean) : [];
+    return signal(new Set(items));
+  }, [key]);
+
+  // Keep set in sync with param
+  useEffect(() => {
+    const items = param.value ? param.value.split(",").map(parse).filter(Boolean) : [];
+    setSignal.value = new Set(items);
+  }, [param.value]);
+
+  // Setter that updates param
+  const setter = useMemo(
+    () => (set: Set<T>) => {
+      setSignal.value = set;
+      const arr = Array.from(set).map(serialize);
+      setParam(arr.length > 0 ? arr.join(",") : null);
+    },
+    [setParam],
+  );
+
+  return [setSignal, setter, initialized];
+}
+
+/**
+ * Sync a module-level signal to a query param (one-way: signal → URL)
+ * Useful when state lives outside the component.
+ */
+export function useSyncToParam(signal: Signal<string>, setParam: (v: string | null) => void): void {
+  useEffect(() => {
+    setParam(signal.value || null);
+  }, [signal.value]);
+}
+
+/**
+ * Initialize a module-level signal from a query param on mount (one-way: URL → signal)
+ */
+export function useInitFromParam<T>(
+  param: Signal<string | null>,
+  signal: Signal<T>,
+  parse: (s: string) => T,
+): void {
+  useEffect(() => {
+    if (param.value) {
+      signal.value = parse(param.value);
+    }
+  }, []);
+}

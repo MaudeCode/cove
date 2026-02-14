@@ -9,6 +9,13 @@ import { signal, computed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
+import {
+  useQueryParam,
+  useQueryParamSet,
+  useSyncToParam,
+  useInitFromParam,
+  pushQueryState,
+} from "@/hooks/useQueryParam";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
@@ -165,12 +172,14 @@ async function toggleSkillEnabled(skill: SkillStatusEntry): Promise<void> {
   }
 }
 
-function toggleExpanded(skillKey: string): void {
+function toggleExpanded(skillKey: string, shouldPushState = true): void {
   const next = new Set(expandedSkills.value);
-  if (next.has(skillKey)) {
+  const wasExpanded = next.has(skillKey);
+  if (wasExpanded) {
     next.delete(skillKey);
   } else {
     next.add(skillKey);
+    if (shouldPushState) pushQueryState();
   }
   expandedSkills.value = next;
 }
@@ -218,26 +227,59 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
 // ============================================
 
 export function SkillsView(_props: RouteProps) {
+  // URL query params as source of truth
+  const skillsReady = !isLoading.value && skills.value.length > 0;
+  const [searchParam, setSearchParam] = useQueryParam("q");
+  const [sourceParam, setSourceParam] = useQueryParam("source");
+  const [statusParam, setStatusParam] = useQueryParam("status");
+  const [expandedParam, setExpandedParam, expandedInitialized] = useQueryParamSet<string>("skill", {
+    ready: skillsReady,
+  });
+
+  // Initial load
   useEffect(() => {
     if (isConnected.value && activeTab.value === "installed") {
-      loadSkills().then(() => {
-        // Handle deep link: ?expand=skillKey or ?skill=skillKey
-        const params = new URLSearchParams(window.location.search);
-        const expandKey = params.get("expand") || params.get("skill");
-        if (expandKey) {
-          // Expand the skill
-          expandedSkills.value = new Set([expandKey]);
-          // Scroll to it after a brief delay for render
-          setTimeout(() => {
-            const el = document.querySelector(`[data-skill-key="${expandKey}"]`);
-            el?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 100);
-          // Clear the query param to avoid re-triggering
-          window.history.replaceState({}, "", window.location.pathname);
-        }
-      });
+      loadSkills();
     }
   }, [isConnected.value]);
+
+  // Sync URL → state on mount
+  useInitFromParam(searchParam, searchQuery, (s) => s);
+  useInitFromParam(sourceParam, sourceFilter, (s) => s as SkillSource | "all");
+  useInitFromParam(statusParam, statusFilter, (s) => s as SkillStatus | "all");
+
+  // Sync state → URL
+  useSyncToParam(searchQuery, setSearchParam);
+
+  useEffect(() => {
+    setSourceParam(sourceFilter.value === "all" ? null : sourceFilter.value);
+  }, [sourceFilter.value]);
+
+  useEffect(() => {
+    setStatusParam(statusFilter.value === "all" ? null : statusFilter.value);
+  }, [statusFilter.value]);
+
+  // Sync URL → expanded skill
+  useEffect(() => {
+    if (skillsReady && expandedParam.value.size > 0) {
+      const newKeys = Array.from(expandedParam.value).filter((k) => !expandedSkills.value.has(k));
+      if (newKeys.length > 0) {
+        expandedSkills.value = new Set([...expandedSkills.value, ...expandedParam.value]);
+        // Scroll to the first new one
+        setTimeout(() => {
+          const el = document.querySelector(`[data-skill-key="${newKeys[0]}"]`);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }, 100);
+      }
+    }
+  }, [expandedParam.value, skillsReady]);
+
+  // Sync expanded → URL
+  useEffect(() => {
+    if (expandedInitialized.value) {
+      setExpandedParam(expandedSkills.value);
+    }
+  }, [expandedSkills.value, expandedInitialized.value]);
 
   const filtered = filteredSkills.value;
   const s = stats.value;
