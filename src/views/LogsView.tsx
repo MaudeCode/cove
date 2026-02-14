@@ -320,7 +320,7 @@ export function LogsView(_props: RouteProps) {
   return (
     <ViewErrorBoundary viewName={t("nav.logs")}>
       <div class="flex-1 flex flex-col overflow-hidden p-4 sm:p-6">
-        <div class="max-w-6xl mx-auto w-full flex flex-col flex-1 min-h-0 space-y-4 sm:space-y-6">
+        <div class="max-w-5xl mx-auto w-full flex flex-col flex-1 min-h-0 space-y-4 sm:space-y-6">
           <PageHeader
             title={t("logs.title")}
             subtitle={t("logs.description")}
