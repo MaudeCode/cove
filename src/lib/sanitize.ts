@@ -97,6 +97,7 @@ const SANITIZE_CONFIG: Config = {
   FORBID_ATTR: ["onerror", "onload", "onclick", "onmouseover", "onfocus", "onblur"],
   // Allow data URIs for images (base64 encoded)
   ALLOW_DATA_ATTR: false,
+  ADD_DATA_URI_TAGS: ["img"],
   // Use safe URI schemes
   ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
 };
