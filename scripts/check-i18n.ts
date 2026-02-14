@@ -17,6 +17,10 @@ import { join, extname } from "path";
 const LOCALE_FILE = "src/locales/en.json";
 const SRC_DIR = "src";
 
+// Keys that are generated dynamically via template literals
+// e.g., t(`commandPalette.categories.${category}`)
+const DYNAMIC_KEY_PREFIXES = ["commandPalette.categories."];
+
 // ============================================
 // Helpers
 // ============================================
@@ -122,6 +126,9 @@ function main() {
       allSourceContent.includes(`'${key}'`) ||
       allSourceContent.includes(`\`${key}\``)
     ) {
+      usedKeys.push(key);
+    } else if (DYNAMIC_KEY_PREFIXES.some((prefix) => key.startsWith(prefix))) {
+      // Key is used dynamically via template literal
       usedKeys.push(key);
     } else {
       unusedKeys.push(key);

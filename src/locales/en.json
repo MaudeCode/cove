@@ -197,6 +197,14 @@
     "placeholder": "Type a command...",
     "noMatches": "No matches",
     "noCommands": "No commands found",
+    "categories": {
+      "chat": "Chat",
+      "session": "Session",
+      "model": "Model",
+      "cron": "Cron",
+      "gateway": "Gateway",
+      "settings": "Settings"
+    },
     "hints": {
       "navigate": "↑↓ navigate",
       "select": "↵ select",
