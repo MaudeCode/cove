@@ -1,0 +1,130 @@
+/**
+ * AgentsView
+ *
+ * Manage agents: overview, workspace files, tools, and skills.
+ */
+
+import { useEffect } from "preact/hooks";
+import { t } from "@/lib/i18n";
+import { isConnected } from "@/lib/gateway";
+import { Spinner } from "@/components/ui/Spinner";
+import { IconButton } from "@/components/ui/IconButton";
+import { PageHeader } from "@/components/ui/PageHeader";
+import { PageLayout } from "@/components/ui/PageLayout";
+import { TabNav } from "@/components/ui/TabNav";
+import { RefreshCw, Plus, User, FileText, Wrench, Sparkles } from "lucide-preact";
+import type { RouteProps } from "@/types/routes";
+
+// State and actions
+import {
+  activeTab,
+  files,
+  workspacePath,
+  isLoading,
+  error,
+  loadAgents,
+  loadFiles,
+  loadToolsConfig,
+  openCreateModal,
+  refresh,
+  selectTab,
+  type AgentsTab,
+} from "./agent-state";
+
+// Components
+import { AgentSelector } from "./AgentSelector";
+import { OverviewTab } from "./tabs/OverviewTab";
+import { FilesTab } from "./tabs/FilesTab";
+import { ToolsTab } from "./tabs/ToolsTab";
+import { SkillsTab } from "./tabs/SkillsTab";
+import { CreateAgentModal } from "./modals/CreateAgentModal";
+import { DeleteAgentModal } from "./modals/DeleteAgentModal";
+
+// ============================================
+// Tab Configuration
+// ============================================
+
+const AGENT_TABS = [
+  { id: "overview", label: "agents.tabs.overview", icon: <User class="w-4 h-4" /> },
+  { id: "files", label: "agents.tabs.files", icon: <FileText class="w-4 h-4" /> },
+  { id: "tools", label: "agents.tabs.tools", icon: <Wrench class="w-4 h-4" /> },
+  { id: "skills", label: "agents.tabs.skills", icon: <Sparkles class="w-4 h-4" /> },
+] as const;
+
+// ============================================
+// Main View
+// ============================================
+
+export function AgentsView(_props: RouteProps) {
+  useEffect(() => {
+    if (isConnected.value) {
+      loadAgents().then(() => {
+        loadFiles();
+        loadToolsConfig(); // Load config for model info on overview
+      });
+    }
+  }, [isConnected.value]);
+
+  const tab = activeTab.value;
+
+  return (
+    <PageLayout viewName={t("nav.agents")}>
+      <PageHeader
+        title={t("agents.title")}
+        subtitle={t("agents.description")}
+        actions={
+          <div class="flex items-center gap-3">
+            <AgentSelector />
+            <IconButton
+              icon={<Plus class="w-4 h-4" />}
+              label={t("agents.create.title")}
+              onClick={openCreateModal}
+              disabled={!isConnected.value}
+              variant="ghost"
+            />
+            <IconButton
+              icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
+              label={t("actions.refresh")}
+              onClick={refresh}
+              disabled={isLoading.value || !isConnected.value}
+              variant="ghost"
+            />
+          </div>
+        }
+      />
+
+      <TabNav
+        items={AGENT_TABS.map((tab) => ({ ...tab, label: t(tab.label) }))}
+        activeId={tab}
+        onChange={(id) => selectTab(id as AgentsTab)}
+      />
+
+      {error.value && (
+        <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+          {error.value}
+        </div>
+      )}
+
+      {isLoading.value && files.value.length === 0 ? (
+        <div class="flex justify-center py-16">
+          <Spinner size="lg" />
+        </div>
+      ) : (
+        <>
+          {tab === "overview" && <OverviewTab />}
+          {tab === "files" && <FilesTab />}
+          {tab === "tools" && <ToolsTab />}
+          {tab === "skills" && <SkillsTab />}
+        </>
+      )}
+
+      {workspacePath.value && (
+        <p class="text-xs text-[var(--color-text-muted)] text-center">{workspacePath.value}</p>
+      )}
+
+      {/* Modals */}
+      <CreateAgentModal />
+      <DeleteAgentModal />
+    </PageLayout>
+  );
+}
