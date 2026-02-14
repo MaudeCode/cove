@@ -1,35 +1,29 @@
-## 🖼️ Canvas Panel
+## 🤖 Agents Management
 
-Let your agent push images, diagrams, and rich content directly to your browser with the new canvas feature:
+A complete redesign of the Workspace page into a full-featured Agents view:
 
-- **Floating panel** — Drag anywhere, dock to edges, or pop out to a separate window
-- **Local images without base64** — The `/_canvas/` proxy serves images from your gateway's canvas directory
-- **All commands supported** — `present`, `hide`, `navigate`, `eval`, and `snapshot`
-- **Multi-tab sync** — Canvas state syncs across browser tabs automatically
-- **Works everywhere** — Dev server, npm package, and Docker all include the canvas proxy
-
-Enable it in Settings → Canvas Node, then agents can push content with:
-```
-nodes action=invoke node=<id> invokeCommand=canvas.present invokeParamsJson='{"url":"/_canvas/image.png"}'
-```
+- **Overview tab** — See agent identity, avatar, workspace path, and model at a glance
+- **Files tab** — Browse and edit workspace files (AGENTS.md, SOUL.md, etc.) with token counts
+- **Tools tab** — Configure tool access with profile presets and per-tool toggles
+- **Skills tab** — Enable/disable skills per-agent with allowlist management
+- **CRUD support** — Create new agents, update settings, or delete agents directly from the UI
 
 ---
 
-## 📚 Documentation Site
+## 💭 Thinking Blocks
 
-New VitePress-powered documentation at [maudecode.github.io/cove](https://maudecode.github.io/cove):
+Extended thinking is now visible in chat history as collapsible blocks:
 
-- **Getting started guides** — Installation, configuration, deployment
-- **Canvas setup** — Step-by-step instructions for gateway and Cove
-- **Agent reference** — Complete skill doc for using canvas from agents
-- **Auto-deployed** — Updates on every push to `docs/`
+- **Collapsed by default** — Keep the chat clean while preserving thinking context
+- **Click to expand** — Review the model's reasoning process when needed
+- **Token summary** — See thinking token count without expanding
 
 ---
 
-## 🐳 Improved Docker Container
+## 📊 Compaction Indicator
 
-The Docker image now uses nginx with a proper canvas proxy:
+Visual feedback when context overflow triggers compaction:
 
-- **Smaller and faster** — nginx serves static files efficiently
-- **Canvas proxy built-in** — Configure with `GATEWAY_HOST` and `GATEWAY_PORT` env vars
-- **Rootless and secure** — Runs as non-root with read-only filesystem
+- **Inline divider** — Shows exactly where old messages were summarized
+- **Subtle styling** — Doesn't disrupt reading flow
+- **Anchored position** — Stays in place even when new messages arrive
