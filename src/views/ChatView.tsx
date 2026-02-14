@@ -11,6 +11,7 @@ import { route } from "preact-router";
 import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
 import { sendMessage, abortChat, processMessageQueue } from "@/lib/chat/send";
 import { loadHistory } from "@/lib/chat/history";
+import { clearExpandedToolCalls } from "@/components/chat/ToolCall";
 import {
   filteredMessages,
   searchQuery,
@@ -98,6 +99,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     const cachedSession = getCachedSessionKey();
     if (cachedSession !== currentSession) {
       clearMessages();
+      clearExpandedToolCalls();
       // Clear search when switching sessions
       searchQuery.value = "";
       isSearchOpen.value = false;

@@ -9,6 +9,7 @@
 
 import type { ComponentChildren } from "preact";
 import { useState, useEffect } from "preact/hooks";
+import { useSignal } from "@preact/signals";
 import type { ToolCall as ToolCallType } from "@/types/messages";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/Spinner";
@@ -20,6 +21,19 @@ import {
   resolvedApprovalIds,
   handleExecApprovalDecisionDirect,
 } from "@/signals/exec";
+
+/**
+ * Module-level set to persist expanded state across re-renders.
+ * Using a plain Set (not a signal) since we use local signals for reactivity.
+ * Limited to prevent unbounded growth.
+ */
+const expandedToolCallIds = new Set<string>();
+const MAX_EXPANDED_TRACKED = 100;
+
+/** Clear expanded state (called when switching sessions) */
+export function clearExpandedToolCalls(): void {
+  expandedToolCallIds.clear();
+}
 import {
   CodeBlock,
   ReadInputBlock,
@@ -61,16 +75,35 @@ function isApprovalPending(result: unknown): result is ApprovalPendingResult {
 }
 
 export function ToolCall({ toolCall }: ToolCallProps) {
-  // Always start collapsed - user can click to expand (but auto-expand for approvals)
+  // Check initial state from module-level Set (persists across re-renders)
   const approvalPending = isApprovalPending(toolCall.result);
-  const [expanded, setExpanded] = useState(approvalPending);
+  const initialExpanded = expandedToolCallIds.has(toolCall.id) || approvalPending;
+
+  // Use local signal for reactivity
+  const expanded = useSignal(initialExpanded);
+
+  // Sync to module-level Set when expanded changes
+  const toggleExpanded = () => {
+    expanded.value = !expanded.value;
+    if (expanded.value) {
+      // Limit Set size to prevent unbounded growth
+      if (expandedToolCallIds.size >= MAX_EXPANDED_TRACKED) {
+        const oldest = expandedToolCallIds.values().next().value;
+        if (oldest) expandedToolCallIds.delete(oldest);
+      }
+      expandedToolCallIds.add(toolCall.id);
+    } else {
+      expandedToolCallIds.delete(toolCall.id);
+    }
+  };
 
   // Expand when approval becomes pending
   useEffect(() => {
-    if (approvalPending) {
-      setExpanded(true);
+    if (approvalPending && !expanded.value) {
+      expanded.value = true;
+      expandedToolCallIds.add(toolCall.id);
     }
-  }, [approvalPending]);
+  }, [approvalPending, toolCall.id]);
 
   const duration =
     toolCall.completedAt && toolCall.startedAt ? toolCall.completedAt - toolCall.startedAt : null;
@@ -86,9 +119,9 @@ export function ToolCall({ toolCall }: ToolCallProps) {
       {/* Compact summary row */}
       <button
         type="button"
-        onClick={() => setExpanded(!expanded)}
+        onClick={toggleExpanded}
         class="w-full flex items-center gap-2 px-3 py-2 text-left hover:bg-[var(--color-bg-secondary)] transition-colors"
-        aria-expanded={expanded}
+        aria-expanded={expanded.value}
       >
         {/* Status icon */}
         <span class={`text-sm flex-shrink-0 ${statusConfig.color}`}>{statusConfig.icon}</span>
@@ -113,12 +146,12 @@ export function ToolCall({ toolCall }: ToolCallProps) {
         {/* Expand chevron */}
         <ChevronDownIcon
           class="w-4 h-4 text-[var(--color-text-muted)] flex-shrink-0"
-          open={expanded}
+          open={expanded.value}
         />
       </button>
 
       {/* Expanded details */}
-      {expanded && (
+      {expanded.value && (
         <div class="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] space-y-3">
           {/* Arguments - special handling for specific tools */}
           {toolCall.args && Object.keys(toolCall.args).length > 0 && (
