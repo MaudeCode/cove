@@ -275,6 +275,27 @@
     "deny": "Deny"
   },
 
+  "toolOutput": {
+    "expand": "Expand output",
+    "output": "Output",
+    "lines": "{count} lines",
+    "moreLines": "⋯ {count} more lines (click to expand)",
+    "collapse": "⋯ collapse"
+  },
+
+  "toolInput": {
+    "fromLine": "from line {line}",
+    "lineCount": "{count} lines",
+    "searchQuery": "Search query",
+    "url": "URL",
+    "imagePath": "Image path",
+    "prompt": "Prompt",
+    "inputImage": "Input image",
+    "expandImage": "Click to expand image",
+    "expandedImage": "Expanded image",
+    "imageViewer": "Image viewer"
+  },
+
   "status": {
     "connected": "Healthy",
     "disconnected": "Disconnected",
