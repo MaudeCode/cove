@@ -8,7 +8,13 @@
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
-import { useQueryParam, pushQueryState } from "@/hooks/useQueryParam";
+import {
+  useQueryParam,
+  useSyncToParam,
+  useSyncFilterToParam,
+  useInitFromParam,
+  pushQueryState,
+} from "@/hooks/useQueryParam";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
@@ -26,10 +32,19 @@ import type { CronJob } from "@/types/cron";
 export function CronView(_props: RouteProps) {
   const { state, modal, form, computed, actions } = useCronJobs();
 
-  // URL query param as source of truth for selected job
-  // Wait until jobs are loaded before syncing (avoids clearing param prematurely)
+  // URL query params as source of truth
   const jobsReady = !state.isLoading.value && state.cronJobs.value.length > 0;
+  const [searchParam, setSearchParam] = useQueryParam("q");
+  const [filterParam, setFilterParam] = useQueryParam("filter");
   const [jobParam, setJobParam, jobParamInitialized] = useQueryParam("job", { ready: jobsReady });
+
+  // Sync URL → state on mount
+  useInitFromParam(searchParam, state.searchQuery, (s) => s);
+  useInitFromParam(filterParam, state.statusFilter, (s) => s as "all" | "enabled" | "disabled");
+
+  // Sync state → URL
+  useSyncToParam(state.searchQuery, setSearchParam);
+  useSyncFilterToParam(state.statusFilter, setFilterParam, "all");
 
   // Sync URL → modal: when jobParam changes, open/close modal
   useEffect(() => {

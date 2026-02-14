@@ -13,6 +13,7 @@ import {
   useQueryParam,
   useQueryParamSet,
   useSyncToParam,
+  useSyncFilterToParam,
   useInitFromParam,
   pushQueryState,
 } from "@/hooks/useQueryParam";
@@ -250,14 +251,8 @@ export function SkillsView(_props: RouteProps) {
 
   // Sync state → URL
   useSyncToParam(searchQuery, setSearchParam);
-
-  useEffect(() => {
-    setSourceParam(sourceFilter.value === "all" ? null : sourceFilter.value);
-  }, [sourceFilter.value]);
-
-  useEffect(() => {
-    setStatusParam(statusFilter.value === "all" ? null : statusFilter.value);
-  }, [statusFilter.value]);
+  useSyncFilterToParam(sourceFilter, setSourceParam, "all");
+  useSyncFilterToParam(statusFilter, setStatusParam, "all");
 
   // Sync URL → expanded skill
   useEffect(() => {

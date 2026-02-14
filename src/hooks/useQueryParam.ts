@@ -210,3 +210,17 @@ export function useInitFromParam<T>(
     }
   }, []);
 }
+
+/**
+ * Sync a filter signal to a query param, treating a default value as null (one-way: signal → URL)
+ * Common pattern for filters where "all" means no filter.
+ */
+export function useSyncFilterToParam<T extends string>(
+  signal: Signal<T>,
+  setParam: (v: string | null) => void,
+  defaultValue: T,
+): void {
+  useEffect(() => {
+    setParam(signal.value === defaultValue ? null : signal.value);
+  }, [signal.value]);
+}
