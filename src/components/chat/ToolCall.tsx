@@ -8,7 +8,7 @@
  */
 
 import type { ComponentChildren } from "preact";
-import { useState, useEffect } from "preact/hooks";
+import { useRef, useState, useEffect } from "preact/hooks";
 import { useSignal } from "@preact/signals";
 import type { ToolCall as ToolCallType } from "@/types/messages";
 import { ChevronDownIcon } from "@/components/ui/icons";
@@ -43,6 +43,8 @@ import {
   SearchInputBlock,
   UrlInputBlock,
   ImageInputBlock,
+  MemoryGetInputBlock,
+  BrowserInputBlock,
   ResultBlock,
   parseErrorResult,
 } from "./tool-blocks";
@@ -75,6 +77,8 @@ function isApprovalPending(result: unknown): result is ApprovalPendingResult {
 }
 
 export function ToolCall({ toolCall }: ToolCallProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
+
   // Check initial state from module-level Set (persists across re-renders)
   const approvalPending = isApprovalPending(toolCall.result);
   const initialExpanded = expandedToolCallIds.has(toolCall.id) || approvalPending;
@@ -84,6 +88,7 @@ export function ToolCall({ toolCall }: ToolCallProps) {
 
   // Sync to module-level Set when expanded changes
   const toggleExpanded = () => {
+    const wasExpanded = expanded.value;
     expanded.value = !expanded.value;
     if (expanded.value) {
       // Limit Set size to prevent unbounded growth
@@ -94,6 +99,12 @@ export function ToolCall({ toolCall }: ToolCallProps) {
       expandedToolCallIds.add(toolCall.id);
     } else {
       expandedToolCallIds.delete(toolCall.id);
+      // Scroll collapsed block into view after DOM updates
+      if (wasExpanded && containerRef.current) {
+        requestAnimationFrame(() => {
+          containerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        });
+      }
     }
   };
 
@@ -115,7 +126,10 @@ export function ToolCall({ toolCall }: ToolCallProps) {
   const statusConfig = getStatusConfig(effectiveStatus, approvalPending);
 
   return (
-    <div class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden">
+    <div
+      ref={containerRef}
+      class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden"
+    >
       {/* Compact summary row */}
       <button
         type="button"
@@ -155,7 +169,7 @@ export function ToolCall({ toolCall }: ToolCallProps) {
         <div class="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] space-y-3">
           {/* Arguments - special handling for specific tools */}
           {toolCall.args && Object.keys(toolCall.args).length > 0 && (
-            <ToolSection label="Input">
+            <ToolSection label="Input" raw={toolCall.args}>
               <InputBlock toolCall={toolCall} />
             </ToolSection>
           )}
@@ -170,7 +184,7 @@ export function ToolCall({ toolCall }: ToolCallProps) {
 
           {/* Result (hide when approval pending - the command output isn't ready yet) */}
           {toolCall.result !== undefined && !approvalPending && (
-            <ToolSection label="Output">
+            <ToolSection label="Output" raw={toolCall.result}>
               <ResultBlock
                 result={toolCall.result}
                 error={toolCall.status === "error"}
@@ -219,8 +233,14 @@ function InputBlock({ toolCall }: { toolCall: ToolCallType }) {
   if (toolCall.name === "web_fetch") {
     return <UrlInputBlock args={args} />;
   }
+  if (toolCall.name === "memory_get") {
+    return <MemoryGetInputBlock args={args} />;
+  }
   if (toolCall.name === "image") {
     return <ImageInputBlock args={args} />;
+  }
+  if (toolCall.name === "browser") {
+    return <BrowserInputBlock args={args} />;
   }
 
   return <CodeBlock content={args} />;
@@ -274,7 +294,7 @@ function ExecApprovalButtons({ approvalId, expiresAtMs }: ExecApprovalButtonsPro
         role="status"
         aria-live="polite"
       >
-        {isDenied ? t("exec.denied") : t("exec.approved")}
+        {isDenied ? t("exec.denied") : t("common.approved")}
       </div>
     );
   }
@@ -337,15 +357,35 @@ function ExecApprovalButtons({ approvalId, expiresAtMs }: ExecApprovalButtonsPro
 interface ToolSectionProps {
   label: string;
   children: preact.ComponentChildren;
+  /** Raw data for toggle view */
+  raw?: unknown;
 }
 
-function ToolSection({ label, children }: ToolSectionProps) {
+function ToolSection({ label, children, raw }: ToolSectionProps) {
+  const showRaw = useSignal(false);
+
   return (
     <div>
-      <div class="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide mb-1">
-        {label}
+      <div class="flex items-center gap-2 mb-1">
+        <span class="text-[10px] font-medium text-[var(--color-text-muted)] uppercase tracking-wide">
+          {label}
+        </span>
+        {raw !== undefined && (
+          <button
+            type="button"
+            onClick={() => (showRaw.value = !showRaw.value)}
+            class="text-[10px] text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+            aria-pressed={showRaw.value}
+          >
+            {showRaw.value ? t("toolBlock.showFormatted") : t("toolBlock.showRaw")}
+          </button>
+        )}
       </div>
-      {children}
+      {showRaw.value && raw !== undefined ? (
+        <CodeBlock content={JSON.stringify(raw, null, 2)} filePath="raw.json" maxLines={30} />
+      ) : (
+        children
+      )}
     </div>
   );
 }

@@ -4,7 +4,7 @@
  * Syntax-highlighted code block with expand/collapse and fullscreen modal.
  */
 
-import { useState, useMemo } from "preact/hooks";
+import { useRef, useState, useMemo } from "preact/hooks";
 import Prism from "prismjs";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-javascript";
@@ -36,8 +36,17 @@ export interface CodeBlockProps {
 }
 
 export function CodeBlock({ content, maxLines = 30, error = false, filePath }: CodeBlockProps) {
+  const containerRef = useRef<HTMLDivElement>(null);
   const [showFull, setShowFull] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
+
+  const handleCollapse = () => {
+    setShowFull(false);
+    // Scroll the code block back into view after collapsing
+    requestAnimationFrame(() => {
+      containerRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  };
 
   // Prepare content
   const isJson = typeof content === "object" && content !== null;
@@ -72,7 +81,7 @@ export function CodeBlock({ content, maxLines = 30, error = false, filePath }: C
 
   return (
     <>
-      <div class="relative group">
+      <div ref={containerRef} class="relative group">
         {/* Expand button - appears on hover/focus */}
         {(truncated || lines.length > 10) && (
           <IconButton
@@ -111,7 +120,7 @@ export function CodeBlock({ content, maxLines = 30, error = false, filePath }: C
         {truncated && showFull && (
           <button
             type="button"
-            onClick={() => setShowFull(false)}
+            onClick={handleCollapse}
             class={`${toggleButtonClass} text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]`}
           >
             {t("toolOutput.collapse")}
@@ -124,7 +133,7 @@ export function CodeBlock({ content, maxLines = 30, error = false, filePath }: C
         open={fullscreen}
         onClose={() => setFullscreen(false)}
         content={fullText}
-        title={t("toolOutput.output")}
+        title={t("common.output")}
         language={language || undefined}
       />
     </>
