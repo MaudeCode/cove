@@ -59,22 +59,22 @@
 
 <details>
 <summary><strong>Chat Interface</strong></summary>
-<img src="./docs/chat.jpg" alt="Chat Interface" width="800">
+<img src="./docs/public/chat.jpg" alt="Chat Interface" width="800">
 </details>
 
 <details>
 <summary><strong>Server Stats</strong></summary>
-<img src="./docs/server_stats.jpg" alt="Server Stats" width="800">
+<img src="./docs/public/server_stats.jpg" alt="Server Stats" width="800">
 </details>
 
 <details>
 <summary><strong>Settings</strong></summary>
-<img src="./docs/cove_settings.jpg" alt="Cove Settings" width="800">
+<img src="./docs/public/cove_settings.jpg" alt="Cove Settings" width="800">
 </details>
 
 <details>
 <summary><strong>Configuration Editor</strong></summary>
-<img src="./docs/config.jpg" alt="Configuration Editor" width="800">
+<img src="./docs/public/config.jpg" alt="Configuration Editor" width="800">
 </details>
 
 ## 🚀 Quick Start
