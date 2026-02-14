@@ -5,8 +5,35 @@
  */
 
 import { signal } from "@preact/signals";
-import { send } from "@/lib/gateway";
+import { send, gatewayUrl } from "@/lib/gateway";
 import { log } from "@/lib/logger";
+
+/**
+ * Resolve avatar URL to absolute URL.
+ * - HTTP URLs and data URIs are returned as-is
+ * - Relative paths (like /avatar/main) are prefixed with gateway URL
+ * - Emoji strings are returned as-is (for fallback display)
+ */
+function resolveAvatarUrl(avatar: string | null | undefined): string | null {
+  if (!avatar) return null;
+
+  // Already absolute URL or data URI
+  if (avatar.startsWith("http://") || avatar.startsWith("https://") || avatar.startsWith("data:")) {
+    return avatar;
+  }
+
+  // Relative path starting with / - prefix with gateway URL
+  if (avatar.startsWith("/")) {
+    const wsUrl = gatewayUrl.value;
+    if (wsUrl) {
+      const httpUrl = wsUrl.replace(/^ws/, "http");
+      return `${httpUrl}${avatar}`;
+    }
+  }
+
+  // Emoji or other string - return as-is for fallback display
+  return avatar;
+}
 
 // ============================================
 // Types
@@ -61,13 +88,19 @@ export async function loadAssistantIdentity(sessionKey?: string): Promise<void> 
         assistantName.value = result.name;
       }
       if (result.avatar) {
-        assistantAvatar.value = result.avatar;
+        // Resolve relative avatar URLs to absolute gateway URLs
+        assistantAvatar.value = resolveAvatarUrl(result.avatar);
       }
       if (result.agentId) {
         assistantAgentId.value = result.agentId;
       }
 
-      log.ui.info("Loaded assistant identity:", assistantName.value);
+      log.ui.info(
+        "Loaded assistant identity:",
+        assistantName.value,
+        "avatar:",
+        assistantAvatar.value,
+      );
     }
   } catch (err) {
     log.ui.error("Failed to load assistant identity:", err);
