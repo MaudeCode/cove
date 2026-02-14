@@ -44,35 +44,35 @@ export function normalizeWorkspaceFilename(name: string): string {
 export const WORKSPACE_FILE_META: Record<string, WorkspaceFileMeta> = {
   "AGENTS.md": {
     icon: "📋",
-    description: "workspace.files.agents",
+    description: "agents.files.meta.agents",
   },
   "SOUL.md": {
     icon: "🎭",
-    description: "workspace.files.soul",
+    description: "agents.files.meta.soul",
   },
   "TOOLS.md": {
     icon: "🛠️",
-    description: "workspace.files.tools",
+    description: "agents.files.meta.tools",
   },
   "IDENTITY.md": {
     icon: "🪪",
-    description: "workspace.files.identity",
+    description: "agents.files.meta.identity",
   },
   "USER.md": {
     icon: "👤",
-    description: "workspace.files.user",
+    description: "agents.files.meta.user",
   },
   "HEARTBEAT.md": {
     icon: "💓",
-    description: "workspace.files.heartbeat",
+    description: "agents.files.meta.heartbeat",
   },
   "BOOTSTRAP.md": {
     icon: "🚀",
-    description: "workspace.files.bootstrap",
+    description: "agents.files.meta.bootstrap",
   },
   "MEMORY.md": {
     icon: "🧠",
-    description: "workspace.files.memory",
+    description: "agents.files.meta.memory",
   },
 };
 
