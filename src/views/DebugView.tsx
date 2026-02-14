@@ -53,7 +53,7 @@ import {
   Users,
   Zap,
 } from "lucide-preact";
-import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
+import { PageLayout } from "@/components/ui/PageLayout";
 import type { RouteProps } from "@/types/routes";
 import type { GatewayEvent } from "@/types/gateway";
 import { SnapshotsPanel } from "@/components/debug/SnapshotsPanel";
@@ -326,217 +326,213 @@ export function DebugView(_props: RouteProps) {
   const state = connectionState.value;
 
   return (
-    <ViewErrorBoundary viewName={t("nav.debug")}>
-      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
-        <div class="max-w-5xl mx-auto space-y-4 sm:space-y-6">
-          <PageHeader
-            title={t("nav.debug")}
-            subtitle={t("debug.subtitle")}
-            actions={
-              <Badge variant={connectionBadgeVariant.value}>
-                {connected ? <Wifi size={14} class="mr-1" /> : <WifiOff size={14} class="mr-1" />}
-                {state}
-              </Badge>
-            }
-          />
-          {/* Connection & Server Info */}
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-            {/* Connection Info */}
-            <Card>
-              <div class="flex items-center gap-2 mb-4">
-                <Wifi
-                  size={18}
-                  class={connected ? "text-[var(--color-success)]" : "text-[var(--color-error)]"}
-                />
-                <h2 class="font-medium">{t("debug.connection")}</h2>
-              </div>
-              <div class="space-y-0">
-                <InfoRow icon={Activity} label={t("debug.state")} value={state} />
-                <InfoRow icon={Zap} label={t("debug.url")} value={gatewayUrl.value} copyable mono />
-                <InfoRow
-                  icon={Key}
-                  label={t("debug.sessionKey")}
-                  value={mainSessionKey.value}
-                  copyable
-                  mono
-                />
-                <InfoRow
-                  icon={RefreshCw}
-                  label={t("debug.reconnectAttempts")}
-                  value={String(reconnectAttempt.value)}
-                />
-                <InfoRow
-                  icon={Clock}
-                  label={t("debug.connectedAt")}
-                  value={connectedAt.value ? formatTimestamp(connectedAt.value) : null}
-                />
-              </div>
-            </Card>
-
-            {/* Server Info */}
-            <Card>
-              <div class="flex items-center gap-2 mb-4">
-                <Server size={18} class="text-[var(--color-primary)]" />
-                <h2 class="font-medium">{t("debug.server")}</h2>
-              </div>
-              <div class="space-y-0">
-                <InfoRow icon={Server} label={t("debug.version")} value={gatewayVersion.value} />
-                <InfoRow icon={Monitor} label={t("debug.host")} value={gatewayHost.value} />
-                <InfoRow
-                  icon={FileText}
-                  label={t("debug.commit")}
-                  value={gatewayCommit.value?.slice(0, 8)}
-                  copyable
-                  mono
-                />
-                <InfoRow icon={Clock} label={t("debug.uptime")} value={formattedUptime.value} />
-                <InfoRow
-                  icon={Clock}
-                  label={t("debug.tickInterval")}
-                  value={tickIntervalMs.value ? `${tickIntervalMs.value}ms` : null}
-                />
-              </div>
-            </Card>
-
-            {/* Paths Info */}
-            <Card>
-              <div class="flex items-center gap-2 mb-4">
-                <Folder size={18} class="text-[var(--color-warning)]" />
-                <h2 class="font-medium">{t("debug.paths")}</h2>
-              </div>
-              <div class="space-y-0">
-                <InfoRow
-                  icon={FileText}
-                  label={t("debug.configPath")}
-                  value={gatewayConfigPath.value}
-                  copyable
-                  mono
-                />
-                <InfoRow
-                  icon={Folder}
-                  label={t("debug.stateDir")}
-                  value={gatewayStateDir.value}
-                  copyable
-                  mono
-                />
-              </div>
-            </Card>
-
-            {/* Client Info */}
-            <Card>
-              <div class="flex items-center gap-2 mb-4">
-                <Monitor size={18} class="text-[var(--color-info)]" />
-                <h2 class="font-medium">{t("debug.client")}</h2>
-              </div>
-              <div class="space-y-0">
-                <InfoRow icon={Monitor} label={t("debug.appVersion")} value={__APP_VERSION__} />
-                <InfoRow icon={Monitor} label={t("debug.platform")} value={navigator.platform} />
-                <InfoRow
-                  icon={Monitor}
-                  label={t("debug.userAgent")}
-                  value={navigator.userAgent.slice(0, 60) + "..."}
-                />
-                <InfoRow
-                  icon={Users}
-                  label={t("debug.presenceCount")}
-                  value={String(presence.value.length)}
-                />
-              </div>
-            </Card>
+    <PageLayout viewName={t("nav.debug")}>
+      <PageHeader
+        title={t("nav.debug")}
+        subtitle={t("debug.subtitle")}
+        actions={
+          <Badge variant={connectionBadgeVariant.value}>
+            {connected ? <Wifi size={14} class="mr-1" /> : <WifiOff size={14} class="mr-1" />}
+            {state}
+          </Badge>
+        }
+      />
+      {/* Connection & Server Info */}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+        {/* Connection Info */}
+        <Card>
+          <div class="flex items-center gap-2 mb-4">
+            <Wifi
+              size={18}
+              class={connected ? "text-[var(--color-success)]" : "text-[var(--color-error)]"}
+            />
+            <h2 class="font-medium">{t("debug.connection")}</h2>
           </div>
-
-          {/* Snapshots & Manual RPC - Side by side on larger screens */}
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            <SnapshotsPanel />
-            <ManualRpcPanel />
+          <div class="space-y-0">
+            <InfoRow icon={Activity} label={t("debug.state")} value={state} />
+            <InfoRow icon={Zap} label={t("debug.url")} value={gatewayUrl.value} copyable mono />
+            <InfoRow
+              icon={Key}
+              label={t("debug.sessionKey")}
+              value={mainSessionKey.value}
+              copyable
+              mono
+            />
+            <InfoRow
+              icon={RefreshCw}
+              label={t("debug.reconnectAttempts")}
+              value={String(reconnectAttempt.value)}
+            />
+            <InfoRow
+              icon={Clock}
+              label={t("debug.connectedAt")}
+              value={connectedAt.value ? formatTimestamp(connectedAt.value) : null}
+            />
           </div>
+        </Card>
 
-          {/* Event Log - at bottom so it doesn't push other cards around */}
-          <Card>
-            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              <div class="flex items-center gap-2">
-                <Activity size={18} class="text-[var(--color-accent)]" />
-                <h2 class="font-medium">{t("debug.eventLog")}</h2>
-                <Badge variant="default">{eventLog.value.length}</Badge>
-              </div>
-              <div class="flex items-center gap-2">
-                <Toggle
-                  checked={!isPaused.value}
-                  onChange={(checked) => {
-                    isPaused.value = !checked;
-                  }}
-                  label={isPaused.value ? t("debug.paused") : t("debug.recording")}
-                />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearLog}
-                  disabled={eventLog.value.length === 0}
-                  icon={<Trash2 size={14} />}
-                >
-                  <span class="hidden sm:inline">{t("debug.clear")}</span>
-                </Button>
-              </div>
+        {/* Server Info */}
+        <Card>
+          <div class="flex items-center gap-2 mb-4">
+            <Server size={18} class="text-[var(--color-primary)]" />
+            <h2 class="font-medium">{t("debug.server")}</h2>
+          </div>
+          <div class="space-y-0">
+            <InfoRow icon={Server} label={t("debug.version")} value={gatewayVersion.value} />
+            <InfoRow icon={Monitor} label={t("debug.host")} value={gatewayHost.value} />
+            <InfoRow
+              icon={FileText}
+              label={t("debug.commit")}
+              value={gatewayCommit.value?.slice(0, 8)}
+              copyable
+              mono
+            />
+            <InfoRow icon={Clock} label={t("debug.uptime")} value={formattedUptime.value} />
+            <InfoRow
+              icon={Clock}
+              label={t("debug.tickInterval")}
+              value={tickIntervalMs.value ? `${tickIntervalMs.value}ms` : null}
+            />
+          </div>
+        </Card>
+
+        {/* Paths Info */}
+        <Card>
+          <div class="flex items-center gap-2 mb-4">
+            <Folder size={18} class="text-[var(--color-warning)]" />
+            <h2 class="font-medium">{t("debug.paths")}</h2>
+          </div>
+          <div class="space-y-0">
+            <InfoRow
+              icon={FileText}
+              label={t("debug.configPath")}
+              value={gatewayConfigPath.value}
+              copyable
+              mono
+            />
+            <InfoRow
+              icon={Folder}
+              label={t("debug.stateDir")}
+              value={gatewayStateDir.value}
+              copyable
+              mono
+            />
+          </div>
+        </Card>
+
+        {/* Client Info */}
+        <Card>
+          <div class="flex items-center gap-2 mb-4">
+            <Monitor size={18} class="text-[var(--color-info)]" />
+            <h2 class="font-medium">{t("debug.client")}</h2>
+          </div>
+          <div class="space-y-0">
+            <InfoRow icon={Monitor} label={t("debug.appVersion")} value={__APP_VERSION__} />
+            <InfoRow icon={Monitor} label={t("debug.platform")} value={navigator.platform} />
+            <InfoRow
+              icon={Monitor}
+              label={t("debug.userAgent")}
+              value={navigator.userAgent.slice(0, 60) + "..."}
+            />
+            <InfoRow
+              icon={Users}
+              label={t("debug.presenceCount")}
+              value={String(presence.value.length)}
+            />
+          </div>
+        </Card>
+      </div>
+
+      {/* Snapshots & Manual RPC - Side by side on larger screens */}
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+        <SnapshotsPanel />
+        <ManualRpcPanel />
+      </div>
+
+      {/* Event Log - at bottom so it doesn't push other cards around */}
+      <Card>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+          <div class="flex items-center gap-2">
+            <Activity size={18} class="text-[var(--color-accent)]" />
+            <h2 class="font-medium">{t("debug.eventLog")}</h2>
+            <Badge variant="default">{eventLog.value.length}</Badge>
+          </div>
+          <div class="flex items-center gap-2">
+            <Toggle
+              checked={!isPaused.value}
+              onChange={(checked) => {
+                isPaused.value = !checked;
+              }}
+              label={isPaused.value ? t("debug.paused") : t("debug.recording")}
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearLog}
+              disabled={eventLog.value.length === 0}
+              icon={<Trash2 size={14} />}
+            >
+              <span class="hidden sm:inline">{t("debug.clear")}</span>
+            </Button>
+          </div>
+        </div>
+
+        {eventLog.value.length === 0 ? (
+          <div class="text-center py-8 text-[var(--color-text-muted)]">
+            <Activity size={32} class="mx-auto mb-2 opacity-50" />
+            <p>{t("debug.noEvents")}</p>
+            <p class="text-sm mt-1">{t("debug.noEventsHint")}</p>
+          </div>
+        ) : (
+          <>
+            {/* Mobile: Card list */}
+            <div class="md:hidden space-y-2 max-h-96 overflow-y-auto">
+              {eventLog.value.map((entry) => (
+                <MobileEventCard key={entry.id} entry={entry} />
+              ))}
             </div>
 
-            {eventLog.value.length === 0 ? (
-              <div class="text-center py-8 text-[var(--color-text-muted)]">
-                <Activity size={32} class="mx-auto mb-2 opacity-50" />
-                <p>{t("debug.noEvents")}</p>
-                <p class="text-sm mt-1">{t("debug.noEventsHint")}</p>
-              </div>
+            {/* Desktop: Expandable rows */}
+            <div class="hidden md:block max-h-96 overflow-y-auto border border-[var(--color-border)] rounded-lg">
+              {eventLog.value.map((entry) => (
+                <EventEntry
+                  key={entry.id}
+                  entry={entry}
+                  expanded={expandedEvents.value.has(entry.id)}
+                  onToggle={() => toggleEventExpanded(entry.id)}
+                />
+              ))}
+            </div>
+          </>
+        )}
+      </Card>
+
+      {/* Mobile event detail modal */}
+      <Modal
+        open={!!mobileEventModal.value}
+        onClose={() => {
+          mobileEventModal.value = null;
+        }}
+        title={mobileEventModal.value?.event || ""}
+      >
+        {mobileEventModal.value && (
+          <div class="space-y-3">
+            <div class="text-sm text-[var(--color-text-muted)]">
+              {new Date(mobileEventModal.value.timestamp).toLocaleString()}
+            </div>
+            {mobileEventModal.value.payload != null &&
+            Object.keys(mobileEventModal.value.payload as object).length > 0 ? (
+              <JsonBlock
+                value={formatJson(mobileEventModal.value.payload)}
+                maxHeight="max-h-[60vh]"
+                id={`mobile-event-${mobileEventModal.value.id}`}
+              />
             ) : (
-              <>
-                {/* Mobile: Card list */}
-                <div class="md:hidden space-y-2 max-h-96 overflow-y-auto">
-                  {eventLog.value.map((entry) => (
-                    <MobileEventCard key={entry.id} entry={entry} />
-                  ))}
-                </div>
-
-                {/* Desktop: Expandable rows */}
-                <div class="hidden md:block max-h-96 overflow-y-auto border border-[var(--color-border)] rounded-lg">
-                  {eventLog.value.map((entry) => (
-                    <EventEntry
-                      key={entry.id}
-                      entry={entry}
-                      expanded={expandedEvents.value.has(entry.id)}
-                      onToggle={() => toggleEventExpanded(entry.id)}
-                    />
-                  ))}
-                </div>
-              </>
+              <p class="text-sm text-[var(--color-text-muted)]">{t("debug.noPayload")}</p>
             )}
-          </Card>
-
-          {/* Mobile event detail modal */}
-          <Modal
-            open={!!mobileEventModal.value}
-            onClose={() => {
-              mobileEventModal.value = null;
-            }}
-            title={mobileEventModal.value?.event || ""}
-          >
-            {mobileEventModal.value && (
-              <div class="space-y-3">
-                <div class="text-sm text-[var(--color-text-muted)]">
-                  {new Date(mobileEventModal.value.timestamp).toLocaleString()}
-                </div>
-                {mobileEventModal.value.payload != null &&
-                Object.keys(mobileEventModal.value.payload as object).length > 0 ? (
-                  <JsonBlock
-                    value={formatJson(mobileEventModal.value.payload)}
-                    maxHeight="max-h-[60vh]"
-                    id={`mobile-event-${mobileEventModal.value.id}`}
-                  />
-                ) : (
-                  <p class="text-sm text-[var(--color-text-muted)]">{t("debug.noPayload")}</p>
-                )}
-              </div>
-            )}
-          </Modal>
-        </div>
-      </div>
-    </ViewErrorBoundary>
+          </div>
+        )}
+      </Modal>
+    </PageLayout>
   );
 }
