@@ -45,6 +45,8 @@
     "typecheck": "tsc -b --noEmit",
     "knip": "knip",
     "check": "bun run lint && bun run format:check && bun run typecheck && pnpm knip",
+    "i18n:check": "bun scripts/check-i18n.ts",
+    "i18n:fix": "bun scripts/check-i18n.ts --fix",
     "prepare": "husky",
     "serve": "bun run server.ts",
     "start": "NODE_ENV=production bun run server.ts",

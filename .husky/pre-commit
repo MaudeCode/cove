@@ -2,3 +2,4 @@ bun run lint
 bun run format:check
 bun run typecheck
 pnpm knip
+bun run i18n:check
