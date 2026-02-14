@@ -43,7 +43,7 @@ import {
   selectedPath,
   expandedNav,
   mobileViewingDetail,
-  parseHashToPath,
+  parseParamToPath,
 } from "@/signals/configNav";
 
 // ============================================
@@ -96,11 +96,11 @@ function getNavItemsForPath(
 // ============================================
 
 export function ConfigView(_props: RouteProps) {
-  // Sync URL hash to selectedPath on mount (handles navigation from other pages)
+  // Sync URL ?section= to selectedPath on mount (handles navigation from other pages)
   useEffect(() => {
-    const hashPath = parseHashToPath();
-    if (hashPath.length > 0) {
-      selectedPath.value = hashPath;
+    const sectionPath = parseParamToPath();
+    if (sectionPath.length > 0) {
+      selectedPath.value = sectionPath;
     }
   }, []);
 

@@ -2,6 +2,7 @@
  * Config Navigation Signals
  *
  * State management for config view navigation (path selection, expansion).
+ * Uses ?section= query param for URL state (consistent with other views).
  */
 
 import { signal } from "@preact/signals";
@@ -16,20 +17,21 @@ const STORAGE_KEY_EXPANDED = "cove:config:expandedNav";
 // Path Parsing
 // ============================================
 
-/** Parse URL hash to path array: #gateway.controlUi → ["gateway", "controlUi"] */
-export function parseHashToPath(): (string | number)[] {
-  const hash = window.location.hash.slice(1); // Remove #
-  if (!hash) return [];
+/** Parse URL query param to path array: ?section=gateway.controlUi → ["gateway", "controlUi"] */
+export function parseParamToPath(): (string | number)[] {
+  const params = new URLSearchParams(window.location.search);
+  const section = params.get("section");
+  if (!section) return [];
 
-  return hash.split(".").map((segment) => {
+  return section.split(".").map((segment) => {
     // Convert numeric strings to numbers (for array indices)
     const num = Number(segment);
     return Number.isInteger(num) && num >= 0 ? num : segment;
   });
 }
 
-/** Convert path array to URL hash: ["gateway", "controlUi"] → "gateway.controlUi" */
-export function pathToHash(path: (string | number)[]): string {
+/** Convert path array to query param value: ["gateway", "controlUi"] → "gateway.controlUi" */
+export function pathToParam(path: (string | number)[]): string {
   if (path.length === 0) return "";
   return path.join(".");
 }
@@ -53,8 +55,8 @@ function loadPersistedExpanded(): Set<string> {
 // Signals
 // ============================================
 
-/** Currently selected path in the nav tree (synced with URL hash) */
-export const selectedPath = signal<(string | number)[]>(parseHashToPath());
+/** Currently selected path in the nav tree (synced with URL ?section= param) */
+export const selectedPath = signal<(string | number)[]>(parseParamToPath());
 
 /** Expanded nav items */
 export const expandedNav = signal<Set<string>>(loadPersistedExpanded());
@@ -71,20 +73,24 @@ selectedPath.subscribe(() => {
   mobileViewingDetail.value = false;
 });
 
-// Sync selectedPath → URL hash (without triggering hashchange)
-let isUpdatingHash = false;
+// Sync selectedPath → URL ?section= param
+let isUpdatingParam = false;
 selectedPath.subscribe((path) => {
-  const newHash = pathToHash(path);
-  const currentHash = window.location.hash.slice(1);
-  if (newHash !== currentHash) {
-    isUpdatingHash = true;
-    if (newHash) {
-      window.location.hash = newHash;
+  const newValue = pathToParam(path);
+  const params = new URLSearchParams(window.location.search);
+  const currentValue = params.get("section") ?? "";
+
+  if (newValue !== currentValue) {
+    isUpdatingParam = true;
+    if (newValue) {
+      params.set("section", newValue);
     } else {
-      // Remove hash without adding to history
-      history.replaceState(null, "", window.location.pathname + window.location.search);
+      params.delete("section");
     }
-    isUpdatingHash = false;
+    const search = params.toString();
+    const newUrl = window.location.pathname + (search ? `?${search}` : "") + window.location.hash;
+    history.replaceState(null, "", newUrl);
+    isUpdatingParam = false;
   }
 
   // Auto-expand parent paths so selected item is visible
@@ -97,11 +103,11 @@ selectedPath.subscribe((path) => {
   }
 });
 
-// Sync URL hash → selectedPath (for back/forward navigation)
+// Sync URL ?section= → selectedPath (for back/forward navigation)
 if (typeof window !== "undefined") {
-  window.addEventListener("hashchange", () => {
-    if (!isUpdatingHash) {
-      selectedPath.value = parseHashToPath();
+  window.addEventListener("popstate", () => {
+    if (!isUpdatingParam) {
+      selectedPath.value = parseParamToPath();
     }
   });
 }
