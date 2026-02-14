@@ -296,6 +296,10 @@
     "imageViewer": "Image viewer"
   },
 
+  "sessionStatus": {
+    "remaining": "{percent}% remaining"
+  },
+
   "status": {
     "connected": "Healthy",
     "disconnected": "Disconnected",
