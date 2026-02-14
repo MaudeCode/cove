@@ -9,6 +9,14 @@ import { signal, computed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
+import {
+  useQueryParam,
+  useQueryParamSet,
+  useSyncToParam,
+  useSyncFilterToParam,
+  useInitFromParam,
+  pushQueryState,
+} from "@/hooks/useQueryParam";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
@@ -195,10 +203,12 @@ async function revokeToken(device: PairedDevice, role: string): Promise<void> {
 
 function toggleExpanded(deviceId: string): void {
   const next = new Set(expandedDevices.value);
-  if (next.has(deviceId)) {
+  const wasExpanded = next.has(deviceId);
+  if (wasExpanded) {
     next.delete(deviceId);
   } else {
     next.add(deviceId);
+    pushQueryState();
   }
   expandedDevices.value = next;
 }
@@ -363,6 +373,49 @@ function EmptyState() {
 // ============================================
 
 export function DevicesView(_props: RouteProps) {
+  // URL query params as source of truth
+  const devicesReady = !isLoading.value && devices.value.length > 0;
+  const [searchParam, setSearchParam] = useQueryParam("q");
+  const [roleParam, setRoleParam] = useQueryParam("role");
+  const [expandedParam, setExpandedParam, expandedInitialized] = useQueryParamSet<string>(
+    "device",
+    { ready: devicesReady },
+  );
+
+  // Sync URL → state on mount
+  useInitFromParam(searchParam, searchQuery, (s) => s);
+  useInitFromParam(roleParam, roleFilter, (s) => s as DeviceRole);
+
+  // Sync state → URL
+  useSyncToParam(searchQuery, setSearchParam);
+  useSyncFilterToParam(roleFilter, setRoleParam, "all");
+
+  // Sync URL → expanded devices
+  useEffect(() => {
+    if (devicesReady && expandedParam.value.size > 0) {
+      const newIds = Array.from(expandedParam.value).filter((id) => !expandedDevices.value.has(id));
+      if (newIds.length > 0) {
+        expandedDevices.value = new Set([...expandedDevices.value, ...expandedParam.value]);
+        // Scroll to the first new one (wait for render)
+        // Note: mobile and desktop both have data-device-id, pick the visible one
+        setTimeout(() => {
+          const els = document.querySelectorAll(`[data-device-id="${newIds[0]}"]`);
+          const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 100);
+      }
+    }
+  }, [expandedParam.value, devicesReady]);
+
+  // Sync expanded → URL
+  useEffect(() => {
+    if (expandedInitialized.value) {
+      setExpandedParam(expandedDevices.value);
+    }
+  }, [expandedDevices.value, expandedInitialized.value]);
+
   useEffect(() => {
     if (isConnected.value) {
       loadDevices();
@@ -494,28 +547,30 @@ export function DevicesView(_props: RouteProps) {
                 {/* Mobile: Card list */}
                 <div class="md:hidden space-y-2">
                   {filtered.map((device) => (
-                    <DeviceCard
-                      key={device.deviceId}
-                      device={device}
-                      onSelect={(d) => {
-                        mobileDetailModal.value = d;
-                      }}
-                    />
+                    <div key={device.deviceId} data-device-id={device.deviceId}>
+                      <DeviceCard
+                        device={device}
+                        onSelect={(d) => {
+                          mobileDetailModal.value = d;
+                        }}
+                      />
+                    </div>
                   ))}
                 </div>
 
                 {/* Desktop: Row list with expand/collapse */}
                 <Card padding="none" class="hidden md:block overflow-hidden">
                   {filtered.map((device) => (
-                    <DeviceRow
-                      key={device.deviceId}
-                      device={device}
-                      isExpanded={expandedDevices.value.has(device.deviceId)}
-                      onToggleExpand={() => toggleExpanded(device.deviceId)}
-                      onOpenTokenModal={(d) => {
-                        tokenModal.value = d;
-                      }}
-                    />
+                    <div key={device.deviceId} data-device-id={device.deviceId}>
+                      <DeviceRow
+                        device={device}
+                        isExpanded={expandedDevices.value.has(device.deviceId)}
+                        onToggleExpand={() => toggleExpanded(device.deviceId)}
+                        onOpenTokenModal={(d) => {
+                          tokenModal.value = d;
+                        }}
+                      />
+                    </div>
                   ))}
                 </Card>
               </>
