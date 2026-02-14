@@ -96,11 +96,13 @@
     "more": "More",
     "showMore": "Show More",
     "showLess": "Show Less",
-    "remove": "Remove"
+    "remove": "Remove",
+    "view": "View"
   },
   "common": {
     "noData": "No data",
     "tryAgain": "Try again",
+    "success": "Success",
     "enabled": "Enabled",
     "disabled": "Disabled",
     "dark": "Dark",
@@ -452,6 +454,20 @@
   },
   "cron": {
     "description": "Schedule and manage automated tasks.",
+    "actions": {
+      "list": "List jobs",
+      "add": "Add job",
+      "update": "Update job",
+      "remove": "Remove job",
+      "run": "Run job",
+      "runs": "Run history",
+      "status": "Scheduler status",
+      "wake": "Wake scheduler"
+    },
+    "noJobs": "No cron jobs configured",
+    "jobCount": "{count} jobs",
+    "jobTriggered": "Job triggered",
+    "jobRemoved": "Job removed",
     "createJob": "Create Job",
     "editJob": "Edit Job",
     "confirmDelete": "Delete this job?",
@@ -475,6 +491,7 @@
     },
     "columns": {
       "job": "Job",
+      "schedule": "Schedule",
       "target": "Target",
       "status": "Status"
     },

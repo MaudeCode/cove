@@ -216,6 +216,87 @@ export function BrowserInputBlock({ args }: BrowserInputBlockProps) {
 }
 
 // ============================================
+// Cron Input Block
+// ============================================
+
+interface CronInputBlockProps {
+  args: Record<string, unknown>;
+}
+
+export function CronInputBlock({ args }: CronInputBlockProps) {
+  const action = args.action as string;
+  const jobId = args.jobId as string | undefined;
+  const job = args.job as Record<string, unknown> | undefined;
+  const jobName = job?.name as string | undefined;
+  const patch = args.patch as Record<string, unknown> | undefined;
+
+  // Format action display
+  const actionLabels: Record<string, string> = {
+    list: t("cron.actions.list"),
+    add: t("cron.actions.add"),
+    update: t("cron.actions.update"),
+    remove: t("cron.actions.remove"),
+    run: t("cron.actions.run"),
+    runs: t("cron.actions.runs"),
+    status: t("cron.actions.status"),
+    wake: t("cron.actions.wake"),
+  };
+
+  const actionIcons: Record<string, string> = {
+    list: "📋",
+    add: "➕",
+    update: "✏️",
+    remove: "🗑️",
+    run: "▶️",
+    runs: "📊",
+    status: "📡",
+    wake: "⏰",
+  };
+
+  const icon = actionIcons[action] || "⏰";
+  const label = actionLabels[action] || action;
+
+  // For add action, show more job details
+  if (action === "add" && job) {
+    const schedule = job.schedule as Record<string, unknown> | undefined;
+    const sessionTarget = job.sessionTarget as string | undefined;
+
+    return (
+      <div class="space-y-1">
+        <ToolInputContainer inline>
+          <span>
+            {icon} {label}
+          </span>
+          {jobName && <ToolBadge>{jobName}</ToolBadge>}
+        </ToolInputContainer>
+        <div class="text-xs text-[var(--color-text-muted)] pl-1 flex flex-wrap gap-x-3">
+          {schedule && (
+            <span>
+              {schedule.kind === "cron" && `🕐 ${schedule.expr}`}
+              {schedule.kind === "every" && `🔄 Every ${(schedule.everyMs as number) / 1000}s`}
+              {schedule.kind === "at" && `📅 One-time`}
+            </span>
+          )}
+          {sessionTarget && <span>→ {sessionTarget}</span>}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <ToolInputContainer inline>
+      <span>
+        {icon} {label}
+      </span>
+      {(jobId || jobName) && <ToolBadge>{jobName || jobId?.slice(0, 8) || ""}</ToolBadge>}
+      {patch && Object.keys(patch).length > 0 && (
+        <span class="text-[var(--color-text-muted)]">({Object.keys(patch).join(", ")})</span>
+      )}
+    </ToolInputContainer>
+  );
+}
+
+// ============================================
 // URL Input Block (web_fetch)
 // ============================================
 

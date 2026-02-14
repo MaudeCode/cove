@@ -45,6 +45,7 @@ import {
   ImageInputBlock,
   MemoryGetInputBlock,
   BrowserInputBlock,
+  CronInputBlock,
   ResultBlock,
   parseErrorResult,
 } from "./tool-blocks";
@@ -242,6 +243,9 @@ function InputBlock({ toolCall }: { toolCall: ToolCallType }) {
   if (toolCall.name === "browser") {
     return <BrowserInputBlock args={args} />;
   }
+  if (toolCall.name === "cron") {
+    return <CronInputBlock args={args} />;
+  }
 
   return <CodeBlock content={args} />;
 }
@@ -361,6 +365,21 @@ interface ToolSectionProps {
   raw?: unknown;
 }
 
+/** Format raw data as pretty JSON, handling string JSON gracefully */
+function formatRawJson(raw: unknown): string {
+  // If it's a string, try to parse it as JSON first
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      // Not valid JSON, return as-is
+      return raw;
+    }
+  }
+  return JSON.stringify(raw, null, 2);
+}
+
 function ToolSection({ label, children, raw }: ToolSectionProps) {
   const showRaw = useSignal(false);
 
@@ -382,7 +401,7 @@ function ToolSection({ label, children, raw }: ToolSectionProps) {
         )}
       </div>
       {showRaw.value && raw !== undefined ? (
-        <CodeBlock content={JSON.stringify(raw, null, 2)} filePath="raw.json" maxLines={30} />
+        <CodeBlock content={formatRawJson(raw)} filePath="raw.json" maxLines={30} />
       ) : (
         children
       )}

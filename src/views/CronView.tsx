@@ -5,6 +5,7 @@
  * Route: /cron
  */
 
+import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
 import { Card } from "@/components/ui/Card";
@@ -22,6 +23,22 @@ import type { RouteProps } from "@/types/routes";
 
 export function CronView(_props: RouteProps) {
   const { state, modal, form, computed, actions } = useCronJobs();
+
+  // Handle deep link: ?job=jobId opens the edit modal
+  useEffect(() => {
+    if (!state.isLoading.value && state.cronJobs.value.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const jobId = params.get("job");
+      if (jobId) {
+        const job = state.cronJobs.value.find((j) => j.id === jobId);
+        if (job) {
+          actions.openJobModal("edit", job);
+        }
+        // Clear the query param to avoid re-triggering
+        window.history.replaceState({}, "", window.location.pathname);
+      }
+    }
+  }, [state.isLoading.value, state.cronJobs.value]);
 
   const counts = computed.jobCounts.value;
 

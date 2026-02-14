@@ -15,6 +15,7 @@ export {
   ImageInputBlock,
   MemoryGetInputBlock,
   BrowserInputBlock,
+  CronInputBlock,
 } from "./InputBlocks";
 
 export { ErrorResultBlock, ResultBlock } from "./ResultBlocks";

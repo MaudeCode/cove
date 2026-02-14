@@ -183,12 +183,15 @@ export function App() {
  * Handle route changes - sync to signal for sidebar active state
  */
 function handleRouteChange(e: { url: string }) {
+  // Strip query params for sidebar active state matching
+  const pathWithoutQuery = e.url.split("?")[0];
+
   // Track previous route for "back" navigation (e.g., settings toggle)
   // Only update if navigating TO settings from a non-settings page
-  if (e.url === "/settings" && currentPath.value !== "/settings") {
+  if (pathWithoutQuery === "/settings" && currentPath.value !== "/settings") {
     previousRoute.value = currentPath.value;
   }
-  currentPath.value = e.url;
+  currentPath.value = pathWithoutQuery;
 }
 
 /**
