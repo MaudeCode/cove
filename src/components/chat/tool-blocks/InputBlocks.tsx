@@ -5,6 +5,7 @@
 import { useState } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { CodeBlock } from "./CodeBlock";
+import { ToolInputContainer, ToolBadge } from "./shared";
 
 // ============================================
 // Read Input Block
@@ -19,18 +20,17 @@ export function ReadInputBlock({ args }: ReadInputBlockProps) {
   const offset = args.offset as number | undefined;
   const limit = args.limit as number | undefined;
 
-  let display = filePath;
-  if (offset || limit) {
-    const parts: string[] = [];
-    if (offset) parts.push(t("toolInput.fromLine", { line: offset }));
-    if (limit) parts.push(t("toolInput.lineCount", { count: limit }));
-    display += `  # ${parts.join(", ")}`;
-  }
+  const lineRange =
+    offset && limit ? `${offset}-${offset + limit - 1}` : offset ? `${offset}+` : undefined;
 
   return (
-    <pre class="text-xs p-2 rounded-md bg-[var(--color-bg-tertiary)] font-mono text-[var(--color-text-primary)]">
-      {display}
-    </pre>
+    <ToolInputContainer inline>
+      <span>
+        📄 {filePath}
+        {lineRange && <span class="text-[var(--color-text-muted)]">:{lineRange}</span>}
+      </span>
+      {limit && <ToolBadge>{t("toolInput.lineCount", { count: limit })}</ToolBadge>}
+    </ToolInputContainer>
   );
 }
 
@@ -48,9 +48,7 @@ export function WriteInputBlock({ args }: WriteInputBlockProps) {
 
   return (
     <div class="space-y-2">
-      <pre class="text-xs p-2 rounded-md bg-[var(--color-bg-tertiary)] font-mono text-[var(--color-text-primary)]">
-        {filePath}
-      </pre>
+      <ToolInputContainer>📄 {filePath}</ToolInputContainer>
       <CodeBlock content={content} filePath={filePath} maxLines={30} />
     </div>
   );
@@ -162,9 +160,58 @@ export function SearchInputBlock({ args }: SearchInputBlockProps) {
   const query = args.query as string;
 
   return (
-    <pre class="text-xs p-2 rounded-md bg-[var(--color-bg-tertiary)] font-mono text-[var(--color-text-primary)]">
+    <ToolInputContainer>
       <span class="sr-only">{t("toolInput.searchQuery")}: </span>🔍 {query}
-    </pre>
+    </ToolInputContainer>
+  );
+}
+
+// ============================================
+// Memory Get Input Block
+// ============================================
+
+interface MemoryGetInputBlockProps {
+  args: Record<string, unknown>;
+}
+
+export function MemoryGetInputBlock({ args }: MemoryGetInputBlockProps) {
+  const path = args.path as string;
+  const from = args.from as number | undefined;
+  const lines = args.lines as number | undefined;
+
+  const lineRange = from && lines ? `${from}-${from + lines - 1}` : from ? `${from}+` : undefined;
+
+  return (
+    <ToolInputContainer inline>
+      <span class="sr-only">{t("toolInput.memoryPath")}: </span>
+      <span>
+        📄 {path}
+        {lineRange && <span class="text-[var(--color-text-muted)]">:{lineRange}</span>}
+      </span>
+      {lines && <ToolBadge>{t("toolOutput.lines", { count: lines })}</ToolBadge>}
+    </ToolInputContainer>
+  );
+}
+
+// ============================================
+// Browser Input Block
+// ============================================
+
+interface BrowserInputBlockProps {
+  args: Record<string, unknown>;
+}
+
+export function BrowserInputBlock({ args }: BrowserInputBlockProps) {
+  const action = args.action as string;
+  const profile = args.profile as string | undefined;
+  const url = (args.targetUrl ?? args.url) as string | undefined;
+
+  return (
+    <ToolInputContainer inline>
+      <span>🌐 {action}</span>
+      {profile && <ToolBadge>{profile}</ToolBadge>}
+      {url && <span class="text-[var(--color-accent)] truncate">{url}</span>}
+    </ToolInputContainer>
   );
 }
 
@@ -180,9 +227,9 @@ export function UrlInputBlock({ args }: UrlInputBlockProps) {
   const url = args.url as string;
 
   return (
-    <pre class="text-xs p-2 rounded-md bg-[var(--color-bg-tertiary)] font-mono text-[var(--color-text-primary)]">
-      <span class="sr-only">{t("toolInput.url")}: </span>🌐 {url}
-    </pre>
+    <ToolInputContainer>
+      <span class="sr-only">{t("common.url")}: </span>🌐 {url}
+    </ToolInputContainer>
   );
 }
 
@@ -220,16 +267,16 @@ export function ImageInputBlock({ args }: ImageInputBlockProps) {
       )}
       {/* Image path if not URL */}
       {!isUrl && image && (
-        <pre class="text-xs p-2 rounded-md bg-[var(--color-bg-tertiary)] font-mono text-[var(--color-text-primary)]">
+        <ToolInputContainer>
           <span class="sr-only">{t("toolInput.imagePath")}: </span>
           🖼️ {image}
-        </pre>
+        </ToolInputContainer>
       )}
       {/* Prompt */}
       {prompt && (
-        <pre class="text-xs p-2 rounded-md bg-[var(--color-bg-tertiary)] font-mono text-[var(--color-text-primary)]">
+        <ToolInputContainer>
           <span class="sr-only">{t("toolInput.prompt")}: </span>💬 {prompt}
-        </pre>
+        </ToolInputContainer>
       )}
 
       {/* Lightbox */}
@@ -237,7 +284,7 @@ export function ImageInputBlock({ args }: ImageInputBlockProps) {
         <div
           role="dialog"
           aria-modal="true"
-          aria-label={t("toolInput.imageViewer")}
+          aria-label={t("common.imageViewer")}
           class="fixed inset-0 z-[9999] bg-black/90 flex items-center justify-center p-4"
           onClick={() => setExpanded(false)}
           onKeyDown={(e) => e.key === "Escape" && setExpanded(false)}

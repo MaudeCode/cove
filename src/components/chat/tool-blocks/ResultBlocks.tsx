@@ -7,6 +7,7 @@ import { t } from "@/lib/i18n";
 import { renderMarkdown } from "@/lib/markdown";
 import { parseResult, parseErrorResult, type ErrorResultShape } from "./utils";
 import { CodeBlock } from "./CodeBlock";
+import { ToolOutputContainer } from "./shared";
 
 // ============================================
 // Error Result Block
@@ -15,7 +16,7 @@ import { CodeBlock } from "./CodeBlock";
 export function ErrorResultBlock({ result }: { result: ErrorResultShape }) {
   return (
     <div class="text-xs p-3 rounded-md bg-[var(--color-error)]/10 border border-[var(--color-error)]/20">
-      <div class="font-medium text-[var(--color-error)] mb-1">{t("status.error")}</div>
+      <div class="font-medium text-[var(--color-error)] mb-1">{t("common.error")}</div>
       <div class="text-[var(--color-text-primary)] whitespace-pre-wrap">{result.error}</div>
     </div>
   );
@@ -52,12 +53,20 @@ export function ResultBlock({ result, error, toolName, filePath }: ResultBlockPr
     return <MemorySearchResultBlock result={result} />;
   }
 
+  if (toolName === "memory_get") {
+    return <MemoryGetResultBlock result={result} />;
+  }
+
   if (toolName === "image") {
     return <ImageResultBlock result={result} />;
   }
 
   if (toolName === "session_status") {
     return <SessionStatusBlock result={result} />;
+  }
+
+  if (toolName === "browser") {
+    return <BrowserResultBlock result={result} />;
   }
 
   return <CodeBlock content={result} maxLines={20} error={error} filePath={filePath} />;
@@ -194,6 +203,102 @@ function MemorySearchResultBlock({ result }: { result: unknown }) {
               filePath={r.path}
               maxLines={10}
             />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ============================================
+// Memory Get Result Block
+// ============================================
+
+interface MemoryGetResult {
+  path?: string;
+  text?: string;
+  from?: number;
+  lines?: number;
+}
+
+function MemoryGetResultBlock({ result }: { result: unknown }) {
+  const data = parseResult<MemoryGetResult>(result);
+
+  if (!data?.text) {
+    return <CodeBlock content={result} maxLines={20} />;
+  }
+
+  // Just show the content - path/lines already shown in input
+  return <CodeBlock content={data.text} filePath={data.path} maxLines={30} />;
+}
+
+// ============================================
+// Browser Result Block
+// ============================================
+
+interface BrowserTab {
+  targetId?: string;
+  title?: string;
+  url?: string;
+  type?: string;
+}
+
+interface BrowserTabsResult {
+  tabs?: BrowserTab[];
+}
+
+function BrowserResultBlock({ result }: { result: unknown }) {
+  // Handle string result (snapshot output with EXTERNAL markers)
+  if (typeof result === "string") {
+    const cleaned = result
+      .replace(/<<<EXTERNAL_UNTRUSTED_CONTENT>>>\nSource: Browser\n---\n?/g, "")
+      .replace(/\n?<<<END_EXTERNAL_UNTRUSTED_CONTENT>>>/g, "")
+      .trim();
+
+    // Try to parse as JSON (tabs response wrapped in markers)
+    try {
+      const parsed = JSON.parse(cleaned);
+      if (parsed?.tabs) {
+        return <BrowserTabsList tabs={parsed.tabs} />;
+      }
+    } catch {
+      // Not JSON, show as content
+    }
+
+    if (!cleaned) {
+      return <ToolOutputContainer>{t("toolOutput.emptyResponse")}</ToolOutputContainer>;
+    }
+
+    return <CodeBlock content={cleaned} maxLines={30} />;
+  }
+
+  // Handle object result
+  const data = parseResult<BrowserTabsResult>(result);
+  if (data?.tabs) {
+    return <BrowserTabsList tabs={data.tabs} />;
+  }
+
+  return <CodeBlock content={result} maxLines={20} />;
+}
+
+function BrowserTabsList({ tabs }: { tabs: BrowserTab[] }) {
+  if (tabs.length === 0) {
+    return <ToolOutputContainer>{t("toolOutput.noTabsOpen")}</ToolOutputContainer>;
+  }
+
+  return (
+    <div class="space-y-1">
+      {tabs.map((tab, i) => (
+        <div
+          key={tab.targetId ?? i}
+          class="flex items-center gap-2 text-xs p-2 rounded-md bg-[var(--color-bg-tertiary)]"
+        >
+          <span class="text-[var(--color-text-muted)]">🌐</span>
+          <span class="font-medium text-[var(--color-text-primary)] truncate">
+            {tab.title || "Untitled"}
+          </span>
+          {tab.url && tab.url !== "about:blank" && (
+            <span class="text-[var(--color-accent)] truncate text-[10px]">{tab.url}</span>
           )}
         </div>
       ))}
