@@ -326,12 +326,19 @@ function handleToolEvent(evt: AgentEvent): void {
       existingToolCalls.push({
         id: toolCallId,
         name: toolName,
+        args: data.args as Record<string, unknown> | undefined,
         status: "running",
         startedAt: Date.now(),
         insertedAtContentLength: run!.content.length,
         contentSnapshotAtStart: run!.content,
       });
       idx = existingToolCalls.length - 1;
+    } else if (data.args && !existingToolCalls[idx].args) {
+      // Backfill args if we receive them later
+      existingToolCalls[idx] = {
+        ...existingToolCalls[idx],
+        args: data.args as Record<string, unknown>,
+      };
     }
     return idx;
   };
