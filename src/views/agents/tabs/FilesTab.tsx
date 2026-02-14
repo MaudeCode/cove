@@ -90,7 +90,7 @@ function FileCard({ file }: { file: WorkspaceFile }) {
         )}
         <IconButton
           icon={file.missing ? <Plus class="w-4 h-4" /> : <Pencil class="w-4 h-4" />}
-          label={file.missing ? t("agents.files.create") : t("agents.files.edit")}
+          label={file.missing ? t("common.create") : t("common.edit")}
           onClick={(e) => {
             e.stopPropagation();
             openFile(file.name);

@@ -322,9 +322,7 @@ export function CommandPalette() {
               aria-activedescendant={selectedItemId}
             />
             {submenuLoading && (
-              <span class="text-[var(--color-text-muted)] text-sm">
-                {t("commandPalette.loading")}
-              </span>
+              <span class="text-[var(--color-text-muted)] text-sm">{t("common.loading")}</span>
             )}
           </div>
         </div>
@@ -342,7 +340,7 @@ export function CommandPalette() {
             <div>
               {filteredSubmenuItems.length === 0 ? (
                 <div class="px-3 py-8 text-center text-[var(--color-text-muted)]">
-                  {query ? t("commandPalette.noMatches") : t("commandPalette.noItems")}
+                  {query ? t("commandPalette.noMatches") : t("common.noItems")}
                 </div>
               ) : (
                 filteredSubmenuItems.map((item, idx) => (

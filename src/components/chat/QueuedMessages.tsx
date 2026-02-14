@@ -168,8 +168,8 @@ export function QueuedMessages() {
                       type="button"
                       onClick={() => handleEdit(message)}
                       class="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
-                      title={t("actions.edit")}
-                      aria-label={t("actions.edit")}
+                      title={t("common.edit")}
+                      aria-label={t("common.edit")}
                     >
                       <EditIcon class="w-4 h-4" />
                     </button>

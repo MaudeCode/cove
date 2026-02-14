@@ -39,10 +39,10 @@ export function SessionFilters() {
   }, [showFilters]);
 
   const kinds = [
-    { value: null, label: t("sessions.filterAll") },
-    { value: "main", label: t("sessions.filterMain") },
-    { value: "isolated", label: t("sessions.filterIsolated") },
-    { value: "channel", label: t("sessions.filterChannel") },
+    { value: null, label: t("common.all") },
+    { value: "main", label: t("common.main") },
+    { value: "isolated", label: t("common.isolated") },
+    { value: "channel", label: t("common.channel") },
   ];
 
   return (
@@ -50,7 +50,7 @@ export function SessionFilters() {
       {/* Title row with buttons */}
       <div class="flex items-center justify-between">
         <h3 class="text-xs font-semibold text-[var(--color-accent)] uppercase tracking-wider">
-          {t("nav.sessions")}
+          {t("common.sessions")}
         </h3>
         <button
           type="button"

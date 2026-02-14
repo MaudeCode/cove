@@ -301,7 +301,7 @@ export function ConfigView(_props: RouteProps) {
                   onClick={handleSave}
                   disabled={!canSave.value}
                 >
-                  {isSaving.value ? t("config.saving") : t("config.save")}
+                  {isSaving.value ? t("common.saving") : t("config.save")}
                 </Button>
                 <IconButton
                   icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}

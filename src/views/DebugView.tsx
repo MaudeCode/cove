@@ -326,9 +326,9 @@ export function DebugView(_props: RouteProps) {
   const state = connectionState.value;
 
   return (
-    <PageLayout viewName={t("nav.debug")}>
+    <PageLayout viewName={t("common.debug")}>
       <PageHeader
-        title={t("nav.debug")}
+        title={t("common.debug")}
         subtitle={t("debug.subtitle")}
         actions={
           <Badge variant={connectionBadgeVariant.value}>
@@ -350,7 +350,7 @@ export function DebugView(_props: RouteProps) {
           </div>
           <div class="space-y-0">
             <InfoRow icon={Activity} label={t("debug.state")} value={state} />
-            <InfoRow icon={Zap} label={t("debug.url")} value={gatewayUrl.value} copyable mono />
+            <InfoRow icon={Zap} label={t("common.url")} value={gatewayUrl.value} copyable mono />
             <InfoRow
               icon={Key}
               label={t("debug.sessionKey")}
@@ -378,16 +378,16 @@ export function DebugView(_props: RouteProps) {
             <h2 class="font-medium">{t("debug.server")}</h2>
           </div>
           <div class="space-y-0">
-            <InfoRow icon={Server} label={t("debug.version")} value={gatewayVersion.value} />
-            <InfoRow icon={Monitor} label={t("debug.host")} value={gatewayHost.value} />
+            <InfoRow icon={Server} label={t("common.version")} value={gatewayVersion.value} />
+            <InfoRow icon={Monitor} label={t("common.host")} value={gatewayHost.value} />
             <InfoRow
               icon={FileText}
-              label={t("debug.commit")}
+              label={t("common.commit")}
               value={gatewayCommit.value?.slice(0, 8)}
               copyable
               mono
             />
-            <InfoRow icon={Clock} label={t("debug.uptime")} value={formattedUptime.value} />
+            <InfoRow icon={Clock} label={t("common.uptime")} value={formattedUptime.value} />
             <InfoRow
               icon={Clock}
               label={t("debug.tickInterval")}
@@ -428,7 +428,7 @@ export function DebugView(_props: RouteProps) {
           </div>
           <div class="space-y-0">
             <InfoRow icon={Monitor} label={t("debug.appVersion")} value={__APP_VERSION__} />
-            <InfoRow icon={Monitor} label={t("debug.platform")} value={navigator.platform} />
+            <InfoRow icon={Monitor} label={t("common.platform")} value={navigator.platform} />
             <InfoRow
               icon={Monitor}
               label={t("debug.userAgent")}
@@ -463,7 +463,7 @@ export function DebugView(_props: RouteProps) {
               onChange={(checked) => {
                 isPaused.value = !checked;
               }}
-              label={isPaused.value ? t("debug.paused") : t("debug.recording")}
+              label={isPaused.value ? t("common.paused") : t("debug.recording")}
             />
             <Button
               variant="ghost"
@@ -472,7 +472,7 @@ export function DebugView(_props: RouteProps) {
               disabled={eventLog.value.length === 0}
               icon={<Trash2 size={14} />}
             >
-              <span class="hidden sm:inline">{t("debug.clear")}</span>
+              <span class="hidden sm:inline">{t("common.clear")}</span>
             </Button>
           </div>
         </div>

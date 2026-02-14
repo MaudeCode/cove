@@ -74,7 +74,7 @@ export function CronJobForm({
   return (
     <div class="space-y-4 sm:space-y-5">
       {/* Name */}
-      <FormField label={t("cron.form.name")} error={errors.name}>
+      <FormField label={t("common.name")} error={errors.name}>
         <Input
           value={editName.value}
           onInput={(e) => (editName.value = (e.target as HTMLInputElement).value)}
@@ -94,7 +94,7 @@ export function CronJobForm({
       </FormField>
 
       {/* Schedule */}
-      <FormField label={t("cron.form.schedule")} error={errors.schedule}>
+      <FormField label={t("common.schedule")} error={errors.schedule}>
         <div class="space-y-3">
           <Dropdown
             value={editScheduleKind.value}

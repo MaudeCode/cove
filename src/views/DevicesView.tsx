@@ -78,8 +78,8 @@ const rotatingToken = signal(false);
 
 const ROLE_OPTIONS = [
   { value: "all", label: () => t("devices.filters.allRoles") },
-  { value: "operator", label: () => t("devices.filters.operators") },
-  { value: "node", label: () => t("devices.filters.nodes") },
+  { value: "operator", label: () => t("common.operators") },
+  { value: "node", label: () => t("common.nodes") },
 ] as const;
 
 // ============================================
@@ -374,9 +374,9 @@ export function DevicesView(_props: RouteProps) {
   const pending = pendingRequests.value;
 
   return (
-    <PageLayout viewName={t("nav.devices")}>
+    <PageLayout viewName={t("common.devices")}>
       <PageHeader
-        title={t("devices.title")}
+        title={t("common.devices")}
         subtitle={t("devices.description")}
         actions={
           <IconButton
@@ -405,7 +405,7 @@ export function DevicesView(_props: RouteProps) {
           <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
             <StatCard
               icon={Smartphone}
-              label={t("devices.stats.total")}
+              label={t("common.total")}
               value={s.total}
               active={roleFilter.value === "all"}
               onClick={() => {
@@ -414,7 +414,7 @@ export function DevicesView(_props: RouteProps) {
             />
             <StatCard
               icon={Globe}
-              label={t("devices.stats.operators")}
+              label={t("common.operators")}
               value={s.operators}
               active={roleFilter.value === "operator"}
               onClick={() => {
@@ -423,7 +423,7 @@ export function DevicesView(_props: RouteProps) {
             />
             <StatCard
               icon={Monitor}
-              label={t("devices.stats.nodes")}
+              label={t("common.nodes")}
               value={s.nodes}
               active={roleFilter.value === "node"}
               onClick={() => {
@@ -432,7 +432,7 @@ export function DevicesView(_props: RouteProps) {
             />
             <StatCard
               icon={Clock}
-              label={t("devices.stats.pending")}
+              label={t("common.pending")}
               value={s.pending}
               highlight={s.pending > 0}
             />

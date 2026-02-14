@@ -208,10 +208,10 @@ const levelStyles: Record<LogLevel, { active: string; inactive: string }> = {
 };
 
 const levelLabels: Record<LogLevel, string> = {
-  debug: "logs.debug",
+  debug: "common.debug",
   info: "logs.info",
   warn: "logs.warnings",
-  error: "logs.errors",
+  error: "common.error",
 };
 
 function LevelFilter({ level, count, selected, onClick }: LevelFilterProps) {
@@ -318,18 +318,18 @@ export function LogsView(_props: RouteProps) {
   const counts = levelCounts.value;
 
   return (
-    <ViewErrorBoundary viewName={t("nav.logs")}>
+    <ViewErrorBoundary viewName={t("common.logs")}>
       <div class="flex-1 flex flex-col overflow-hidden p-4 sm:p-6">
         <div class="max-w-5xl mx-auto w-full flex flex-col flex-1 min-h-0 space-y-4 sm:space-y-6">
           <PageHeader
-            title={t("logs.title")}
+            title={t("common.logs")}
             subtitle={t("logs.description")}
             actions={
               <div class="flex items-center gap-2">
                 <Toggle
                   checked={isLive.value}
                   onChange={(checked) => (isLive.value = checked)}
-                  label={isLive.value ? t("logs.live") : t("logs.paused")}
+                  label={isLive.value ? t("logs.live") : t("common.paused")}
                 />
                 <IconButton
                   icon={<RefreshCw size={16} class={isLoading.value ? "animate-spin" : ""} />}
@@ -369,7 +369,7 @@ export function LogsView(_props: RouteProps) {
                     : "bg-[var(--color-bg-secondary)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-hover)]"
                 }`}
               >
-                {t("logs.all")} ({logLines.value.length})
+                {t("common.all")} ({logLines.value.length})
               </button>
               <LevelFilter
                 level="debug"
@@ -412,7 +412,7 @@ export function LogsView(_props: RouteProps) {
                   onClick={downloadLogs}
                   icon={<Download size={14} />}
                 >
-                  {t("logs.download")}
+                  {t("common.download")}
                 </Button>
                 <Button
                   variant="ghost"
@@ -421,7 +421,7 @@ export function LogsView(_props: RouteProps) {
                   disabled={logLines.value.length === 0}
                   icon={<Trash2 size={14} />}
                 >
-                  {t("logs.clear")}
+                  {t("common.clear")}
                 </Button>
               </div>
               {/* Mobile: icon-only buttons */}
@@ -429,14 +429,14 @@ export function LogsView(_props: RouteProps) {
                 <IconButton
                   icon={<Download size={16} />}
                   onClick={downloadLogs}
-                  label={t("logs.download")}
+                  label={t("common.download")}
                   size="sm"
                 />
                 <IconButton
                   icon={<Trash2 size={16} />}
                   onClick={clearLogs}
                   disabled={logLines.value.length === 0}
-                  label={t("logs.clear")}
+                  label={t("common.clear")}
                   size="sm"
                 />
               </div>

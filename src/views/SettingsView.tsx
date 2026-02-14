@@ -165,7 +165,7 @@ function CanvasNodeSettings() {
   return (
     <>
       <SettingRow
-        labelKey="settings.device.enabled"
+        labelKey="common.enableCanvas"
         descriptionKey="settings.device.enabledDescription"
       >
         <Toggle checked={canvasNodeEnabled.value} onChange={handleToggle} />
@@ -295,7 +295,7 @@ export function SettingsView(_props: SettingsViewProps) {
               </SettingRow>
 
               <SettingRow
-                labelKey="settings.newChat.defaultAgent"
+                labelKey="common.defaultAgent"
                 descriptionKey="settings.newChat.defaultAgentDescription"
               >
                 <Dropdown
@@ -320,15 +320,12 @@ export function SettingsView(_props: SettingsViewProps) {
       <SettingsSection titleKey="settings.about.title">
         <div class="space-y-4">
           <div class="space-y-3">
-            <InfoRow label={t("settings.about.cove")} value={`v${APP_VERSION}`} />
+            <InfoRow label={t("common.cove")} value={`v${APP_VERSION}`} />
             {gatewayVersion.value && (
-              <InfoRow
-                label={t("settings.about.gateway")}
-                value={formatVersion(gatewayVersion.value)}
-              />
+              <InfoRow label={t("common.gateway")} value={formatVersion(gatewayVersion.value)} />
             )}
             {gatewayUrl.value && (
-              <InfoRow label={t("settings.about.gatewayUrl")} value={gatewayUrl.value} truncate />
+              <InfoRow label={t("common.gatewayUrl")} value={gatewayUrl.value} truncate />
             )}
           </div>
 
@@ -338,7 +335,7 @@ export function SettingsView(_props: SettingsViewProps) {
             </Button>
             {isConnected.value && (
               <Button variant="secondary" onClick={() => logout()}>
-                {t("actions.logout")}
+                {t("common.logout")}
               </Button>
             )}
           </div>

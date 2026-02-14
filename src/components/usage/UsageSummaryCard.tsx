@@ -26,7 +26,7 @@ export function UsageSummaryCard({ usage, isLoading }: UsageSummaryCardProps) {
           <h3 class="font-semibold">{t("usage.summary.title")}</h3>
         </div>
         <p class="text-sm text-[var(--color-text-muted)]">
-          {isLoading ? t("status.loading") : t("usage.summary.unavailable")}
+          {isLoading ? t("common.loading") : t("usage.summary.unavailable")}
         </p>
       </Card>
     );
@@ -53,22 +53,22 @@ export function UsageSummaryCard({ usage, isLoading }: UsageSummaryCardProps) {
             <div class="text-2xl font-bold text-[var(--color-success)]">
               {formatCost(totals.totalCost)}
             </div>
-            <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.totalCost")}</div>
+            <div class="text-xs text-[var(--color-text-muted)]">{t("common.totalCost")}</div>
           </div>
         )}
       </div>
 
       <div class="grid grid-cols-3 gap-4">
         <div>
-          <div class="text-sm text-[var(--color-text-muted)]">{t("usage.summary.input")}</div>
+          <div class="text-sm text-[var(--color-text-muted)]">{t("common.input")}</div>
           <div class="font-medium">{formatTokenCount(totals.input)}</div>
         </div>
         <div>
-          <div class="text-sm text-[var(--color-text-muted)]">{t("usage.summary.output")}</div>
+          <div class="text-sm text-[var(--color-text-muted)]">{t("common.output")}</div>
           <div class="font-medium">{formatTokenCount(totals.output)}</div>
         </div>
         <div>
-          <div class="text-sm text-[var(--color-text-muted)]">{t("usage.summary.total")}</div>
+          <div class="text-sm text-[var(--color-text-muted)]">{t("common.total")}</div>
           <div class="font-medium">{formatTokenCount(totals.totalTokens)}</div>
         </div>
       </div>

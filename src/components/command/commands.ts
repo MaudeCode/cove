@@ -173,7 +173,7 @@ const sessionCommands: Command[] = [
     icon: "🗑",
     action: async () => {
       const sessionKey = effectiveSessionKey.value;
-      if (sessionKey && confirm(t("commandPalette.confirm.deleteSession"))) {
+      if (sessionKey && confirm(t("common.deleteThisSession"))) {
         try {
           await send("sessions.delete", { sessionKey });
         } catch {
@@ -245,7 +245,7 @@ const cronCommands: Command[] = [
     getSubmenuItems: async (): Promise<SubMenuItem[]> => {
       const jobs = await fetchCronJobs();
       if (jobs.length === 0) {
-        return [{ id: "none", label: t("commandPalette.noItems"), action: () => {} }];
+        return [{ id: "none", label: t("common.noItems"), action: () => {} }];
       }
       return jobs.map((job) => ({
         id: job.id,
@@ -272,7 +272,7 @@ const cronCommands: Command[] = [
     getSubmenuItems: async (): Promise<SubMenuItem[]> => {
       const jobs = await fetchCronJobs();
       if (jobs.length === 0) {
-        return [{ id: "none", label: t("commandPalette.noItems"), action: () => {} }];
+        return [{ id: "none", label: t("common.noItems"), action: () => {} }];
       }
       return jobs.map((job) => ({
         id: job.id,

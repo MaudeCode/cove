@@ -80,9 +80,7 @@ export function DeviceDetails({ device, bare = false, onOpenTokenModal }: Device
               <span class="text-xs">{device.scopes.join(", ")}</span>
             </DetailRow>
           )}
-          <DetailRow label={t("devices.approved")}>
-            {formatTimestamp(device.approvedAtMs)}
-          </DetailRow>
+          <DetailRow label={t("common.approved")}>{formatTimestamp(device.approvedAtMs)}</DetailRow>
         </div>
 
         {/* Right column: Tokens */}

@@ -127,8 +127,8 @@ export function LoginView() {
 
   // Build auth mode options with translations
   const authModeOptions = [
-    { value: "token", label: t("auth.authMode.token") },
-    { value: "password", label: t("auth.authMode.password") },
+    { value: "token", label: t("common.token") },
+    { value: "password", label: t("common.password") },
   ];
 
   return (
@@ -137,18 +137,20 @@ export function LoginView() {
         {/* Logo */}
         <div class="text-center mb-4 sm:mb-8">
           <CoveLogo size="lg" class="mx-auto mb-2 sm:mb-3 sm:w-16 sm:h-16" />
-          <h1 class="text-xl sm:text-2xl font-bold">{t("app.name")}</h1>
+          <h1 class="text-xl sm:text-2xl font-bold">{t("common.cove")}</h1>
           <p class="text-sm sm:text-base text-[var(--color-text-muted)] mt-1">{t("app.tagline")}</p>
         </div>
 
         {/* Form */}
         <Card variant="elevated" padding="md">
-          <h2 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">{t("auth.title")}</h2>
+          <h2 class="text-base sm:text-lg font-semibold mb-3 sm:mb-4">
+            {t("common.connectToGateway")}
+          </h2>
 
           <div class="space-y-3 sm:space-y-4">
             {/* Gateway URL */}
             <FormField
-              label={t("auth.gatewayUrl")}
+              label={t("common.gatewayUrl")}
               htmlFor="gateway-url"
               error={validationError.value || undefined}
             >
@@ -183,7 +185,7 @@ export function LoginView() {
 
             {/* Token/Password */}
             <FormField
-              label={authMode.value === "token" ? t("auth.token") : t("auth.password")}
+              label={authMode.value === "token" ? t("common.token") : t("common.password")}
               htmlFor="auth-credential"
             >
               <PasswordInput
@@ -216,7 +218,7 @@ export function LoginView() {
               loading={connecting.value}
               fullWidth
             >
-              {connecting.value ? t("auth.connecting") : t("actions.connect")}
+              {connecting.value ? t("common.connecting") : t("actions.connect")}
             </Button>
 
             {/* Error message */}

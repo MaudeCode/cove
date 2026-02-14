@@ -68,13 +68,13 @@ function getStatusBadge(status: ChannelStatus) {
     case "connected":
       return { variant: "success" as const, label: t("channels.status.connected") };
     case "configured":
-      return { variant: "warning" as const, label: t("channels.status.configured") };
+      return { variant: "warning" as const, label: t("common.configured") };
     case "not-configured":
       return { variant: "default" as const, label: t("channels.status.notConfigured") };
     case "disabled":
-      return { variant: "default" as const, label: t("channels.status.disabled") };
+      return { variant: "default" as const, label: t("common.disabled") };
     case "error":
-      return { variant: "error" as const, label: t("channels.status.error") };
+      return { variant: "error" as const, label: t("common.error") };
   }
 }
 
@@ -109,7 +109,7 @@ async function handleLogout(): Promise<void> {
 
   isLoggingOut.value = true;
   try {
-    await send("channels.logout", {
+    await send("common.logout", {
       channel: logoutModal.value.channel,
       accountId: logoutModal.value.accountId,
     });
@@ -188,7 +188,7 @@ function AccountRow({
       {/* Logout button */}
       <IconButton
         icon={<LogOut class="w-3.5 h-3.5" />}
-        label={t("channels.logout")}
+        label={t("common.logout")}
         onClick={() => {
           logoutModal.value = {
             channel: channelId,
@@ -240,7 +240,7 @@ function ChannelCard({ channel }: { channel: ChannelDisplayData }) {
               rel="noopener noreferrer"
               class="flex items-center gap-1 hover:text-[var(--color-accent)] transition-colors"
             >
-              {t("channels.docs")}
+              {t("common.docs")}
               <ExternalLink class="w-3 h-3" />
             </a>
           </div>
@@ -293,7 +293,7 @@ function LogoutModal() {
           {t("actions.cancel")}
         </Button>
         <Button variant="danger" onClick={handleLogout} loading={isLoggingOut.value}>
-          {t("channels.logout")}
+          {t("common.logout")}
         </Button>
       </div>
     </Modal>
@@ -314,9 +314,9 @@ export function ChannelsView(_props: RouteProps) {
   const statValues = stats.value;
 
   return (
-    <PageLayout viewName={t("nav.channels")}>
+    <PageLayout viewName={t("common.channels")}>
       <PageHeader
-        title={t("channels.title")}
+        title={t("common.channels")}
         subtitle={t("channels.description")}
         actions={
           <>
@@ -343,11 +343,7 @@ export function ChannelsView(_props: RouteProps) {
       {/* Stats Cards */}
       {isConnected.value && !isLoading.value && (
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-4">
-          <StatCard
-            icon={MessageSquare}
-            label={t("channels.stats.total")}
-            value={statValues.total}
-          />
+          <StatCard icon={MessageSquare} label={t("common.total")} value={statValues.total} />
           <StatCard icon={Zap} label={t("channels.stats.active")} value={statValues.active} />
           <StatCard
             icon={AlertCircle}

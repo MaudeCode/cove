@@ -85,7 +85,7 @@ export function SearchBar() {
         <div data-tour="canvas" class={canvasNodeEnabled.value ? undefined : "hidden"}>
           <IconButton
             icon={<CanvasIcon />}
-            label={t("canvas.title")}
+            label={t("common.canvas")}
             onClick={() => (canvasPanelOpen.value = !canvasPanelOpen.value)}
             variant="ghost"
             size="sm"

@@ -83,67 +83,67 @@ export const navigation: NavSection[] = [
     items: [
       {
         id: "overview",
-        labelKey: "nav.overview",
+        labelKey: "common.overview",
         icon: OverviewIcon,
         requiresConnection: true,
       },
       {
         id: "usage",
-        labelKey: "nav.usage",
+        labelKey: "common.usage",
         icon: UsageIcon,
         requiresConnection: true,
       },
       {
         id: "channels",
-        labelKey: "nav.channels",
+        labelKey: "common.channels",
         icon: ChannelsIcon,
         requiresConnection: true,
       },
       {
         id: "instances",
-        labelKey: "nav.instances",
+        labelKey: "common.instances",
         icon: InstancesIcon,
         requiresConnection: true,
       },
       {
         id: "sessions",
-        labelKey: "nav.sessions",
+        labelKey: "common.sessions",
         icon: SessionsIcon,
         requiresConnection: true,
       },
       {
         id: "cron",
-        labelKey: "nav.cron",
+        labelKey: "common.cronJobs",
         icon: CronIcon,
         requiresConnection: true,
       },
     ],
   },
   {
-    titleKey: "nav.sections.agent",
+    titleKey: "common.agent",
     items: [
       {
         id: "skills",
-        labelKey: "nav.skills",
+        labelKey: "common.skills",
         icon: SkillsIcon,
         requiresConnection: true,
       },
       {
         id: "agents",
-        labelKey: "nav.agents",
+        labelKey: "common.agents",
         icon: AgentsIcon,
         requiresConnection: true,
       },
       {
         id: "devices",
-        labelKey: "nav.devices",
+        labelKey: "common.devices",
         icon: DevicesIcon,
         requiresConnection: true,
       },
     ],
   },
   {
-    titleKey: "nav.sections.settings",
+    titleKey: "common.settings",
     items: [
       {
         id: "settings",
@@ -158,13 +158,13 @@ export const navigation: NavSection[] = [
       },
       {
         id: "debug",
-        labelKey: "nav.debug",
+        labelKey: "common.debug",
         icon: DebugIcon,
         requiresConnection: true,
       },
       {
         id: "logs",
-        labelKey: "nav.logs",
+        labelKey: "common.logs",
         icon: LogsIcon,
         requiresConnection: true,
       },
@@ -175,7 +175,7 @@ export const navigation: NavSection[] = [
     items: [
       {
         id: "docs",
-        labelKey: "nav.docs",
+        labelKey: "common.docs",
         icon: DocsIcon,
         external: EXTERNAL_URLS.docs,
       },

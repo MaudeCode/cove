@@ -54,12 +54,12 @@ export function NewChatModal({ open, onClose, onCreate }: NewChatModalProps) {
   }
 
   return (
-    <Modal open={open} onClose={handleClose} title={t("newChatModal.title")}>
+    <Modal open={open} onClose={handleClose} title={t("common.newChat")}>
       <div class="space-y-6">
         {/* Agent Selection */}
         <div>
           <label class="block text-sm font-medium text-[var(--color-text-primary)] mb-2">
-            {t("newChatModal.agent")}
+            {t("common.agent")}
           </label>
           <Dropdown
             value={selectedAgent}

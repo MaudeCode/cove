@@ -25,7 +25,7 @@ export function AgentsCard({ healthData }: AgentsCardProps) {
         <div class="p-2 rounded-lg bg-[var(--color-warning)]/10">
           <Cpu class="w-5 h-5 text-[var(--color-warning)]" />
         </div>
-        <h3 class="font-semibold">{t("usage.agents.title")}</h3>
+        <h3 class="font-semibold">{t("common.agents")}</h3>
       </div>
 
       <div class="space-y-3">
@@ -38,7 +38,7 @@ export function AgentsCard({ healthData }: AgentsCardProps) {
               <span class="font-medium">{agent.name || agent.agentId}</span>
               {agent.isDefault && (
                 <Badge variant="success" size="sm">
-                  {t("usage.agents.default")}
+                  {t("common.default")}
                 </Badge>
               )}
             </div>

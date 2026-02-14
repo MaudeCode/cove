@@ -234,7 +234,7 @@ export function CanvasPanel() {
         {/* Header */}
         <div class="flex items-center justify-between px-4 py-2 border-b border-[var(--color-border)]">
           <span class="text-sm font-medium text-[var(--color-text-primary)]">
-            {t("canvas.title")}
+            {t("common.canvas")}
           </span>
           <div class="flex items-center gap-1">
             {url && (
@@ -299,7 +299,7 @@ export function CanvasPanel() {
       >
         <GripHorizontal class="w-4 h-4 text-[var(--color-text-muted)] shrink-0" />
         <span class="text-sm font-medium text-[var(--color-text-primary)] truncate flex-1">
-          {t("canvas.title")}
+          {t("common.canvas")}
         </span>
         <div class="flex items-center gap-1">
           {url && !isMinimized.value && (

@@ -289,9 +289,9 @@ function cancelInlineEdit() {
 
 const LEVEL_OPTIONS = [
   { value: "inherit", label: t("sessions.admin.levels.inherit") },
-  { value: "off", label: t("sessions.admin.levels.off") },
+  { value: "off", label: t("common.off") },
   { value: "low", label: t("sessions.admin.levels.low") },
-  { value: "medium", label: t("sessions.admin.levels.medium") },
+  { value: "medium", label: t("common.medium") },
   { value: "high", label: t("sessions.admin.levels.high") },
 ];
 
@@ -521,12 +521,12 @@ function SessionDetailModal() {
     <Modal
       open={!!session}
       onClose={closeSessionDetail}
-      title={session.label || session.displayName || t("sessions.admin.sessionDetails")}
+      title={session.label || session.displayName || t("common.sessionDetails")}
       size="xl"
       footer={
         isDeleting.value ? (
           <DeleteConfirmFooter
-            message={t("sessions.admin.confirmDelete")}
+            message={t("common.deleteThisSession")}
             onCancel={() => (isDeleting.value = false)}
             onDelete={deleteSession}
           />
@@ -567,7 +567,7 @@ function SessionDetailModal() {
           <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
             <div class="text-lg sm:text-xl font-bold">{formatTokenCount(session)}</div>
             <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
-              {t("sessions.admin.tokens")}
+              {t("common.tokens")}
             </div>
           </div>
           <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
@@ -581,7 +581,7 @@ function SessionDetailModal() {
               {session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—"}
             </div>
             <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
-              {t("sessions.admin.lastActive")}
+              {t("common.lastActive")}
             </div>
           </div>
         </div>
@@ -599,7 +599,7 @@ function SessionDetailModal() {
 
           <FormField label={t("sessions.admin.overrides")}>
             <div class="grid grid-cols-3 gap-2 sm:gap-4">
-              <FormField label={t("sessions.admin.thinking")} class="space-y-1">
+              <FormField label={t("common.thinking")} class="space-y-1">
                 <Dropdown
                   value={editThinking.value}
                   onChange={(val) => (editThinking.value = val)}
@@ -657,9 +657,9 @@ export function SessionsAdminView(_props: RouteProps) {
   const counts = sessionCounts.value;
 
   return (
-    <PageLayout viewName={t("nav.sessions")}>
+    <PageLayout viewName={t("common.sessions")}>
       <PageHeader
-        title={t("sessions.admin.title")}
+        title={t("common.sessions")}
         subtitle={t("sessions.admin.description")}
         actions={
           <>
@@ -707,21 +707,21 @@ export function SessionsAdminView(_props: RouteProps) {
         <div class="flex flex-wrap justify-center sm:grid sm:grid-cols-5 gap-2 sm:gap-3 [&>*]:w-[calc(33.333%-0.375rem)] sm:[&>*]:w-auto">
           <StatCard
             icon={MessageSquare}
-            label={t("sessions.admin.stats.total")}
+            label={t("common.total")}
             value={counts.total}
             active={kindFilter.value === "all"}
             onClick={() => (kindFilter.value = "all")}
           />
           <StatCard
             icon={getKindStyle("main").icon}
-            label={t("sessions.admin.kinds.main")}
+            label={t("common.main")}
             value={counts.main}
             active={kindFilter.value === "main"}
             onClick={() => (kindFilter.value = "main")}
           />
           <StatCard
             icon={getKindStyle("channel").icon}
-            label={t("sessions.admin.kinds.channel")}
+            label={t("common.channel")}
             value={counts.channel}
             active={kindFilter.value === "channel"}
             onClick={() => (kindFilter.value = "channel")}
@@ -735,7 +735,7 @@ export function SessionsAdminView(_props: RouteProps) {
           />
           <StatCard
             icon={getKindStyle("isolated").icon}
-            label={t("sessions.admin.kinds.isolated")}
+            label={t("common.isolated")}
             value={counts.isolated}
             active={kindFilter.value === "isolated"}
             onClick={() => (kindFilter.value = "isolated")}
@@ -772,13 +772,11 @@ export function SessionsAdminView(_props: RouteProps) {
             <table class="w-full">
               <thead>
                 <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                  <th class="py-3 px-4 font-medium">{t("sessions.admin.columns.session")}</th>
-                  <th class="py-3 px-4 font-medium w-32">{t("sessions.admin.columns.model")}</th>
-                  <th class="py-3 px-4 font-medium w-36">
-                    {t("sessions.admin.columns.lastActive")}
-                  </th>
+                  <th class="py-3 px-4 font-medium">{t("common.session")}</th>
+                  <th class="py-3 px-4 font-medium w-32">{t("common.model")}</th>
+                  <th class="py-3 px-4 font-medium w-36">{t("common.lastActive")}</th>
                   <th class="py-3 px-4 font-medium w-32 hidden lg:table-cell">
-                    {t("sessions.admin.columns.tokens")}
+                    {t("common.tokens")}
                   </th>
                   <th class="py-3 px-4 font-medium w-12"></th>
                 </tr>
@@ -816,9 +814,7 @@ export function SessionsAdminView(_props: RouteProps) {
             <div class="p-12 text-center">
               <Search class="w-10 h-10 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
               <h3 class="text-lg font-medium mb-2">{t("sessions.admin.noResults")}</h3>
-              <p class="text-[var(--color-text-muted)] mb-4">
-                {t("sessions.admin.noResultsDescription")}
-              </p>
+              <p class="text-[var(--color-text-muted)] mb-4">{t("common.noResultsHint")}</p>
               <Button
                 variant="secondary"
                 size="sm"
@@ -827,7 +823,7 @@ export function SessionsAdminView(_props: RouteProps) {
                   kindFilter.value = "all";
                 }}
               >
-                {t("sessions.admin.clearFilters")}
+                {t("common.clearFilters")}
               </Button>
             </div>
           </Card>

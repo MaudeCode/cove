@@ -40,7 +40,7 @@ function getCommonSteps(): TourStep[] {
     },
     {
       target: "[data-tour='settings']",
-      title: t("tour.steps.settings.title"),
+      title: t("common.settings"),
       content: t("tour.steps.settings.content"),
       placement: "bottom",
     },
@@ -67,7 +67,7 @@ function getCanvasPairingStep(): TourStep {
 function getCanvasButtonStep(): TourStep {
   return {
     target: "[data-tour='canvas']",
-    title: t("tour.steps.canvasButton.title"),
+    title: t("common.canvas"),
     content: t("tour.steps.canvasButton.content"),
     placement: "bottom",
     beforeShow: async () => {

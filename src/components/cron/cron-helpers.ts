@@ -67,11 +67,11 @@ export function getJobStatusBadge(job: CronJob): {
   variant: "success" | "error" | "warning" | "default";
   label: string;
 } {
-  if (!job.enabled) return { variant: "default", label: t("cron.disabled") };
+  if (!job.enabled) return { variant: "default", label: t("common.disabled") };
   if (job.state.runningAtMs) return { variant: "warning", label: t("cron.running") };
   if (job.state.lastStatus === "error") return { variant: "error", label: t("cron.lastFailed") };
   if (job.state.lastStatus === "ok") return { variant: "success", label: t("cron.lastOk") };
-  return { variant: "default", label: t("cron.pending") };
+  return { variant: "default", label: t("common.pending") };
 }
 
 /**

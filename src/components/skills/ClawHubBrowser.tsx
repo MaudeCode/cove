@@ -259,7 +259,7 @@ export function ClawHubBrowser() {
           disabled={isLoading.value}
           class="flex-shrink-0"
         >
-          <span class="hidden sm:inline">{t("actions.search")}</span>
+          <span class="hidden sm:inline">{t("common.search")}</span>
           <Search class="w-4 h-4 sm:hidden" />
         </Button>
         <IconButton

@@ -131,7 +131,7 @@ export async function sendMessage(
     // Only rename if session label is still "New Chat" (not already renamed)
     if (!isRetry && isUserCreatedChat(sessionKey)) {
       const session = sessions.value.find((s) => s.key === sessionKey);
-      const newChatLabel = t("newChatModal.title");
+      const newChatLabel = t("common.newChat");
       if (session?.label === newChatLabel) {
         // Fire and forget - don't block on rename, but log failures
         autoRenameSession(sessionKey, message).catch((err) => {

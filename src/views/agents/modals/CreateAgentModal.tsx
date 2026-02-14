@@ -22,12 +22,12 @@ export function CreateAgentModal() {
     <Modal
       open={createModalOpen.value}
       onClose={() => (createModalOpen.value = false)}
-      title={t("agents.create.title")}
+      title={t("common.createAgent")}
     >
       <div class="space-y-4">
         <div>
           <label htmlFor="create-name" class="text-sm font-medium">
-            {t("agents.create.name")}
+            {t("common.name")}
           </label>
           <Input
             id="create-name"
@@ -42,7 +42,7 @@ export function CreateAgentModal() {
         </div>
         <div>
           <label htmlFor="create-workspace" class="text-sm font-medium">
-            {t("agents.create.workspace")}
+            {t("common.workspace")}
           </label>
           <Input
             id="create-workspace"
@@ -83,7 +83,7 @@ export function CreateAgentModal() {
               createSaving.value || !createName.value.trim() || !createWorkspace.value.trim()
             }
           >
-            {createSaving.value ? t("actions.creating") : t("agents.create.submit")}
+            {createSaving.value ? t("actions.creating") : t("common.createAgent")}
           </Button>
         </div>
       </div>

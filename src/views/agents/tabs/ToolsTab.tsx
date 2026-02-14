@@ -47,7 +47,7 @@ interface ToolSection {
 const TOOL_SECTIONS: ToolSection[] = [
   {
     id: "fs",
-    labelKey: "agents.tools.sections.files",
+    labelKey: "common.files",
     tools: [
       { id: "read", label: "read", descriptionKey: "agents.tools.toolDescriptions.read" },
       { id: "write", label: "write", descriptionKey: "agents.tools.toolDescriptions.write" },
@@ -97,7 +97,7 @@ const TOOL_SECTIONS: ToolSection[] = [
   },
   {
     id: "sessions",
-    labelKey: "agents.tools.sections.sessions",
+    labelKey: "common.sessions",
     tools: [
       {
         id: "sessions_list",
@@ -152,7 +152,7 @@ export function ToolsTab() {
       <Card>
         <div class="p-4 border-b border-[var(--color-border)] flex items-center justify-between">
           <div>
-            <h3 class="text-base font-semibold">{t("agents.tools.title")}</h3>
+            <h3 class="text-base font-semibold">{t("common.tools")}</h3>
             <p class="text-sm text-[var(--color-text-muted)]">
               {t("agents.tools.enabled", { count: `${enabledCount}/${totalCount}` })}
             </p>
@@ -164,7 +164,7 @@ export function ToolsTab() {
               disabled={toolsSaving.value}
               class="px-3 py-1.5 text-sm font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
             >
-              {toolsSaving.value ? t("actions.saving") : t("actions.save")}
+              {toolsSaving.value ? t("common.saving") : t("actions.save")}
             </button>
           )}
         </div>

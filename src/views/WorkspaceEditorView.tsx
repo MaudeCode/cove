@@ -193,7 +193,7 @@ export function WorkspaceEditorView({ filename }: WorkspaceEditorViewProps) {
   }, []);
 
   return (
-    <ViewErrorBoundary viewName={decodedFilename || t("nav.agents")}>
+    <ViewErrorBoundary viewName={decodedFilename || t("common.agents")}>
       <div class="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div class="flex items-center justify-between gap-4 px-4 sm:px-6 py-3 border-b border-[var(--color-border)] bg-[var(--color-bg-secondary)]">
@@ -246,7 +246,7 @@ export function WorkspaceEditorView({ filename }: WorkspaceEditorViewProps) {
                 onClick={saveFile}
                 disabled={!hasChanges.value || isSaving.value}
               >
-                {isSaving.value ? t("actions.saving") : t("actions.save")}
+                {isSaving.value ? t("common.saving") : t("actions.save")}
               </Button>
             )}
           </div>
@@ -264,7 +264,7 @@ export function WorkspaceEditorView({ filename }: WorkspaceEditorViewProps) {
             active={mode.value === "edit"}
             onClick={() => (mode.value = "edit")}
             icon={<Pencil class="w-4 h-4" />}
-            label={t("agents.files.edit")}
+            label={t("common.edit")}
             indicator={hasChanges.value}
           />
         </div>

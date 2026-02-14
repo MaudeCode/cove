@@ -47,7 +47,7 @@ function CronJobActions({
       />
       <IconButton
         icon={job.enabled ? <XCircle class="w-4 h-4" /> : <CheckCircle class="w-4 h-4" />}
-        label={job.enabled ? t("cron.disable") : t("cron.enable")}
+        label={job.enabled ? t("common.disable") : t("common.enable")}
         size="sm"
         variant="ghost"
         onClick={(e) => {

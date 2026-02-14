@@ -258,7 +258,7 @@ export function MessageList({
           {/* Loading state */}
           {isLoading && (
             <div class="flex justify-center py-8">
-              <Spinner size="md" label={t("status.loading")} />
+              <Spinner size="md" label={t("common.loading")} />
             </div>
           )}
 
@@ -278,14 +278,14 @@ export function MessageList({
                 {isAvatarUrl(assistantAvatar) ? (
                   <img
                     src={assistantAvatar}
-                    alt={assistantName || t("chat.emptyState.assistant")}
+                    alt={assistantName || t("common.assistant")}
                     class="w-20 h-20 rounded-2xl mx-auto mb-4 opacity-90"
                   />
                 ) : assistantAvatar ? (
                   <div
                     class="text-6xl mx-auto mb-4"
                     role="img"
-                    aria-label={assistantName || t("chat.emptyState.assistant")}
+                    aria-label={assistantName || t("common.assistant")}
                   >
                     {assistantAvatar}
                   </div>
@@ -310,7 +310,7 @@ export function MessageList({
                       <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] font-mono">
                         F
                       </kbd>
-                      <span class="ml-1">{t("chat.emptyState.search")}</span>
+                      <span class="ml-1">{t("common.search")}</span>
                     </span>
                     <span class="flex items-center gap-1">
                       <kbd class="px-1.5 py-0.5 rounded bg-[var(--color-bg-tertiary)] font-mono">

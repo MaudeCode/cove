@@ -112,7 +112,7 @@ export function MobileConfigHeader({
               icon={<Save size={18} />}
               onClick={onSave}
               disabled={!canSave}
-              label={isSaving ? t("config.saving") : t("config.save")}
+              label={isSaving ? t("common.saving") : t("config.save")}
               size="sm"
               variant="ghost"
               class={canSave ? "text-[var(--color-accent)]" : ""}

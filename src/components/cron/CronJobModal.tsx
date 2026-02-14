@@ -107,11 +107,11 @@ export function CronJobModal({
             onSave={onSave}
             isSaving={isSaving}
             saveDisabled={!hasChanges}
-            saveLabel={isEdit ? t("actions.save") : t("actions.create")}
+            saveLabel={isEdit ? t("actions.save") : t("common.create")}
             extraContent={
               <div class="flex items-center justify-between sm:justify-start gap-2">
                 <span class="text-sm text-[var(--color-text-secondary)]">
-                  {editEnabled.value ? t("cron.enabled") : t("cron.disabled")}
+                  {editEnabled.value ? t("common.enabled") : t("common.disabled")}
                 </span>
                 <Toggle
                   checked={editEnabled.value}
@@ -164,7 +164,7 @@ export function CronJobModal({
             </div>
 
             <div class="grid grid-cols-3 gap-2 sm:gap-4">
-              <MiniStat value={formatNextRun(job)} label={t("cron.nextRun")} />
+              <MiniStat value={formatNextRun(job)} label={t("common.nextRun")} />
               <MiniStat value={formatLastRun(job)} label={t("cron.lastRun")} />
               <MiniStat
                 value={

@@ -45,10 +45,10 @@ import { DeleteAgentModal } from "./modals/DeleteAgentModal";
 // ============================================
 
 const AGENT_TABS = [
-  { id: "overview", label: "agents.tabs.overview", icon: <User class="w-4 h-4" /> },
-  { id: "files", label: "agents.tabs.files", icon: <FileText class="w-4 h-4" /> },
-  { id: "tools", label: "agents.tabs.tools", icon: <Wrench class="w-4 h-4" /> },
-  { id: "skills", label: "agents.tabs.skills", icon: <Sparkles class="w-4 h-4" /> },
+  { id: "overview", label: "common.overview", icon: <User class="w-4 h-4" /> },
+  { id: "files", label: "common.files", icon: <FileText class="w-4 h-4" /> },
+  { id: "tools", label: "common.tools", icon: <Wrench class="w-4 h-4" /> },
+  { id: "skills", label: "common.skills", icon: <Sparkles class="w-4 h-4" /> },
 ] as const;
 
 // ============================================
@@ -68,16 +68,16 @@ export function AgentsView(_props: RouteProps) {
   const tab = activeTab.value;
 
   return (
-    <PageLayout viewName={t("nav.agents")}>
+    <PageLayout viewName={t("common.agents")}>
       <PageHeader
-        title={t("agents.title")}
+        title={t("common.agents")}
         subtitle={t("agents.description")}
         actions={
           <div class="flex items-center gap-3">
             <AgentSelector />
             <IconButton
               icon={<Plus class="w-4 h-4" />}
-              label={t("agents.create.title")}
+              label={t("common.createAgent")}
               onClick={openCreateModal}
               disabled={!isConnected.value}
               variant="ghost"

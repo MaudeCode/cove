@@ -27,7 +27,7 @@ export function DeleteAgentModal() {
     <Modal
       open={deleteModalOpen.value}
       onClose={() => (deleteModalOpen.value = false)}
-      title={t("agents.delete.title")}
+      title={t("common.deleteAgent")}
     >
       <div class="space-y-4">
         {/* Warning banner */}
@@ -93,7 +93,7 @@ export function DeleteAgentModal() {
             onClick={deleteAgent}
             disabled={deleteDeleting.value || deleteConfirmText.value !== agent?.id}
           >
-            {deleteDeleting.value ? t("actions.deleting") : t("agents.delete.submit")}
+            {deleteDeleting.value ? t("actions.deleting") : t("common.deleteAgent")}
           </Button>
         </div>
       </div>

@@ -50,7 +50,7 @@ import type { RouteProps } from "@/types/routes";
 const SOURCE_OPTIONS = [
   { value: "all", label: () => t("skills.filters.allSources") },
   { value: "openclaw-bundled", label: () => t("skills.source.bundled") },
-  { value: "openclaw-workspace", label: () => t("skills.source.workspace") },
+  { value: "openclaw-workspace", label: () => t("common.workspace") },
   { value: "openclaw-managed", label: () => t("skills.source.managed") },
   { value: "openclaw-extra", label: () => t("skills.source.extra") },
 ] as const;
@@ -198,7 +198,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
         {hasFilters ? t("skills.noResults") : t("skills.emptyTitle")}
       </h3>
       <p class="text-[var(--color-text-muted)] mb-4">
-        {hasFilters ? t("skills.noResultsDescription") : t("skills.emptyDescription")}
+        {hasFilters ? t("common.noResultsHint") : t("skills.emptyDescription")}
       </p>
       {hasFilters && (
         <button
@@ -206,7 +206,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
           onClick={clearFilters}
           class="text-[var(--color-accent)] hover:underline"
         >
-          {t("skills.clearFilters")}
+          {t("common.clearFilters")}
         </button>
       )}
     </div>
@@ -246,9 +246,9 @@ export function SkillsView(_props: RouteProps) {
     !!searchQuery.value || sourceFilter.value !== "all" || statusFilter.value !== "all";
 
   return (
-    <PageLayout viewName={t("nav.skills")}>
+    <PageLayout viewName={t("common.skills")}>
       <PageHeader
-        title={t("skills.title")}
+        title={t("common.skills")}
         subtitle={t("skills.description")}
         actions={
           tab === "installed" ? (
@@ -292,7 +292,7 @@ export function SkillsView(_props: RouteProps) {
               <div class="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
                 <StatCard
                   icon={Puzzle}
-                  label={t("skills.stats.total")}
+                  label={t("common.total")}
                   value={s.total}
                   active={statusFilter.value === "all"}
                   onClick={() => {
@@ -301,7 +301,7 @@ export function SkillsView(_props: RouteProps) {
                 />
                 <StatCard
                   icon={CheckCircle}
-                  label={t("skills.stats.eligible")}
+                  label={t("common.eligible")}
                   value={s.eligible}
                   active={statusFilter.value === "eligible"}
                   onClick={() => {
@@ -310,7 +310,7 @@ export function SkillsView(_props: RouteProps) {
                 />
                 <StatCard
                   icon={XCircle}
-                  label={t("skills.stats.disabled")}
+                  label={t("common.disabled")}
                   value={s.disabled}
                   active={statusFilter.value === "disabled"}
                   onClick={() => {
@@ -319,7 +319,7 @@ export function SkillsView(_props: RouteProps) {
                 />
                 <StatCard
                   icon={AlertTriangle}
-                  label={t("skills.stats.missingReqs")}
+                  label={t("common.missingReqs")}
                   value={s.missingReqs}
                   active={statusFilter.value === "missing-reqs"}
                   highlight={s.missingReqs > 0}
@@ -335,7 +335,7 @@ export function SkillsView(_props: RouteProps) {
                 <div class="flex items-center gap-3">
                   <Input
                     type="text"
-                    placeholder={t("skills.searchPlaceholder")}
+                    placeholder={t("common.searchSkills")}
                     value={searchQuery.value}
                     onInput={(e) => {
                       searchQuery.value = (e.target as HTMLInputElement).value;
@@ -406,7 +406,7 @@ export function SkillsView(_props: RouteProps) {
               {workspaceDir.value && (
                 <div class="text-xs text-[var(--color-text-muted)] space-y-1">
                   <div>
-                    {t("skills.workspaceDir")}: <code>{workspaceDir.value}</code>
+                    {t("common.workspace")}: <code>{workspaceDir.value}</code>
                   </div>
                   <div>
                     {t("skills.managedDir")}: <code>{managedSkillsDir.value}</code>

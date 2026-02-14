@@ -450,12 +450,14 @@ function UrlStep({
 
   return (
     <Card variant="elevated" padding="md">
-      <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">{t("onboarding.urlTitle")}</h2>
+      <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">
+        {t("common.connectToGateway")}
+      </h2>
       <p class="text-xs sm:text-sm text-[var(--color-text-muted)] mb-3 sm:mb-6">
         {t("onboarding.urlSubtitle")}
       </p>
 
-      <FormField label={t("auth.gatewayUrl")} htmlFor="gateway-url">
+      <FormField label={t("common.gatewayUrl")} htmlFor="gateway-url">
         <Input
           id="gateway-url"
           type="url"
@@ -520,8 +522,8 @@ function AuthStep({
   };
 
   const authModeOptions = [
-    { value: "token", label: t("auth.authMode.token") },
-    { value: "password", label: t("auth.authMode.password") },
+    { value: "token", label: t("common.token") },
+    { value: "password", label: t("common.password") },
   ];
 
   return (
@@ -543,7 +545,7 @@ function AuthStep({
         </FormField>
 
         <FormField
-          label={authMode === "token" ? t("auth.token") : t("auth.password")}
+          label={authMode === "token" ? t("common.token") : t("common.password")}
           htmlFor="credential"
         >
           <PasswordInput
@@ -600,9 +602,7 @@ function ConnectStep({
       {connecting && (
         <>
           <Spinner size="md" class="mx-auto mb-3 sm:mb-4" />
-          <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">
-            {t("onboarding.connecting")}
-          </h2>
+          <h2 class="text-base sm:text-lg font-semibold mb-1 sm:mb-2">{t("common.connecting")}</h2>
           <p class="text-xs sm:text-sm text-[var(--color-text-muted)]">
             {t("onboarding.connectingDesc")}
           </p>
@@ -677,7 +677,7 @@ function ConnectStep({
             >
               <MonitorPlay class="w-5 h-5 flex-shrink-0 text-[var(--color-accent)]" />
               <div class="flex-1">
-                <div class="text-xs sm:text-sm font-medium">{t("onboarding.canvasTitle")}</div>
+                <div class="text-xs sm:text-sm font-medium">{t("common.enableCanvas")}</div>
                 <div class="text-xs text-[var(--color-text-muted)] mt-0.5 sm:mt-1">
                   {t("onboarding.canvasDesc")}
                 </div>
@@ -737,7 +737,7 @@ function ConnectStep({
             fullWidth
             icon={<ArrowLeft class="w-4 h-4" />}
           >
-            {t("onboarding.tryAgain")}
+            {t("common.tryAgain")}
           </Button>
         </>
       )}

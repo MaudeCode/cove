@@ -268,9 +268,9 @@ export function ManualRpcPanel() {
         {rpcResult.value && (
           <div>
             <div class="flex items-center justify-between mb-2">
-              <span class="text-sm font-medium">{t("debug.result")}</span>
+              <span class="text-sm font-medium">{t("common.result")}</span>
               <Badge variant={rpcResult.value.ok ? "success" : "error"}>
-                {rpcResult.value.ok ? t("debug.ok") : t("debug.error")}
+                {rpcResult.value.ok ? t("debug.ok") : t("common.error")}
               </Badge>
             </div>
             <JsonBlock

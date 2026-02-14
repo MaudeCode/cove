@@ -204,9 +204,9 @@ export function InstancesView(_props: RouteProps) {
   const clientCount = instances.value.filter((i) => i.mode !== "gateway").length;
 
   return (
-    <PageLayout viewName={t("nav.instances")}>
+    <PageLayout viewName={t("common.instances")}>
       <PageHeader
-        title={t("instances.title")}
+        title={t("common.instances")}
         subtitle={t("instances.description")}
         actions={
           <IconButton
@@ -222,11 +222,7 @@ export function InstancesView(_props: RouteProps) {
       {/* Stats Cards */}
       {isConnected.value && !isLoading.value && (
         <div class="grid grid-cols-3 gap-2 sm:gap-4">
-          <StatCard
-            icon={Globe}
-            label={t("instances.stats.total")}
-            value={instances.value.length}
-          />
+          <StatCard icon={Globe} label={t("common.total")} value={instances.value.length} />
           <StatCard icon={Server} label={t("instances.stats.gateways")} value={gatewayCount} />
           <StatCard icon={Monitor} label={t("instances.stats.clients")} value={clientCount} />
         </div>
@@ -263,7 +259,7 @@ export function InstancesView(_props: RouteProps) {
                 <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
                   <th class="py-3 px-4 font-medium">{t("instances.columns.instance")}</th>
                   <th class="py-3 px-4 font-medium w-24">{t("instances.columns.mode")}</th>
-                  <th class="py-3 px-4 font-medium w-40">{t("instances.columns.platform")}</th>
+                  <th class="py-3 px-4 font-medium w-40">{t("common.platform")}</th>
                   <th class="py-3 px-4 font-medium w-28">{t("instances.columns.lastSeen")}</th>
                   <th class="py-3 px-4 font-medium w-20 hidden lg:table-cell">
                     {t("instances.columns.idle")}

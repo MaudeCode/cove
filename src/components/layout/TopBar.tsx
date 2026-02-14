@@ -40,7 +40,7 @@ export function TopBar() {
           >
             <CoveLogo size="md" animated />
             <span class="bg-gradient-to-r from-[var(--color-accent)] to-[color-mix(in_oklch,var(--color-accent),var(--color-text-primary)_40%)] bg-clip-text text-transparent">
-              {t("app.name")}
+              {t("common.cove")}
             </span>
           </a>
         </div>
@@ -70,7 +70,7 @@ export function TopBar() {
               <div data-tour="canvas">
                 <IconButton
                   icon={<CanvasIcon />}
-                  label={t("canvas.title")}
+                  label={t("common.canvas")}
                   onClick={() => (canvasPanelOpen.value = !canvasPanelOpen.value)}
                   variant="ghost"
                   size="md"
@@ -122,7 +122,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
   connected: {
     dot: "bg-[var(--color-success)]",
     text: "text-[var(--color-success)]",
-    label: "status.connected",
+    label: "common.healthy",
   },
   connecting: {
     dot: "bg-[var(--color-warning)]",
@@ -142,7 +142,7 @@ const STATUS_STYLES: Record<string, StatusStyle> = {
   error: {
     dot: "bg-[var(--color-error)]",
     text: "text-[var(--color-error)]",
-    label: "status.error",
+    label: "common.error",
   },
   disconnected: {
     dot: "bg-[var(--color-text-muted)]",

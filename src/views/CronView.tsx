@@ -26,9 +26,9 @@ export function CronView(_props: RouteProps) {
   const counts = computed.jobCounts.value;
 
   return (
-    <PageLayout viewName={t("nav.cron")}>
+    <PageLayout viewName={t("common.cronJobs")}>
       <PageHeader
-        title={t("cron.title")}
+        title={t("common.cronJobs")}
         subtitle={t("cron.description")}
         actions={
           <>
@@ -85,21 +85,21 @@ export function CronView(_props: RouteProps) {
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           <StatCard
             icon={Clock}
-            label={t("cron.stats.total")}
+            label={t("common.total")}
             value={counts.total}
             active={state.statusFilter.value === "all"}
             onClick={() => (state.statusFilter.value = "all")}
           />
           <StatCard
             icon={CheckCircle}
-            label={t("cron.stats.enabled")}
+            label={t("common.enabled")}
             value={counts.enabled}
             active={state.statusFilter.value === "enabled"}
             onClick={() => (state.statusFilter.value = "enabled")}
           />
           <StatCard
             icon={XCircle}
-            label={t("cron.stats.disabled")}
+            label={t("common.disabled")}
             value={counts.disabled}
             active={state.statusFilter.value === "disabled"}
             onClick={() => (state.statusFilter.value = "disabled")}
@@ -153,9 +153,9 @@ export function CronView(_props: RouteProps) {
               <thead>
                 <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
                   <th class="py-3 px-4 font-medium">{t("cron.columns.job")}</th>
-                  <th class="py-3 px-4 font-medium w-40">{t("cron.columns.schedule")}</th>
+                  <th class="py-3 px-4 font-medium w-40">{t("common.schedule")}</th>
                   <th class="py-3 px-4 font-medium w-24">{t("cron.columns.target")}</th>
-                  <th class="py-3 px-4 font-medium w-32">{t("cron.columns.nextRun")}</th>
+                  <th class="py-3 px-4 font-medium w-32">{t("common.nextRun")}</th>
                   <th class="py-3 px-4 font-medium w-24">{t("cron.columns.status")}</th>
                   <th class="py-3 px-4 font-medium w-20"></th>
                 </tr>
@@ -206,7 +206,7 @@ export function CronView(_props: RouteProps) {
             <div class="p-12 text-center">
               <Search class="w-10 h-10 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
               <h3 class="text-lg font-medium mb-2">{t("cron.noResults")}</h3>
-              <p class="text-[var(--color-text-muted)] mb-4">{t("cron.noResultsDescription")}</p>
+              <p class="text-[var(--color-text-muted)] mb-4">{t("common.noResultsHint")}</p>
               <Button
                 variant="secondary"
                 size="sm"
@@ -215,7 +215,7 @@ export function CronView(_props: RouteProps) {
                   state.statusFilter.value = "all";
                 }}
               >
-                {t("cron.clearFilters")}
+                {t("common.clearFilters")}
               </Button>
             </div>
           </Card>

@@ -154,8 +154,8 @@ function ChannelStatus({
   const statusLabel = data.linked
     ? t("debug.linked")
     : data.configured
-      ? t("debug.configured")
-      : t("debug.off");
+      ? t("common.configured")
+      : t("common.off");
 
   return (
     <div class="flex items-center justify-between py-1.5">
@@ -221,15 +221,15 @@ export function SnapshotsPanel() {
               </div>
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-[var(--color-bg-tertiary)] rounded-lg">
                 <StatItem
-                  label={t("debug.input")}
+                  label={t("common.input")}
                   value={formatTokens(recentSession.inputTokens)}
                 />
                 <StatItem
-                  label={t("debug.output")}
+                  label={t("common.output")}
                   value={formatTokens(recentSession.outputTokens)}
                 />
                 <StatItem
-                  label={t("debug.total")}
+                  label={t("common.total")}
                   value={formatTokens(recentSession.totalTokens)}
                 />
                 <StatItem
@@ -248,7 +248,7 @@ export function SnapshotsPanel() {
                 <Heart size={14} class="text-[var(--color-text-muted)]" />
                 <span class="text-sm font-medium">{t("debug.health")}</span>
                 <Badge variant={health.ok ? "success" : "error"} size="sm">
-                  {health.ok ? t("debug.healthy") : t("debug.unhealthy")}
+                  {health.ok ? t("common.healthy") : t("debug.unhealthy")}
                 </Badge>
                 {health.durationMs != null && (
                   <span class="text-xs text-[var(--color-text-muted)]">
@@ -291,7 +291,7 @@ export function SnapshotsPanel() {
                         <span class="text-xs text-[var(--color-text-muted)]">{agent.every}</span>
                       )}
                       <Badge variant={agent.enabled ? "success" : "default"} size="sm">
-                        {agent.enabled ? t("debug.on") : t("debug.off")}
+                        {agent.enabled ? t("debug.on") : t("common.off")}
                       </Badge>
                     </div>
                   </div>

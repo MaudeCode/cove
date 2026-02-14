@@ -96,7 +96,7 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
     return null;
   }
 
-  const displayName = currentModel ? getModelDisplayName(currentModel) : t("sessions.defaultModel");
+  const displayName = currentModel ? getModelDisplayName(currentModel) : t("common.default");
 
   const toggleFavorite = (modelId: string, e: Event) => {
     e.preventDefault();

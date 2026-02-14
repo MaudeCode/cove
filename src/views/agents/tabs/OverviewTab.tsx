@@ -51,7 +51,7 @@ export function OverviewTab() {
                     htmlFor="edit-name"
                     class="text-xs text-[var(--color-text-muted)] uppercase tracking-wide"
                   >
-                    {t("agents.overview.identityName")}
+                    {t("common.name")}
                   </label>
                   <Input
                     id="edit-name"
@@ -87,7 +87,7 @@ export function OverviewTab() {
                     htmlFor="edit-workspace"
                     class="text-xs text-[var(--color-text-muted)] uppercase tracking-wide"
                   >
-                    {t("agents.overview.workspace")}
+                    {t("common.workspace")}
                   </label>
                   <Input
                     id="edit-workspace"
@@ -104,7 +104,7 @@ export function OverviewTab() {
                     htmlFor="edit-model"
                     class="text-xs text-[var(--color-text-muted)] uppercase tracking-wide"
                   >
-                    {t("agents.overview.model")}
+                    {t("common.model")}
                   </label>
                   <Input
                     id="edit-model"
@@ -125,7 +125,7 @@ export function OverviewTab() {
                   disabled={overviewSaving.value}
                   class="px-3 py-1.5 text-sm font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                 >
-                  {overviewSaving.value ? t("actions.saving") : t("actions.save")}
+                  {overviewSaving.value ? t("common.saving") : t("actions.save")}
                 </button>
                 <button
                   type="button"
@@ -151,7 +151,7 @@ export function OverviewTab() {
                   </span>
                   {isDefault && (
                     <Badge variant="info" size="sm">
-                      {t("agents.overview.isDefault")}
+                      {t("common.defaultAgent")}
                     </Badge>
                   )}
                 </div>
@@ -174,7 +174,7 @@ export function OverviewTab() {
               <div class="flex items-center gap-1">
                 <IconButton
                   icon={<Pencil class="w-4 h-4" />}
-                  label={t("actions.edit")}
+                  label={t("common.edit")}
                   onClick={startOverviewEdit}
                   variant="ghost"
                 />

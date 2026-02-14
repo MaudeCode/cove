@@ -1,10 +1,7 @@
 {
   "app": {
-    "name": "Cove",
-    "description": "OpenClaw WebUI",
     "tagline": "A cozy home for your AI assistant"
   },
-
   "onboarding": {
     "welcome": "Welcome to Cove",
     "welcomeSubtitle": "Your beautiful interface for OpenClaw",
@@ -15,23 +12,18 @@
     "feature3Title": "Full Control",
     "feature3Desc": "Manage sessions, cron jobs, skills, and more",
     "getStarted": "Get Started",
-    "skip": "I'll configure this later",
     "skipToLogin": "Skip to manual login",
-    "urlTitle": "Connect to Gateway",
     "urlSubtitle": "Enter your OpenClaw gateway WebSocket URL",
     "urlError": "URL must start with ws:// or wss://",
     "troubleshootTitle": "Tips:",
     "troubleshoot1": "Local gateway: ws://localhost:8080",
     "troubleshoot2": "Remote gateway: wss://your-server.com:8080",
     "troubleshoot3": "Check that your gateway is running",
-    "verifying": "Verifying...",
-    "gatewayFound": "Gateway found!",
     "probeError": "Could not connect to gateway",
     "authTitle": "Authentication",
     "authSubtitle": "Enter your credentials to connect",
     "authMethod": "Auth Method",
     "rememberMeDesc": "Save credentials for automatic reconnection",
-    "connecting": "Connecting...",
     "connectingDesc": "Establishing secure connection to your gateway",
     "success": "Connected!",
     "successDesc": "You're all set. Time to start chatting with your assistant.",
@@ -42,17 +34,14 @@
     "hint2": "Check that the gateway is running",
     "hint3": "Ensure your credentials are valid",
     "hint4": "Try refreshing if using HTTPS with self-signed certs",
-    "tryAgain": "Try Again",
     "showFeatureTour": "Show feature tour",
     "modeTitle": "How would you like to use Cove?",
     "modeSingle": "Single chat",
     "modeSingleDesc": "One focused conversation",
     "modeMulti": "Multi-chat (Beta)",
     "modeMultiDesc": "Multiple conversations",
-    "canvasTitle": "Enable Canvas",
     "canvasDesc": "Let the agent push images and content to your browser"
   },
-
   "tour": {
     "skipTour": "Skip tour",
     "steps": {
@@ -69,7 +58,6 @@
         "content": "Switch between different AI models per session. Each model has different capabilities and response styles."
       },
       "settings": {
-        "title": "Settings",
         "content": "Customize your experience with 12+ themes, font sizes, time formats, and more. Preferences are saved automatically."
       },
       "canvasPairing": {
@@ -77,33 +65,10 @@
         "content": "Your browser needs to be approved as a canvas device. Click the approve button to allow your agent to push content here."
       },
       "canvasButton": {
-        "title": "Canvas",
         "content": "Your agent can push images, diagrams, and content directly here. Click to open the canvas panel."
       }
-    },
-    "startChatting": "Start Chatting",
-    "themesTitle": "Personalize Your Experience",
-    "themesDesc": "Choose from multiple themes to match your style.",
-    "themesTip1": "6 built-in themes: Light, Dark, Nord, Dracula, and more",
-    "themesTip2": "System preference auto-switching supported",
-    "themesTip3": "Change anytime in Settings",
-    "shortcutsTitle": "Keyboard Shortcuts",
-    "shortcutsDesc": "Work faster with keyboard navigation.",
-    "shortcutsTip1": "⌘/Ctrl + K — Quick command palette",
-    "shortcutsTip2": "⌘/Ctrl + F — Search messages",
-    "shortcutsTip3": "Enter to send, Shift+Enter for newline",
-    "sessionsTitle": "Session Management",
-    "sessionsDesc": "Organize conversations your way.",
-    "sessionsTip1": "Multiple sessions with different contexts",
-    "sessionsTip2": "Rename, pin, and filter sessions",
-    "sessionsTip3": "Switch models per session",
-    "uploadsTitle": "File Uploads",
-    "uploadsDesc": "Share images and files with your assistant.",
-    "uploadsTip1": "Drag & drop files into the chat",
-    "uploadsTip2": "Paste images directly from clipboard",
-    "uploadsTip3": "Click the attachment button to browse"
+    }
   },
-
   "actions": {
     "send": "Send",
     "queue": "Queue",
@@ -113,81 +78,128 @@
     "close": "Close",
     "save": "Save",
     "saved": "Saved",
-    "saving": "Saving...",
-    "clear": "Clear",
-    "create": "Create",
     "creating": "Creating...",
     "new": "New",
     "delete": "Delete",
     "deleting": "Deleting...",
-    "edit": "Edit",
     "copy": "Copy",
     "copied": "Copied!",
     "retry": "Retry",
     "refresh": "Refresh",
-    "expand": "Expand",
-    "collapse": "Collapse",
-    "newChat": "New Chat",
     "connect": "Connect",
-    "disconnect": "Disconnect",
-    "logout": "Logout",
-    "login": "Login",
-    "submit": "Submit",
     "confirm": "Confirm",
     "back": "Back",
     "continue": "Continue",
     "next": "Next",
+    "previous": "Previous",
     "done": "Done",
-    "search": "Search",
-    "filter": "Filter",
-    "clear": "Clear",
-    "selectAll": "Select All",
-    "deselectAll": "Deselect All",
     "more": "More",
-    "less": "Less",
-    "viewAll": "View All",
     "showMore": "Show More",
     "showLess": "Show Less",
-    "remove": "Remove",
-    "download": "Download"
+    "remove": "Remove"
   },
-
   "common": {
-    "confirmDelete": "Are you sure?",
-    "deleting": "Deleting...",
-    "saving": "Saving...",
-    "loading": "Loading...",
     "noData": "No data",
-    "noResults": "No results found",
     "tryAgain": "Try again",
-    "dismiss": "Dismiss",
     "enabled": "Enabled",
     "disabled": "Disabled",
     "dark": "Dark",
-    "light": "Light"
-  },
-
-  "commandPalette": {
-    "placeholder": "Type a command...",
+    "light": "Light",
+    "total": "Total",
+    "sessions": "Sessions",
+    "error": "Error",
+    "skills": "Skills",
+    "workspace": "Workspace",
+    "output": "Output",
+    "overview": "Overview",
+    "agents": "Agents",
+    "tokens": "Tokens",
+    "lastActive": "Last Active",
+    "noResultsHint": "Try adjusting your search or filters.",
+    "clearFilters": "Clear Filters",
+    "model": "Model",
+    "name": "Name",
+    "files": "Files",
+    "tools": "Tools",
+    "cove": "Cove",
+    "connectToGateway": "Connect to Gateway",
+    "connecting": "Connecting...",
+    "enableCanvas": "Enable Canvas",
+    "settings": "Settings",
+    "canvas": "Canvas",
+    "saving": "Saving...",
+    "create": "Create",
+    "edit": "Edit",
+    "newChat": "New Chat",
+    "logout": "Logout",
+    "search": "Search",
+    "download": "Download",
     "loading": "Loading...",
     "noItems": "No items",
+    "deleteThisSession": "Delete this session?",
+    "gatewayUrl": "Gateway URL",
+    "password": "Password",
+    "token": "Token",
+    "approved": "Approved",
+    "url": "URL",
+    "imageViewer": "Image viewer",
+    "healthy": "Healthy",
+    "usage": "Usage",
+    "channels": "Channels",
+    "instances": "Instances",
+    "cronJobs": "Cron Jobs",
+    "debug": "Debug",
+    "logs": "Logs",
+    "docs": "Docs",
+    "devices": "Devices",
+    "agent": "Agent",
+    "assistant": "Assistant",
+    "thinking": "Thinking",
+    "all": "All",
+    "main": "Main",
+    "isolated": "Isolated",
+    "channel": "Channel",
+    "default": "Default",
+    "sessionDetails": "Session Details",
+    "off": "Off",
+    "medium": "Medium",
+    "session": "Session",
+    "gateway": "Gateway",
+    "defaultAgent": "Default Agent",
+    "enable": "Enable",
+    "disable": "Disable",
+    "pending": "Pending",
+    "nextRun": "Next Run",
+    "schedule": "Schedule",
+    "version": "Version",
+    "host": "Host",
+    "commit": "Commit",
+    "uptime": "Uptime",
+    "platform": "Platform",
+    "clear": "Clear",
+    "paused": "Paused",
+    "input": "Input",
+    "configured": "Configured",
+    "result": "Result",
+    "searchSkills": "Search skills...",
+    "alwaysActive": "Always active",
+    "eligible": "Eligible",
+    "missingReqs": "Missing Reqs",
+    "createAgent": "Create Agent",
+    "deleteAgent": "Delete Agent",
+    "operators": "Operators",
+    "nodes": "Nodes",
+    "totalCost": "Total Cost"
+  },
+  "commandPalette": {
+    "placeholder": "Type a command...",
     "noMatches": "No matches",
     "noCommands": "No commands found",
-    "failedToLoad": "Failed to load",
     "hints": {
       "navigate": "↑↓ navigate",
       "select": "↵ select",
       "close": "esc close",
       "back": "esc back"
-    },
-    "categories": {
-      "recent": "Recent",
-      "chat": "Chat",
-      "session": "Session",
-      "model": "Model",
-      "cron": "Automation",
-      "gateway": "Gateway",
-      "settings": "Settings"
     },
     "commands": {
       "chat": {
@@ -218,197 +230,111 @@
       }
     },
     "confirm": {
-      "deleteSession": "Delete this session?",
       "restartGateway": "Restart the gateway? Connection will drop briefly."
     }
   },
-
   "auth": {
-    "title": "Connect to Gateway",
-    "gatewayUrl": "Gateway URL",
     "gatewayUrlPlaceholder": "ws://localhost:8080",
-    "password": "Password",
     "passwordPlaceholder": "Enter password",
-    "token": "Token",
     "tokenPlaceholder": "Enter token",
-    "rememberMe": "Remember me",
-    "connecting": "Connecting...",
-    "authMode": {
-      "password": "Password",
-      "token": "Token"
-    }
+    "rememberMe": "Remember me"
   },
-
   "errors": {
     "generic": "Something went wrong",
-    "connectionFailed": "Failed to connect to gateway",
-    "connectionLost": "Connection lost",
-    "unauthorized": "Invalid credentials",
-    "timeout": "Request timed out",
-    "notFound": "Not found",
-    "serverError": "Server error",
-    "networkError": "Network error",
     "unknown": "An unknown error occurred",
-    "retry": "Please try again",
     "required": "This field is required",
     "invalid": "Invalid value",
     "viewFailed": "Failed to load {view}"
   },
-
   "exec": {
     "approvalNeeded": "Exec Approval Needed",
-    "command": "Command",
-    "host": "Host",
-    "agent": "Agent",
-    "session": "Session",
-    "cwd": "Working Directory",
-    "resolved": "Resolved Path",
-    "security": "Security Mode",
-    "askMode": "Ask Mode",
     "expiresIn": "Expires in {time}",
     "expired": "Expired",
-    "approved": "Approved",
     "denied": "Denied",
-    "pendingCount": "{count} pending",
     "allowOnce": "Allow Once",
     "allowAlways": "Always Allow",
     "deny": "Deny"
   },
-
   "toolOutput": {
     "expand": "Expand output",
-    "output": "Output",
     "lines": "{count} lines",
     "moreLines": "⋯ {count} more lines (click to expand)",
-    "collapse": "⋯ collapse"
+    "collapse": "⋯ collapse",
+    "emptyResponse": "Empty response",
+    "noTabsOpen": "No tabs open"
   },
-
   "toolInput": {
-    "fromLine": "from line {line}",
     "lineCount": "{count} lines",
     "searchQuery": "Search query",
-    "url": "URL",
+    "memoryPath": "Memory path",
     "imagePath": "Image path",
     "prompt": "Prompt",
     "inputImage": "Input image",
     "expandImage": "Click to expand image",
-    "expandedImage": "Expanded image",
-    "imageViewer": "Image viewer"
+    "expandedImage": "Expanded image"
   },
-
+  "toolBlock": {
+    "showRaw": "Show raw",
+    "showFormatted": "Show formatted"
+  },
   "sessionStatus": {
     "remaining": "{percent}% remaining"
   },
-
   "status": {
-    "connected": "Healthy",
     "disconnected": "Disconnected",
     "connecting": "Connecting",
-    "reconnecting": "Reconnecting",
-    "error": "Error",
-    "online": "Online",
-    "offline": "Offline",
-    "loading": "Loading...",
-    "saving": "Saving...",
-    "processing": "Processing..."
+    "reconnecting": "Reconnecting"
   },
-
   "connection": {
     "disconnected": "Connection lost. Messages will be sent when reconnected.",
     "reconnecting": "Reconnecting to gateway...",
     "reconnectingAttempt": "Reconnecting... (attempt {count})",
-    "messageFailed": "Failed to send. Tap to retry.",
     "messageFailedStatus": "Failed",
     "messageSending": "Sending",
     "messageQueued": "Queued",
-    "messagesQueued": "{count} message queued",
-    "messagesQueued_plural": "{count} messages queued"
+    "messagesQueued": "{count} message queued"
   },
-
   "nav": {
     "chat": "Chat",
-    "sessions": "Sessions",
-    "overview": "Overview",
-    "usage": "Usage",
-    "channels": "Channels",
-    "instances": "Instances",
-    "cron": "Cron Jobs",
     "config": "Config",
-    "status": "Status",
-    "debug": "Debug",
-    "logs": "Logs",
-    "docs": "Docs",
     "github": "GitHub",
     "githubOpenClaw": "OpenClaw GitHub",
     "discord": "Discord",
     "settings": "Cove Settings",
-    "memory": "Memory",
-    "skills": "Skills",
-    "agents": "Agents",
-    "nodes": "Nodes",
-    "devices": "Devices",
     "sections": {
-      "chat": "Chat",
       "control": "Control",
-      "agent": "Agent",
-      "settings": "Settings",
       "resources": "Resources"
     }
   },
-
   "newChatModal": {
-    "title": "New Chat",
-    "agent": "Agent",
     "agentDescription": "Choose which assistant to chat with",
     "rememberChoice": "Remember this choice",
     "rememberChoiceDescription": "Skip this dialog next time and use these defaults",
     "create": "Create Chat"
   },
-
   "chat": {
     "placeholder": "Message (Enter to send, Shift+Enter for new line)",
     "placeholderMobile": "Message...",
-    "placeholderDisabled": "Connect to gateway to start chatting",
-    "sending": "Sending...",
     "thinking": "Thinking...",
     "queuedMessages": "Queued ({count})",
-    "queuedMessages_plural": "Queued ({count})",
     "editQueuedMessage": "Edit Queued Message",
     "images": "Images",
     "addImage": "Add Image",
     "noImages": "No images attached",
     "imageCount": "{count} image",
-    "imageCount_plural": "{count} images",
-    "streaming": "Generating response...",
-    "copyCode": "Copy code",
-    "viewRaw": "View raw",
-    "viewRendered": "View rendered",
     "scrollToBottom": "Scroll to bottom",
     "search": "Search messages",
     "searchPlaceholder": "Search in conversation...",
     "match": "match",
     "matches": "matches",
-    "dateRange": "Date",
-    "noMatches": "No matches found",
-    "newMessages": "{count} new message",
-    "newMessages_plural": "{count} new messages",
     "emptyState": {
       "title": "Start a conversation",
       "titleWithName": "Chat with {name}",
       "description": "Send a message to begin chatting with your assistant",
-      "assistant": "Assistant",
       "hint": "Quick tips:",
-      "search": "Search",
       "newSession": "New session"
     },
-    "toolCall": {
-      "running": "Running...",
-      "completed": "Completed",
-      "failed": "Failed",
-      "duration": "{duration}"
-    },
     "thinkingBlock": {
-      "thinking": "Thinking",
       "thoughtFor": "Thought for ~{duration}",
       "second": "{count} second",
       "second_plural": "{count} seconds",
@@ -416,7 +342,6 @@
       "collapseLabel": "Collapse thinking"
     },
     "heartbeats": "{count} heartbeat",
-    "heartbeats_plural": "{count} heartbeats",
     "heartbeatsTitle": "Heartbeats",
     "noHeartbeats": "No heartbeats yet",
     "compacting": "Compacting…",
@@ -427,14 +352,9 @@
     "dateTo": "To",
     "attachImage": "Attach image",
     "dropFiles": "Drop files here",
-    "imageViewer": "Image viewer",
     "copyMarkdown": "Copy markdown"
   },
-
   "sessions": {
-    "title": "Sessions",
-    "main": "Main",
-    "current": "Current",
     "pinned": "Pinned",
     "today": "Today",
     "yesterday": "Yesterday",
@@ -442,105 +362,57 @@
     "older": "Older",
     "noSessions": "No sessions yet",
     "noResults": "No sessions match your search",
-    "newSession": "New Session",
     "rename": "Rename Session",
     "label": "Session Label",
     "labelPlaceholder": "Enter a name for this session",
     "delete": "Delete Session",
     "deleteConfirm": "Are you sure you want to delete \"{name}\"?",
     "deleteWarning": "This action cannot be undone. All messages in this session will be permanently deleted.",
-    "switchTo": "Switch to {name}",
-    "count": "{count} session",
-    "count_plural": "{count} sessions",
     "searchPlaceholder": "Search...",
     "filterSessions": "Filter sessions",
-    "filterAll": "All",
-    "filterMain": "Main",
-    "filterIsolated": "Isolated",
-    "filterChannel": "Channel",
     "showCron": "Show cron sessions",
-    "tokens": "{count} tokens",
-    "model": "Model: {model}",
-    "defaultModel": "Default",
     "admin": {
-      "title": "Sessions",
       "description": "Manage active sessions, configure overrides, and monitor usage.",
       "label": "Label",
       "labelPlaceholder": "Give this session a memorable name",
       "labelHelp": "A friendly name to help identify this session in lists.",
       "editLabel": "Edit label",
       "overrides": "Session Overrides",
-      "tokens": "Tokens",
       "contextUsed": "Context Used",
-      "lastActive": "Last Active",
-      "thinking": "Thinking",
       "verbose": "Verbose",
       "reasoning": "Reasoning",
-      "sessionDetails": "Session Details",
       "openInChat": "Open in Chat",
-      "configure": "Configure",
-      "confirmDelete": "Delete this session?",
       "emptyTitle": "No Sessions",
       "emptyDescription": "Sessions will appear here once you start chatting.",
       "noResults": "No Matching Sessions",
-      "noResultsDescription": "Try adjusting your search or filters.",
-      "clearFilters": "Clear Filters",
       "searchPlaceholder": "Search sessions...",
       "count": "{count} session",
-      "count_plural": "{count} sessions",
       "filteredCount": "Showing {filtered} of {total} sessions",
-      "stats": {
-        "total": "Total"
-      },
       "kinds": {
-        "main": "Main",
-        "channel": "Channel",
-        "cron": "Cron",
-        "isolated": "Isolated"
+        "cron": "Cron"
       },
       "levels": {
         "inherit": "Inherit",
-        "off": "Off",
         "low": "Low",
-        "medium": "Medium",
         "high": "High"
-      },
-      "filters": {
-        "all": "All Types"
-      },
-      "columns": {
-        "session": "Session",
-        "kind": "Type",
-        "model": "Model",
-        "lastActive": "Last Active",
-        "tokens": "Tokens"
       }
     }
   },
-
   "models": {
     "addFavorite": "Add to favorites",
     "removeFavorite": "Remove from favorites"
   },
-
   "settings": {
-    "title": "Settings",
     "description": "Customize your Cove experience",
     "appearance": {
       "title": "Appearance",
-      "theme": "Theme",
-      "themeDescription": "Choose your color scheme",
-      "themeSystem": "System",
       "useSystemTheme": "Follow system appearance",
       "useSystemThemeDescription": "Automatically switch between light and dark themes",
       "lightTheme": "Light Theme",
       "darkTheme": "Dark Theme",
-      "lightThemes": "Light",
-      "darkThemes": "Dark",
       "fontSize": "Font Size",
       "fontSizeDescription": "Adjust text size throughout the app",
       "fontSizeSm": "Small",
-      "fontSizeMd": "Medium",
       "fontSizeLg": "Large",
       "fontFamily": "Font Family",
       "fontFamilyDescription": "Choose your preferred typeface",
@@ -550,43 +422,15 @@
       "fontMono": "JetBrains Mono",
       "fontDyslexic": "OpenDyslexic"
     },
-    "language": {
-      "title": "Language & Region",
-      "locale": "Language",
-      "timeFormat": "Time Format",
-      "timeRelative": "Relative (2 hours ago)",
-      "timeAbsolute": "Absolute (3:45 PM)"
-    },
-    "notifications": {
-      "title": "Notifications",
-      "desktop": "Desktop Notifications",
-      "sound": "Sound"
-    },
     "about": {
-      "title": "About",
-      "cove": "Cove",
-      "gateway": "Gateway",
-      "gatewayUrl": "Gateway URL"
+      "title": "About"
     },
     "device": {
-      "title": "Canvas Node",
-      "enabled": "Enable Canvas",
       "enabledDescription": "Register as a node so the agent can push content to this browser",
-      "id": "Device ID",
       "name": "Display Name",
-      "nameDescription": "Custom name shown in node list",
-      "status": "Status",
-      "connected": "Connected",
-      "disconnected": "Not connected"
-    },
-    "links": {
-      "title": "Links",
-      "docs": "Documentation",
-      "github": "GitHub",
-      "discord": "Discord Community"
+      "nameDescription": "Custom name shown in node list"
     },
     "preferences": {
-      "title": "Preferences",
       "timeFormat": "Time Display",
       "timeFormatDescription": "How timestamps are shown",
       "timeRelative": "Relative (2 hours ago)",
@@ -598,44 +442,24 @@
       "multiChatDescription": "Show session sidebar with multiple conversations"
     },
     "newChat": {
-      "title": "New Chat",
       "useDefaults": "Always use defaults",
       "useDefaultsDescription": "Skip the agent picker when creating new chats",
-      "defaultAgent": "Default Agent",
       "defaultAgentDescription": "Which agent to use for new chats"
     },
-    "account": {
-      "title": "Account",
-      "logoutDescription": "Disconnect from the gateway"
-    },
     "data": {
-      "title": "Data",
-      "resetDefaults": "Reset to Defaults",
-      "resetDefaultsDescription": "Restore all settings to their defaults"
-    },
-    "comingSoon": "Coming soon"
+      "resetDefaults": "Reset to Defaults"
+    }
   },
-
   "cron": {
-    "title": "Cron Jobs",
     "description": "Schedule and manage automated tasks.",
     "createJob": "Create Job",
     "editJob": "Edit Job",
-    "editJobNamed": "Edit {name}",
-    "deleteJob": "Delete Job",
     "confirmDelete": "Delete this job?",
     "runNow": "Run Now",
-    "enable": "Enable",
-    "disable": "Disable",
-    "enabled": "Enabled",
-    "disabled": "Disabled",
     "announces": "Announces results",
     "running": "Running",
-    "pending": "Pending",
     "lastOk": "Last OK",
     "lastFailed": "Last Failed",
-    "schedule": "Schedule",
-    "nextRun": "Next Run",
     "lastRun": "Last Run",
     "lastDuration": "Last Duration",
     "recentRuns": "Recent Runs",
@@ -644,27 +468,14 @@
     "emptyTitle": "No Cron Jobs",
     "emptyDescription": "Create a job to schedule automated tasks.",
     "noResults": "No Matching Jobs",
-    "noResultsDescription": "Try adjusting your search or filters.",
-    "clearFilters": "Clear Filters",
     "count": "{count} job",
-    "count_plural": "{count} jobs",
     "filteredCount": "Showing {filtered} of {total} jobs",
     "stats": {
-      "total": "Total",
-      "enabled": "Enabled",
-      "disabled": "Disabled",
       "nextWake": "Next Wake"
-    },
-    "filters": {
-      "all": "All Jobs",
-      "enabled": "Enabled",
-      "disabled": "Disabled"
     },
     "columns": {
       "job": "Job",
-      "schedule": "Schedule",
       "target": "Target",
-      "nextRun": "Next Run",
       "status": "Status"
     },
     "scheduleKind": {
@@ -680,22 +491,14 @@
       "nextHeartbeat": "Next Heartbeat",
       "now": "Immediate"
     },
-    "payloadKind": {
-      "systemEvent": "System Event",
-      "agentTurn": "Agent Turn"
-    },
     "form": {
-      "name": "Name",
       "namePlaceholder": "My Job",
       "description": "Description",
       "descriptionPlaceholder": "What does this job do?",
       "descriptionHint": "Optional description for this job.",
-      "enabled": "Enabled",
-      "schedule": "Schedule",
       "timezonePlaceholder": "Timezone (e.g., America/New_York)",
       "cronPlaceholder": "*/5 * * * *",
       "intervalPlaceholder": "Interval in milliseconds",
-      "timestampPlaceholder": "Unix timestamp in milliseconds",
       "sessionTarget": "Session Target",
       "sessionTargetHint": "Main injects into the main session. Isolated runs in a separate session.",
       "wakeMode": "Wake Mode",
@@ -718,7 +521,6 @@
       "payloadRequired": "Payload text is required"
     }
   },
-
   "debug": {
     "subtitle": "Connection diagnostics and event logging.",
     "connection": "Connection",
@@ -727,47 +529,29 @@
     "paths": "Paths",
     "eventLog": "Event Log",
     "state": "State",
-    "url": "URL",
     "sessionKey": "Session Key",
     "reconnectAttempts": "Reconnect Attempts",
     "connectedAt": "Connected At",
-    "version": "Version",
-    "host": "Host",
-    "commit": "Commit",
-    "uptime": "Uptime",
     "tickInterval": "Tick Interval",
     "configPath": "Config Path",
     "stateDir": "State Directory",
     "appVersion": "App Version",
-    "platform": "Platform",
     "userAgent": "User Agent",
     "presenceCount": "Connected Clients",
-    "clear": "Clear",
-    "paused": "Paused",
     "recording": "Recording",
     "noEvents": "No events recorded",
     "noEventsHint": "Events will appear here as they occur.",
     "snapshots": "Snapshots",
-    "snapshotsDesc": "Status, health, and heartbeat data.",
-    "status": "Status",
     "health": "Health",
-    "lastHeartbeat": "Last Heartbeat",
     "noData": "No data — click Refresh",
     "recentSession": "Recent Session",
     "heartbeatAgents": "Heartbeat Agents",
     "showRawJson": "Show raw JSON",
-    "input": "Input",
-    "output": "Output",
-    "total": "Total",
     "used": "Used",
-    "healthy": "Healthy",
     "unhealthy": "Unhealthy",
     "linked": "Linked",
-    "configured": "Configured",
     "on": "On",
-    "off": "Off",
     "ok": "OK",
-    "error": "Error",
     "clickToExpand": "click to expand",
     "noPayload": "no payload",
     "viewEventDetails": "View {{event}} event details",
@@ -780,32 +564,19 @@
     "noParams": "No params — click Add to add one",
     "formMode": "Form",
     "jsonMode": "JSON",
-    "call": "Call",
-    "result": "Result"
+    "call": "Call"
   },
-
   "overview": {
     "serverInfo": "Server Information",
-    "version": "Version",
-    "commit": "Commit",
-    "host": "Host",
     "capabilities": "Capabilities",
     "capabilitiesCount": "{count} methods"
   },
-
   "logs": {
-    "title": "Logs",
     "description": "Gateway log viewer with live tailing.",
     "searchPlaceholder": "Search logs...",
     "live": "Live",
-    "paused": "Paused",
-    "all": "All",
-    "debug": "Debug",
     "info": "Info",
     "warnings": "Warn",
-    "errors": "Error",
-    "download": "Download",
-    "clear": "Clear",
     "noLogs": "No logs available",
     "noLogsHint": "Logs will appear here when the gateway writes them.",
     "noMatches": "No logs match your filter",
@@ -818,97 +589,54 @@
     "rawLine": "Raw",
     "fields": "fields"
   },
-
   "channels": {
-    "title": "Channels",
     "description": "Messaging platform integrations and status.",
     "emptyTitle": "No Channels",
     "emptyDescription": "No channel plugins are available.",
     "learnMore": "Learn how to set up channels",
     "count": "{count} channel",
-    "count_plural": "{count} channels",
-    "accountSingular": "account",
-    "accountPlural": "accounts",
-    "docs": "Docs",
     "configure": "Configure",
     "probe": "Health Check",
     "probing": "Checking...",
-    "probeOk": "Healthy",
-    "probeFailed": "Unhealthy",
-    "logout": "Logout",
     "logoutTitle": "Logout from Channel",
     "logoutConfirm": "Are you sure you want to log out of {channel}?",
     "logoutWarning": "You may need to re-authenticate (QR code, token, etc.) to reconnect.",
     "logoutSuccess": "Logged out of {channel}",
-    "viewDocs": "View documentation",
     "stats": {
-      "total": "Total",
       "active": "Active (24h)",
       "errors": "Errors"
     },
     "status": {
       "connected": "Connected",
-      "configured": "Configured",
-      "notConfigured": "Not Configured",
-      "disabled": "Disabled",
-      "error": "Error"
-    },
-    "account": {
-      "enabled": "enabled",
-      "disabled": "disabled",
-      "configured": "configured",
-      "linked": "linked",
-      "running": "running",
-      "connected": "connected",
-      "disconnected": "disconnected"
-    },
-    "columns": {
-      "channel": "Channel",
-      "accounts": "Accounts",
-      "status": "Status",
-      "lastActivity": "Last Activity"
+      "notConfigured": "Not Configured"
     }
   },
-
   "instances": {
-    "title": "Instances",
     "description": "Connected clients and services.",
     "emptyTitle": "No Instances",
     "emptyDescription": "No connected clients or services found.",
     "count": "{count} instance",
-    "count_plural": "{count} instances",
-    "idle": "Idle",
     "idleSeconds": "{count}s",
     "idleMinutes": "{count}m",
     "idleHours": "{count}h",
     "stats": {
-      "total": "Total",
       "gateways": "Gateways",
       "clients": "Clients"
     },
     "columns": {
       "instance": "Instance",
       "mode": "Mode",
-      "platform": "Platform",
       "lastSeen": "Last Seen",
       "idle": "Idle"
     }
   },
-
   "skills": {
-    "title": "Skills",
     "description": "Browse and manage assistant skills.",
     "emptyTitle": "No Skills",
     "emptyDescription": "No skills are available in this workspace.",
     "noResults": "No Matching Skills",
     "count": "{count} skill",
-    "count_plural": "{count} skills",
-    "noResultsDescription": "Try adjusting your search or filters.",
-    "clearFilters": "Clear Filters",
     "filteredCount": "Showing {filtered} of {total} skills",
-    "searchPlaceholder": "Search skills...",
-    "enable": "Enable",
-    "disable": "Disable",
     "enabledSuccess": "Enabled {name}",
     "disabledSuccess": "Disabled {name}",
     "installDeps": "Install Dependencies",
@@ -920,47 +648,27 @@
     "skillKey": "Skill Key",
     "location": "Location",
     "homepage": "Homepage",
-    "alwaysActive": "Always active",
     "missingRequirements": "Missing requirements",
     "blockedByAllowlist": "Blocked by allowlist",
     "primaryEnv": "Primary env var",
-    "workspaceDir": "Workspace",
     "managedDir": "Managed skills",
-    "stats": {
-      "total": "Total",
-      "eligible": "Eligible",
-      "disabled": "Disabled",
-      "missingReqs": "Missing Reqs"
-    },
     "status": {
-      "eligible": "Eligible",
-      "disabled": "Disabled",
-      "missingReqs": "Missing Reqs",
       "blocked": "Blocked"
     },
     "source": {
       "bundled": "Bundled",
-      "workspace": "Workspace",
       "managed": "Installed",
       "extra": "Extra"
     },
     "filters": {
       "allSources": "All Sources"
     },
-    "tabs": {
-      "installed": "Installed",
-      "clawhub": "ClawHub"
-    },
     "clawhub": {
-      "title": "Browse ClawHub",
-      "description": "Discover and install skills from the community registry.",
       "searchPlaceholder": "Search ClawHub skills...",
       "install": "Install",
       "installing": "Installing...",
       "installTitle": "Install {name}",
       "installConfirm": "Install {name} v{version} from ClawHub?",
-      "installSuccess": "Installed {name} from ClawHub",
-      "installFailed": "Failed to install from ClawHub",
       "noDescription": "No description available",
       "changelog": "Changelog",
       "downloads": "downloads",
@@ -971,51 +679,24 @@
       "notYetSupported": "ClawHub installation coming soon! Install manually: openclaw skills install {slug}"
     }
   },
-
   "agents": {
-    "title": "Agents",
     "description": "Manage agent configuration and workspace files.",
-    "selectAgent": "Select agent",
-    "newAgent": "New Agent",
-    "deleteAgent": "Delete Agent",
-    "loadError": "Failed to load agent data",
-    "tabs": {
-      "overview": "Overview",
-      "files": "Files",
-      "tools": "Tools",
-      "skills": "Skills"
-    },
     "overview": {
-      "title": "Overview",
-      "model": "Model",
-      "modelDescription": "Primary model for this agent",
-      "fallbacks": "Fallbacks",
-      "fallbacksDescription": "Comma-separated fallback models",
-      "fallbacksPlaceholder": "provider/model, provider/model",
-      "identity": "Identity",
-      "identityName": "Name",
       "identityEmoji": "Emoji",
       "avatar": "Avatar",
       "avatarPlaceholder": "avatar.jpg or https://...",
       "namePlaceholder": "Agent name",
-      "workspace": "Workspace",
-      "workspacePath": "Path",
       "workspacePlaceholder": "/path/to/workspace",
       "modelPlaceholder": "anthropic/claude-sonnet-4-20250514",
-      "editHint": "Avatar: relative path, URL, or data URI. Model: leave empty to keep current.",
-      "isDefault": "Default Agent",
-      "inheritDefault": "Inherit default ({model})"
+      "editHint": "Avatar: relative path, URL, or data URI. Model: leave empty to keep current."
     },
     "files": {
-      "title": "Files",
       "totalTokens": "~{count} tokens injected per run",
       "loadError": "Failed to load workspace files",
       "loadFileError": "Failed to load file",
       "saveError": "Failed to save file",
       "saved": "File saved",
       "missing": "Missing",
-      "create": "Create",
-      "edit": "Edit",
       "view": "View",
       "unsaved": "Unsaved",
       "unsavedWarning": "You have unsaved changes. Are you sure you want to leave?",
@@ -1040,10 +721,7 @@
       }
     },
     "tools": {
-      "title": "Tools",
-      "description": "Configure tool access for this agent.",
       "profile": "Profile",
-      "profileDescription": "Base tool access profile",
       "profiles": {
         "full": "Full — All tools enabled",
         "coding": "Coding — Files, exec, web",
@@ -1051,11 +729,9 @@
         "minimal": "Minimal — Read-only basics"
       },
       "sections": {
-        "files": "Files",
         "runtime": "Runtime",
         "web": "Web",
         "memory": "Memory",
-        "sessions": "Sessions",
         "automation": "Automation"
       },
       "toolDescriptions": {
@@ -1077,18 +753,12 @@
         "gateway": "Gateway control",
         "nodes": "Node devices"
       },
-      "enableAll": "Enable All",
-      "disableAll": "Disable All",
-      "enabled": "{count} enabled",
-      "overrides": "Overrides"
+      "enabled": "{count} enabled"
     },
     "skills": {
       "title": "Agent Skill Access",
-      "description": "Enable or disable skills for this agent.",
-      "filter": "Filter skills",
       "noSkills": "No eligible skills available",
       "noSearchResults": "No skills match your search",
-      "enabledCount": "{count} enabled",
       "usingAllowlist": "Using allowlist: {allowed} of {total} skills",
       "usingAll": "Using all {count} eligible skills",
       "useAll": "Use All Skills",
@@ -1099,25 +769,18 @@
       "selectSpecificHint": "= agent can only use checked skills.",
       "globalHint": "To globally enable/disable skills, visit the",
       "page": "page",
-      "searchPlaceholder": "Search skills...",
-      "alwaysActive": "Always active",
       "details": "Details"
     },
     "create": {
-      "title": "Create Agent",
-      "name": "Name",
       "nameHint": "Used as the agent ID (lowercase, no spaces)",
       "namePlaceholder": "my-agent",
-      "workspace": "Workspace",
       "workspacePlaceholder": "~/agents/my-agent",
       "emoji": "Emoji (optional)",
       "emojiPlaceholder": "🤖",
       "requiredFields": "Name and workspace are required",
-      "submit": "Create Agent",
       "success": "Agent created"
     },
     "delete": {
-      "title": "Delete Agent",
       "warning": "This action cannot be undone",
       "warningDescription": "Deleting this agent will permanently remove its configuration from OpenClaw. Make sure you have backups if needed.",
       "willDelete": "This will permanently delete:",
@@ -1128,19 +791,15 @@
       "includeFilesDescription": "Permanently delete all files in {path}",
       "confirmPrompt": "Type \"{id}\" to confirm deletion:",
       "confirmMismatch": "Please type the agent ID to confirm deletion",
-      "submit": "Delete Agent",
       "success": "Agent deleted"
     }
   },
-
   "devices": {
-    "title": "Devices",
     "description": "Manage paired devices and authentication tokens.",
     "emptyTitle": "No Devices",
     "emptyDescription": "No devices have been paired yet.",
     "noResults": "No matching devices",
     "count": "{count} device",
-    "count_plural": "{count} devices",
     "filteredCount": "Showing {filtered} of {total}",
     "searchPlaceholder": "Search devices...",
     "pendingRequests": "Pending Pairing Requests",
@@ -1152,7 +811,6 @@
     "deviceId": "Device ID",
     "clientId": "Client ID",
     "scopes": "Scopes",
-    "approved": "Approved",
     "tokens": "Auth Tokens",
     "noTokens": "No tokens",
     "tokenActive": "Active",
@@ -1167,87 +825,19 @@
     "tokenRotated": "Token rotated and copied to clipboard",
     "tokenCopied": "New token copied to clipboard",
     "toggleDetails": "Toggle details for {name}",
-    "stats": {
-      "total": "Total",
-      "operators": "Operators",
-      "nodes": "Nodes",
-      "pending": "Pending"
-    },
     "filters": {
-      "allRoles": "All Roles",
-      "operators": "Operators",
-      "nodes": "Nodes"
+      "allRoles": "All Roles"
     }
   },
-
-  "nodes": {
-    "title": "Nodes",
-    "description": "Manage paired mobile devices and nodes.",
-    "emptyTitle": "No Nodes",
-    "emptyDescription": "Pair a mobile device or node to get started.",
-    "noResults": "No matching nodes",
-    "count": "{count} node",
-    "count_plural": "{count} nodes",
-    "filteredCount": "Showing {filtered} of {total}",
-    "searchPlaceholder": "Search nodes...",
-    "pendingRequests": "Pending Pairing Requests",
-    "requestedAt": "Requested",
-    "approve": "Approve",
-    "reject": "Reject",
-    "approveSuccess": "Pairing approved",
-    "rejectSuccess": "Pairing rejected",
-    "connected": "Connected",
-    "nodeId": "Node ID",
-    "version": "Version",
-    "ipAddress": "IP Address",
-    "commands": "Commands",
-    "actions": "Actions",
-    "actionsRequireConnection": "Actions require an active connection",
-    "notify": "Notify",
-    "notifyTitle": "Send Notification to {name}",
-    "notifyTitleLabel": "Title",
-    "notifyTitlePlaceholder": "Notification title",
-    "notifyBodyLabel": "Message",
-    "notifyBodyPlaceholder": "Notification message...",
-    "sendNotification": "Send",
-    "notifySuccess": "Notification sent to {name}",
-    "cameraFront": "Front Camera",
-    "cameraBack": "Back Camera",
-    "cameraRequested": "Requesting photo...",
-    "cameraSuccess": "Photo captured",
-    "location": "Location",
-    "locationSuccess": "Location retrieved",
-    "screenRecord": "Screen Record",
-    "screenRecordHint": "Record the device screen",
-    "stats": {
-      "total": "Total",
-      "connected": "Connected",
-      "paired": "Offline",
-      "pending": "Pending"
-    },
-    "status": {
-      "connected": "Connected",
-      "paired": "Offline"
-    }
-  },
-
   "usage": {
-    "title": "Usage",
     "description": "Token usage and cost analytics",
     "loadError": "Failed to load usage data",
     "gateway": {
-      "title": "Gateway",
-      "unknown": "Unknown host",
-      "uptime": "Uptime",
-      "sessions": "Sessions"
+      "unknown": "Unknown host"
     },
     "summary": {
       "title": "Token Usage",
       "period": "Last {days} days",
-      "totalCost": "Total Cost",
-      "input": "Input",
-      "output": "Output",
-      "total": "Total",
       "cache": "Cache Tokens",
       "cacheRead": "Cache Read",
       "cacheWrite": "Cache Write",
@@ -1257,31 +847,19 @@
       "title": "Daily Activity"
     },
     "agents": {
-      "title": "Agents",
-      "default": "Default",
       "sessions": "sessions"
     },
     "sessions": {
-      "title": "Sessions",
       "noData": "No session usage data available",
-      "name": "Session",
-      "model": "Model",
-      "tokens": "Tokens",
       "cost": "Cost",
-      "lastActive": "Last Active",
       "showing": "Showing {from}–{to} of {total}",
       "viewDetails": "View details for {name}"
     },
     "detail": {
-      "title": "Session Details",
       "contextWeight": "Context Weight",
-      "skills": "Skills",
-      "tools": "Tools",
-      "files": "Files",
       "system": "System Prompt",
       "other": "Other",
       "tabs": {
-        "overview": "Overview",
         "timeline": "Timeline",
         "messages": "Messages"
       },
@@ -1290,33 +868,15 @@
       "cumulativeTokens": "Cumulative Tokens",
       "requests": "Requests",
       "totalTokens": "Total Tokens",
-      "totalCost": "Total Cost",
       "role": {
         "user": "User",
-        "assistant": "Assistant",
-        "tool": "Tool",
-        "toolResult": "Result"
+        "tool": "Tool"
       },
       "tokenCount": "{count} tokens"
     }
   },
-
   "time": {
-    "justNow": "just now",
-    "secondsAgo": "{count} second ago",
-    "secondsAgo_plural": "{count} seconds ago",
     "minutesAgo": "{count} minute ago",
-    "minutesAgo_plural": "{count} minutes ago",
-    "hoursAgo": "{count} hour ago",
-    "hoursAgo_plural": "{count} hours ago",
-    "daysAgo": "{count} day ago",
-    "daysAgo_plural": "{count} days ago",
-    "weeksAgo": "{count} week ago",
-    "weeksAgo_plural": "{count} weeks ago",
-    "monthsAgo": "{count} month ago",
-    "monthsAgo_plural": "{count} months ago",
-    "yearsAgo": "{count} year ago",
-    "yearsAgo_plural": "{count} years ago",
     "compact": {
       "now": "now",
       "minutes": "{count}m",
@@ -1327,15 +887,10 @@
       "years": "{count}y"
     }
   },
-
   "canvas": {
-    "title": "Canvas",
     "close": "Close canvas",
     "minimize": "Minimize",
     "maximize": "Maximize",
-    "restore": "Restore",
-    "expand": "Expand",
-    "openInNewTab": "Open in new tab",
     "openUrlInNewTab": "Open URL in new tab",
     "openCanvasTab": "Pop out to canvas tab",
     "iframeTitle": "Canvas content",
@@ -1343,68 +898,27 @@
     "noContent": "No content to display",
     "noContentHint": "The assistant can push content here."
   },
-
   "accessibility": {
-    "skipToContent": "Skip to content",
-    "menuOpen": "Open menu",
-    "menuClose": "Close menu",
     "sidebarToggle": "Toggle sidebar",
-    "themeToggle": "Toggle theme",
     "loading": "Loading",
-    "closeDialog": "Close dialog",
     "expandSection": "Expand section",
     "collapseSection": "Collapse section"
   },
-
   "config": {
     "title": "Configuration",
     "description": "Manage OpenClaw settings",
     "searchPlaceholder": "Search settings...",
     "save": "Save Changes",
-    "saving": "Saving...",
     "reset": "Reset",
     "unsavedChanges": "You have unsaved changes",
-    "discardChanges": "Discard changes?",
     "saveSuccess": "Configuration saved. Gateway will restart.",
-    "saveError": "Failed to save configuration",
-    "hashMismatch": "Configuration was modified externally. Reload and try again.",
-    "reload": "Reload",
-    "showAdvanced": "Show advanced settings",
-    "hideAdvanced": "Hide advanced settings",
-    "restartRequired": "Gateway will restart to apply changes",
     "noFields": "No settings found",
     "noResults": "No matching settings",
     "selectSection": "Select a section to configure",
-    "subsections": "Subsections",
     "general": "General",
     "noSettingsAtLevel": "No settings available at this level.",
     "schemaNotFound": "Schema not found for path: {path}",
-    "mobileNotReady": "Mobile editing coming soon",
-    "mobileNotReadyHint": "Use desktop for full configuration editing.",
-    "emptyConfig": "Configuration is empty",
-    "loadError": "Failed to load configuration",
-    "version": "OpenClaw {version}",
-    "configPath": "Config: {path}",
-    "expandAll": "Expand all",
-    "collapseAll": "Collapse all",
-    "sections": {
-      "gateway": "Gateway",
-      "agents": "Agents",
-      "channels": "Channels",
-      "tools": "Tools",
-      "models": "Models",
-      "auth": "Authentication",
-      "commands": "Commands",
-      "session": "Session",
-      "cron": "Cron",
-      "skills": "Skills",
-      "plugins": "Plugins",
-      "other": "Other"
-    },
     "validation": {
-      "required": "This field is required",
-      "invalidUrl": "Invalid URL format",
-      "invalidNumber": "Must be a number",
       "invalidFormat": "Invalid format",
       "mustBeString": "Must be a string",
       "mustBeNumber": "Must be a number",
@@ -1425,8 +939,6 @@
       "hidePassword": "Hide password",
       "addItem": "Add item",
       "removeItem": "Remove item",
-      "noItems": "No items",
-      "editJson": "Edit as JSON",
       "dragToReorder": "Drag to reorder",
       "moveUp": "Move up",
       "moveDown": "Move down",

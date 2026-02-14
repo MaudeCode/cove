@@ -129,7 +129,7 @@ export function Sidebar() {
       // Create session with initial label
       await send("sessions.patch", {
         key: sessionKey,
-        label: t("newChatModal.title"),
+        label: t("common.newChat"),
       });
 
       // Refresh session list so new chat appears in sidebar
@@ -156,7 +156,7 @@ export function Sidebar() {
               fullWidth
               icon={<PlusIcon />}
             >
-              {t("actions.newChat")}
+              {t("common.newChat")}
             </Button>
           </div>
 

@@ -92,7 +92,7 @@ export function SkillsTab() {
                   disabled={skillsSaving.value}
                   class="px-3 py-1.5 text-sm font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
                 >
-                  {skillsSaving.value ? t("actions.saving") : t("actions.save")}
+                  {skillsSaving.value ? t("common.saving") : t("actions.save")}
                 </button>
               )}
               <IconButton
@@ -145,10 +145,10 @@ export function SkillsTab() {
               type="text"
               value={skillsSearchQuery.value}
               onInput={(e) => (skillsSearchQuery.value = (e.target as HTMLInputElement).value)}
-              placeholder={t("agents.skills.searchPlaceholder")}
+              placeholder={t("common.searchSkills")}
               class="pl-9"
               fullWidth
-              aria-label={t("agents.skills.searchPlaceholder")}
+              aria-label={t("common.searchSkills")}
             />
           </div>
         </div>
@@ -181,7 +181,7 @@ export function SkillsTab() {
                     {skill.always && (
                       <span
                         class="text-xs text-[var(--color-text-muted)]"
-                        title={t("agents.skills.alwaysActive")}
+                        title={t("common.alwaysActive")}
                       >
                         ⚡
                       </span>
@@ -217,7 +217,7 @@ export function SkillsTab() {
         <br />
         {t("agents.skills.globalHint")}{" "}
         <a href="/skills" class="text-[var(--color-accent)] hover:underline">
-          {t("nav.skills")}
+          {t("common.skills")}
         </a>{" "}
         {t("agents.skills.page")}.
       </HintBox>

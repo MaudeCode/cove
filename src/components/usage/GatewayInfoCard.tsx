@@ -33,7 +33,7 @@ export function GatewayInfoCard({ healthData }: GatewayInfoCardProps) {
           <Server class="w-5 h-5 text-[var(--color-accent)]" />
         </div>
         <div>
-          <h3 class="font-semibold">{t("usage.gateway.title")}</h3>
+          <h3 class="font-semibold">{t("common.gateway")}</h3>
           <p class="text-sm text-[var(--color-text-muted)]">
             {gatewayHost.value || t("usage.gateway.unknown")}
           </p>
@@ -49,7 +49,7 @@ export function GatewayInfoCard({ healthData }: GatewayInfoCardProps) {
         <div class="flex items-center gap-2">
           <Clock class="w-4 h-4 text-[var(--color-text-muted)]" />
           <div>
-            <div class="text-sm text-[var(--color-text-muted)]">{t("usage.gateway.uptime")}</div>
+            <div class="text-sm text-[var(--color-text-muted)]">{t("common.uptime")}</div>
             <div class="font-medium">{uptime != null ? formatUptime(uptime) : "-"}</div>
           </div>
         </div>
@@ -57,7 +57,7 @@ export function GatewayInfoCard({ healthData }: GatewayInfoCardProps) {
         <div class="flex items-center gap-2">
           <Activity class="w-4 h-4 text-[var(--color-text-muted)]" />
           <div>
-            <div class="text-sm text-[var(--color-text-muted)]">{t("usage.gateway.sessions")}</div>
+            <div class="text-sm text-[var(--color-text-muted)]">{t("common.sessions")}</div>
             <div class="font-medium">{healthData?.sessions?.count ?? "-"}</div>
           </div>
         </div>

@@ -197,7 +197,7 @@ function SessionUsageTable() {
           <div class="p-2 rounded-lg bg-[var(--color-info)]/10">
             <Users class="w-5 h-5 text-[var(--color-info)]" />
           </div>
-          <h3 class="font-semibold">{t("usage.sessions.title")}</h3>
+          <h3 class="font-semibold">{t("common.sessions")}</h3>
           <Spinner size="sm" />
         </div>
         <div class="space-y-3">
@@ -225,7 +225,7 @@ function SessionUsageTable() {
           <div class="p-2 rounded-lg bg-[var(--color-info)]/10">
             <Users class="w-5 h-5 text-[var(--color-info)]" />
           </div>
-          <h3 class="font-semibold">{t("usage.sessions.title")}</h3>
+          <h3 class="font-semibold">{t("common.sessions")}</h3>
         </div>
         <p class="text-sm text-[var(--color-text-muted)]">{t("usage.sessions.noData")}</p>
       </Card>
@@ -326,7 +326,7 @@ function SessionUsageTable() {
           <div class="p-2 rounded-lg bg-[var(--color-info)]/10">
             <Users class="w-5 h-5 text-[var(--color-info)]" />
           </div>
-          <h3 class="font-semibold">{t("usage.sessions.title")}</h3>
+          <h3 class="font-semibold">{t("common.sessions")}</h3>
           {isLoadingSessions && <Spinner size="sm" />}
         </div>
         {paginatedSessions.map((session) => (
@@ -360,7 +360,7 @@ function SessionUsageTable() {
           <div class="p-2 rounded-lg bg-[var(--color-info)]/10">
             <Users class="w-5 h-5 text-[var(--color-info)]" />
           </div>
-          <h3 class="font-semibold">{t("usage.sessions.title")}</h3>
+          <h3 class="font-semibold">{t("common.sessions")}</h3>
           {isLoadingSessions && <Spinner size="sm" />}
         </div>
 
@@ -369,10 +369,10 @@ function SessionUsageTable() {
             <thead>
               <tr class="border-b border-[var(--color-border)]">
                 <th class="text-left py-2 px-2 font-medium text-[var(--color-text-muted)]">
-                  {t("usage.sessions.name")}
+                  {t("common.session")}
                 </th>
                 <th class="text-left py-2 px-2 font-medium text-[var(--color-text-muted)]">
-                  {t("usage.sessions.model")}
+                  {t("common.model")}
                 </th>
                 <th class="text-right py-2 px-2 font-medium">
                   <button
@@ -380,7 +380,7 @@ function SessionUsageTable() {
                     class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
                     onClick={() => toggleSort("tokens")}
                   >
-                    {t("usage.sessions.tokens")}
+                    {t("common.tokens")}
                     <SortIcon col="tokens" />
                   </button>
                 </th>
@@ -400,7 +400,7 @@ function SessionUsageTable() {
                     class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
                     onClick={() => toggleSort("recent")}
                   >
-                    {t("usage.sessions.lastActive")}
+                    {t("common.lastActive")}
                     <SortIcon col="recent" />
                   </button>
                 </th>
@@ -477,13 +477,13 @@ function SessionDetailModal() {
   }, [session, tab]);
 
   const tabs: { id: DetailTab; label: string }[] = [
-    { id: "overview", label: t("usage.detail.tabs.overview") },
+    { id: "overview", label: t("common.overview") },
     { id: "timeline", label: t("usage.detail.tabs.timeline") },
     { id: "messages", label: t("usage.detail.tabs.messages") },
   ];
 
   return (
-    <Modal open={!!session} onClose={clearSessionDetail} title={t("usage.detail.title")}>
+    <Modal open={!!session} onClose={clearSessionDetail} title={t("common.sessionDetails")}>
       {session && (
         <div class="space-y-4">
           {/* Session name */}
@@ -533,11 +533,11 @@ function OverviewTab({ session }: { session: SessionUsageEntry }) {
       {/* Token breakdown */}
       <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
-          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.input")}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("common.input")}</div>
           <div class="font-medium">{formatTokenCount(session.usage.input)}</div>
         </div>
         <div>
-          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.output")}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("common.output")}</div>
           <div class="font-medium">{formatTokenCount(session.usage.output)}</div>
         </div>
         <div>
@@ -545,7 +545,7 @@ function OverviewTab({ session }: { session: SessionUsageEntry }) {
           <div class="font-medium">{formatTokenCount(session.usage.cacheRead)}</div>
         </div>
         <div>
-          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.summary.totalCost")}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("common.totalCost")}</div>
           <div class="font-medium text-[var(--color-success)]">
             {formatCost(session.usage.totalCost)}
           </div>
@@ -567,7 +567,7 @@ function OverviewTab({ session }: { session: SessionUsageEntry }) {
             )}
             {contextWeight.skills != null && contextWeight.skills > 0 && (
               <ContextWeightBar
-                label={t("usage.detail.skills")}
+                label={t("common.skills")}
                 value={contextWeight.skills}
                 total={contextWeight.total}
                 color="var(--color-success)"
@@ -575,7 +575,7 @@ function OverviewTab({ session }: { session: SessionUsageEntry }) {
             )}
             {contextWeight.tools != null && contextWeight.tools > 0 && (
               <ContextWeightBar
-                label={t("usage.detail.tools")}
+                label={t("common.tools")}
                 value={contextWeight.tools}
                 total={contextWeight.total}
                 color="var(--color-warning)"
@@ -583,7 +583,7 @@ function OverviewTab({ session }: { session: SessionUsageEntry }) {
             )}
             {contextWeight.files != null && contextWeight.files > 0 && (
               <ContextWeightBar
-                label={t("usage.detail.files")}
+                label={t("common.files")}
                 value={contextWeight.files}
                 total={contextWeight.total}
                 color="var(--color-info)"
@@ -705,7 +705,7 @@ function TimelineTab() {
         </div>
         <div class="text-center">
           <div class="text-lg font-semibold text-[var(--color-success)]">{formatCost(maxCost)}</div>
-          <div class="text-xs text-[var(--color-text-muted)]">{t("usage.detail.totalCost")}</div>
+          <div class="text-xs text-[var(--color-text-muted)]">{t("common.totalCost")}</div>
         </div>
       </div>
     </div>
@@ -741,9 +741,9 @@ function MessagesTab() {
 
   const roleLabels: Record<string, string> = {
     user: t("usage.detail.role.user"),
-    assistant: t("usage.detail.role.assistant"),
+    assistant: t("common.assistant"),
     tool: t("usage.detail.role.tool"),
-    toolResult: t("usage.detail.role.toolResult"),
+    toolResult: t("common.result"),
   };
 
   return (
@@ -816,9 +816,9 @@ export function UsageView(_props: RouteProps) {
   }, [isConnected.value]);
 
   return (
-    <PageLayout viewName={t("nav.usage")}>
+    <PageLayout viewName={t("common.usage")}>
       <PageHeader
-        title={t("usage.title")}
+        title={t("common.usage")}
         subtitle={t("usage.description")}
         actions={
           <IconButton

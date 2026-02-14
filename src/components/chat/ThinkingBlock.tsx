@@ -51,7 +51,7 @@ export function ThinkingBlock({ content }: ThinkingBlockProps) {
         {/* Label */}
         <span class="font-medium">
           {isExpanded
-            ? t("chat.thinkingBlock.thinking")
+            ? t("common.thinking")
             : t("chat.thinkingBlock.thoughtFor", { duration: durationText })}
         </span>
       </button>

@@ -132,7 +132,7 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
           ))}
           {items.length === 0 && (
             <p class="text-sm text-[var(--color-text-muted)] py-4 text-center border border-dashed border-[var(--color-border)] rounded-lg">
-              {t("config.field.noItems")}
+              {t("common.noItems")}
             </p>
           )}
         </div>
@@ -174,7 +174,7 @@ export function ArrayNode({ schema, value, path, hints, level, label, help }: Ar
         <div class="space-y-3">
           {items.length === 0 ? (
             <p class="text-sm text-[var(--color-text-muted)] py-4 text-center border border-dashed border-[var(--color-border)] rounded-lg">
-              {t("config.field.noItems")}
+              {t("common.noItems")}
             </p>
           ) : (
             items.map((item, index) => (

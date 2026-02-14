@@ -318,7 +318,7 @@ export function StatusView(_props: RouteProps) {
   }, [connected]);
 
   return (
-    <PageLayout viewName={t("nav.overview")}>
+    <PageLayout viewName={t("common.overview")}>
       {/* Security Warnings */}
       {!isSecureContext.value && (
         <div class="flex items-start gap-3 p-4 rounded-lg bg-[var(--color-warning)]/10 border border-[var(--color-warning)]/20">
@@ -367,7 +367,7 @@ export function StatusView(_props: RouteProps) {
                 size="sm"
               >
                 {state === "connected"
-                  ? t("status.connected")
+                  ? t("common.healthy")
                   : state === "connecting" || state === "authenticating"
                     ? t("status.connecting")
                     : state === "reconnecting"
@@ -460,9 +460,9 @@ export function StatusView(_props: RouteProps) {
       {connected && (
         <Card title={t("overview.serverInfo")} padding="md">
           <div class="divide-y divide-[var(--color-border)]">
-            <InfoRow label={t("overview.version")} value={gatewayVersion.value} />
-            <InfoRow label={t("overview.commit")} value={gatewayCommit.value?.substring(0, 8)} />
-            <InfoRow label={t("overview.host")} value={gatewayHost.value} />
+            <InfoRow label={t("common.version")} value={gatewayVersion.value} />
+            <InfoRow label={t("common.commit")} value={gatewayCommit.value?.substring(0, 8)} />
+            <InfoRow label={t("common.host")} value={gatewayHost.value} />
             <InfoRow
               label={t("overview.capabilities")}
               value={

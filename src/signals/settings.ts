@@ -122,7 +122,7 @@ effect(() => {
 
 export const FONT_SIZE_OPTIONS: { value: FontSize; labelKey: string }[] = [
   { value: "sm", labelKey: "settings.appearance.fontSizeSm" },
-  { value: "md", labelKey: "settings.appearance.fontSizeMd" },
+  { value: "md", labelKey: "common.medium" },
   { value: "lg", labelKey: "settings.appearance.fontSizeLg" },
 ];
 

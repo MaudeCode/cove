@@ -188,7 +188,7 @@ export function ThemeSettings() {
           <div>
             <SectionHeader
               icon={<Sun class="w-4 h-4" />}
-              titleKey="settings.appearance.lightThemes"
+              titleKey="common.light"
               selectedThemeName={lightThemes.find((t) => t.id === selectedManualTheme)?.name}
             />
             <div class="flex flex-wrap gap-2">
@@ -207,7 +207,7 @@ export function ThemeSettings() {
           <div>
             <SectionHeader
               icon={<Moon class="w-4 h-4" />}
-              titleKey="settings.appearance.darkThemes"
+              titleKey="common.dark"
               selectedThemeName={darkThemes.find((t) => t.id === selectedManualTheme)?.name}
             />
             <div class="flex flex-wrap gap-2">

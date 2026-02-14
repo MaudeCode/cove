@@ -27,7 +27,7 @@ const SOURCE_ICONS: Record<string, typeof Package> = {
 const SOURCE_LABELS: Record<string, string> = {
   "openclaw-bundled": "skills.source.bundled",
   "openclaw-managed": "skills.source.managed",
-  "openclaw-workspace": "skills.source.workspace",
+  "openclaw-workspace": "common.workspace",
   "openclaw-extra": "skills.source.extra",
 };
 
@@ -40,9 +40,9 @@ function getStatusBadge(status: SkillStatus) {
     SkillStatus,
     { variant: "success" | "default" | "warning" | "error"; key: string }
   > = {
-    eligible: { variant: "success", key: "skills.status.eligible" },
-    disabled: { variant: "default", key: "skills.status.disabled" },
-    "missing-reqs": { variant: "warning", key: "skills.status.missingReqs" },
+    eligible: { variant: "success", key: "common.eligible" },
+    disabled: { variant: "default", key: "common.disabled" },
+    "missing-reqs": { variant: "warning", key: "common.missingReqs" },
     blocked: { variant: "error", key: "skills.status.blocked" },
   };
   const { variant, key } = variants[status];
@@ -88,7 +88,7 @@ export function SkillCard({ skill, onToggleExpand, onToggleEnabled }: SkillCardP
             {statusBadge.label}
           </Badge>
           {skill.always && (
-            <span class="text-xs text-[var(--color-text-muted)]" title={t("skills.alwaysActive")}>
+            <span class="text-xs text-[var(--color-text-muted)]" title={t("common.alwaysActive")}>
               ⚡
             </span>
           )}
@@ -105,7 +105,7 @@ export function SkillCard({ skill, onToggleExpand, onToggleEnabled }: SkillCardP
             checked={!skill.disabled}
             onChange={onToggleEnabled}
             size="sm"
-            aria-label={skill.disabled ? t("skills.enable") : t("skills.disable")}
+            aria-label={skill.disabled ? t("common.enable") : t("common.disable")}
           />
         </div>
       }
@@ -155,7 +155,7 @@ export function SkillRow({
           <div class="flex items-center gap-2">
             <span class="font-medium truncate">{skill.name}</span>
             {skill.always && (
-              <span class="text-xs text-[var(--color-text-muted)]" title={t("skills.alwaysActive")}>
+              <span class="text-xs text-[var(--color-text-muted)]" title={t("common.alwaysActive")}>
                 ⚡
               </span>
             )}
@@ -186,7 +186,7 @@ export function SkillRow({
             checked={!skill.disabled}
             onChange={onToggleEnabled}
             size="sm"
-            aria-label={skill.disabled ? t("skills.enable") : t("skills.disable")}
+            aria-label={skill.disabled ? t("common.enable") : t("common.disable")}
           />
         </div>
       </button>

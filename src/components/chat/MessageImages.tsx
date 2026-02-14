@@ -104,7 +104,7 @@ export function MessageImages({ images }: MessageImagesProps) {
             <button
               type="button"
               onClick={(e) => handleDownload(e, image.url, index)}
-              aria-label={t("actions.download")}
+              aria-label={t("common.download")}
               class="
                 absolute bottom-2 right-2 p-1.5 rounded-lg cursor-pointer
                 bg-black/60 text-white
@@ -125,7 +125,7 @@ export function MessageImages({ images }: MessageImagesProps) {
           ref={lightboxRef}
           role="dialog"
           aria-modal="true"
-          aria-label={t("chat.imageViewer")}
+          aria-label={t("common.imageViewer")}
           class="fixed inset-0 z-[9999] bg-black/80 flex items-center justify-center p-4 outline-none"
           onClick={() => setExpandedIndex(null)}
           onKeyDown={(e) => {
@@ -141,7 +141,7 @@ export function MessageImages({ images }: MessageImagesProps) {
             <button
               type="button"
               onClick={(e) => handleDownload(e, images[expandedIndex].url, expandedIndex)}
-              aria-label={t("actions.download")}
+              aria-label={t("common.download")}
               class={LIGHTBOX_BUTTON_CLASS}
             >
               <Download class="w-6 h-6" />
