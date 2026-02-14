@@ -11,6 +11,12 @@ import { useEffect } from "preact/hooks";
 import { route } from "preact-router";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
+import {
+  useQueryParam,
+  useSyncToParam,
+  useSyncFilterToParam,
+  useInitFromParam,
+} from "@/hooks/useQueryParam";
 import { isMultiChatMode } from "@/signals/settings";
 import { getSessionDisplayKind, getErrorMessage, type SessionKind } from "@/lib/session-utils";
 import { Card } from "@/components/ui/Card";
@@ -648,6 +654,39 @@ function SessionDetailModal() {
 // ============================================
 
 export function SessionsAdminView(_props: RouteProps) {
+  // URL query params as source of truth
+  const [searchParam, setSearchParam] = useQueryParam("q");
+  const [kindParam, setKindParam] = useQueryParam("kind");
+  const sessionsReady = !isLoading.value && adminSessions.value.length > 0;
+  const [sessionParam, setSessionParam, sessionParamInitialized] = useQueryParam("session", {
+    ready: sessionsReady,
+  });
+
+  // Sync URL → state on mount
+  useInitFromParam(searchParam, searchQuery, (s) => s);
+  useInitFromParam(kindParam, kindFilter, (s) => s);
+
+  // Sync state → URL
+  useSyncToParam(searchQuery, setSearchParam);
+  useSyncFilterToParam(kindFilter, setKindParam, "all");
+
+  // Sync URL → selected session
+  useEffect(() => {
+    if (sessionsReady && sessionParam.value) {
+      const session = adminSessions.value.find((s) => s.key === sessionParam.value);
+      if (session && selectedSession.value?.key !== session.key) {
+        openSessionDetail(session);
+      }
+    }
+  }, [sessionParam.value, sessionsReady]);
+
+  // Sync selected session → URL
+  useEffect(() => {
+    if (sessionParamInitialized.value) {
+      setSessionParam(selectedSession.value?.key ?? null);
+    }
+  }, [selectedSession.value, sessionParamInitialized.value]);
+
   useEffect(() => {
     if (isConnected.value) {
       loadAdminSessions();
