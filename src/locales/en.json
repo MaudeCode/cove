@@ -379,6 +379,14 @@
       "failed": "Failed",
       "duration": "{duration}"
     },
+    "thinkingBlock": {
+      "thinking": "Thinking",
+      "thoughtFor": "Thought for ~{duration}",
+      "second": "{count} second",
+      "second_plural": "{count} seconds",
+      "expandLabel": "Expand thinking",
+      "collapseLabel": "Collapse thinking"
+    },
     "heartbeats": "{count} heartbeat",
     "heartbeats_plural": "{count} heartbeats",
     "heartbeatsTitle": "Heartbeats",

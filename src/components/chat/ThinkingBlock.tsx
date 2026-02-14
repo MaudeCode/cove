@@ -8,21 +8,23 @@
 import { useState } from "preact/hooks";
 import { MessageContent } from "./MessageContent";
 import { ChevronRight, ChevronDown, Brain } from "lucide-preact";
+import { t } from "@/lib/i18n";
 
 interface ThinkingBlockProps {
   /** The thinking/reasoning content (markdown) */
   content: string;
-  /** Message timestamp for calculating thinking duration */
-  timestamp?: number;
 }
 
-export function ThinkingBlock({ content, timestamp: _timestamp }: ThinkingBlockProps) {
+export function ThinkingBlock({ content }: ThinkingBlockProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
   // Estimate thinking duration based on content length (rough heuristic)
   // In the future, this could come from actual timing data
   const estimatedSeconds = Math.max(1, Math.round(content.length / 500));
-  const durationText = estimatedSeconds === 1 ? "1 second" : `${estimatedSeconds} seconds`;
+  const durationText = t(
+    estimatedSeconds === 1 ? "chat.thinkingBlock.second" : "chat.thinkingBlock.second_plural",
+    { count: estimatedSeconds },
+  );
 
   return (
     <div class="thinking-block border border-[var(--color-border)] rounded-lg overflow-hidden my-2">
@@ -30,20 +32,28 @@ export function ThinkingBlock({ content, timestamp: _timestamp }: ThinkingBlockP
       <button
         type="button"
         onClick={() => setIsExpanded(!isExpanded)}
+        aria-expanded={isExpanded}
+        aria-label={
+          isExpanded ? t("chat.thinkingBlock.collapseLabel") : t("chat.thinkingBlock.expandLabel")
+        }
         class="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] transition-colors"
       >
         {/* Expand/collapse icon */}
         {isExpanded ? (
-          <ChevronDown class="w-4 h-4 flex-shrink-0" />
+          <ChevronDown class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         ) : (
-          <ChevronRight class="w-4 h-4 flex-shrink-0" />
+          <ChevronRight class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         )}
 
         {/* Brain icon */}
-        <Brain class="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)]" />
+        <Brain class="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)]" aria-hidden="true" />
 
         {/* Label */}
-        <span class="font-medium">{isExpanded ? "Thinking" : `Thought for ~${durationText}`}</span>
+        <span class="font-medium">
+          {isExpanded
+            ? t("chat.thinkingBlock.thinking")
+            : t("chat.thinkingBlock.thoughtFor", { duration: durationText })}
+        </span>
       </button>
 
       {/* Content - only shown when expanded */}

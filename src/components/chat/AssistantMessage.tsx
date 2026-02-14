@@ -188,9 +188,7 @@ export function AssistantMessage({
       {/* Message Content - interleaved blocks */}
       <div class="space-y-3">
         {/* Thinking/reasoning block (collapsible) */}
-        {message.thinking && (
-          <ThinkingBlock content={message.thinking} timestamp={message.timestamp} />
-        )}
+        {message.thinking && <ThinkingBlock content={message.thinking} />}
 
         {blocks.map((block, idx) => {
           log.chat.debug("Rendering block", {
