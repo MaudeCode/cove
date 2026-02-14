@@ -322,10 +322,11 @@ export function LogsView(_props: RouteProps) {
       if (newIds.length > 0) {
         expandedLogs.value = new Set([...expandedLogs.value, ...validIds]);
         // Scroll to the first new one
+        // Note: mobile and desktop both have data-log-id, pick the visible one
         setTimeout(() => {
-          document
-            .querySelector(`#log-${newIds[0]}`)
-            ?.scrollIntoView({ behavior: "smooth", block: "center" });
+          const els = document.querySelectorAll(`[data-log-id="${newIds[0]}"]`);
+          const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
+          el?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 100);
       }
     }
@@ -552,7 +553,9 @@ export function LogsView(_props: RouteProps) {
                   aria-live="polite"
                 >
                   {lines.map((line) => (
-                    <MobileLogCard key={line.id} line={line} />
+                    <div key={line.id} data-log-id={line.id}>
+                      <MobileLogCard line={line} />
+                    </div>
                   ))}
                 </div>
 
@@ -565,7 +568,7 @@ export function LogsView(_props: RouteProps) {
                   aria-live="polite"
                 >
                   {lines.map((line) => (
-                    <div key={line.id} id={`log-${line.id}`}>
+                    <div key={line.id} data-log-id={line.id}>
                       <LogLine
                         line={line}
                         expanded={expandedLogs.value.has(line.id)}

@@ -261,8 +261,10 @@ export function SkillsView(_props: RouteProps) {
       if (newKeys.length > 0) {
         expandedSkills.value = new Set([...expandedSkills.value, ...expandedParam.value]);
         // Scroll to the first new one
+        // Note: mobile and desktop both have data-skill-key, pick the visible one
         setTimeout(() => {
-          const el = document.querySelector(`[data-skill-key="${newKeys[0]}"]`);
+          const els = document.querySelectorAll(`[data-skill-key="${newKeys[0]}"]`);
+          const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
           el?.scrollIntoView({ behavior: "smooth", block: "center" });
         }, 100);
       }
@@ -409,14 +411,15 @@ export function SkillsView(_props: RouteProps) {
                   {/* Mobile: Card list */}
                   <div class="md:hidden space-y-2">
                     {filtered.map((skill) => (
-                      <SkillCard
-                        key={skill.skillKey}
-                        skill={skill}
-                        onToggleExpand={() => {
-                          mobileDetailModal.value = skill;
-                        }}
-                        onToggleEnabled={() => toggleSkillEnabled(skill)}
-                      />
+                      <div key={skill.skillKey} data-skill-key={skill.skillKey}>
+                        <SkillCard
+                          skill={skill}
+                          onToggleExpand={() => {
+                            mobileDetailModal.value = skill;
+                          }}
+                          onToggleEnabled={() => toggleSkillEnabled(skill)}
+                        />
+                      </div>
                     ))}
                   </div>
 
