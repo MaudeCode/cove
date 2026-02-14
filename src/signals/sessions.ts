@@ -106,8 +106,9 @@ export function isForActiveSession(eventSessionKey: string | undefined | null): 
 
 /** Get display label for a session (for search matching) */
 function getSessionDisplayLabel(session: Session): string {
-  if (session.label) return session.label;
+  // Prioritize displayName over label (matches OpenClaw UI behavior)
   if (session.displayName) return session.displayName;
+  if (session.label) return session.label;
   return session.key;
 }
 

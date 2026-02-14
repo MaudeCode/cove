@@ -45,10 +45,10 @@ export interface SessionItemProps {
  *   - agent:maude-pm:spawn:abc123 → "Spawn"
  */
 export function getSessionLabel(session: Session): string {
-  // User-set label takes priority
-  if (session.label) return session.label;
-  // Gateway-provided display name (e.g., "Cove" for main)
+  // Prioritize displayName over label (matches OpenClaw UI behavior)
   if (session.displayName) return session.displayName;
+  // User-set label
+  if (session.label) return session.label;
 
   // Parse the session key
   const parts = session.key.split(":");

@@ -86,7 +86,7 @@ function createMarkdownRenderer(): Marked {
     breaks: true, // Convert \n to <br>
   });
 
-  // Custom renderer for code blocks and links
+  // Custom renderer for code blocks, links, and raw HTML
   marked.use({
     renderer: {
       code(token) {
@@ -107,6 +107,12 @@ function createMarkdownRenderer(): Marked {
         }
 
         return `<a href="${escapeHtml(href)}"${title}>${text}</a>`;
+      },
+      // Escape raw HTML instead of rendering it.
+      // Prevents pasted HTML (e.g., error pages) from rendering as formatted output.
+      // Security is handled by DOMPurify, but this improves UX.
+      html(token) {
+        return escapeHtml(token.text);
       },
     },
   });

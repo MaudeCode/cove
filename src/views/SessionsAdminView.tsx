@@ -112,7 +112,8 @@ function formatContextUsage(session: Session): string {
 }
 
 function getDisplayName(session: Session): string {
-  return session.label || session.displayName || session.key.split(":").pop() || session.key;
+  // Prioritize displayName over label (matches OpenClaw UI behavior)
+  return session.displayName || session.label || session.key.split(":").pop() || session.key;
 }
 
 // ============================================
