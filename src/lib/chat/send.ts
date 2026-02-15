@@ -18,14 +18,31 @@ import {
   markMessageSending,
   markMessageSent,
   isStreaming,
+  clearMessages,
 } from "@/signals/chat";
 import { sessions } from "@/signals/sessions";
 import { autoRenameSession } from "./auto-rename";
 import { isUserCreatedChat } from "@/lib/session-utils";
 import { t } from "@/lib/i18n";
+import { loadHistory } from "./history";
 import type { Message, MessageImage } from "@/types/messages";
 import type { ChatSendResult } from "@/types/chat";
 import type { AttachmentPayload } from "@/types/attachments";
+
+/**
+ * Session reset commands that clear the current session.
+ * These match OpenClaw's DEFAULT_RESET_TRIGGERS.
+ */
+const RESET_COMMANDS = ["/new", "/reset"];
+
+/**
+ * Check if a message is a session reset command.
+ */
+function isResetCommand(message: string): boolean {
+  const trimmed = message.trim().toLowerCase();
+  // Exact match or command with arguments (e.g., "/new some context")
+  return RESET_COMMANDS.some((cmd) => trimmed === cmd || trimmed.startsWith(`${cmd} `));
+}
 
 let idempotencyCounter = 0;
 
@@ -126,6 +143,20 @@ export async function sendMessage(
     }
 
     markMessageSent(messageId);
+
+    // Handle session reset commands (/new, /reset)
+    // Clear local messages and reload history (which will be empty for the new session)
+    if (isResetCommand(message)) {
+      log.chat.info("Reset command detected, clearing messages for session:", sessionKey);
+      // Small delay to let the gateway finish creating the new session
+      setTimeout(() => {
+        clearMessages();
+        // Reload history to get any welcome message or confirm empty state
+        loadHistory(sessionKey).catch((err) => {
+          log.chat.warn("Failed to reload history after reset:", err);
+        });
+      }, 100);
+    }
 
     // Auto-rename on first message in user-created chats
     // Only rename if session label is still "New Chat" (not already renamed)
