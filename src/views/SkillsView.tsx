@@ -257,19 +257,31 @@ export function SkillsView(_props: RouteProps) {
   useSyncFilterToParam(sourceFilter, setSourceParam, "all");
   useSyncFilterToParam(statusFilter, setStatusParam, "all");
 
-  // Sync URL → expanded skill
+  // Sync URL → expanded skill (desktop: expand row, mobile: open modal)
   useEffect(() => {
     if (skillsReady && expandedParam.value.size > 0) {
       const newKeys = Array.from(expandedParam.value).filter((k) => !expandedSkills.value.has(k));
       if (newKeys.length > 0) {
+        // Desktop: expand the skill row
         expandedSkills.value = new Set([...expandedSkills.value, ...expandedParam.value]);
-        // Scroll to the first new one
-        // Note: mobile and desktop both have data-skill-key, pick the visible one
-        setTimeout(() => {
-          const els = document.querySelectorAll(`[data-skill-key="${newKeys[0]}"]`);
-          const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
-          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
+
+        // Mobile: open detail modal for the first skill
+        const isMobile = window.innerWidth < 768; // md breakpoint
+        if (isMobile) {
+          const skill = skills.value.find((s) => s.skillKey === newKeys[0]);
+          if (skill) {
+            mobileDetailModal.value = skill;
+          }
+        }
+
+        // Scroll to the first new one (desktop only, modal handles mobile)
+        if (!isMobile) {
+          setTimeout(() => {
+            const els = document.querySelectorAll(`[data-skill-key="${newKeys[0]}"]`);
+            const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 100);
+        }
       }
     }
   }, [expandedParam.value, skillsReady]);
@@ -418,6 +430,11 @@ export function SkillsView(_props: RouteProps) {
                         <SkillCard
                           skill={skill}
                           onToggleExpand={() => {
+                            // Add to expanded set for URL sync
+                            const next = new Set(expandedSkills.value);
+                            next.add(skill.skillKey);
+                            expandedSkills.value = next;
+                            pushQueryState();
                             mobileDetailModal.value = skill;
                           }}
                           onToggleEnabled={() => toggleSkillEnabled(skill)}
@@ -465,6 +482,12 @@ export function SkillsView(_props: RouteProps) {
       <Modal
         open={!!mobileDetailModal.value}
         onClose={() => {
+          // Clear from expanded set so URL updates
+          if (mobileDetailModal.value) {
+            const next = new Set(expandedSkills.value);
+            next.delete(mobileDetailModal.value.skillKey);
+            expandedSkills.value = next;
+          }
           mobileDetailModal.value = null;
         }}
         title={mobileDetailModal.value?.name || ""}
