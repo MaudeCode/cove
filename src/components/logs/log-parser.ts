@@ -114,6 +114,16 @@ const SKIP_KEYS = [
  * Parse a raw log line into a structured format.
  * Handles: JSON, OpenClaw text, bracketed, cloudflared, and plain text formats.
  */
+/** Pretty-print JSON logs, fallback to raw for non-JSON */
+export function formatRawLog(raw: string): string {
+  if (!raw.startsWith("{")) return raw;
+  try {
+    return JSON.stringify(JSON.parse(raw), null, 2);
+  } catch {
+    return raw;
+  }
+}
+
 export function parseLogLine(raw: string): ParsedLogLine {
   const id = ++lineIdCounter;
 

@@ -31,6 +31,7 @@ import {
   levelIcons,
   levelColors,
   formatLogTimestamp,
+  formatRawLog,
 } from "@/components/logs";
 import type { ParsedLogLine, LogLevel } from "@/components/logs";
 import { RefreshCw, Search, Trash2, Download, FileText, ChevronRight, Info } from "lucide-preact";
@@ -237,10 +238,6 @@ function LevelFilter({ level, count, selected, onClick }: LevelFilterProps) {
 }
 
 // ============================================
-// Mobile Log Card
-// ============================================
-
-// ============================================
 // Mobile Log Modal
 // ============================================
 
@@ -301,13 +298,13 @@ function MobileLogModal({ logId, lines, onClose }: MobileLogModalProps) {
             </div>
           )}
 
-          {/* Raw line */}
+          {/* Raw JSON */}
           <div>
             <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
               {t("logs.rawLine")}
             </h4>
             <pre class="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-bg-tertiary)] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
-              {line.raw}
+              {formatRawLog(line.raw)}
             </pre>
           </div>
         </div>

@@ -6,7 +6,7 @@
 
 import { t } from "@/lib/i18n";
 import { ChevronRight } from "lucide-preact";
-import type { ParsedLogLine } from "./log-parser";
+import { formatRawLog, type ParsedLogLine } from "./log-parser";
 import { levelIcons, levelColors, formatLogTimestamp } from "./constants";
 
 interface LogLineProps {
@@ -71,6 +71,15 @@ export function LogLine({ line, expanded, onToggle }: LogLineProps) {
               </div>
             ))}
           </div>
+          {/* Raw JSON */}
+          <details class="pt-1 border-t border-[var(--color-border)]/30">
+            <summary class="text-xs text-[var(--color-text-muted)] cursor-pointer hover:text-[var(--color-text-secondary)]">
+              {t("logs.rawLine")}
+            </summary>
+            <pre class="mt-2 text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-bg-primary)] rounded p-2 overflow-x-auto whitespace-pre-wrap break-all">
+              {formatRawLog(line.raw)}
+            </pre>
+          </details>
         </div>
       )}
     </div>
