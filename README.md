@@ -77,6 +77,11 @@
 <img src="./docs/public/config.jpg" alt="Configuration Editor" width="800">
 </details>
 
+<details>
+<summary><strong>ClawHub Skills Browser</strong></summary>
+<img src="./docs/public/clawhub.jpg" alt="ClawHub Skills Browser" width="800">
+</details>
+
 ## 🚀 Quick Start
 
 ### Option 1: npx (Easiest)
