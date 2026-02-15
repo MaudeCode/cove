@@ -103,6 +103,7 @@
     "noData": "No data",
     "tryAgain": "Try again",
     "success": "Success",
+    "dryRun": "Dry run",
     "enabled": "Enabled",
     "disabled": "Disabled",
     "dark": "Dark",
@@ -271,7 +272,13 @@
     "moreLines": "⋯ {count} more lines (click to expand)",
     "collapse": "⋯ collapse",
     "emptyResponse": "Empty response",
-    "noTabsOpen": "No tabs open"
+    "noTabsOpen": "No tabs open",
+    "messageSent": "Message sent",
+    "noChannels": "No channels found",
+    "channelCount": "{count} channels",
+    "noResults": "No results found",
+    "messageCount": "{count} messages",
+    "noEvents": "No events found"
   },
   "toolInput": {
     "lineCount": "{count} lines",
@@ -288,7 +295,8 @@
     "editingFile": "Editing file",
     "browserAction": "Browser action",
     "cronAction": "Cron action",
-    "sessionStatus": "Session status"
+    "sessionStatus": "Session status",
+    "messageAction": "Message action"
   },
   "toolBlock": {
     "showRaw": "Show raw",

@@ -31,3 +31,4 @@ export { BrowserInputBlock, BrowserResultBlock } from "./browser";
 export { CronInputBlock, CronResultBlock } from "./cron";
 export { SessionStatusInputBlock, SessionStatusResultBlock } from "./session-status";
 export { ImageInputBlock, ImageResultBlock } from "./image";
+export { MessageInputBlock, MessageResultBlock } from "./message";

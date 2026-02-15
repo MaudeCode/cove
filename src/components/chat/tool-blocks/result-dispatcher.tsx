@@ -14,6 +14,7 @@ import { ImageResultBlock } from "./image";
 import { SessionStatusResultBlock } from "./session-status";
 import { BrowserResultBlock } from "./browser";
 import { CronResultBlock } from "./cron";
+import { MessageResultBlock } from "./message";
 
 // ============================================
 // Error Result Block
@@ -71,6 +72,9 @@ export function ResultBlock({ result, error, toolName, filePath }: ResultBlockPr
 
     case "cron":
       return <CronResultBlock result={result} />;
+
+    case "message":
+      return <MessageResultBlock result={result} />;
 
     default:
       return <CodeBlock content={result} maxLines={20} error={error} filePath={filePath} />;

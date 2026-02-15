@@ -47,6 +47,7 @@ import {
   BrowserInputBlock,
   CronInputBlock,
   SessionStatusInputBlock,
+  MessageInputBlock,
   ResultBlock,
   parseErrorResult,
 } from "./tool-blocks";
@@ -249,6 +250,9 @@ function InputBlock({ toolCall }: { toolCall: ToolCallType }) {
   }
   if (toolCall.name === "session_status") {
     return <SessionStatusInputBlock args={args} />;
+  }
+  if (toolCall.name === "message") {
+    return <MessageInputBlock args={args} />;
   }
 
   return <CodeBlock content={args} />;
