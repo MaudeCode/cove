@@ -27,7 +27,9 @@ export function PageHeader({ title, subtitle, actions, class: className }: PageH
     );
 
   return (
-    <div class={`flex items-start justify-between gap-4 ${className ?? ""}`}>
+    <div
+      class={`flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 ${className ?? ""}`}
+    >
       <div class="flex-1 min-w-0">
         <h1 class="text-xl font-semibold text-[var(--color-text-primary)]">{title}</h1>
         {subtitleContent}

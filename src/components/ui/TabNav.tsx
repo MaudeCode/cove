@@ -20,7 +20,10 @@ interface TabNavProps {
 
 export function TabNav({ items, activeId, onChange }: TabNavProps) {
   return (
-    <div class="flex border-b border-[var(--color-border)]" role="tablist">
+    <div
+      class="flex border-b border-[var(--color-border)] overflow-x-auto scrollbar-hide -mx-4 px-4 sm:mx-0 sm:px-0"
+      role="tablist"
+    >
       {items.map((item) => {
         const isActive = item.id === activeId;
         return (
@@ -30,7 +33,7 @@ export function TabNav({ items, activeId, onChange }: TabNavProps) {
             role="tab"
             aria-selected={isActive}
             onClick={() => onChange(item.id)}
-            class={`relative flex items-center gap-2 px-4 py-3 text-sm font-medium transition-colors ${
+            class={`relative flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-3 text-sm font-medium transition-colors whitespace-nowrap flex-shrink-0 ${
               isActive
                 ? "text-[var(--color-accent)]"
                 : "text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)]"

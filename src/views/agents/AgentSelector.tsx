@@ -30,7 +30,7 @@ export function AgentSelector() {
       <button
         type="button"
         onClick={() => (agentSelectorOpen.value = !isOpen)}
-        class="flex items-center gap-3 px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] transition-colors min-w-[180px]"
+        class="flex items-center gap-2 sm:gap-3 px-2 sm:px-3 py-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg-surface)] hover:bg-[var(--color-bg-hover)] transition-colors max-w-[180px] sm:max-w-none sm:min-w-[180px]"
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >

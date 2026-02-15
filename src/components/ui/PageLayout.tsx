@@ -28,7 +28,7 @@ const maxWidthClasses = {
 export function PageLayout({ viewName, children, maxWidth = "5xl" }: PageLayoutProps) {
   return (
     <ViewErrorBoundary viewName={viewName}>
-      <div class="flex-1 overflow-y-auto p-4 sm:p-6">
+      <div class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6">
         <div class={`${maxWidthClasses[maxWidth]} mx-auto space-y-4 sm:space-y-6`}>{children}</div>
       </div>
     </ViewErrorBoundary>

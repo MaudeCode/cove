@@ -138,12 +138,48 @@ export function OverviewTab() {
               </div>
             </div>
           ) : (
-            <div class="flex items-center gap-4">
-              {/* Avatar */}
-              <AgentAvatar agentId={agent.id} emoji={identityEmoji} size="lg" />
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+              {/* Avatar + Name row (mobile: side by side, desktop: part of horizontal layout) */}
+              <div class="flex items-center gap-3 sm:gap-4">
+                <AgentAvatar agentId={agent.id} emoji={identityEmoji} size="lg" />
 
-              {/* Name + Emoji + Metadata */}
-              <div class="flex-1 min-w-0">
+                {/* Name + Emoji + Default Badge */}
+                <div class="flex-1 min-w-0 sm:hidden">
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <h3 class="text-lg font-semibold truncate max-w-[150px]">{identityName}</h3>
+                    <span class="text-xl flex-shrink-0" title={t("agents.overview.identityEmoji")}>
+                      {identityEmoji}
+                    </span>
+                    {isDefault && (
+                      <Badge variant="info" size="sm">
+                        {t("common.defaultAgent")}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Actions (mobile: top right) */}
+                <div class="flex items-center gap-1 sm:hidden ml-auto">
+                  <IconButton
+                    icon={<Pencil class="w-4 h-4" />}
+                    label={t("common.edit")}
+                    onClick={startOverviewEdit}
+                    variant="ghost"
+                  />
+                  {selectedAgentId.value !== "main" && (
+                    <IconButton
+                      icon={<Trash2 class="w-4 h-4" />}
+                      label={t("actions.delete")}
+                      onClick={openDeleteModal}
+                      variant="ghost"
+                      class="text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Desktop: Name + Emoji + Metadata */}
+              <div class="hidden sm:block flex-1 min-w-0">
                 <div class="flex items-center gap-2">
                   <h3 class="text-lg font-semibold truncate">{identityName}</h3>
                   <span class="text-xl" title={t("agents.overview.identityEmoji")}>
@@ -155,13 +191,13 @@ export function OverviewTab() {
                     </Badge>
                   )}
                 </div>
-                <div class="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mt-1 text-sm text-[var(--color-text-muted)]">
+                <div class="flex items-center gap-3 mt-1 text-sm text-[var(--color-text-muted)]">
                   <span class="font-mono truncate" title={workspacePath.value}>
                     {workspacePath.value || "—"}
                   </span>
                   {currentModel && (
                     <>
-                      <span class="hidden sm:inline">•</span>
+                      <span>•</span>
                       <span class="truncate" title={currentModel}>
                         {currentModel}
                       </span>
@@ -170,8 +206,20 @@ export function OverviewTab() {
                 </div>
               </div>
 
-              {/* Actions */}
-              <div class="flex items-center gap-1">
+              {/* Mobile: Metadata below */}
+              <div class="sm:hidden text-sm text-[var(--color-text-muted)] space-y-1">
+                <div class="font-mono truncate" title={workspacePath.value}>
+                  {workspacePath.value || "—"}
+                </div>
+                {currentModel && (
+                  <div class="truncate" title={currentModel}>
+                    {currentModel}
+                  </div>
+                )}
+              </div>
+
+              {/* Desktop: Actions */}
+              <div class="hidden sm:flex items-center gap-1">
                 <IconButton
                   icon={<Pencil class="w-4 h-4" />}
                   label={t("common.edit")}
