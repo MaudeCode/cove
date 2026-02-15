@@ -18,7 +18,24 @@ Redesigned tool call visualization with specialized blocks per tool:
 
 ---
 
+## 🦞 ClawHub Discovery
+
+Browse and install skills from ClawHub with an improved discovery experience:
+
+- **Trending carousel** — See what's popular at a glance
+- **Sort options** — Popular, Trending, Most Starred, Newest
+- **Auto-search** — Results update as you type with debounced search
+- **Rich detail modal** — Stats, author info, changelog, and install button
+
+---
+
 ## 📱 Mobile
 
 - **Responsive layouts** — Agents page and tab bars work properly on narrow screens
 - **Deep link support** — URL params open modals correctly on mobile
+
+---
+
+## 🎨 Polish
+
+- **Friendly error pages** — When something breaks, you'll see a confused lobster instead of a scary stack trace
