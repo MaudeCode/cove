@@ -73,9 +73,8 @@ export class ViewErrorBoundary extends Component<ViewErrorBoundaryProps, ViewErr
             <Button
               onClick={this.handleRetry}
               variant="secondary"
-              class="inline-flex items-center gap-2"
+              icon={<RefreshCw class="w-4 h-4" />}
             >
-              <RefreshCw class="w-4 h-4" aria-hidden="true" />
               {t("actions.retry")}
             </Button>
           </div>
