@@ -2,14 +2,15 @@
  * ViewErrorBoundary
  *
  * A specialized error boundary for view/page components.
- * Provides a more contextual error message and consistent styling.
+ * Shows a friendly error page with collapsible details.
  */
 
 import { Component, type ComponentChildren } from "preact";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
+import { toast } from "./Toast";
 import { Button } from "./Button";
-import { AlertTriangle, RefreshCw } from "lucide-preact";
+import { RefreshCw, ChevronDown, ChevronUp, Copy } from "lucide-preact";
 
 export interface ViewErrorBoundaryProps {
   /** Child components to render */
@@ -23,6 +24,7 @@ export interface ViewErrorBoundaryProps {
 interface ViewErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
+  detailsOpen: boolean;
 }
 
 export class ViewErrorBoundary extends Component<ViewErrorBoundaryProps, ViewErrorBoundaryState> {
@@ -31,6 +33,7 @@ export class ViewErrorBoundary extends Component<ViewErrorBoundaryProps, ViewErr
     this.state = {
       hasError: false,
       error: null,
+      detailsOpen: false,
     };
   }
 
@@ -45,31 +48,50 @@ export class ViewErrorBoundary extends Component<ViewErrorBoundaryProps, ViewErr
   }
 
   handleRetry = (): void => {
-    this.setState({ hasError: false, error: null });
+    this.setState({ hasError: false, error: null, detailsOpen: false });
     this.props.onRetry?.();
+  };
+
+  toggleDetails = (): void => {
+    this.setState((prev) => ({ detailsOpen: !prev.detailsOpen }));
+  };
+
+  copyError = (): void => {
+    const { error } = this.state;
+    if (error) {
+      const text = `${error.name}: ${error.message}\n\n${error.stack || ""}`;
+      navigator.clipboard.writeText(text);
+      toast.success(t("actions.copied"));
+    }
   };
 
   render() {
     if (this.state.hasError) {
-      const { viewName } = this.props;
-      const { error } = this.state;
+      const { error, detailsOpen } = this.state;
 
       return (
-        <div class="flex-1 flex flex-col items-center justify-center p-8" role="alert">
-          <div class="max-w-md w-full text-center space-y-4">
-            <AlertTriangle
-              class="w-12 h-12 mx-auto text-[var(--color-warning)]"
+        <div
+          class="flex-1 flex flex-col items-center justify-start p-8 pt-16 overflow-auto"
+          role="alert"
+        >
+          <div class="max-w-lg w-full text-center space-y-6">
+            {/* Lobster mascot */}
+            <img
+              src="/confused-lobster.png"
+              alt=""
+              class="w-80 h-auto mx-auto rounded-xl"
               aria-hidden="true"
             />
 
-            <h2 class="text-lg font-semibold text-[var(--color-text-primary)]">
-              {viewName ? t("errors.viewFailed", { view: viewName }) : t("errors.generic")}
-            </h2>
+            {/* Friendly headline */}
+            <div class="space-y-2">
+              <h2 class="text-xl font-semibold text-[var(--color-text-primary)]">
+                {t("errors.errorPage.title")}
+              </h2>
+              <p class="text-sm text-[var(--color-text-muted)]">{t("errors.errorPage.subtitle")}</p>
+            </div>
 
-            <p class="text-sm text-[var(--color-text-muted)]">
-              {error?.message || t("errors.unknown")}
-            </p>
-
+            {/* Retry button */}
             <Button
               onClick={this.handleRetry}
               variant="secondary"
@@ -77,6 +99,39 @@ export class ViewErrorBoundary extends Component<ViewErrorBoundaryProps, ViewErr
             >
               {t("actions.retry")}
             </Button>
+
+            {/* Collapsible error details */}
+            {error && (
+              <div class="text-left">
+                <button
+                  type="button"
+                  onClick={this.toggleDetails}
+                  class="flex items-center gap-2 text-xs text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+                >
+                  {detailsOpen ? <ChevronUp class="w-4 h-4" /> : <ChevronDown class="w-4 h-4" />}
+                  {t("errors.errorPage.details")}
+                </button>
+
+                {detailsOpen && (
+                  <div class="mt-2 relative">
+                    <pre class="p-3 bg-[var(--color-bg-tertiary)] rounded-lg text-xs text-[var(--color-text-muted)] overflow-x-auto max-h-40 overflow-y-auto">
+                      <code>
+                        {error.name}: {error.message}
+                        {error.stack && `\n\n${error.stack}`}
+                      </code>
+                    </pre>
+                    <button
+                      type="button"
+                      onClick={this.copyError}
+                      class="absolute top-2 right-2 p-1.5 rounded bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-hover)] transition-colors"
+                      title={t("actions.copy")}
+                    >
+                      <Copy class="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       );

@@ -256,7 +256,12 @@
     "unknown": "An unknown error occurred",
     "required": "This field is required",
     "invalid": "Invalid value",
-    "viewFailed": "Failed to load {view}"
+    "viewFailed": "Failed to load {view}",
+    "errorPage": {
+      "title": "Well, that wasn't supposed to happen",
+      "subtitle": "Something got tangled up. Give it another shot?",
+      "details": "Technical details"
+    }
   },
   "exec": {
     "approvalNeeded": "Exec Approval Needed",
