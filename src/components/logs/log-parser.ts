@@ -24,11 +24,15 @@ export function resetLineIdCounter() {
 }
 
 /** Flatten nested objects into dot-notation keys (arrays are stringified, not indexed) */
-function flattenObject(obj: Record<string, unknown>, prefix = ""): Record<string, string> {
+function flattenObject(
+  obj: Record<string, unknown>,
+  prefix = "",
+  skipNumericKeys = true,
+): Record<string, string> {
   const result: Record<string, string> = {};
   for (const [key, value] of Object.entries(obj)) {
-    // Skip numeric keys (array indices)
-    if (/^\d+$/.test(key)) continue;
+    // Skip numeric keys (tslog positional args) unless explicitly included
+    if (skipNumericKeys && /^\d+$/.test(key)) continue;
 
     const fullKey = prefix ? `${prefix}.${key}` : key;
     if (value === null || value === undefined) continue;
@@ -36,7 +40,7 @@ function flattenObject(obj: Record<string, unknown>, prefix = ""): Record<string
       // Stringify arrays instead of flattening with indices
       result[fullKey] = JSON.stringify(value);
     } else if (typeof value === "object") {
-      Object.assign(result, flattenObject(value as Record<string, unknown>, fullKey));
+      Object.assign(result, flattenObject(value as Record<string, unknown>, fullKey, false));
     } else if (typeof value === "string") {
       result[fullKey] = value;
     } else {
@@ -44,6 +48,52 @@ function flattenObject(obj: Record<string, unknown>, prefix = ""): Record<string
     }
   }
   return result;
+}
+
+/**
+ * Extract message and fields from tslog's numbered positional args.
+ * tslog stores args as "0", "1", "2", etc. The last string arg is typically the message.
+ */
+function extractTslogArgs(parsed: Record<string, unknown>): {
+  message: string | null;
+  fields: Record<string, string>;
+} {
+  const numericKeys = Object.keys(parsed)
+    .filter((k) => /^\d+$/.test(k))
+    .map(Number)
+    .sort((a, b) => a - b);
+
+  if (numericKeys.length === 0) {
+    return { message: null, fields: {} };
+  }
+
+  // Find the last string value - that's typically the message
+  let message: string | null = null;
+  const fields: Record<string, string> = {};
+
+  for (const key of numericKeys) {
+    const value = parsed[String(key)];
+    if (typeof value === "string") {
+      // Try to parse as JSON (subsystem info is often stringified JSON)
+      try {
+        const innerParsed = JSON.parse(value);
+        if (typeof innerParsed === "object" && innerParsed !== null) {
+          // It's a JSON object (like {"subsystem":"agent/embedded"})
+          Object.assign(fields, flattenObject(innerParsed, "", false));
+          continue;
+        }
+      } catch {
+        // Not JSON, treat as potential message
+      }
+      // Last string becomes the message
+      message = value;
+    } else if (typeof value === "object" && value !== null) {
+      // Object field - flatten it
+      Object.assign(fields, flattenObject(value as Record<string, unknown>, "", false));
+    }
+  }
+
+  return { message, fields };
 }
 
 /** Keys to skip when extracting fields from JSON logs */
@@ -73,11 +123,15 @@ export function parseLogLine(raw: string): ParsedLogLine {
   let fields: Record<string, string> | undefined;
 
   // Try JSON format first: {"level":"info","time":"...","msg":"..."}
+  // Also handles tslog format: {"0":"subsystem","1":{data},"2":"message","_meta":{...},"time":"..."}
   if (raw.startsWith("{")) {
     try {
       const parsed = JSON.parse(raw);
       timestamp = parsed.time || parsed.timestamp || parsed.ts;
-      const jsonLevel = (parsed.level || parsed.lvl || "")?.toLowerCase();
+
+      // Check for level in _meta (tslog) or top-level
+      const metaLevel = parsed._meta?.logLevelName?.toLowerCase();
+      const jsonLevel = metaLevel || (parsed.level || parsed.lvl || "")?.toLowerCase();
       if (["debug", "info", "warn", "warning", "error", "err"].includes(jsonLevel)) {
         level =
           jsonLevel === "warning"
@@ -87,16 +141,31 @@ export function parseLogLine(raw: string): ParsedLogLine {
               : (jsonLevel as LogLevel);
       }
 
-      // Extract main message
-      const numericKey = Object.keys(parsed).find((k) => /^\d+$/.test(k));
-      if (parsed.msg || parsed.message) {
-        message = parsed.msg || parsed.message;
-      } else if (parsed.error && typeof parsed.error === "string") {
-        message = parsed.error;
-      } else if (numericKey && typeof parsed[numericKey] === "string") {
-        message = parsed[numericKey];
-      } else {
-        // Format key fields into a readable message
+      // Check for tslog numbered args first (has "0", "1", etc.)
+      const hasNumericKeys = Object.keys(parsed).some((k) => /^\d+$/.test(k));
+
+      if (hasNumericKeys) {
+        // tslog format: extract message and fields from numbered args
+        const tslogData = extractTslogArgs(parsed);
+        if (tslogData.message) {
+          message = tslogData.message;
+        }
+        if (Object.keys(tslogData.fields).length > 0) {
+          fields = tslogData.fields;
+        }
+      }
+
+      // Fallback to standard formats if no message found yet
+      if (message === raw) {
+        if (parsed.msg || parsed.message) {
+          message = parsed.msg || parsed.message;
+        } else if (parsed.error && typeof parsed.error === "string") {
+          message = parsed.error;
+        }
+      }
+
+      // If still no message, format key fields into a readable message
+      if (message === raw && !hasNumericKeys) {
         const parts: string[] = [];
         for (const [key, value] of Object.entries(parsed)) {
           if (SKIP_KEYS.includes(key)) continue;
@@ -109,15 +178,17 @@ export function parseLogLine(raw: string): ParsedLogLine {
         message = parts.length > 0 ? parts.join("  ") : raw;
       }
 
-      // Extract additional fields
-      const filtered: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(parsed)) {
-        if (!SKIP_KEYS.includes(key) && !/^\d+$/.test(key)) {
-          filtered[key] = value;
+      // Extract additional fields (non-numeric, non-skip keys)
+      if (!fields) {
+        const filtered: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(parsed)) {
+          if (!SKIP_KEYS.includes(key) && !/^\d+$/.test(key) && key !== "_meta") {
+            filtered[key] = value;
+          }
         }
-      }
-      if (Object.keys(filtered).length > 0) {
-        fields = flattenObject(filtered);
+        if (Object.keys(filtered).length > 0) {
+          fields = flattenObject(filtered);
+        }
       }
     } catch {
       // Not valid JSON, continue with text parsing
