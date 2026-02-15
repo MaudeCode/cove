@@ -7,6 +7,7 @@
 import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { isConnected } from "@/lib/gateway";
+import { useQueryParam, useInitFromParam, useSyncFilterToParam } from "@/hooks/useQueryParam";
 import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -18,16 +19,20 @@ import type { RouteProps } from "@/types/routes";
 // State and actions
 import {
   activeTab,
+  selectedAgentId,
+  agents,
   files,
   workspacePath,
   isLoading,
   error,
+  skillsSearchQuery,
   loadAgents,
   loadFiles,
   loadToolsConfig,
   openCreateModal,
   refresh,
   selectTab,
+  selectAgent,
   type AgentsTab,
 } from "./agent-state";
 
@@ -56,6 +61,41 @@ const AGENT_TABS = [
 // ============================================
 
 export function AgentsView(_props: RouteProps) {
+  // URL query params
+  const agentsReady = !isLoading.value && agents.value.length > 0;
+  const [agentParam, setAgentParam] = useQueryParam("agent");
+  const [tabParam, setTabParam] = useQueryParam("tab");
+  const [searchParam, setSearchParam] = useQueryParam("q");
+
+  // Sync URL → state on mount
+  useInitFromParam(agentParam, selectedAgentId, (s) => s);
+  useInitFromParam(tabParam, activeTab, (s) => s as AgentsTab);
+  useInitFromParam(searchParam, skillsSearchQuery, (s) => s);
+
+  // Sync state → URL (omit defaults from URL)
+  useSyncFilterToParam(selectedAgentId, setAgentParam, "main");
+  useSyncFilterToParam(activeTab, setTabParam, "overview");
+
+  // Only sync search when on skills tab
+  useEffect(() => {
+    if (activeTab.value === "skills") {
+      setSearchParam(skillsSearchQuery.value || null);
+    } else if (searchParam.value) {
+      // Clear search param when leaving skills tab
+      setSearchParam(null);
+    }
+  }, [skillsSearchQuery.value, activeTab.value]);
+
+  // If URL has agent param, select it once agents load
+  useEffect(() => {
+    if (agentsReady && agentParam.value) {
+      const agent = agents.value.find((a) => a.id === agentParam.value);
+      if (agent && selectedAgentId.value !== agent.id) {
+        selectAgent(agent.id);
+      }
+    }
+  }, [agentParam.value, agentsReady]);
+
   useEffect(() => {
     if (isConnected.value) {
       loadAgents().then(() => {
