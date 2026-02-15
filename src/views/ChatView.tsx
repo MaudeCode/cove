@@ -9,6 +9,7 @@ import { useEffect, useRef } from "preact/hooks";
 import { useComputed } from "@preact/signals";
 import { route } from "preact-router";
 import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
+import { useQueryParam, useInitFromParam, useSyncToParam } from "@/hooks/useQueryParam";
 import { sendMessage, abortChat, processMessageQueue } from "@/lib/chat/send";
 import { loadHistory } from "@/lib/chat/history";
 import { clearExpandedToolCalls } from "@/components/chat/ToolCall";
@@ -50,6 +51,22 @@ interface ChatViewProps {
 export function ChatView({ sessionKey }: ChatViewProps) {
   const prevSessionRef = useRef<string | null>(null);
   const wasConnectedRef = useRef<boolean>(false);
+
+  // URL query params for search
+  const [searchParam, setSearchParam] = useQueryParam("q");
+
+  // Sync URL → search state on mount
+  useInitFromParam(searchParam, searchQuery, (s) => s);
+
+  // Auto-open search panel if URL has search param
+  useEffect(() => {
+    if (searchParam.value && !isSearchOpen.value) {
+      isSearchOpen.value = true;
+    }
+  }, [searchParam.value]);
+
+  // Sync search state → URL
+  useSyncToParam(searchQuery, setSearchParam);
 
   // Sync session from URL to signal, and redirect /chat to actual main session URL
   useEffect(() => {
