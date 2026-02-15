@@ -64,8 +64,8 @@ const searchQuery = signal("");
 const selectedLevels = signal<Set<LogLevel>>(new Set());
 const expandedLogs = signal<Set<number>>(new Set());
 
-/** Mobile log detail modal */
-const mobileLogModal = signal<ParsedLogLine | null>(null);
+/** Mobile log detail modal - derived from expandedLogs for URL sync */
+const mobileModalLogId = signal<number | null>(null);
 
 // ============================================
 // Actions
@@ -240,7 +240,92 @@ function LevelFilter({ level, count, selected, onClick }: LevelFilterProps) {
 // Mobile Log Card
 // ============================================
 
-function MobileLogCard({ line }: { line: ParsedLogLine }) {
+// ============================================
+// Mobile Log Modal
+// ============================================
+
+interface MobileLogModalProps {
+  logId: number | null;
+  lines: ParsedLogLine[];
+  onClose: () => void;
+}
+
+function MobileLogModal({ logId, lines, onClose }: MobileLogModalProps) {
+  const line = logId !== null ? lines.find((l) => l.id === logId) : null;
+
+  return (
+    <Modal open={!!line} onClose={onClose} title={t("logs.logDetails")}>
+      {line && (
+        <div class="space-y-4">
+          {/* Level & timestamp */}
+          <div class="flex items-center gap-2">
+            {line.level && (
+              <Badge
+                variant={
+                  line.level === "error" ? "error" : line.level === "warn" ? "warning" : "default"
+                }
+              >
+                {line.level}
+              </Badge>
+            )}
+            {line.timestamp && (
+              <span class="text-sm text-[var(--color-text-muted)] font-mono">{line.timestamp}</span>
+            )}
+          </div>
+
+          {/* Message */}
+          <div>
+            <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
+              {t("logs.message")}
+            </h4>
+            <p class="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap break-words">
+              {line.message}
+            </p>
+          </div>
+
+          {/* Fields */}
+          {line.fields && Object.keys(line.fields).length > 0 && (
+            <div>
+              <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-2">
+                {t("logs.fields")}
+              </h4>
+              <div class="space-y-2 bg-[var(--color-bg-tertiary)] rounded-lg p-3">
+                {Object.entries(line.fields).map(([key, value]) => (
+                  <div key={key} class="text-xs font-mono">
+                    <span class="text-[var(--color-accent)]">{key}</span>
+                    <span class="text-[var(--color-text-muted)] mx-1">=</span>
+                    <span class="text-[var(--color-text-secondary)] break-all">{value}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Raw line */}
+          <div>
+            <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
+              {t("logs.rawLine")}
+            </h4>
+            <pre class="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-bg-tertiary)] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
+              {line.raw}
+            </pre>
+          </div>
+        </div>
+      )}
+    </Modal>
+  );
+}
+
+// ============================================
+// Mobile Log Card
+// ============================================
+
+interface MobileLogCardProps {
+  line: ParsedLogLine;
+  onSelect: (id: number) => void;
+}
+
+function MobileLogCard({ line, onSelect }: MobileLogCardProps) {
   const Icon = line.level ? levelIcons[line.level] : Info;
   const iconColor = line.level ? levelColors[line.level] : "text-[var(--color-text-muted)]";
   const hasFields = line.fields && Object.keys(line.fields).length > 0;
@@ -250,9 +335,7 @@ function MobileLogCard({ line }: { line: ParsedLogLine }) {
     <button
       type="button"
       class="w-full flex items-start gap-3 p-3 text-left bg-[var(--color-bg-secondary)] rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors"
-      onClick={() => {
-        mobileLogModal.value = line;
-      }}
+      onClick={() => onSelect(line.id)}
       aria-label={t("logs.viewLogDetails")}
     >
       <Icon size={16} class={`mt-0.5 flex-shrink-0 ${iconColor}`} />
@@ -312,7 +395,7 @@ export function LogsView(_props: RouteProps) {
     setLiveParam(isLive.value ? null : "0");
   }, [isLive.value]);
 
-  // Sync URL → expanded log
+  // Sync URL → expanded log (desktop expands, mobile opens modal)
   useEffect(() => {
     if (logsReady && expandedParam.value.size > 0) {
       const validIds = Array.from(expandedParam.value).filter((id) =>
@@ -321,6 +404,11 @@ export function LogsView(_props: RouteProps) {
       const newIds = validIds.filter((id) => !expandedLogs.value.has(id));
       if (newIds.length > 0) {
         expandedLogs.value = new Set([...expandedLogs.value, ...validIds]);
+        // On mobile, open modal for the first log in the URL param
+        const isMobile = window.matchMedia("(max-width: 767px)").matches;
+        if (isMobile && mobileModalLogId.value === null) {
+          mobileModalLogId.value = newIds[0];
+        }
         // Scroll to the first new one
         // Note: mobile and desktop both have data-log-id, pick the visible one
         setTimeout(() => {
@@ -554,7 +642,17 @@ export function LogsView(_props: RouteProps) {
                 >
                   {lines.map((line) => (
                     <div key={line.id} data-log-id={line.id}>
-                      <MobileLogCard line={line} />
+                      <MobileLogCard
+                        line={line}
+                        onSelect={(id) => {
+                          mobileModalLogId.value = id;
+                          // Add to expandedLogs for URL sync
+                          const current = new Set(expandedLogs.value);
+                          current.add(id);
+                          expandedLogs.value = current;
+                          pushQueryState();
+                        }}
+                      />
                     </div>
                   ))}
                 </div>
@@ -587,80 +685,19 @@ export function LogsView(_props: RouteProps) {
           </div>
 
           {/* Mobile log detail modal */}
-          <Modal
-            open={!!mobileLogModal.value}
+          <MobileLogModal
+            logId={mobileModalLogId.value}
+            lines={logLines.value}
             onClose={() => {
-              mobileLogModal.value = null;
+              // Remove from expandedLogs when closing
+              if (mobileModalLogId.value !== null) {
+                const current = new Set(expandedLogs.value);
+                current.delete(mobileModalLogId.value);
+                expandedLogs.value = current;
+              }
+              mobileModalLogId.value = null;
             }}
-            title={t("logs.logDetails")}
-          >
-            {mobileLogModal.value && (
-              <div class="space-y-4">
-                {/* Level & timestamp */}
-                <div class="flex items-center gap-2">
-                  {mobileLogModal.value.level && (
-                    <Badge
-                      variant={
-                        mobileLogModal.value.level === "error"
-                          ? "error"
-                          : mobileLogModal.value.level === "warn"
-                            ? "warning"
-                            : "default"
-                      }
-                    >
-                      {mobileLogModal.value.level}
-                    </Badge>
-                  )}
-                  {mobileLogModal.value.timestamp && (
-                    <span class="text-sm text-[var(--color-text-muted)] font-mono">
-                      {mobileLogModal.value.timestamp}
-                    </span>
-                  )}
-                </div>
-
-                {/* Message */}
-                <div>
-                  <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                    {t("logs.message")}
-                  </h4>
-                  <p class="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap break-words">
-                    {mobileLogModal.value.message}
-                  </p>
-                </div>
-
-                {/* Fields */}
-                {mobileLogModal.value.fields &&
-                  Object.keys(mobileLogModal.value.fields).length > 0 && (
-                    <div>
-                      <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-2">
-                        {t("logs.fields")}
-                      </h4>
-                      <div class="space-y-2 bg-[var(--color-bg-tertiary)] rounded-lg p-3">
-                        {Object.entries(mobileLogModal.value.fields).map(([key, value]) => (
-                          <div key={key} class="text-xs font-mono">
-                            <span class="text-[var(--color-accent)]">{key}</span>
-                            <span class="text-[var(--color-text-muted)] mx-1">=</span>
-                            <span class="text-[var(--color-text-secondary)] break-all">
-                              {value}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                {/* Raw line */}
-                <div>
-                  <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
-                    {t("logs.rawLine")}
-                  </h4>
-                  <pre class="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-bg-tertiary)] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
-                    {mobileLogModal.value.raw}
-                  </pre>
-                </div>
-              </div>
-            )}
-          </Modal>
+          />
         </div>
       </div>
     </ViewErrorBoundary>
