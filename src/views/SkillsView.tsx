@@ -230,6 +230,7 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
 export function SkillsView(_props: RouteProps) {
   // URL query params as source of truth
   const skillsReady = !isLoading.value && skills.value.length > 0;
+  const [tabParam, setTabParam] = useQueryParam("tab");
   const [searchParam, setSearchParam] = useQueryParam("q");
   const [sourceParam, setSourceParam] = useQueryParam("source");
   const [statusParam, setStatusParam] = useQueryParam("status");
@@ -245,11 +246,13 @@ export function SkillsView(_props: RouteProps) {
   }, [isConnected.value]);
 
   // Sync URL → state on mount
+  useInitFromParam(tabParam, activeTab, (s) => s as SkillsTab);
   useInitFromParam(searchParam, searchQuery, (s) => s);
   useInitFromParam(sourceParam, sourceFilter, (s) => s as SkillSource | "all");
   useInitFromParam(statusParam, statusFilter, (s) => s as SkillStatus | "all");
 
   // Sync state → URL
+  useSyncFilterToParam(activeTab, setTabParam, "installed");
   useSyncToParam(searchQuery, setSearchParam);
   useSyncFilterToParam(sourceFilter, setSourceParam, "all");
   useSyncFilterToParam(statusFilter, setStatusParam, "all");
