@@ -9,7 +9,14 @@ export { CodeBlock } from "./CodeBlock";
 export type { CodeBlockProps } from "./CodeBlock";
 
 // Shared components
-export { ToolInputContainer, ToolBadge, ToolOutputContainer } from "./shared";
+export {
+  ToolInputContainer,
+  ToolBadge,
+  ToolOutputContainer,
+  ResultCard,
+  ResultGrid,
+  ResultGridRow,
+} from "./shared";
 
 // Utilities
 export { parseResult, parseErrorResult } from "./utils";

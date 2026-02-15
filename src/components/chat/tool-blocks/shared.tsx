@@ -83,3 +83,82 @@ export function ToolOutputContainer({ children, class: className = "" }: ToolOut
     </div>
   );
 }
+
+// ============================================
+// Result Card
+// ============================================
+
+interface ResultCardProps {
+  children: ComponentChildren;
+  /** Header content (shown after checkmark) */
+  header: ComponentChildren;
+  /** Show success checkmark (default: true) */
+  success?: boolean;
+}
+
+/**
+ * Standard card for successful tool results.
+ * Provides consistent layout with success indicator and header.
+ */
+export function ResultCard({ children, header, success = true }: ResultCardProps) {
+  return (
+    <div class="text-xs p-2 rounded-md bg-[var(--color-bg-tertiary)] space-y-2">
+      <div class="flex items-center gap-2">
+        {success && <span class="text-[var(--color-success)]">✓</span>}
+        {header}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+// ============================================
+// Result Grid
+// ============================================
+
+interface ResultGridProps {
+  children: ComponentChildren;
+}
+
+/**
+ * Two-column grid for key-value pairs in results.
+ */
+export function ResultGrid({ children }: ResultGridProps) {
+  return (
+    <div class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-0.5 text-[var(--color-text-muted)]">
+      {children}
+    </div>
+  );
+}
+
+interface ResultGridRowProps {
+  label: string;
+  children: ComponentChildren;
+  mono?: boolean;
+  small?: boolean;
+}
+
+/**
+ * Single row in a ResultGrid.
+ */
+export function ResultGridRow({
+  label,
+  children,
+  mono = false,
+  small = false,
+}: ResultGridRowProps) {
+  const valueClasses = [
+    "text-[var(--color-text-primary)]",
+    mono ? "font-mono" : "",
+    small ? "text-[10px]" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  return (
+    <>
+      <span>{label}:</span>
+      <span class={valueClasses}>{children}</span>
+    </>
+  );
+}
