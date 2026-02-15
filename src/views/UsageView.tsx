@@ -9,6 +9,7 @@ import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
+import { useQueryParam } from "@/hooks/useQueryParam";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
@@ -809,6 +810,29 @@ function ContextWeightBar({
 // ============================================
 
 export function UsageView(_props: RouteProps) {
+  // URL query params
+  const sessionsReady = sessionsUsage.value !== null && sessionsUsage.value.sessions.length > 0;
+  const [sessionParam, setSessionParam, sessionParamInitialized] = useQueryParam("session", {
+    ready: sessionsReady,
+  });
+
+  // Sync URL → selected session
+  useEffect(() => {
+    if (sessionsReady && sessionParam.value) {
+      const session = sessionsUsage.value?.sessions.find((s) => s.key === sessionParam.value);
+      if (session && selectedSession.value?.key !== session.key) {
+        selectedSession.value = session;
+      }
+    }
+  }, [sessionParam.value, sessionsReady]);
+
+  // Sync selected session → URL
+  useEffect(() => {
+    if (sessionParamInitialized.value) {
+      setSessionParam(selectedSession.value?.key ?? null);
+    }
+  }, [selectedSession.value, sessionParamInitialized.value]);
+
   useEffect(() => {
     if (isConnected.value) {
       loadAll();
