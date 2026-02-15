@@ -9,6 +9,7 @@
 import { signal, computed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
+import { useQueryParamSet, pushQueryState } from "@/hooks/useQueryParam";
 import { formatJson } from "@/lib/utils";
 import {
   isConnected,
@@ -157,10 +158,12 @@ function clearLog() {
 
 function toggleEventExpanded(id: number) {
   const current = new Set(expandedEvents.value);
-  if (current.has(id)) {
+  const wasExpanded = current.has(id);
+  if (wasExpanded) {
     current.delete(id);
   } else {
     current.add(id);
+    pushQueryState();
   }
   expandedEvents.value = current;
 }
@@ -304,6 +307,40 @@ function EventEntry({ entry, expanded, onToggle }: EventEntryProps) {
 // ============================================
 
 export function DebugView(_props: RouteProps) {
+  // URL query params (note: event IDs are ephemeral, mainly useful for back/forward)
+  const eventsReady = eventLog.value.length > 0;
+  const [expandedParam, setExpandedParam, expandedInitialized] = useQueryParamSet<number>("event", {
+    ready: eventsReady,
+  });
+
+  // Sync URL → expanded events
+  useEffect(() => {
+    if (eventsReady && expandedParam.value.size > 0) {
+      const validIds = Array.from(expandedParam.value).filter((id) =>
+        eventLog.value.some((e) => e.id === id),
+      );
+      if (validIds.length > 0) {
+        const newIds = validIds.filter((id) => !expandedEvents.value.has(id));
+        if (newIds.length > 0) {
+          expandedEvents.value = new Set([...expandedEvents.value, ...validIds]);
+          // Scroll to first new one
+          setTimeout(() => {
+            const els = document.querySelectorAll(`[data-event-id="${newIds[0]}"]`);
+            const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
+            el?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }, 100);
+        }
+      }
+    }
+  }, [expandedParam.value, eventsReady]);
+
+  // Sync expanded → URL
+  useEffect(() => {
+    if (expandedInitialized.value) {
+      setExpandedParam(expandedEvents.value);
+    }
+  }, [expandedEvents.value, expandedInitialized.value]);
+
   // Subscribe to gateway events
   useEffect(() => {
     const unsubscribe = subscribe((event: GatewayEvent) => {
@@ -488,19 +525,22 @@ export function DebugView(_props: RouteProps) {
             {/* Mobile: Card list */}
             <div class="md:hidden space-y-2 max-h-96 overflow-y-auto">
               {eventLog.value.map((entry) => (
-                <MobileEventCard key={entry.id} entry={entry} />
+                <div key={entry.id} data-event-id={entry.id}>
+                  <MobileEventCard entry={entry} />
+                </div>
               ))}
             </div>
 
             {/* Desktop: Expandable rows */}
             <div class="hidden md:block max-h-96 overflow-y-auto border border-[var(--color-border)] rounded-lg">
               {eventLog.value.map((entry) => (
-                <EventEntry
-                  key={entry.id}
-                  entry={entry}
-                  expanded={expandedEvents.value.has(entry.id)}
-                  onToggle={() => toggleEventExpanded(entry.id)}
-                />
+                <div key={entry.id} data-event-id={entry.id}>
+                  <EventEntry
+                    entry={entry}
+                    expanded={expandedEvents.value.has(entry.id)}
+                    onToggle={() => toggleEventExpanded(entry.id)}
+                  />
+                </div>
               ))}
             </div>
           </>
