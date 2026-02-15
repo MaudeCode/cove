@@ -46,6 +46,7 @@ import {
   MemoryGetInputBlock,
   BrowserInputBlock,
   CronInputBlock,
+  SessionStatusInputBlock,
   ResultBlock,
   parseErrorResult,
 } from "./tool-blocks";
@@ -245,6 +246,9 @@ function InputBlock({ toolCall }: { toolCall: ToolCallType }) {
   }
   if (toolCall.name === "cron") {
     return <CronInputBlock args={args} />;
+  }
+  if (toolCall.name === "session_status") {
+    return <SessionStatusInputBlock args={args} />;
   }
 
   return <CodeBlock content={args} />;

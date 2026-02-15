@@ -16,6 +16,7 @@ export {
   MemoryGetInputBlock,
   BrowserInputBlock,
   CronInputBlock,
+  SessionStatusInputBlock,
 } from "./InputBlocks";
 
 export { ErrorResultBlock, ResultBlock } from "./ResultBlocks";
