@@ -44,14 +44,19 @@ export function ToolInputContainer({
 
 interface ToolBadgeProps {
   children: ComponentChildren;
+  /** Tooltip text */
+  title?: string;
 }
 
 /**
  * Small badge for metadata (line counts, profiles, etc.)
  */
-export function ToolBadge({ children }: ToolBadgeProps) {
+export function ToolBadge({ children, title }: ToolBadgeProps) {
   return (
-    <span class="text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)] px-1.5 py-0.5 rounded">
+    <span
+      class="text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)] px-1.5 py-0.5 rounded"
+      title={title}
+    >
       {children}
     </span>
   );
