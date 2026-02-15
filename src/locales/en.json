@@ -281,14 +281,22 @@
     "prompt": "Prompt",
     "inputImage": "Input image",
     "expandImage": "Click to expand image",
-    "expandedImage": "Expanded image"
+    "expandedImage": "Expanded image",
+    "readingFile": "Reading file",
+    "writingFile": "Writing file",
+    "runningCommand": "Running command",
+    "editingFile": "Editing file",
+    "browserAction": "Browser action",
+    "cronAction": "Cron action",
+    "sessionStatus": "Session status"
   },
   "toolBlock": {
     "showRaw": "Show raw",
     "showFormatted": "Show formatted"
   },
   "sessionStatus": {
-    "remaining": "{percent}% remaining"
+    "remaining": "{percent}% remaining",
+    "currentSession": "Current session"
   },
   "status": {
     "disconnected": "Disconnected",

@@ -25,6 +25,7 @@ export function ReadInputBlock({ args }: ReadInputBlockProps) {
 
   return (
     <ToolInputContainer inline>
+      <span class="sr-only">{t("toolInput.readingFile")}: </span>
       <span>
         📄 {filePath}
         {lineRange && <span class="text-[var(--color-text-muted)]">:{lineRange}</span>}
@@ -48,7 +49,9 @@ export function WriteInputBlock({ args }: WriteInputBlockProps) {
 
   return (
     <div class="space-y-2">
-      <ToolInputContainer>📄 {filePath}</ToolInputContainer>
+      <ToolInputContainer>
+        <span class="sr-only">{t("toolInput.writingFile")}: </span>📄 {filePath}
+      </ToolInputContainer>
       <CodeBlock content={content} filePath={filePath} maxLines={30} />
     </div>
   );
@@ -68,7 +71,12 @@ export function ExecCommandBlock({ args }: ExecCommandBlockProps) {
 
   const display = cwd ? `# cwd: ${cwd}\n${command}` : command;
 
-  return <CodeBlock content={display} filePath="command.sh" maxLines={20} />;
+  return (
+    <div>
+      <span class="sr-only">{t("toolInput.runningCommand")}: </span>
+      <CodeBlock content={display} filePath="command.sh" maxLines={20} />
+    </div>
+  );
 }
 
 // ============================================
@@ -145,7 +153,12 @@ export function EditDiffBlock({ args }: EditDiffBlockProps) {
 
   const diff = generateDiff(oldStr, newStr, filePath);
 
-  return <CodeBlock content={diff} filePath="changes.diff" maxLines={40} />;
+  return (
+    <div>
+      <span class="sr-only">{t("toolInput.editingFile")}: </span>
+      <CodeBlock content={diff} filePath="changes.diff" maxLines={40} />
+    </div>
+  );
 }
 
 // ============================================
@@ -208,6 +221,7 @@ export function BrowserInputBlock({ args }: BrowserInputBlockProps) {
 
   return (
     <ToolInputContainer inline>
+      <span class="sr-only">{t("toolInput.browserAction")}: </span>
       <span>🌐 {action}</span>
       {profile && <ToolBadge>{profile}</ToolBadge>}
       {url && <span class="text-[var(--color-accent)] truncate">{url}</span>}
@@ -264,6 +278,7 @@ export function CronInputBlock({ args }: CronInputBlockProps) {
     return (
       <div class="space-y-1">
         <ToolInputContainer inline>
+          <span class="sr-only">{t("toolInput.cronAction")}: </span>
           <span>
             {icon} {label}
           </span>
@@ -285,6 +300,7 @@ export function CronInputBlock({ args }: CronInputBlockProps) {
 
   return (
     <ToolInputContainer inline>
+      <span class="sr-only">{t("toolInput.cronAction")}: </span>
       <span>
         {icon} {label}
       </span>
@@ -294,6 +310,44 @@ export function CronInputBlock({ args }: CronInputBlockProps) {
       )}
     </ToolInputContainer>
   );
+}
+
+// ============================================
+// Session Status Input Block
+// ============================================
+
+interface SessionStatusInputBlockProps {
+  args: Record<string, unknown>;
+}
+
+export function SessionStatusInputBlock({ args }: SessionStatusInputBlockProps) {
+  const sessionKey = args.sessionKey as string | undefined;
+  const model = args.model as string | undefined;
+
+  // No args = current session status (common case)
+  if (!sessionKey && !model) {
+    return (
+      <ToolInputContainer>
+        <span class="sr-only">{t("toolInput.sessionStatus")}: </span>
+        <span>📊 {t("sessionStatus.currentSession")}</span>
+      </ToolInputContainer>
+    );
+  }
+
+  return (
+    <ToolInputContainer inline>
+      <span class="sr-only">{t("toolInput.sessionStatus")}: </span>
+      <span>📊</span>
+      {sessionKey && <ToolBadge title={sessionKey}>🧵 {formatSessionKey(sessionKey)}</ToolBadge>}
+      {model && <ToolBadge>🧠 {model}</ToolBadge>}
+    </ToolInputContainer>
+  );
+}
+
+/** Format session key for display (truncate middle if long) */
+function formatSessionKey(key: string): string {
+  if (key.length <= 30) return key;
+  return key.slice(0, 15) + "…" + key.slice(-12);
 }
 
 // ============================================
