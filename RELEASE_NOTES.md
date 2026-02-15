@@ -20,7 +20,7 @@ Redesigned tool call visualization with specialized blocks per tool:
 
 ## 🦞 ClawHub Discovery
 
-Browse and install skills from ClawHub with an improved discovery experience:
+Browse and install skills from ClawHub — now with CORS headers enabled! (Thanks @steipete 🙏)
 
 - **Trending carousel** — See what's popular at a glance
 - **Sort options** — Popular, Trending, Most Starred, Newest
