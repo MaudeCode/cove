@@ -252,6 +252,87 @@ await send('sessions.patch', { key: key, label: 'foo' })
 await send('sessions.delete', { key: key })
 ```
 
+### 7. URL Query Params (`src/hooks/useQueryParam.ts`)
+
+Views use URL query params for shareable, bookmarkable state. This enables:
+- Sharing links to specific views/filters
+- Browser back/forward navigation
+- Bookmarking filtered views
+
+**Available Hooks:**
+```ts
+import {
+  useQueryParam,        // Single string param
+  useQueryParamSet,     // Comma-separated Set (for multiple items)
+  useInitFromParam,     // URL → signal on mount
+  useSyncToParam,       // Signal → URL (always)
+  useSyncFilterToParam, // Signal → URL (omit default value)
+  pushQueryState,       // Push to history (for expand/select actions)
+} from "@/hooks/useQueryParam";
+```
+
+**Basic Usage:**
+```tsx
+function MyView() {
+  const [searchParam, setSearchParam] = useQueryParam("q");
+  const [filterParam, setFilterParam] = useQueryParam("filter");
+  
+  // URL → state on mount
+  useInitFromParam(searchParam, searchQuery, (s) => s);
+  useInitFromParam(filterParam, filterValue, (s) => s as FilterType);
+  
+  // State → URL (omit defaults)
+  useSyncToParam(searchQuery, setSearchParam);
+  useSyncFilterToParam(filterValue, setFilterParam, "all");
+}
+```
+
+**For Sets (expanded items, multi-select):**
+```tsx
+const [expandedParam, setExpandedParam, initialized] = useQueryParamSet<string>(
+  "item",
+  { ready: dataLoaded }  // Wait for data before syncing
+);
+
+// URL → state
+useEffect(() => {
+  if (dataLoaded && expandedParam.value.size > 0) {
+    expandedItems.value = new Set([...expandedItems.value, ...expandedParam.value]);
+  }
+}, [expandedParam.value, dataLoaded]);
+
+// State → URL  
+useEffect(() => {
+  if (initialized.value) {
+    setExpandedParam(expandedItems.value);
+  }
+}, [expandedItems.value, initialized.value]);
+```
+
+**Scroll-to Pattern (mobile/desktop):**
+When expanding items from URL, scroll to the first one using `offsetParent` to find the visible element:
+```tsx
+setTimeout(() => {
+  const els = document.querySelectorAll(`[data-item-id="${id}"]`);
+  const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
+  el?.scrollIntoView({ behavior: "smooth", block: "center" });
+}, 100);
+```
+
+**Current View Params:**
+| View | Params |
+|------|--------|
+| ChatView | `?q=` (search) |
+| CronView | `?q=`, `?filter=`, `?job=` |
+| LogsView | `?q=`, `?level=`, `?live=`, `?log=` |
+| SkillsView | `?tab=`, `?q=`, `?source=`, `?status=`, `?skill=` |
+| SessionsAdminView | `?q=`, `?kind=`, `?session=` |
+| DevicesView | `?q=`, `?role=`, `?device=` |
+| ConfigView | `?section=` |
+| DebugView | `?event=` |
+| UsageView | `?session=`, `?days=`, `?sort=` |
+| AgentsView | `?agent=`, `?tab=`, `?q=` |
+
 ### Reference
 - **OpenClaw protocol**: https://github.com/openclaw/openclaw
 - **Protocol schema**: `openclaw/src/gateway/protocol/schema/frames.ts`
