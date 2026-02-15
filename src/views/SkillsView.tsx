@@ -44,6 +44,8 @@ import type { SkillStatusReport, SkillStatusEntry, SkillStatus, SkillSource } fr
 import { getSkillStatus } from "@/types/skills";
 import {
   ClawHubBrowser,
+  clawHubLoading,
+  refreshClawHub,
   SkillRow,
   SkillCard,
   InstallDepsModal,
@@ -305,14 +307,20 @@ export function SkillsView(_props: RouteProps) {
         title={t("common.skills")}
         subtitle={t("skills.description")}
         actions={
-          tab === "installed" ? (
-            <IconButton
-              icon={<RefreshCw class={isLoading.value ? "animate-spin" : ""} />}
-              onClick={loadSkills}
-              disabled={isLoading.value}
-              label={t("actions.refresh")}
-            />
-          ) : undefined
+          <IconButton
+            icon={
+              <RefreshCw
+                class={
+                  (tab === "installed" ? isLoading.value : clawHubLoading.value)
+                    ? "animate-spin"
+                    : ""
+                }
+              />
+            }
+            onClick={tab === "installed" ? loadSkills : refreshClawHub}
+            disabled={tab === "installed" ? isLoading.value : clawHubLoading.value}
+            label={t("actions.refresh")}
+          />
         }
       />
 
