@@ -9,7 +9,7 @@ import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
-import { useQueryParam } from "@/hooks/useQueryParam";
+import { useQueryParam, useInitFromParam, useSyncFilterToParam } from "@/hooks/useQueryParam";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
@@ -815,6 +815,27 @@ export function UsageView(_props: RouteProps) {
   const [sessionParam, setSessionParam, sessionParamInitialized] = useQueryParam("session", {
     ready: sessionsReady,
   });
+  const [daysParam, setDaysParam] = useQueryParam("days");
+  const [sortParam, setSortParam] = useQueryParam("sort");
+
+  // Sync URL → state on mount
+  useEffect(() => {
+    if (daysParam.value) {
+      const days = parseInt(daysParam.value, 10);
+      if ([7, 30, 90].includes(days) && usageDays.value !== days) {
+        usageDays.value = days;
+      }
+    }
+  }, [daysParam.value]);
+
+  useInitFromParam(sortParam, sessionsSortBy, (s) => s as "cost" | "tokens" | "recent");
+
+  // Sync state → URL (omit defaults)
+  useEffect(() => {
+    setDaysParam(usageDays.value === 30 ? null : String(usageDays.value));
+  }, [usageDays.value]);
+
+  useSyncFilterToParam(sessionsSortBy, setSortParam, "recent");
 
   // Sync URL → selected session
   useEffect(() => {
