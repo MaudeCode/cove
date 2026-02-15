@@ -37,14 +37,14 @@ export const SUPPORTED_IMAGE_TYPES = [
   "image/webp",
 ] as const;
 
-/** Max file size (10MB for input, but will be compressed) */
+/** Max file size for input (10MB) */
 export const MAX_FILE_SIZE = 10 * 1024 * 1024;
 
-/** Max payload size for gateway (512KB) - images will be compressed to fit */
-export const MAX_PAYLOAD_SIZE = 400 * 1024; // Leave headroom for base64 + message overhead
+/** Max payload size for gateway (5MB limit, ~3.5MB before base64 encoding) */
+export const MAX_PAYLOAD_SIZE = 3.5 * 1024 * 1024;
 
-/** Max image dimension (will resize if larger) */
-export const MAX_IMAGE_DIMENSION = 2048;
+/** Max image dimension - matches OpenClaw API limit */
+export const MAX_IMAGE_DIMENSION = 2000;
 
 /** Check if MIME type is a supported image */
 export function isSupportedImage(mimeType: string): boolean {
