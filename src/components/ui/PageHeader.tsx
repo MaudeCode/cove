@@ -27,14 +27,12 @@ export function PageHeader({ title, subtitle, actions, class: className }: PageH
     );
 
   return (
-    <div
-      class={`flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 sm:gap-4 ${className ?? ""}`}
-    >
-      <div class="flex-1 min-w-0">
+    <div class={`space-y-1 ${className ?? ""}`}>
+      <div class="flex items-center justify-between gap-3">
         <h1 class="text-xl font-semibold text-[var(--color-text-primary)]">{title}</h1>
-        {subtitleContent}
+        {actions && <div class="flex items-center gap-2 flex-shrink-0">{actions}</div>}
       </div>
-      {actions && <div class="flex items-center gap-2 flex-shrink-0">{actions}</div>}
+      {subtitleContent}
     </div>
   );
 }
