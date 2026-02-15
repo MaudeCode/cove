@@ -8,7 +8,6 @@
 import type { Message } from "@/types/messages";
 import {
   isCompactionSummary,
-  isNoReply,
   isHeartbeatMessage,
   isCronSummary,
   isSystemEvent,
@@ -42,11 +41,6 @@ export function groupMessages(messages: Message[]): MessageGroup[] {
 
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i];
-
-    // Skip NO_REPLY messages entirely - they're internal signals
-    if (isNoReply(msg)) {
-      continue;
-    }
 
     // Skip heartbeat messages - they're shown in the HeartbeatIndicator dropdown
     if (isHeartbeatMessage(msg)) {

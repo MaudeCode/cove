@@ -26,7 +26,7 @@ import { isForActiveSession } from "@/signals/sessions";
 import type { Message, ToolCall } from "@/types/messages";
 import type { ChatEvent, AgentEvent } from "@/types/chat";
 import { parseMessageContent, mergeToolCalls } from "@/types/chat";
-import { isHeartbeatResponse, isNoReplyContent } from "@/lib/message-detection";
+import { isHeartbeatResponse } from "@/lib/message-detection";
 import { processNextQueuedMessage } from "./send";
 import { loadHistory } from "./history";
 import { extractToolResultContent } from "@/lib/tool-utils";
@@ -513,15 +513,14 @@ function handleFinalEvent(event: ChatEvent): void {
     return;
   }
 
-  // Check for heartbeat/no-reply responses - complete run immediately without adding message
+  // Check for heartbeat responses - complete run immediately without adding message
   if (message?.content) {
     const parsed = parseMessageContent(message.content);
     if (
       parsed.text &&
-      (isNoReplyContent(parsed.text) ||
-        isHeartbeatResponse({ role: "assistant", content: parsed.text, id: "", timestamp: 0 }))
+      isHeartbeatResponse({ role: "assistant", content: parsed.text, id: "", timestamp: 0 })
     ) {
-      log.chat.debug("Heartbeat/no-reply detected, completing run without message:", runId);
+      log.chat.debug("Heartbeat detected, completing run without message:", runId);
       completeRun(runId);
       setTimeout(() => processNextQueuedMessage(sessionKey), 100);
       return;

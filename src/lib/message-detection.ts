@@ -16,10 +16,6 @@ const HEARTBEAT_PROMPT_PATTERNS = [
 /** Heartbeat response pattern */
 const HEARTBEAT_RESPONSE = /^\s*heartbeat_ok\s*$/i;
 
-/** NO_REPLY pattern (should be hidden - these are signals to not send anything)
- * Also catches truncated versions like "NO_" from streaming race conditions */
-const NO_REPLY_PATTERN = /^\s*no_(?:reply|repl|rep|re|r|_?)?\s*$/i;
-
 /** Cron summary prefix pattern (isolated cron jobs post summaries with this prefix) */
 const CRON_PREFIX_PATTERN = /^\s*\[cron\]/i;
 
@@ -37,23 +33,6 @@ function isHeartbeatPrompt(message: Message): boolean {
 export function isHeartbeatResponse(message: Message): boolean {
   if (message.role !== "assistant") return false;
   return HEARTBEAT_RESPONSE.test(message.content);
-}
-
-/**
- * Check if a message is a NO_REPLY signal (or truncated version like "NO_")
- * These should be hidden entirely - they're signals to not send anything.
- */
-export function isNoReply(message: Message): boolean {
-  if (message.role !== "assistant") return false;
-  return NO_REPLY_PATTERN.test(message.content);
-}
-
-/**
- * Check if raw content looks like a NO_REPLY signal.
- * Used for filtering streaming content before it's wrapped as a Message.
- */
-export function isNoReplyContent(content: string): boolean {
-  return NO_REPLY_PATTERN.test(content);
 }
 
 /**
