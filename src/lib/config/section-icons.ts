@@ -39,10 +39,10 @@ import {
   Circle,
   RefreshCw,
   Settings2,
+  type LucideIcon,
 } from "lucide-preact";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const SECTION_ICONS: Record<string, any> = {
+export const SECTION_ICONS: Record<string, LucideIcon> = {
   // Core
   gateway: Globe,
   agents: Bot,

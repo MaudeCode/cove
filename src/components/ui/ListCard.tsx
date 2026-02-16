@@ -6,14 +6,12 @@
  * Used by Sessions, Instances, and other admin list views.
  */
 
-import type { ComponentChildren, ComponentType } from "preact";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IconComponent = ComponentType<any>;
+import type { ComponentChildren } from "preact";
+import type { LucideIcon } from "lucide-preact";
 
 export interface ListCardMeta {
   /** Icon to show before the value */
-  icon?: IconComponent;
+  icon?: LucideIcon;
   /** The value/text to display */
   value: string;
   /** Optional title/tooltip */
@@ -22,7 +20,7 @@ export interface ListCardMeta {
 
 export interface ListCardProps {
   /** Main icon component */
-  icon: IconComponent;
+  icon: LucideIcon;
   /** Icon background color variant */
   iconVariant?: "default" | "success" | "warning" | "error" | "info";
   /** Primary title text */

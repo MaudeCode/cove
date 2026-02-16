@@ -45,21 +45,18 @@ import {
   Trash2,
   Pencil,
   Sparkles,
+  type LucideIcon,
 } from "lucide-preact";
 import { PageLayout } from "@/components/ui/PageLayout";
 import type { Session } from "@/types/sessions";
 import type { RouteProps } from "@/types/routes";
-import type { ComponentType } from "preact";
 
 // ============================================
 // Kind Styling Config (single source of truth)
 // ============================================
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IconComponent = ComponentType<any>;
-
 interface KindStyle {
-  icon: IconComponent;
+  icon: LucideIcon;
   color: string; // CSS variable name without var()
   badgeVariant: "default" | "success" | "warning" | "error" | "info";
 }

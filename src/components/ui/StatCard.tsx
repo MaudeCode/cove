@@ -5,14 +5,11 @@
  * Used for filterable stat displays in admin views.
  */
 
-import type { ComponentType } from "preact";
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type IconComponent = ComponentType<any>;
+import type { LucideIcon } from "lucide-preact";
 
 interface StatCardProps {
   /** Lucide icon component */
-  icon: IconComponent;
+  icon: LucideIcon;
   /** Label text below the value */
   label: string;
   /** Main value to display */
