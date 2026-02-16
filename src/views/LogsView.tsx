@@ -16,6 +16,7 @@ import {
   useInitFromParam,
   toggleSetValue,
 } from "@/hooks/useQueryParam";
+import { useExpandableFromQueryParamSet } from "@/hooks/useExpandableFromQueryParamSet";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
 import { IconButton } from "@/components/ui/IconButton";
@@ -376,37 +377,20 @@ export function LogsView(_props: RouteProps) {
     setLiveParam(isLive.value ? null : "0");
   }, [isLive.value]);
 
-  // Sync URL → expanded log (desktop expands, mobile opens modal)
-  useEffect(() => {
-    if (logsReady && expandedParam.value.size > 0) {
-      const validIds = Array.from(expandedParam.value).filter((id) =>
-        logLines.value.some((l) => l.id === id),
-      );
-      const newIds = validIds.filter((id) => !expandedLogs.value.has(id));
-      if (newIds.length > 0) {
-        expandedLogs.value = new Set([...expandedLogs.value, ...validIds]);
-        // On mobile, open modal for the first log in the URL param
-        const isMobile = window.matchMedia("(max-width: 767px)").matches;
-        if (isMobile && mobileModalLogId.value === null) {
-          mobileModalLogId.value = newIds[0];
-        }
-        // Scroll to the first new one
-        // Note: mobile and desktop both have data-log-id, pick the visible one
-        setTimeout(() => {
-          const els = document.querySelectorAll(`[data-log-id="${newIds[0]}"]`);
-          const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
-          el?.scrollIntoView({ behavior: "smooth", block: "center" });
-        }, 100);
+  useExpandableFromQueryParamSet<number>({
+    ready: logsReady,
+    expandedParam,
+    expandedState: expandedLogs,
+    expandedInitialized,
+    setExpandedParam,
+    isValid: (id) => logLines.value.some((l) => l.id === id),
+    getItemSelector: (id) => `[data-log-id="${id}"]`,
+    onMobileOpenFirst: (id) => {
+      if (mobileModalLogId.value === null) {
+        mobileModalLogId.value = id;
       }
-    }
-  }, [expandedParam.value, logsReady]);
-
-  // Sync expanded → URL
-  useEffect(() => {
-    if (expandedInitialized.value) {
-      setExpandedParam(expandedLogs.value);
-    }
-  }, [expandedLogs.value, expandedInitialized.value]);
+    },
+  });
 
   // Initial fetch
   useEffect(() => {

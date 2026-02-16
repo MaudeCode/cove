@@ -17,6 +17,7 @@ import {
   useInitFromParam,
   toggleSetValue,
 } from "@/hooks/useQueryParam";
+import { useExpandableFromQueryParamSet } from "@/hooks/useExpandableFromQueryParamSet";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
@@ -251,41 +252,23 @@ export function SkillsView(_props: RouteProps) {
   useSyncFilterToParam(sourceFilter, setSourceParam, "all");
   useSyncFilterToParam(statusFilter, setStatusParam, "all");
 
-  // Sync URL → expanded skill (desktop: expand row, mobile: open modal)
-  useEffect(() => {
-    if (skillsReady && expandedParam.value.size > 0) {
-      const newKeys = Array.from(expandedParam.value).filter((k) => !expandedSkills.value.has(k));
-      if (newKeys.length > 0) {
-        // Desktop: expand the skill row
-        expandedSkills.value = new Set([...expandedSkills.value, ...expandedParam.value]);
-
-        // Mobile: open detail modal for the first skill
-        const isMobile = window.innerWidth < 768; // md breakpoint
-        if (isMobile) {
-          const skill = skills.value.find((s) => s.skillKey === newKeys[0]);
-          if (skill) {
-            mobileDetailModal.value = skill;
-          }
-        }
-
-        // Scroll to the first new one (desktop only, modal handles mobile)
-        if (!isMobile) {
-          setTimeout(() => {
-            const els = document.querySelectorAll(`[data-skill-key="${newKeys[0]}"]`);
-            const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
-            el?.scrollIntoView({ behavior: "smooth", block: "center" });
-          }, 100);
-        }
+  useExpandableFromQueryParamSet<string>({
+    ready: skillsReady,
+    expandedParam,
+    expandedState: expandedSkills,
+    expandedInitialized,
+    setExpandedParam,
+    isValid: (skillKey) => skills.value.some((s) => s.skillKey === skillKey),
+    getItemSelector: (skillKey) => `[data-skill-key="${skillKey}"]`,
+    onMobileOpenFirst: (skillKey) => {
+      const skill = skills.value.find((s) => s.skillKey === skillKey);
+      if (skill) {
+        mobileDetailModal.value = skill;
       }
-    }
-  }, [expandedParam.value, skillsReady]);
-
-  // Sync expanded → URL
-  useEffect(() => {
-    if (expandedInitialized.value) {
-      setExpandedParam(expandedSkills.value);
-    }
-  }, [expandedSkills.value, expandedInitialized.value]);
+    },
+    isMobile: () => window.innerWidth < 768,
+    scrollOnMobile: false,
+  });
 
   const filtered = filteredSkills.value;
   const s = stats.value;
