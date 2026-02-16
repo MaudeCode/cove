@@ -14,6 +14,7 @@ import {
   useQueryParamSet,
   useSyncToParam,
   useInitFromParam,
+  pushQueryState,
   toggleSetValue,
 } from "@/hooks/useQueryParam";
 import { useExpandableFromQueryParamSet } from "@/hooks/useExpandableFromQueryParamSet";
@@ -65,9 +66,17 @@ const isLive = signal(true);
 const searchQuery = signal("");
 const selectedLevels = signal<Set<LogLevel>>(new Set());
 const expandedLogs = signal<Set<number>>(new Set());
+const isMobileViewport = signal(
+  typeof window !== "undefined" ? window.matchMedia("(max-width: 767px)").matches : false,
+);
 
-/** Mobile log detail modal - derived from expandedLogs for URL sync */
-const mobileModalLogId = signal<number | null>(null);
+/** Mobile log detail modal state derived from expanded logs + current viewport mode. */
+const mobileModalLogId = computed<number | null>(() => {
+  if (!isMobileViewport.value || expandedLogs.value.size === 0) return null;
+  // Use the most recently expanded entry as the active mobile modal target.
+  const expanded = Array.from(expandedLogs.value);
+  return expanded[expanded.length - 1] ?? null;
+});
 
 // ============================================
 // Actions
@@ -132,6 +141,16 @@ function toggleLevel(level: LogLevel) {
 
 function clearLevelFilters() {
   selectedLevels.value = new Set();
+}
+
+function openMobileLogDetails(id: number) {
+  pushQueryState();
+  // Mobile presents one detail target at a time, so replace the expanded set.
+  expandedLogs.value = new Set([id]);
+}
+
+function closeMobileLogDetails() {
+  expandedLogs.value = new Set();
 }
 
 // ============================================
@@ -385,12 +404,17 @@ export function LogsView(_props: RouteProps) {
     setExpandedParam,
     isValid: (id) => logLines.value.some((l) => l.id === id),
     getItemSelector: (id) => `[data-log-id="${id}"]`,
-    onMobileOpenFirst: (id) => {
-      if (mobileModalLogId.value === null) {
-        mobileModalLogId.value = id;
-      }
-    },
   });
+
+  useEffect(() => {
+    const updateViewport = () => {
+      isMobileViewport.value = window.matchMedia("(max-width: 767px)").matches;
+    };
+
+    updateViewport();
+    window.addEventListener("resize", updateViewport);
+    return () => window.removeEventListener("resize", updateViewport);
+  }, []);
 
   // Initial fetch
   useEffect(() => {
@@ -610,11 +634,7 @@ export function LogsView(_props: RouteProps) {
                       <MobileLogCard
                         line={line}
                         onSelect={(id) => {
-                          mobileModalLogId.value = id;
-                          // Add to expandedLogs for URL sync
-                          if (!expandedLogs.value.has(id)) {
-                            toggleSetValue(expandedLogs, id, { pushHistory: true });
-                          }
+                          openMobileLogDetails(id);
                         }}
                       />
                     </div>
@@ -649,15 +669,7 @@ export function LogsView(_props: RouteProps) {
           <MobileLogModal
             logId={mobileModalLogId.value}
             lines={logLines.value}
-            onClose={() => {
-              // Remove from expandedLogs when closing
-              if (mobileModalLogId.value !== null) {
-                const current = new Set(expandedLogs.value);
-                current.delete(mobileModalLogId.value);
-                expandedLogs.value = current;
-              }
-              mobileModalLogId.value = null;
-            }}
+            onClose={closeMobileLogDetails}
           />
         </div>
       </div>
