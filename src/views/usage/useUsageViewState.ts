@@ -4,6 +4,7 @@ import { t } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
 import { useQueryParam, useInitFromParam, useSyncFilterToParam } from "@/hooks/useQueryParam";
 import { getErrorMessage } from "@/lib/session-utils";
+import { log } from "@/lib/logger";
 import { toast } from "@/components/ui/Toast";
 import { getSessionsUsageCache, setSessionsUsageCache } from "@/lib/storage";
 import type {
@@ -59,8 +60,9 @@ export async function loadUsage(days: number = 30): Promise<void> {
   try {
     const result = await send<CostUsageSummary>("usage.cost", { days });
     usageData.value = result;
-  } catch {
+  } catch (err) {
     // Usage might not be available.
+    log.usage.warn("Failed to load usage cost summary", { days, err });
   } finally {
     isLoadingUsage.value = false;
   }
@@ -85,7 +87,8 @@ export async function loadSessionsUsage(days: number = 30): Promise<void> {
     });
     sessionsUsage.value = result;
     if (result) setSessionsUsageCache(result);
-  } catch {
+  } catch (err) {
+    log.usage.warn("Failed to load sessions usage", { days, err });
     if (!sessionsUsage.value) {
       sessionsUsage.value = null;
     }
@@ -106,8 +109,9 @@ export async function loadSessionTimeseries(key: string): Promise<void> {
   try {
     const result = await send<SessionUsageTimeSeries>("sessions.usage.timeseries", { key });
     sessionTimeseries.value = result;
-  } catch {
+  } catch (err) {
     // Timeseries may not be available.
+    log.usage.warn("Failed to load session usage timeseries", { key, err });
   } finally {
     isLoadingTimeseries.value = false;
   }
@@ -121,8 +125,9 @@ export async function loadSessionLogs(key: string): Promise<void> {
   try {
     const result = await send<SessionLogsResult>("sessions.usage.logs", { key, limit: 100 });
     sessionLogs.value = result?.logs ?? [];
-  } catch {
+  } catch (err) {
     // Logs may not be available.
+    log.usage.warn("Failed to load session usage logs", { key, err });
   } finally {
     isLoadingLogs.value = false;
   }
