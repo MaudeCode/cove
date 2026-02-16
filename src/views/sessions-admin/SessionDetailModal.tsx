@@ -85,24 +85,32 @@ export function SessionDetailModal() {
                 </Badge>
               )}
             </div>
-            <code class="text-xs sm:text-sm text-[var(--color-text-muted)] break-all">{session.key}</code>
+            <code class="text-xs sm:text-sm text-[var(--color-text-muted)] break-all">
+              {session.key}
+            </code>
           </div>
         </div>
 
         <div class="grid grid-cols-3 gap-2 sm:gap-4">
           <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
             <div class="text-lg sm:text-xl font-bold">{formatTokenCount(session)}</div>
-            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">{t("common.tokens")}</div>
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+              {t("common.tokens")}
+            </div>
           </div>
           <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
             <div class="text-lg sm:text-xl font-bold">{formatContextUsage(session)}</div>
-            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">{t("sessions.admin.contextUsed")}</div>
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+              {t("sessions.admin.contextUsed")}
+            </div>
           </div>
           <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
             <div class="text-lg sm:text-xl font-bold">
               {session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—"}
             </div>
-            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">{t("common.lastActive")}</div>
+            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
+              {t("common.lastActive")}
+            </div>
           </div>
         </div>
 

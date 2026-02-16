@@ -63,12 +63,6 @@ interface ChannelStatus {
   error?: string;
 }
 
-interface HealthData {
-  memoryUsageMB?: number;
-  cpuPercent?: number;
-  uptimeMs?: number;
-}
-
 interface SkillsStatus {
   total: number;
   eligible: number;
@@ -80,9 +74,7 @@ interface SkillsStatus {
 
 const cronStatus = signal<CronStatus | null>(null);
 const channels = signal<ChannelStatus[]>([]);
-const healthData = signal<HealthData | null>(null);
 const skillsStatus = signal<SkillsStatus | null>(null);
-const loadingData = signal(false);
 
 // ============================================
 // Data Fetching
@@ -90,82 +82,72 @@ const loadingData = signal(false);
 
 async function fetchDashboardData() {
   if (!isConnected.value) return;
-
-  loadingData.value = true;
-
+  // Fetch cron status
   try {
-    // Fetch cron status
-    try {
-      const cronResult = await send<{
-        enabled: boolean;
-        jobs: number;
-        nextWakeAtMs?: number;
-      }>("cron.status");
+    const cronResult = await send<{
+      enabled: boolean;
+      jobs: number;
+      nextWakeAtMs?: number;
+    }>("cron.status");
 
-      cronStatus.value = {
-        enabled: cronResult.enabled ?? false,
-        jobCount: cronResult.jobs ?? 0,
-        nextWakeMs: cronResult.nextWakeAtMs ?? null,
-      };
-    } catch {
-      cronStatus.value = null;
-    }
+    cronStatus.value = {
+      enabled: cronResult.enabled ?? false,
+      jobCount: cronResult.jobs ?? 0,
+      nextWakeMs: cronResult.nextWakeAtMs ?? null,
+    };
+  } catch {
+    cronStatus.value = null;
+  }
 
-    // Fetch channels
-    try {
-      const channelsResult = await send<{
-        channelOrder: string[];
-        channelAccounts: Record<
-          string,
-          Array<{
-            accountId: string;
-            name?: string | null;
-            connected?: boolean | null;
-            running?: boolean | null;
-            configured?: boolean | null;
-          }>
-        >;
-      }>("channels.status");
+  // Fetch channels
+  try {
+    const channelsResult = await send<{
+      channelOrder: string[];
+      channelAccounts: Record<
+        string,
+        Array<{
+          accountId: string;
+          name?: string | null;
+          connected?: boolean | null;
+          running?: boolean | null;
+          configured?: boolean | null;
+        }>
+      >;
+    }>("channels.status");
 
-      // Count total accounts and connected accounts across all channels
-      const allAccounts: ChannelStatus[] = [];
-      const channelTypes = channelsResult.channelOrder ?? [];
+    // Count total accounts and connected accounts across all channels
+    const allAccounts: ChannelStatus[] = [];
+    const channelTypes = channelsResult.channelOrder ?? [];
 
-      for (const channelType of channelTypes) {
-        const accounts = channelsResult.channelAccounts?.[channelType] ?? [];
-        for (const account of accounts) {
-          allAccounts.push({
-            id: account.accountId,
-            type: channelType,
-            connected: account.connected ?? account.running ?? false,
-          });
-        }
+    for (const channelType of channelTypes) {
+      const accounts = channelsResult.channelAccounts?.[channelType] ?? [];
+      for (const account of accounts) {
+        allAccounts.push({
+          id: account.accountId,
+          type: channelType,
+          connected: account.connected ?? account.running ?? false,
+        });
       }
-
-      channels.value = allAccounts;
-    } catch {
-      channels.value = [];
     }
 
-    // Fetch skills status
-    try {
-      const skillsResult = await send<{
-        skills?: Array<{ eligible: boolean }>;
-      }>("skills.status");
+    channels.value = allAccounts;
+  } catch {
+    channels.value = [];
+  }
 
-      const skills = skillsResult.skills ?? [];
-      skillsStatus.value = {
-        total: skills.length,
-        eligible: skills.filter((s) => s.eligible).length,
-      };
-    } catch {
-      skillsStatus.value = null;
-    }
+  // Fetch skills status
+  try {
+    const skillsResult = await send<{
+      skills?: Array<{ eligible: boolean }>;
+    }>("skills.status");
 
-    // Health data - skip for now, API may not exist
-    healthData.value = null;
-  } finally {
-    loadingData.value = false;
+    const skills = skillsResult.skills ?? [];
+    skillsStatus.value = {
+      total: skills.length,
+      eligible: skills.filter((s) => s.eligible).length,
+    };
+  } catch {
+    skillsStatus.value = null;
   }
 }
 

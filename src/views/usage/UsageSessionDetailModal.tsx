@@ -48,7 +48,9 @@ export function UsageSessionDetailModal() {
     <Modal open={!!session} onClose={clearSessionDetail} title={t("common.sessionDetails")}>
       {session && (
         <div class="space-y-4">
-          <p class="text-sm text-[var(--color-text-muted)] truncate -mt-2">{session.label || session.key}</p>
+          <p class="text-sm text-[var(--color-text-muted)] truncate -mt-2">
+            {session.label || session.key}
+          </p>
           <TabNav items={tabs} activeId={tab} onChange={handleTabChange} />
           <div role="tabpanel">
             {tab === "overview" && <OverviewTab session={session} />}
@@ -81,7 +83,9 @@ function OverviewTab({ session }: { session: SessionUsageEntry }) {
         </div>
         <div>
           <div class="text-xs text-[var(--color-text-muted)]">{t("common.totalCost")}</div>
-          <div class="font-medium text-[var(--color-success)]">{formatCost(session.usage.totalCost)}</div>
+          <div class="font-medium text-[var(--color-success)]">
+            {formatCost(session.usage.totalCost)}
+          </div>
         </div>
       </div>
 
@@ -150,7 +154,9 @@ function TimelineTab() {
 
   if (!timeseries || timeseries.points.length === 0) {
     return (
-      <p class="text-sm text-[var(--color-text-muted)] py-4 text-center">{t("usage.detail.noTimeline")}</p>
+      <p class="text-sm text-[var(--color-text-muted)] py-4 text-center">
+        {t("usage.detail.noTimeline")}
+      </p>
     );
   }
 
@@ -165,7 +171,8 @@ function TimelineTab() {
   const chartHeight = height - padding.top - padding.bottom;
 
   const xScale = (i: number) => padding.left + (i / (points.length - 1)) * chartWidth;
-  const yScaleTokens = (v: number) => padding.top + chartHeight - (v / (maxTokens || 1)) * chartHeight;
+  const yScaleTokens = (v: number) =>
+    padding.top + chartHeight - (v / (maxTokens || 1)) * chartHeight;
 
   const tokenPath = points
     .map((p, i) => `${i === 0 ? "M" : "L"} ${xScale(i)} ${yScaleTokens(p.cumulativeTokens)}`)
@@ -248,7 +255,9 @@ function MessagesTab() {
 
   if (logs.length === 0) {
     return (
-      <p class="text-sm text-[var(--color-text-muted)] py-4 text-center">{t("usage.detail.noMessages")}</p>
+      <p class="text-sm text-[var(--color-text-muted)] py-4 text-center">
+        {t("usage.detail.noMessages")}
+      </p>
     );
   }
 
@@ -310,7 +319,10 @@ function ContextWeightBar({
     <div class="flex items-center gap-3">
       <div class="w-24 text-xs text-[var(--color-text-muted)]">{label}</div>
       <div class="flex-1 h-2 bg-[var(--color-bg-tertiary)] rounded-full overflow-hidden">
-        <div class="h-full rounded-full transition-all" style={{ width: `${pct}%`, backgroundColor: color }} />
+        <div
+          class="h-full rounded-full transition-all"
+          style={{ width: `${pct}%`, backgroundColor: color }}
+        />
       </div>
       <div class="w-16 text-xs text-right">
         {formatTokenCount(value)} ({pct}%)

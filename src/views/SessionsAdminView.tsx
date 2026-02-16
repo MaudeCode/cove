@@ -126,7 +126,9 @@ export function SessionsAdminView(_props: RouteProps) {
       )}
 
       {error.value && (
-        <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">{error.value}</div>
+        <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+          {error.value}
+        </div>
       )}
 
       {(isLoading.value || !isConnected.value) && (
@@ -135,17 +137,22 @@ export function SessionsAdminView(_props: RouteProps) {
         </div>
       )}
 
-      {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && <SessionsAdminList />}
-
-      {isConnected.value && !isLoading.value && adminSessions.value.length === 0 && !error.value && (
-        <Card>
-          <div class="p-16 text-center">
-            <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-            <h3 class="text-lg font-medium mb-2">{t("sessions.admin.emptyTitle")}</h3>
-            <p class="text-[var(--color-text-muted)]">{t("sessions.admin.emptyDescription")}</p>
-          </div>
-        </Card>
+      {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && (
+        <SessionsAdminList />
       )}
+
+      {isConnected.value &&
+        !isLoading.value &&
+        adminSessions.value.length === 0 &&
+        !error.value && (
+          <Card>
+            <div class="p-16 text-center">
+              <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+              <h3 class="text-lg font-medium mb-2">{t("sessions.admin.emptyTitle")}</h3>
+              <p class="text-[var(--color-text-muted)]">{t("sessions.admin.emptyDescription")}</p>
+            </div>
+          </Card>
+        )}
 
       {isConnected.value &&
         !isLoading.value &&

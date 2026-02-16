@@ -81,7 +81,9 @@ export function MobileLogModal({ logId, lines, onClose }: MobileLogModalProps) {
           <div class="flex items-center gap-2">
             {line.level && (
               <Badge
-                variant={line.level === "error" ? "error" : line.level === "warn" ? "warning" : "default"}
+                variant={
+                  line.level === "error" ? "error" : line.level === "warn" ? "warning" : "default"
+                }
               >
                 {line.level}
               </Badge>
@@ -92,7 +94,9 @@ export function MobileLogModal({ logId, lines, onClose }: MobileLogModalProps) {
           </div>
 
           <div>
-            <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">{t("logs.message")}</h4>
+            <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
+              {t("logs.message")}
+            </h4>
             <p class="text-sm text-[var(--color-text-primary)] whitespace-pre-wrap break-words">
               {line.message}
             </p>
@@ -100,7 +104,9 @@ export function MobileLogModal({ logId, lines, onClose }: MobileLogModalProps) {
 
           {line.fields && Object.keys(line.fields).length > 0 && (
             <div>
-              <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-2">{t("logs.fields")}</h4>
+              <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-2">
+                {t("logs.fields")}
+              </h4>
               <div class="space-y-2 bg-[var(--color-bg-tertiary)] rounded-lg p-3">
                 {Object.entries(line.fields).map(([key, value]) => (
                   <div key={key} class="text-xs font-mono">
@@ -114,7 +120,9 @@ export function MobileLogModal({ logId, lines, onClose }: MobileLogModalProps) {
           )}
 
           <div>
-            <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">{t("logs.rawLine")}</h4>
+            <h4 class="text-xs font-medium text-[var(--color-text-muted)] mb-1">
+              {t("logs.rawLine")}
+            </h4>
             <pre class="text-xs font-mono text-[var(--color-text-secondary)] bg-[var(--color-bg-tertiary)] rounded-lg p-3 overflow-x-auto whitespace-pre-wrap break-all">
               {formatRawLog(line.raw)}
             </pre>

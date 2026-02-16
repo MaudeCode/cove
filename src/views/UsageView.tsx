@@ -53,7 +53,9 @@ export function UsageView(_props: RouteProps) {
       />
 
       {error.value && (
-        <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">{error.value}</div>
+        <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
+          {error.value}
+        </div>
       )}
 
       {(isLoading.value && !healthData.value) || !isConnected.value ? (

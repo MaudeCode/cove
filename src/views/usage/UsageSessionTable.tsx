@@ -3,7 +3,17 @@ import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { ListCard } from "@/components/ui/ListCard";
-import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, MessageSquare, Clock, Zap, TrendingUp, Users } from "lucide-preact";
+import {
+  ChevronDown,
+  ChevronUp,
+  ChevronLeft,
+  ChevronRight,
+  MessageSquare,
+  Clock,
+  Zap,
+  TrendingUp,
+  Users,
+} from "lucide-preact";
 import { formatTokenCount, formatCost, type SessionUsageEntry } from "@/types/server-stats";
 import {
   sessionsUsage,
@@ -240,7 +250,9 @@ export function UsageSessionTable() {
                   <tr
                     key={session.key}
                     class={`border-b border-[var(--color-border)] cursor-pointer transition-colors ${
-                      isSelected ? "bg-[var(--color-accent)]/10" : "hover:bg-[var(--color-bg-hover)]"
+                      isSelected
+                        ? "bg-[var(--color-accent)]/10"
+                        : "hover:bg-[var(--color-bg-hover)]"
                     }`}
                     onClick={() => handleSessionClick(session)}
                     onKeyDown={(e) => {

@@ -186,7 +186,10 @@ function SessionRow({ session }: { session: Session }) {
                 />
               </div>
             )}
-            <div class="text-xs text-[var(--color-text-muted)] font-mono truncate" title={session.key}>
+            <div
+              class="text-xs text-[var(--color-text-muted)] font-mono truncate"
+              title={session.key}
+            >
               {session.key}
             </div>
           </div>
