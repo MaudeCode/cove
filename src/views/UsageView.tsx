@@ -45,7 +45,7 @@ import type {
   SessionLogEntry,
 } from "@/types/server-stats";
 import { formatTokenCount, formatCost } from "@/types/server-stats";
-import { Badge } from "@/components/ui/Badge";
+import { Badge, type BadgeProps } from "@/components/ui/Badge";
 
 import type { RouteProps } from "@/types/routes";
 
@@ -721,14 +721,14 @@ function MessagesTab() {
     );
   }
 
-  const roleColors: Record<string, string> = {
+  const roleColors: Record<SessionLogEntry["role"], NonNullable<BadgeProps["variant"]>> = {
     user: "info",
     assistant: "success",
     tool: "warning",
     toolResult: "default",
   };
 
-  const roleLabels: Record<string, string> = {
+  const roleLabels: Record<SessionLogEntry["role"], string> = {
     user: t("usage.detail.role.user"),
     assistant: t("common.assistant"),
     tool: t("usage.detail.role.tool"),
@@ -744,9 +744,7 @@ function MessagesTab() {
         >
           <div class="flex items-center justify-between gap-2 mb-1">
             <div class="flex items-center gap-2">
-              <Badge variant={roleColors[log.role] as "info" | "success" | "warning" | "default"}>
-                {roleLabels[log.role] || log.role}
-              </Badge>
+              <Badge variant={roleColors[log.role]}>{roleLabels[log.role]}</Badge>
               {log.tokens != null && (
                 <span class="text-xs text-[var(--color-text-muted)]">
                   {t("usage.detail.tokenCount", { count: formatTokenCount(log.tokens) })}
