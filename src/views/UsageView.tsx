@@ -32,6 +32,7 @@ import {
 import { PageLayout } from "@/components/ui/PageLayout";
 import { ListCard } from "@/components/ui/ListCard";
 import { Modal } from "@/components/ui/Modal";
+import { TabNav } from "@/components/ui/TabNav";
 import { GatewayInfoCard, UsageSummaryCard, DailyUsageChart, AgentsCard } from "@/components/usage";
 import { getSessionsUsageCache, setSessionsUsageCache } from "@/lib/storage";
 import type {
@@ -483,6 +484,12 @@ function SessionDetailModal() {
     { id: "messages", label: t("usage.detail.tabs.messages") },
   ];
 
+  const handleTabChange = (id: string) => {
+    if (id === "overview" || id === "timeline" || id === "messages") {
+      detailTab.value = id;
+    }
+  };
+
   return (
     <Modal open={!!session} onClose={clearSessionDetail} title={t("common.sessionDetails")}>
       {session && (
@@ -493,26 +500,7 @@ function SessionDetailModal() {
           </p>
 
           {/* Tabs */}
-          <div class="flex gap-1 border-b border-[var(--color-border)]" role="tablist">
-            {tabs.map((tabItem) => (
-              <button
-                key={tabItem.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === tabItem.id}
-                onClick={() => {
-                  detailTab.value = tabItem.id;
-                }}
-                class={`px-3 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${
-                  tab === tabItem.id
-                    ? "border-[var(--color-accent)] text-[var(--color-accent)]"
-                    : "border-transparent text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-                }`}
-              >
-                {tabItem.label}
-              </button>
-            ))}
-          </div>
+          <TabNav items={tabs} activeId={tab} onChange={handleTabChange} />
 
           {/* Tab content */}
           <div role="tabpanel">
