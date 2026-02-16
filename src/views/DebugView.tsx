@@ -9,7 +9,7 @@
 import { signal, computed } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t, formatTimestamp } from "@/lib/i18n";
-import { useQueryParamSet, pushQueryState } from "@/hooks/useQueryParam";
+import { useQueryParamSet, toggleSetValue } from "@/hooks/useQueryParam";
 import { formatJson } from "@/lib/utils";
 import {
   isConnected,
@@ -157,15 +157,7 @@ function clearLog() {
 }
 
 function toggleEventExpanded(id: number) {
-  const current = new Set(expandedEvents.value);
-  const wasExpanded = current.has(id);
-  if (wasExpanded) {
-    current.delete(id);
-  } else {
-    current.add(id);
-    pushQueryState();
-  }
-  expandedEvents.value = current;
+  toggleSetValue(expandedEvents, id, { pushHistory: true });
 }
 
 async function copyToClipboard(text: string, itemId: string) {

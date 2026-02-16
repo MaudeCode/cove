@@ -14,7 +14,7 @@ import {
   useQueryParamSet,
   useSyncToParam,
   useInitFromParam,
-  pushQueryState,
+  toggleSetValue,
 } from "@/hooks/useQueryParam";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Button } from "@/components/ui/Button";
@@ -126,27 +126,11 @@ function downloadLogs() {
 }
 
 function toggleLevel(level: LogLevel) {
-  const current = new Set(selectedLevels.value);
-  if (current.has(level)) {
-    current.delete(level);
-  } else {
-    current.add(level);
-  }
-  selectedLevels.value = current;
+  toggleSetValue(selectedLevels, level);
 }
 
 function clearLevelFilters() {
   selectedLevels.value = new Set();
-}
-
-function toggleExpanded(id: number) {
-  const current = new Set(expandedLogs.value);
-  if (current.has(id)) {
-    current.delete(id);
-  } else {
-    current.add(id);
-  }
-  expandedLogs.value = current;
 }
 
 // ============================================
@@ -644,10 +628,9 @@ export function LogsView(_props: RouteProps) {
                         onSelect={(id) => {
                           mobileModalLogId.value = id;
                           // Add to expandedLogs for URL sync
-                          const current = new Set(expandedLogs.value);
-                          current.add(id);
-                          expandedLogs.value = current;
-                          pushQueryState();
+                          if (!expandedLogs.value.has(id)) {
+                            toggleSetValue(expandedLogs, id, { pushHistory: true });
+                          }
                         }}
                       />
                     </div>
@@ -668,10 +651,7 @@ export function LogsView(_props: RouteProps) {
                         line={line}
                         expanded={expandedLogs.value.has(line.id)}
                         onToggle={() => {
-                          toggleExpanded(line.id);
-                          if (!expandedLogs.value.has(line.id)) {
-                            pushQueryState(); // Push to history when expanding
-                          }
+                          toggleSetValue(expandedLogs, line.id, { pushHistory: true });
                         }}
                       />
                     </div>

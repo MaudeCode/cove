@@ -15,7 +15,7 @@ import {
   useSyncToParam,
   useSyncFilterToParam,
   useInitFromParam,
-  pushQueryState,
+  toggleSetValue,
 } from "@/hooks/useQueryParam";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
@@ -202,15 +202,7 @@ async function revokeToken(device: PairedDevice, role: string): Promise<void> {
 }
 
 function toggleExpanded(deviceId: string): void {
-  const next = new Set(expandedDevices.value);
-  const wasExpanded = next.has(deviceId);
-  if (wasExpanded) {
-    next.delete(deviceId);
-  } else {
-    next.add(deviceId);
-    pushQueryState();
-  }
-  expandedDevices.value = next;
+  toggleSetValue(expandedDevices, deviceId, { pushHistory: true });
 }
 
 // ============================================

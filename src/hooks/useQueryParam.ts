@@ -145,6 +145,43 @@ export function pushQueryState() {
   window.history.pushState({}, "", window.location.href);
 }
 
+interface ToggleSetValueOptions {
+  /**
+   * Push current URL into browser history when the value is added.
+   * Useful for expandable rows/cards where expanded state should be shareable/back-navigable.
+   */
+  pushHistory?: boolean;
+}
+
+/**
+ * Toggle a value in a Set-backed signal immutably.
+ *
+ * @returns true if value is now present, false if value was removed
+ */
+export function toggleSetValue<T>(
+  setSignal: Signal<Set<T>>,
+  value: T,
+  options: ToggleSetValueOptions = {},
+): boolean {
+  const { pushHistory = false } = options;
+  const next = new Set(setSignal.value);
+  const wasPresent = next.has(value);
+
+  if (wasPresent) {
+    next.delete(value);
+  } else {
+    next.add(value);
+  }
+
+  setSignal.value = next;
+
+  if (pushHistory && !wasPresent) {
+    pushQueryState();
+  }
+
+  return !wasPresent;
+}
+
 /**
  * Hook for Set-based query params (comma-separated in URL)
  * Great for expanded items, multi-select filters, etc.

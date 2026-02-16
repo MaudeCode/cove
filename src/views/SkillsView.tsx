@@ -15,7 +15,7 @@ import {
   useSyncToParam,
   useSyncFilterToParam,
   useInitFromParam,
-  pushQueryState,
+  toggleSetValue,
 } from "@/hooks/useQueryParam";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
@@ -176,15 +176,7 @@ async function toggleSkillEnabled(skill: SkillStatusEntry): Promise<void> {
 }
 
 function toggleExpanded(skillKey: string, shouldPushState = true): void {
-  const next = new Set(expandedSkills.value);
-  const wasExpanded = next.has(skillKey);
-  if (wasExpanded) {
-    next.delete(skillKey);
-  } else {
-    next.add(skillKey);
-    if (shouldPushState) pushQueryState();
-  }
-  expandedSkills.value = next;
+  toggleSetValue(expandedSkills, skillKey, { pushHistory: shouldPushState });
 }
 
 function clearFilters(): void {
@@ -439,10 +431,9 @@ export function SkillsView(_props: RouteProps) {
                           skill={skill}
                           onToggleExpand={() => {
                             // Add to expanded set for URL sync
-                            const next = new Set(expandedSkills.value);
-                            next.add(skill.skillKey);
-                            expandedSkills.value = next;
-                            pushQueryState();
+                            if (!expandedSkills.value.has(skill.skillKey)) {
+                              toggleSetValue(expandedSkills, skill.skillKey, { pushHistory: true });
+                            }
                             mobileDetailModal.value = skill;
                           }}
                           onToggleEnabled={() => toggleSkillEnabled(skill)}
