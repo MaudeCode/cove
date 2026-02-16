@@ -25,6 +25,7 @@ export const isLoading = signal<boolean>(false);
 export const isLoadingUsage = signal<boolean>(false);
 export const isLoadingSessionsUsage = signal<boolean>(false);
 export const error = signal<string | null>(null);
+export const USAGE_DAY_OPTIONS = [7, 14, 30, 90] as const;
 export const usageDays = signal<number>(30);
 export const sessionsSortBy = signal<"cost" | "tokens" | "recent">("recent");
 export const sessionsSortDesc = signal<boolean>(true);
@@ -151,7 +152,10 @@ export function useUsageViewQuerySync(): void {
   useEffect(() => {
     if (!daysParam.value) return;
     const days = parseInt(daysParam.value, 10);
-    if ([7, 30, 90].includes(days) && usageDays.value !== days) {
+    if (
+      USAGE_DAY_OPTIONS.includes(days as (typeof USAGE_DAY_OPTIONS)[number]) &&
+      usageDays.value !== days
+    ) {
       usageDays.value = days;
     }
   }, [daysParam.value]);

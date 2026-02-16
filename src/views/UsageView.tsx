@@ -25,6 +25,7 @@ import {
   isLoadingUsage,
   loadAll,
   loadUsage,
+  USAGE_DAY_OPTIONS,
   useUsageViewQuerySync,
   useUsageViewInitialLoad,
 } from "@/views/usage/useUsageViewState";
@@ -80,7 +81,7 @@ export function UsageView(_props: RouteProps) {
 
       {usageData.value && (
         <div class="flex justify-center gap-2">
-          {[7, 14, 30, 90].map((days) => (
+          {USAGE_DAY_OPTIONS.map((days) => (
             <Button
               key={days}
               variant={usageDays.value === days ? "primary" : "ghost"}
