@@ -23,6 +23,7 @@ import { toast } from "@/components/ui/Toast";
 import { Card } from "@/components/ui/Card";
 import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
+import { Button } from "@/components/ui/Button";
 import { StatCard } from "@/components/ui/StatCard";
 import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
@@ -206,13 +207,9 @@ function EmptyState({ hasFilters }: { hasFilters: boolean }) {
         {hasFilters ? t("common.noResultsHint") : t("skills.emptyDescription")}
       </p>
       {hasFilters && (
-        <button
-          type="button"
-          onClick={clearFilters}
-          class="text-[var(--color-accent)] hover:underline"
-        >
+        <Button type="button" variant="ghost" size="sm" onClick={clearFilters}>
           {t("common.clearFilters")}
-        </button>
+        </Button>
       )}
     </div>
   );
