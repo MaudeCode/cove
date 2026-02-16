@@ -28,6 +28,7 @@ import { sessions } from "@/signals/sessions";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
 import { StatCard } from "@/components/ui/StatCard";
 import {
   Wifi,
@@ -218,17 +219,14 @@ function CopyableValue({ value, label }: { value: string; label: string }) {
     <div class="py-2">
       <div class="flex items-center justify-between mb-1">
         <span class="text-[var(--color-text-muted)] text-sm">{label}</span>
-        <button
+        <IconButton
           onClick={handleCopy}
-          class="p-1 text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] transition-colors flex-shrink-0"
-          aria-label={`Copy ${label}`}
-        >
-          {copied ? (
-            <Check class="w-4 h-4 text-[var(--color-success)]" />
-          ) : (
-            <Copy class="w-4 h-4" />
-          )}
-        </button>
+          icon={copied ? <Check class="text-[var(--color-success)]" /> : <Copy />}
+          label={`Copy ${label}`}
+          size="sm"
+          variant="ghost"
+          class="flex-shrink-0"
+        />
       </div>
       <code class="block text-xs sm:text-sm bg-[var(--color-bg-secondary)] px-2 py-1 rounded truncate w-full">
         {value}
