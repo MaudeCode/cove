@@ -25,6 +25,10 @@ interface StatCardProps {
   onClick?: () => void;
   /** Additional CSS classes */
   class?: string;
+  /** Optional secondary line below label */
+  subtext?: string;
+  /** Optional link destination */
+  href?: string;
 }
 
 export function StatCard({
@@ -35,8 +39,10 @@ export function StatCard({
   highlight,
   onClick,
   class: className,
+  subtext,
+  href,
 }: StatCardProps) {
-  const isClickable = !!onClick;
+  const isClickable = !!onClick || !!href;
 
   const content = (
     <>
@@ -54,6 +60,7 @@ export function StatCard({
           {value}
         </div>
         <div class="text-[10px] sm:text-sm text-[var(--color-text-muted)] truncate">{label}</div>
+        {subtext && <div class="text-xs text-[var(--color-text-muted)] truncate">{subtext}</div>}
       </div>
     </>
   );
@@ -70,6 +77,14 @@ export function StatCard({
   `;
 
   if (isClickable) {
+    if (href && !onClick) {
+      return (
+        <a href={href} class={baseClass}>
+          {content}
+        </a>
+      );
+    }
+
     return (
       <button type="button" onClick={onClick} class={baseClass}>
         {content}

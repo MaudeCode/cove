@@ -28,6 +28,7 @@ import { sessions } from "@/signals/sessions";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
+import { StatCard } from "@/components/ui/StatCard";
 import {
   Wifi,
   WifiOff,
@@ -203,54 +204,6 @@ const formatNextWake = computed(() => {
   if (diff < 86400000) return `${Math.floor(diff / 3600000)}h`;
   return `${Math.floor(diff / 86400000)}d`;
 });
-
-// ============================================
-// Components
-// ============================================
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  subtext,
-  href,
-}: {
-  icon: typeof Wifi;
-  label: string;
-  value: string | number;
-  subtext?: string;
-  href?: string;
-}) {
-  const content = (
-    <>
-      <div class="p-1.5 sm:p-2 rounded-lg bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]">
-        <Icon class="w-4 h-4 sm:w-5 sm:h-5" />
-      </div>
-      <div class="min-w-0 flex-1">
-        <div class="text-base sm:text-lg font-semibold truncate">{value}</div>
-        <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">{label}</div>
-        {subtext && <div class="text-xs text-[var(--color-text-muted)] truncate">{subtext}</div>}
-      </div>
-    </>
-  );
-
-  if (href) {
-    return (
-      <a
-        href={href}
-        class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg bg-[var(--color-bg-secondary)] hover:bg-[var(--color-bg-tertiary)] transition-colors no-underline"
-      >
-        {content}
-      </a>
-    );
-  }
-
-  return (
-    <div class="flex items-center gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg bg-[var(--color-bg-secondary)]">
-      {content}
-    </div>
-  );
-}
 
 function CopyableValue({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
