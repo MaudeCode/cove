@@ -335,7 +335,8 @@
   "status": {
     "disconnected": "Disconnected",
     "connecting": "Connecting",
-    "reconnecting": "Reconnecting"
+    "reconnecting": "Reconnecting",
+    "copyFailed": "Couldn't copy {label}. Check clipboard permissions and HTTPS context."
   },
   "connection": {
     "disconnected": "Connection lost. Messages will be sent when reconnected.",
