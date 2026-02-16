@@ -1,694 +1,41 @@
 /**
  * SessionsAdminView
  *
- * Session management with clean table layout, search, and detail editing.
- * Designed to scale from 2 to 100+ sessions.
+ * Session management with search, filtering, and detail editing.
  * Route: /sessions
  */
 
-import { signal, computed } from "@preact/signals";
-import { useEffect } from "preact/hooks";
-import { route } from "preact-router";
-import { t, formatTimestamp } from "@/lib/i18n";
-import { send, isConnected } from "@/lib/gateway";
-import {
-  useQueryParam,
-  useSyncToParam,
-  useSyncFilterToParam,
-  useInitFromParam,
-} from "@/hooks/useQueryParam";
-import { isMultiChatMode } from "@/signals/settings";
-import { getSessionDisplayKind, getErrorMessage, type SessionKind } from "@/lib/session-utils";
+import { t } from "@/lib/i18n";
+import { isConnected } from "@/lib/gateway";
 import { Card } from "@/components/ui/Card";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { Badge } from "@/components/ui/Badge";
-import { Dropdown } from "@/components/ui/Dropdown";
 import { Spinner } from "@/components/ui/Spinner";
-import { Modal } from "@/components/ui/Modal";
 import { IconButton } from "@/components/ui/IconButton";
-import { FormField } from "@/components/ui/FormField";
 import { StatCard } from "@/components/ui/StatCard";
-import { ListCard } from "@/components/ui/ListCard";
-import { DeleteConfirmFooter, EditFooter } from "@/components/ui/ModalFooter";
 import { PageHeader } from "@/components/ui/PageHeader";
-import {
-  RefreshCw,
-  Search,
-  MessageSquare,
-  Calendar,
-  Users,
-  Radio,
-  Cpu,
-  Clock,
-  Hash,
-  Trash2,
-  Pencil,
-  Sparkles,
-  type LucideIcon,
-} from "lucide-preact";
+import { RefreshCw, Search, MessageSquare } from "lucide-preact";
 import { PageLayout } from "@/components/ui/PageLayout";
-import type { Session } from "@/types/sessions";
+import { SessionsAdminList } from "@/views/sessions-admin/SessionsAdminList";
+import { SessionDetailModal } from "@/views/sessions-admin/SessionDetailModal";
+import {
+  adminSessions,
+  filteredSessions,
+  sessionCounts,
+  isLoading,
+  error,
+  searchQuery,
+  kindFilter,
+  loadAdminSessions,
+  getKindStyle,
+  useSessionsAdminQuerySync,
+  useSessionsAdminInitialLoad,
+} from "@/views/sessions-admin/useSessionsAdminState";
 import type { RouteProps } from "@/types/routes";
 
-// ============================================
-// Kind Styling Config (single source of truth)
-// ============================================
-
-interface KindStyle {
-  icon: LucideIcon;
-  color: string; // CSS variable name without var()
-  badgeVariant: "default" | "success" | "warning" | "error" | "info";
-}
-
-const KIND_STYLES: Record<SessionKind, KindStyle> = {
-  main: { icon: Sparkles, color: "success", badgeVariant: "success" },
-  channel: { icon: Radio, color: "info", badgeVariant: "info" },
-  cron: { icon: Calendar, color: "warning", badgeVariant: "warning" },
-  isolated: { icon: Users, color: "text-muted", badgeVariant: "default" },
-};
-
-function getKindStyle(kind: SessionKind): KindStyle {
-  return KIND_STYLES[kind] ?? KIND_STYLES.isolated;
-}
-
-function getKindLabel(kind: SessionKind): string {
-  return t(`sessions.admin.kinds.${kind}`);
-}
-
-// ============================================
-// Local State
-// ============================================
-
-const adminSessions = signal<Session[]>([]);
-const isLoading = signal<boolean>(false);
-const error = signal<string | null>(null);
-const searchQuery = signal<string>("");
-const kindFilter = signal<string>("all");
-const selectedSession = signal<Session | null>(null);
-const isDeleting = signal<boolean>(false);
-const isSaving = signal<boolean>(false);
-
-// Inline edit state
-const inlineEditKey = signal<string | null>(null);
-const inlineEditValue = signal<string>("");
-
-// Edit form state
-const editLabel = signal<string>("");
-const editThinking = signal<string>("inherit");
-const editVerbose = signal<string>("inherit");
-const editReasoning = signal<string>("inherit");
-
-// ============================================
-// Helpers
-// ============================================
-
-function formatTokenCount(session: Session): string {
-  return (session.totalTokens ?? 0).toLocaleString();
-}
-
-function formatContextUsage(session: Session): string {
-  const used = session.totalTokens ?? 0;
-  const total = session.contextTokens ?? 200000;
-  if (total === 0) return "0%";
-  return `${Math.round((used / total) * 100)}%`;
-}
-
-function getDisplayName(session: Session): string {
-  // Prioritize displayName over label (matches OpenClaw UI behavior)
-  return session.displayName || session.label || session.key.split(":").pop() || session.key;
-}
-
-// ============================================
-// Computed
-// ============================================
-
-const filteredSessions = computed(() => {
-  let result = adminSessions.value;
-
-  // Filter by kind
-  if (kindFilter.value !== "all") {
-    result = result.filter((s) => getSessionDisplayKind(s) === kindFilter.value);
-  }
-
-  // Filter by search
-  const query = searchQuery.value.toLowerCase().trim();
-  if (query) {
-    result = result.filter((s) => {
-      const label = (s.label || s.displayName || "").toLowerCase();
-      const key = s.key.toLowerCase();
-      const model = (s.model || "").toLowerCase();
-      const channel = (s.channel || "").toLowerCase();
-      return (
-        label.includes(query) ||
-        key.includes(query) ||
-        model.includes(query) ||
-        channel.includes(query)
-      );
-    });
-  }
-
-  // Sort: main first, then by last active
-  return [...result].sort((a, b) => {
-    const aIsMain = getSessionDisplayKind(a) === "main";
-    const bIsMain = getSessionDisplayKind(b) === "main";
-    if (aIsMain && !bIsMain) return -1;
-    if (bIsMain && !aIsMain) return 1;
-    return (b.updatedAt ?? 0) - (a.updatedAt ?? 0);
-  });
-});
-
-const sessionCounts = computed(() => {
-  const counts = { total: 0, main: 0, channel: 0, cron: 0, isolated: 0 };
-  for (const session of adminSessions.value) {
-    counts.total++;
-    counts[getSessionDisplayKind(session)]++;
-  }
-  return counts;
-});
-
-// ============================================
-// Actions
-// ============================================
-
-async function loadAdminSessions(): Promise<void> {
-  isLoading.value = true;
-  error.value = null;
-
-  try {
-    const result = await send<{ sessions: Session[] }>("sessions.list", { limit: 200 });
-    adminSessions.value = result.sessions ?? [];
-  } catch (err) {
-    error.value = getErrorMessage(err);
-  } finally {
-    isLoading.value = false;
-  }
-}
-
-function openSessionDetail(session: Session) {
-  selectedSession.value = session;
-  editLabel.value = session.label ?? "";
-  editThinking.value = session.thinking ?? "inherit";
-  editVerbose.value = session.verbose ?? "inherit";
-  editReasoning.value = session.reasoning ?? "inherit";
-}
-
-function closeSessionDetail() {
-  selectedSession.value = null;
-  isDeleting.value = false;
-}
-
-async function saveSession(): Promise<void> {
-  const session = selectedSession.value;
-  if (!session) return;
-
-  isSaving.value = true;
-
-  try {
-    const updates: Partial<Session> = {};
-
-    if (editLabel.value !== (session.label ?? "")) {
-      updates.label = editLabel.value || undefined;
-    }
-    if (editThinking.value !== (session.thinking ?? "inherit")) {
-      updates.thinking = editThinking.value;
-    }
-    if (editVerbose.value !== (session.verbose ?? "inherit")) {
-      updates.verbose = editVerbose.value;
-    }
-    if (editReasoning.value !== (session.reasoning ?? "inherit")) {
-      updates.reasoning = editReasoning.value;
-    }
-
-    if (Object.keys(updates).length > 0) {
-      await send("sessions.patch", { key: session.key, ...updates });
-      adminSessions.value = adminSessions.value.map((s) =>
-        s.key === session.key ? { ...s, ...updates } : s,
-      );
-    }
-
-    closeSessionDetail();
-  } catch (err) {
-    error.value = getErrorMessage(err);
-  } finally {
-    isSaving.value = false;
-  }
-}
-
-async function deleteSession(): Promise<void> {
-  const session = selectedSession.value;
-  if (!session) return;
-
-  try {
-    await send("sessions.delete", { key: session.key });
-    adminSessions.value = adminSessions.value.filter((s) => s.key !== session.key);
-    closeSessionDetail();
-  } catch (err) {
-    error.value = getErrorMessage(err);
-  }
-}
-
-function openInChat(sessionKey: string) {
-  route(`/chat/${encodeURIComponent(sessionKey)}`);
-}
-
-// Inline label editing
-function startInlineEdit(session: Session, e: Event) {
-  e.stopPropagation();
-  inlineEditKey.value = session.key;
-  inlineEditValue.value = session.label ?? "";
-}
-
-async function saveInlineEdit() {
-  const sessionKey = inlineEditKey.value;
-  if (!sessionKey) return;
-
-  const newLabel = inlineEditValue.value.trim();
-  const session = adminSessions.value.find((s) => s.key === sessionKey);
-  if (!session || newLabel === (session.label ?? "")) {
-    inlineEditKey.value = null;
-    return;
-  }
-
-  try {
-    await send("sessions.patch", { key: sessionKey, label: newLabel || undefined });
-    adminSessions.value = adminSessions.value.map((s) =>
-      s.key === sessionKey ? { ...s, label: newLabel || undefined } : s,
-    );
-  } catch (err) {
-    error.value = getErrorMessage(err);
-  } finally {
-    inlineEditKey.value = null;
-  }
-}
-
-function cancelInlineEdit() {
-  inlineEditKey.value = null;
-}
-
-// ============================================
-// Components
-// ============================================
-
-const LEVEL_OPTIONS = [
-  { value: "inherit", label: t("sessions.admin.levels.inherit") },
-  { value: "off", label: t("common.off") },
-  { value: "low", label: t("sessions.admin.levels.low") },
-  { value: "medium", label: t("common.medium") },
-  { value: "high", label: t("sessions.admin.levels.high") },
-];
-
-/** Icon with kind-appropriate coloring */
-function KindIcon({ kind, size = "sm" }: { kind: SessionKind; size?: "sm" | "md" }) {
-  const style = getKindStyle(kind);
-  const Icon = style.icon;
-  const sizeClass = size === "md" ? "w-6 h-6" : "w-4 h-4";
-  const colorClass =
-    style.color === "text-muted"
-      ? "text-[var(--color-text-muted)]"
-      : `text-[var(--color-${style.color})]`;
-
-  return <Icon class={`${sizeClass} ${colorClass}`} />;
-}
-
-/** Background wrapper for kind icon */
-function KindIconWrapper({ kind, size = "sm" }: { kind: SessionKind; size?: "sm" | "md" }) {
-  const style = getKindStyle(kind);
-  const padding = size === "md" ? "p-3" : "p-1.5";
-  const bgClass =
-    style.color === "text-muted"
-      ? "bg-[var(--color-bg-tertiary)]"
-      : `bg-[var(--color-${style.color})]/10`;
-
-  return (
-    <div class={`${padding} rounded-lg flex-shrink-0 ${bgClass}`}>
-      <KindIcon kind={kind} size={size} />
-    </div>
-  );
-}
-
-/** Shared action buttons for session card/row */
-function SessionActions({ session, onDelete }: { session: Session; onDelete: (e: Event) => void }) {
-  return (
-    <div class="flex items-center gap-1 flex-shrink-0">
-      {isMultiChatMode.value && (
-        <IconButton
-          icon={<MessageSquare class="w-4 h-4" />}
-          label={t("sessions.admin.openInChat")}
-          size="sm"
-          variant="ghost"
-          onClick={(e) => {
-            e.stopPropagation();
-            openInChat(session.key);
-          }}
-        />
-      )}
-      <IconButton
-        icon={<Trash2 class="w-4 h-4" />}
-        label={t("actions.delete")}
-        size="sm"
-        variant="ghost"
-        onClick={onDelete}
-        class="text-[var(--color-text-muted)] hover:text-[var(--color-error)] hover:bg-[var(--color-error)]/10"
-      />
-    </div>
-  );
-}
-
-/** Mobile card view for a session */
-function SessionCard({ session }: { session: Session }) {
-  const kind = getSessionDisplayKind(session);
-  const style = getKindStyle(kind);
-  const displayName = getDisplayName(session);
-
-  return (
-    <ListCard
-      icon={style.icon}
-      iconVariant={
-        kind === "main"
-          ? "success"
-          : kind === "channel"
-            ? "info"
-            : kind === "cron"
-              ? "warning"
-              : "default"
-      }
-      title={displayName}
-      subtitle={session.key}
-      badges={
-        <Badge variant={style.badgeVariant} size="sm">
-          {getKindLabel(kind)}
-        </Badge>
-      }
-      meta={[
-        {
-          icon: Clock,
-          value: session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—",
-        },
-        { icon: Hash, value: formatTokenCount(session) },
-      ]}
-      actions={
-        <SessionActions
-          session={session}
-          onDelete={(e) => {
-            e.stopPropagation();
-            openSessionDetail(session);
-            isDeleting.value = true;
-          }}
-        />
-      }
-      onClick={() => openSessionDetail(session)}
-    />
-  );
-}
-
-/** Desktop table row for a session */
-function SessionRow({ session }: { session: Session }) {
-  const kind = getSessionDisplayKind(session);
-  const displayName = getDisplayName(session);
-  const isEditing = inlineEditKey.value === session.key;
-
-  return (
-    <tr
-      class="group hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors"
-      onClick={() => !isEditing && openSessionDetail(session)}
-      onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && !isEditing) {
-          e.preventDefault();
-          openSessionDetail(session);
-        }
-      }}
-      tabIndex={isEditing ? -1 : 0}
-    >
-      {/* Name & Key */}
-      <td class="py-3 px-4">
-        <div class="flex items-center gap-3">
-          <KindIconWrapper kind={kind} />
-          <div class="min-w-0 flex-1">
-            {isEditing ? (
-              <div
-                class="flex items-center gap-2"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
-              >
-                <Input
-                  type="text"
-                  value={inlineEditValue.value}
-                  onInput={(e) => (inlineEditValue.value = (e.target as HTMLInputElement).value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") saveInlineEdit();
-                    if (e.key === "Escape") cancelInlineEdit();
-                  }}
-                  onBlur={saveInlineEdit}
-                  placeholder={t("sessions.admin.labelPlaceholder")}
-                  class="h-8 text-sm"
-                  // eslint-disable-next-line jsx-a11y/no-autofocus
-                  autoFocus
-                />
-              </div>
-            ) : (
-              <div class="flex items-center gap-2 group/label">
-                <div class="font-medium truncate" title={displayName}>
-                  {displayName}
-                </div>
-                <IconButton
-                  icon={<Pencil class="w-3 h-3" />}
-                  label={t("sessions.admin.editLabel")}
-                  size="sm"
-                  variant="ghost"
-                  onClick={(e) => startInlineEdit(session, e)}
-                  class="opacity-0 group-hover/label:opacity-100 !p-1 flex-shrink-0"
-                />
-              </div>
-            )}
-            <div
-              class="text-xs text-[var(--color-text-muted)] font-mono truncate"
-              title={session.key}
-            >
-              {session.key}
-            </div>
-          </div>
-        </div>
-      </td>
-
-      {/* Model */}
-      <td class="py-3 px-4">
-        <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
-          <Cpu class="w-3.5 h-3.5 flex-shrink-0" />
-          <span class="truncate max-w-[120px]" title={session.model || "Default"}>
-            {session.model ? session.model.split("/").pop() : "Default"}
-          </span>
-        </div>
-      </td>
-
-      {/* Last Active */}
-      <td class="py-3 px-4 whitespace-nowrap">
-        <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
-          <Clock class="w-3.5 h-3.5 flex-shrink-0" />
-          <span>{session.updatedAt ? formatTimestamp(session.updatedAt) : "—"}</span>
-        </div>
-      </td>
-
-      {/* Tokens - hidden until lg */}
-      <td class="py-3 px-4 whitespace-nowrap hidden lg:table-cell">
-        <div class="flex items-center gap-1.5 text-sm text-[var(--color-text-muted)]">
-          <Hash class="w-3.5 h-3.5 flex-shrink-0" />
-          <span>{formatTokenCount(session)}</span>
-          <span class="text-xs opacity-60">({formatContextUsage(session)})</span>
-        </div>
-      </td>
-
-      {/* Actions */}
-      <td class="py-3 px-4">
-        <SessionActions
-          session={session}
-          onDelete={(e) => {
-            e.stopPropagation();
-            openSessionDetail(session);
-            isDeleting.value = true;
-          }}
-        />
-      </td>
-    </tr>
-  );
-}
-
-function SessionDetailModal() {
-  const session = selectedSession.value;
-  if (!session) return null;
-
-  const kind = getSessionDisplayKind(session);
-  const style = getKindStyle(kind);
-
-  return (
-    <Modal
-      open={!!session}
-      onClose={closeSessionDetail}
-      title={session.label || session.displayName || t("common.sessionDetails")}
-      size="xl"
-      footer={
-        isDeleting.value ? (
-          <DeleteConfirmFooter
-            message={t("common.deleteThisSession")}
-            onCancel={() => (isDeleting.value = false)}
-            onDelete={deleteSession}
-          />
-        ) : (
-          <EditFooter
-            isEdit
-            onDeleteClick={() => (isDeleting.value = true)}
-            onCancel={closeSessionDetail}
-            onSave={saveSession}
-            isSaving={isSaving.value}
-          />
-        )
-      }
-    >
-      <div class="space-y-4 sm:space-y-6">
-        {/* Session Info */}
-        <div class="flex items-start gap-3 p-3 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-          <KindIconWrapper kind={kind} size="md" />
-          <div class="flex-1 min-w-0">
-            <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 mb-1">
-              <Badge variant={style.badgeVariant} size="sm">
-                {getKindLabel(kind)}
-              </Badge>
-              {session.channel && (
-                <Badge variant="default" size="sm">
-                  {session.channel}
-                </Badge>
-              )}
-            </div>
-            <code class="text-xs sm:text-sm text-[var(--color-text-muted)] break-all">
-              {session.key}
-            </code>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div class="grid grid-cols-3 gap-2 sm:gap-4">
-          <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-lg sm:text-xl font-bold">{formatTokenCount(session)}</div>
-            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
-              {t("common.tokens")}
-            </div>
-          </div>
-          <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-lg sm:text-xl font-bold">{formatContextUsage(session)}</div>
-            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
-              {t("sessions.admin.contextUsed")}
-            </div>
-          </div>
-          <div class="text-center p-2 sm:p-4 rounded-xl bg-[var(--color-bg-primary)] border border-[var(--color-border)]">
-            <div class="text-lg sm:text-xl font-bold">
-              {session.updatedAt ? formatTimestamp(session.updatedAt, { relative: true }) : "—"}
-            </div>
-            <div class="text-xs sm:text-sm text-[var(--color-text-muted)]">
-              {t("common.lastActive")}
-            </div>
-          </div>
-        </div>
-
-        {/* Edit Form */}
-        <div class="space-y-4 sm:space-y-5">
-          <FormField label={t("sessions.admin.label")} hint={t("sessions.admin.labelHelp")}>
-            <Input
-              value={editLabel.value}
-              onInput={(e) => (editLabel.value = (e.target as HTMLInputElement).value)}
-              placeholder={t("sessions.admin.labelPlaceholder")}
-              fullWidth
-            />
-          </FormField>
-
-          <FormField label={t("sessions.admin.overrides")}>
-            <div class="grid grid-cols-3 gap-2 sm:gap-4">
-              <FormField label={t("common.thinking")} class="space-y-1">
-                <Dropdown
-                  value={editThinking.value}
-                  onChange={(val) => (editThinking.value = val)}
-                  options={LEVEL_OPTIONS}
-                />
-              </FormField>
-              <FormField label={t("sessions.admin.verbose")} class="space-y-1">
-                <Dropdown
-                  value={editVerbose.value}
-                  onChange={(val) => (editVerbose.value = val)}
-                  options={LEVEL_OPTIONS}
-                />
-              </FormField>
-              <FormField label={t("sessions.admin.reasoning")} class="space-y-1">
-                <Dropdown
-                  value={editReasoning.value}
-                  onChange={(val) => (editReasoning.value = val)}
-                  options={LEVEL_OPTIONS}
-                />
-              </FormField>
-            </div>
-          </FormField>
-        </div>
-
-        {/* Open in Chat (multi-chat mode only) */}
-        {isMultiChatMode.value && (
-          <Button
-            variant="secondary"
-            fullWidth
-            icon={<MessageSquare class="w-4 h-4" />}
-            onClick={() => {
-              closeSessionDetail();
-              openInChat(session.key);
-            }}
-          >
-            {t("sessions.admin.openInChat")}
-          </Button>
-        )}
-      </div>
-    </Modal>
-  );
-}
-
-// ============================================
-// Main View
-// ============================================
-
 export function SessionsAdminView(_props: RouteProps) {
-  // URL query params as source of truth
-  const [searchParam, setSearchParam] = useQueryParam("q");
-  const [kindParam, setKindParam] = useQueryParam("kind");
-  const sessionsReady = !isLoading.value && adminSessions.value.length > 0;
-  const [sessionParam, setSessionParam, sessionParamInitialized] = useQueryParam("session", {
-    ready: sessionsReady,
-  });
-
-  // Sync URL → state on mount
-  useInitFromParam(searchParam, searchQuery, (s) => s);
-  useInitFromParam(kindParam, kindFilter, (s) => s);
-
-  // Sync state → URL
-  useSyncToParam(searchQuery, setSearchParam);
-  useSyncFilterToParam(kindFilter, setKindParam, "all");
-
-  // Sync URL → selected session
-  useEffect(() => {
-    if (sessionsReady && sessionParam.value) {
-      const session = adminSessions.value.find((s) => s.key === sessionParam.value);
-      if (session && selectedSession.value?.key !== session.key) {
-        openSessionDetail(session);
-      }
-    }
-  }, [sessionParam.value, sessionsReady]);
-
-  // Sync selected session → URL
-  useEffect(() => {
-    if (sessionParamInitialized.value) {
-      setSessionParam(selectedSession.value?.key ?? null);
-    }
-  }, [selectedSession.value, sessionParamInitialized.value]);
-
-  useEffect(() => {
-    if (isConnected.value) {
-      loadAdminSessions();
-    }
-  }, [isConnected.value]);
+  useSessionsAdminQuerySync();
+  useSessionsAdminInitialLoad();
 
   const counts = sessionCounts.value;
 
@@ -714,7 +61,9 @@ export function SessionsAdminView(_props: RouteProps) {
             <IconButton
               icon={<RefreshCw class={`w-4 h-4 ${isLoading.value ? "animate-spin" : ""}`} />}
               label={t("actions.refresh")}
-              onClick={loadAdminSessions}
+              onClick={() => {
+                void loadAdminSessions();
+              }}
               disabled={isLoading.value || !isConnected.value}
               variant="ghost"
             />
@@ -722,7 +71,6 @@ export function SessionsAdminView(_props: RouteProps) {
         }
       />
 
-      {/* Mobile Search */}
       {isConnected.value && !isLoading.value && adminSessions.value.length > 0 && (
         <div class="relative md:hidden">
           <Search class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--color-text-muted)]" />
@@ -737,8 +85,6 @@ export function SessionsAdminView(_props: RouteProps) {
         </div>
       )}
 
-      {/* Stats Cards - 3+2 centered on mobile, 5 across on desktop */}
-      {/* Mobile: flex-wrap with 33.333% width minus half gap (0.375rem = gap-2/2) for 3-col layout */}
       {isConnected.value && !isLoading.value && (
         <div class="flex flex-wrap justify-center sm:grid sm:grid-cols-5 gap-2 sm:gap-3 [&>*]:w-[calc(33.333%-0.375rem)] sm:[&>*]:w-auto">
           <StatCard
@@ -779,69 +125,28 @@ export function SessionsAdminView(_props: RouteProps) {
         </div>
       )}
 
-      {/* Error */}
       {error.value && (
-        <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">
-          {error.value}
-        </div>
+        <div class="p-4 rounded-xl bg-[var(--color-error)]/10 text-[var(--color-error)]">{error.value}</div>
       )}
 
-      {/* Loading / Connecting */}
       {(isLoading.value || !isConnected.value) && (
         <div class="flex justify-center py-16">
           <Spinner size="lg" label={!isConnected.value ? t("status.connecting") : undefined} />
         </div>
       )}
 
-      {/* Sessions - Cards on mobile, Table on desktop */}
-      {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && (
-        <>
-          {/* Mobile: Card list */}
-          <div class="md:hidden space-y-2">
-            {filteredSessions.value.map((session) => (
-              <SessionCard key={session.key} session={session} />
-            ))}
-          </div>
+      {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && <SessionsAdminList />}
 
-          {/* Desktop: Table */}
-          <Card padding="none" class="hidden md:block">
-            <table class="w-full">
-              <thead>
-                <tr class="border-b border-[var(--color-border)] text-left text-sm text-[var(--color-text-muted)]">
-                  <th class="py-3 px-4 font-medium">{t("common.session")}</th>
-                  <th class="py-3 px-4 font-medium w-32">{t("common.model")}</th>
-                  <th class="py-3 px-4 font-medium w-36">{t("common.lastActive")}</th>
-                  <th class="py-3 px-4 font-medium w-32 hidden lg:table-cell">
-                    {t("common.tokens")}
-                  </th>
-                  <th class="py-3 px-4 font-medium w-12"></th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-[var(--color-border)]">
-                {filteredSessions.value.map((session) => (
-                  <SessionRow key={session.key} session={session} />
-                ))}
-              </tbody>
-            </table>
-          </Card>
-        </>
+      {isConnected.value && !isLoading.value && adminSessions.value.length === 0 && !error.value && (
+        <Card>
+          <div class="p-16 text-center">
+            <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
+            <h3 class="text-lg font-medium mb-2">{t("sessions.admin.emptyTitle")}</h3>
+            <p class="text-[var(--color-text-muted)]">{t("sessions.admin.emptyDescription")}</p>
+          </div>
+        </Card>
       )}
 
-      {/* Empty state */}
-      {isConnected.value &&
-        !isLoading.value &&
-        adminSessions.value.length === 0 &&
-        !error.value && (
-          <Card>
-            <div class="p-16 text-center">
-              <MessageSquare class="w-12 h-12 mx-auto mb-4 text-[var(--color-text-muted)] opacity-50" />
-              <h3 class="text-lg font-medium mb-2">{t("sessions.admin.emptyTitle")}</h3>
-              <p class="text-[var(--color-text-muted)]">{t("sessions.admin.emptyDescription")}</p>
-            </div>
-          </Card>
-        )}
-
-      {/* No results from filter */}
       {isConnected.value &&
         !isLoading.value &&
         adminSessions.value.length > 0 &&
@@ -865,7 +170,6 @@ export function SessionsAdminView(_props: RouteProps) {
           </Card>
         )}
 
-      {/* Footer count */}
       {isConnected.value && !isLoading.value && filteredSessions.value.length > 0 && (
         <p class="text-sm text-[var(--color-text-muted)] text-center">
           {filteredSessions.value.length === adminSessions.value.length
