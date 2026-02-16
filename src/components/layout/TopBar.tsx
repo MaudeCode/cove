@@ -18,7 +18,7 @@ import { canvasNodeEnabled } from "@/signals/settings";
 
 export function TopBar() {
   return (
-    <header class="h-14 flex-shrink-0 bg-[var(--color-bg-secondary)]">
+    <header class="h-[var(--topbar-height)] flex-shrink-0 bg-[var(--color-bg-secondary)]">
       <div class="h-full px-4 flex items-center justify-between">
         {/* Left side: hamburger + logo */}
         <div class="flex items-center gap-3">
