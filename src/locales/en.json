@@ -468,12 +468,18 @@
       "fontSizeSm": "Small",
       "fontSizeLg": "Large",
       "fontFamily": "Font Family",
-      "fontFamilyDescription": "Choose your preferred typeface",
+      "fontFamilyDescription": "Choose your preferred interface typeface",
+      "codeFontFamily": "Code Font",
+      "codeFontFamilyDescription": "Used for code blocks and editor surfaces",
       "fontSystem": "System",
       "fontGeist": "Geist",
       "fontInter": "Inter",
       "fontMono": "JetBrains Mono",
-      "fontDyslexic": "OpenDyslexic"
+      "fontDyslexic": "OpenDyslexic",
+      "codeFontJetBrains": "JetBrains Mono",
+      "codeFontSystem": "System Mono",
+      "codeFontFira": "Fira Code",
+      "codeFontSource": "Source Code Pro"
     },
     "about": {
       "title": "About"
