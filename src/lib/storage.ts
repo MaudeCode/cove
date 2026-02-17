@@ -205,11 +205,13 @@ export function consumePendingTour(): boolean {
 export type TimeFormat = "relative" | "local";
 export type FontSize = "sm" | "md" | "lg";
 export type FontFamily = "geist" | "inter" | "system" | "dyslexic" | "mono";
+export type CodeFontFamily = "jetbrains" | "system" | "fira" | "source";
 
 const PREFERENCE_DEFAULTS = {
   timeFormat: "relative" as TimeFormat,
   fontSize: "md" as FontSize,
   fontFamily: "geist" as FontFamily,
+  codeFontFamily: "jetbrains" as CodeFontFamily,
   locale: "en",
   theme: "system",
   sidebarWidth: 280,
@@ -237,6 +239,14 @@ export function getFontFamily(): FontFamily {
 
 export function setFontFamily(value: FontFamily): void {
   setRaw("font-family", value);
+}
+
+export function getCodeFontFamily(): CodeFontFamily {
+  return getRaw<CodeFontFamily>("code-font-family") ?? PREFERENCE_DEFAULTS.codeFontFamily;
+}
+
+export function setCodeFontFamily(value: CodeFontFamily): void {
+  setRaw("code-font-family", value);
 }
 
 export function getLocale(): string {
