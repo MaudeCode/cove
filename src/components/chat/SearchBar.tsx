@@ -21,6 +21,7 @@ import {
 import { canvasPanelOpen } from "@/signals/ui";
 import { canvasNodeEnabled } from "@/signals/settings";
 import { IconButton } from "@/components/ui/IconButton";
+import { Input } from "@/components/ui/Input";
 import { DatePicker } from "@/components/ui/DatePicker";
 import { SearchIcon, XIcon, CanvasIcon } from "@/components/ui/icons";
 import { HeartbeatIndicator } from "./HeartbeatIndicator";
@@ -110,15 +111,19 @@ export function SearchBar() {
 
         {/* Text search input */}
         <div class="flex-1 flex items-center gap-2 min-w-[120px]">
-          <input
-            ref={inputRef}
-            type="text"
-            value={searchQuery.value}
-            onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
-            placeholder={t("chat.searchPlaceholder")}
-            class="flex-1 px-2.5 py-1.5 text-sm rounded-lg bg-[var(--color-bg-primary)] border border-[var(--color-border)] text-[var(--color-text-primary)] placeholder:text-[var(--color-text-muted)] focus:outline-none focus:border-[var(--color-accent)]/50 transition-colors"
-            tabIndex={isOpen ? 0 : -1}
-          />
+          <div class="flex-1">
+            <Input
+              ref={inputRef}
+              type="text"
+              value={searchQuery.value}
+              onInput={(e) => (searchQuery.value = (e.target as HTMLInputElement).value)}
+              placeholder={t("chat.searchPlaceholder")}
+              size="sm"
+              fullWidth
+              class="text-sm"
+              tabIndex={isOpen ? 0 : -1}
+            />
+          </div>
           {/* Match count - inline with search to avoid layout shift */}
           {hasFilters && (
             <span class="text-xs text-[var(--color-text-muted)] whitespace-nowrap">

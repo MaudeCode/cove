@@ -16,6 +16,7 @@ import {
 } from "@/signals/sessions";
 import { Toggle } from "@/components/ui/Toggle";
 import { Chip } from "@/components/ui/Chip";
+import { Input } from "@/components/ui/Input";
 import { FilterIcon, SearchIcon, XIcon } from "@/components/ui/icons";
 
 export function SessionFilters() {
@@ -70,9 +71,8 @@ export function SessionFilters() {
       {showFilters && (
         <div class="mt-2 space-y-2">
           {/* Search input */}
-          <div class="relative">
-            <SearchIcon class="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[var(--color-text-muted)]" />
-            <input
+          <div>
+            <Input
               ref={inputRef}
               type="text"
               value={sessionSearchQuery.value}
@@ -83,21 +83,22 @@ export function SessionFilters() {
                 }
               }}
               placeholder={t("sessions.searchPlaceholder")}
-              class="w-full pl-7 pr-7 py-1.5 text-xs rounded-md
-                bg-[var(--color-bg-primary)] border border-[var(--color-border)]
-                text-[var(--color-text-primary)] placeholder-[var(--color-text-muted)]
-                focus:outline-none focus:border-[var(--color-accent)]/50"
+              size="sm"
+              fullWidth
+              leftElement={<SearchIcon class="w-3.5 h-3.5" />}
+              rightElement={
+                hasSearch ? (
+                  <button
+                    type="button"
+                    onClick={() => setSessionSearchQuery("")}
+                    class="p-0.5 rounded text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
+                    aria-label={t("actions.clear")}
+                  >
+                    <XIcon class="w-3 h-3" />
+                  </button>
+                ) : undefined
+              }
             />
-            {hasSearch && (
-              <button
-                type="button"
-                onClick={() => setSessionSearchQuery("")}
-                class="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded
-                  text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)]"
-              >
-                <XIcon class="w-3 h-3" />
-              </button>
-            )}
           </div>
 
           {/* Kind filter chips */}
