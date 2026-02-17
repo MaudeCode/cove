@@ -49,9 +49,8 @@ function ensureFontAssetLoaded(key: FontAssetKey): Promise<void> {
     .then(() => {
       loaded.add(key);
     })
-    .catch((error: unknown) => {
+    .catch(() => {
       // Fall back to system stack if a web font fails to load.
-      console.warn("Failed to load font asset", key, error);
     })
     .finally(() => {
       loading.delete(key);
