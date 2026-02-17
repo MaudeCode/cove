@@ -65,6 +65,7 @@ if (typeof window !== "undefined") {
 
 // Threshold for dismissing bottom sheet (pixels)
 const DISMISS_THRESHOLD = 100;
+type IframeEvalWindow = Window & { eval(code: string): unknown };
 
 export function CanvasPanel() {
   const { handleDragStart, handleResizeStart, handleDockedResizeStart } = usePanelInteraction();
@@ -99,8 +100,7 @@ export function CanvasPanel() {
 
       try {
         // Execute JS in iframe context
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const result = (iframe.contentWindow as any).eval(js);
+        const result: unknown = (iframe.contentWindow as IframeEvalWindow).eval(js);
         resolve(result);
       } catch (e) {
         reject(String(e));
