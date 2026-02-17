@@ -56,12 +56,24 @@ export class ViewErrorBoundary extends Component<ViewErrorBoundaryProps, ViewErr
     this.setState((prev) => ({ detailsOpen: !prev.detailsOpen }));
   };
 
-  copyError = (): void => {
+  copyError = async (): Promise<void> => {
     const { error } = this.state;
-    if (error) {
+    if (!error) return;
+
+    const label = t("actions.copy");
+    const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : null;
+    if (!clipboard?.writeText) {
+      toast.error(t("status.copyFailed", { label }));
+      return;
+    }
+
+    try {
       const text = `${error.name}: ${error.message}\n\n${error.stack || ""}`;
-      navigator.clipboard.writeText(text);
+      await clipboard.writeText(text);
       toast.success(t("actions.copied"));
+    } catch (copyError) {
+      log.ui.error("Failed to copy view error details:", copyError);
+      toast.error(t("status.copyFailed", { label }));
     }
   };
 
