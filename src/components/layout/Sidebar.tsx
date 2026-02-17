@@ -7,6 +7,7 @@
 import { useState } from "preact/hooks";
 import { signal } from "@preact/signals";
 import { route } from "preact-router";
+import { MessageCircle } from "lucide-preact";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { send, isConnected, mainSessionKey } from "@/lib/gateway";
@@ -56,7 +57,7 @@ function ChatNavButton({ isStreaming }: { isStreaming: boolean }) {
       {isStreaming ? (
         <Spinner size="xs" class="flex-shrink-0 text-[var(--color-accent)]" />
       ) : (
-        <span class="w-5 h-5 flex-shrink-0">💬</span>
+        <MessageCircle class="w-5 h-5 flex-shrink-0" aria-hidden="true" />
       )}
       {t("nav.chat")}
     </button>
