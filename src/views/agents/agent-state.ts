@@ -22,8 +22,11 @@ import { formatAgentName } from "@/types/agents";
 
 export type AgentsTab = "overview" | "files" | "tools" | "skills";
 
+export const TOOL_PROFILES = ["full", "coding", "messaging", "minimal"] as const;
+export type ToolProfile = (typeof TOOL_PROFILES)[number];
+
 export interface ToolsConfig {
-  profile?: string;
+  profile?: ToolProfile;
   allow?: string[];
   alsoAllow?: string[];
   deny?: string[];
@@ -135,6 +138,14 @@ export const selectedAgent = computed(() => {
   return agents.value.find((a) => a.id === selectedAgentId.value) ?? null;
 });
 
+export function isToolProfile(value: string): value is ToolProfile {
+  return TOOL_PROFILES.includes(value as ToolProfile);
+}
+
+export function normalizeToolProfile(value: string | undefined): ToolProfile {
+  return value && isToolProfile(value) ? value : "full";
+}
+
 // ============================================
 // Helpers
 // ============================================
@@ -201,7 +212,7 @@ export async function loadToolsConfig(): Promise<void> {
 
     const agentEntry = result.config.agents?.list?.find((a) => a.id === selectedAgentId.value);
     localToolsConfig.value = {
-      profile: agentEntry?.tools?.profile ?? result.config.tools?.profile ?? "full",
+      profile: normalizeToolProfile(agentEntry?.tools?.profile ?? result.config.tools?.profile),
       alsoAllow: agentEntry?.tools?.alsoAllow ?? [],
       deny: agentEntry?.tools?.deny ?? [],
     };
@@ -253,7 +264,7 @@ export function isToolEnabled(toolId: string): boolean {
   return false;
 }
 
-export function updateToolProfile(profile: string): void {
+export function updateToolProfile(profile: ToolProfile): void {
   localToolsConfig.value = { ...localToolsConfig.value, profile };
   toolsDirty.value = true;
 }

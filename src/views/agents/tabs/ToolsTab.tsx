@@ -16,6 +16,9 @@ import {
   toolsSaving,
   toolsDirty,
   localToolsConfig,
+  TOOL_PROFILES,
+  type ToolProfile,
+  isToolProfile,
   isToolEnabled,
   updateToolProfile,
   toggleTool,
@@ -26,12 +29,12 @@ import {
 // Constants
 // ============================================
 
-const TOOL_PROFILES = [
-  { value: "full", labelKey: "agents.tools.profiles.full" },
-  { value: "coding", labelKey: "agents.tools.profiles.coding" },
-  { value: "messaging", labelKey: "agents.tools.profiles.messaging" },
-  { value: "minimal", labelKey: "agents.tools.profiles.minimal" },
-] as const;
+const TOOL_PROFILE_LABEL_KEYS: Record<ToolProfile, string> = {
+  full: "agents.tools.profiles.full",
+  coding: "agents.tools.profiles.coding",
+  messaging: "agents.tools.profiles.messaging",
+  minimal: "agents.tools.profiles.minimal",
+};
 
 interface ToolDef {
   id: string;
@@ -168,8 +171,13 @@ export function ToolsTab() {
           </span>
           <Dropdown
             value={profile}
-            options={TOOL_PROFILES.map((p) => ({ value: p.value, label: t(p.labelKey) }))}
-            onChange={updateToolProfile}
+            options={TOOL_PROFILES.map((value) => ({
+              value,
+              label: t(TOOL_PROFILE_LABEL_KEYS[value]),
+            }))}
+            onChange={(value) => {
+              if (isToolProfile(value)) updateToolProfile(value);
+            }}
             class="mt-2 w-full"
             aria-label={t("agents.tools.profile")}
           />
