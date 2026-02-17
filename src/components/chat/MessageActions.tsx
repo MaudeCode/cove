@@ -11,6 +11,7 @@ import { MoreVertical, Copy, FileText, Check } from "lucide-preact";
 import { t } from "@/lib/i18n";
 import { stripMarkdown } from "@/lib/utils";
 import { useClickOutside } from "@/hooks/useClickOutside";
+import { toast } from "@/components/ui/Toast";
 
 // ============================================
 // Constants
@@ -87,9 +88,19 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
   const copyToClipboard = useCallback(
     async (type: CopyType) => {
       const text = type === "formatted" ? stripMarkdown(content) : content;
-      await navigator.clipboard.writeText(text);
-      setCopied(type);
-      setIsOpen(false);
+      const label = type === "formatted" ? t("actions.copy") : t("chat.copyMarkdown");
+
+      try {
+        if (!navigator.clipboard?.writeText) {
+          throw new Error("Clipboard API unavailable");
+        }
+
+        await navigator.clipboard.writeText(text);
+        setCopied(type);
+        setIsOpen(false);
+      } catch {
+        toast.error(t("status.copyFailed", { label }));
+      }
     },
     [content],
   );
