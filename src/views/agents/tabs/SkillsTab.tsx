@@ -13,6 +13,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { IconButton } from "@/components/ui/IconButton";
 import { HintBox } from "@/components/ui/HintBox";
 import { RefreshCw, Search } from "lucide-preact";
+import { AgentTabSaveButton } from "./AgentTabSaveButton";
 import {
   skills,
   skillsLoading,
@@ -86,14 +87,7 @@ export function SkillsTab() {
             </div>
             <div class="flex items-center gap-2">
               {skillsDirty.value && (
-                <button
-                  type="button"
-                  onClick={saveSkillsAllowlist}
-                  disabled={skillsSaving.value}
-                  class="px-3 py-1.5 text-sm font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-                >
-                  {skillsSaving.value ? t("common.saving") : t("actions.save")}
-                </button>
+                <AgentTabSaveButton onClick={saveSkillsAllowlist} saving={skillsSaving.value} />
               )}
               <IconButton
                 icon={<RefreshCw class={skillsLoading.value ? "animate-spin" : ""} />}

@@ -10,6 +10,7 @@ import { Dropdown } from "@/components/ui/Dropdown";
 import { Toggle } from "@/components/ui/Toggle";
 import { Spinner } from "@/components/ui/Spinner";
 import { CheckCircle, XCircle } from "lucide-preact";
+import { AgentTabSaveButton } from "./AgentTabSaveButton";
 import {
   toolsLoading,
   toolsSaving,
@@ -158,14 +159,7 @@ export function ToolsTab() {
             </p>
           </div>
           {toolsDirty.value && (
-            <button
-              type="button"
-              onClick={saveToolsConfig}
-              disabled={toolsSaving.value}
-              class="px-3 py-1.5 text-sm font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-            >
-              {toolsSaving.value ? t("common.saving") : t("actions.save")}
-            </button>
+            <AgentTabSaveButton onClick={saveToolsConfig} saving={toolsSaving.value} />
           )}
         </div>
         <div class="p-4">

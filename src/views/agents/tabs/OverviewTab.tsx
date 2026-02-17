@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/Input";
 import { IconButton } from "@/components/ui/IconButton";
 import { Pencil, Trash2 } from "lucide-preact";
 import { AgentAvatar } from "@/components/agents/AgentAvatar";
+import { AgentTabSaveButton } from "./AgentTabSaveButton";
 import {
   selectedAgent,
   selectedAgentId,
@@ -119,14 +120,7 @@ export function OverviewTab() {
               </div>
               <p class="text-xs text-[var(--color-text-muted)]">{t("agents.overview.editHint")}</p>
               <div class="flex gap-2">
-                <button
-                  type="button"
-                  onClick={saveOverviewEdit}
-                  disabled={overviewSaving.value}
-                  class="px-3 py-1.5 text-sm font-medium bg-[var(--color-accent)] text-white rounded-lg hover:bg-[var(--color-accent-hover)] disabled:opacity-50"
-                >
-                  {overviewSaving.value ? t("common.saving") : t("actions.save")}
-                </button>
+                <AgentTabSaveButton onClick={saveOverviewEdit} saving={overviewSaving.value} />
                 <button
                   type="button"
                   onClick={cancelOverviewEdit}
