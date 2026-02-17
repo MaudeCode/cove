@@ -10,6 +10,7 @@ import type { ComponentChildren } from "preact";
 import { MoreVertical, Copy, FileText, Check } from "lucide-preact";
 import { t } from "@/lib/i18n";
 import { stripMarkdown } from "@/lib/utils";
+import { useClickOutside } from "@/hooks/useClickOutside";
 
 // ============================================
 // Constants
@@ -71,25 +72,7 @@ export function MessageActions({ content, visible = false }: MessageActionsProps
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   // Close menu when clicking outside
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleClickOutside = (e: MouseEvent) => {
-      const target = e.target as Node;
-      const clickedOutside =
-        menuRef.current &&
-        !menuRef.current.contains(target) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(target);
-
-      if (clickedOutside) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+  useClickOutside([menuRef, buttonRef], () => setIsOpen(false), isOpen);
 
   // Reset copied state after delay
   useEffect(() => {
