@@ -32,8 +32,6 @@ export interface DropdownProps {
   "aria-label"?: string;
   /** Additional classes for trigger button */
   class?: string;
-  /** Additional classes (alias) */
-  className?: string;
   /** Disabled state */
   disabled?: boolean;
   /** Menu alignment (default: left) */
@@ -68,13 +66,11 @@ export function Dropdown({
   size = "md",
   placeholder = "Select...",
   "aria-label": ariaLabel,
-  class: classFromClass,
-  className: classFromClassName,
+  class: className,
   disabled = false,
   align = "left",
   width,
 }: DropdownProps) {
-  const className = classFromClass || classFromClassName;
   const [isOpen, setIsOpen] = useState(false);
   const [focusedIndex, setFocusedIndex] = useState(-1);
   const [minWidth, setMinWidth] = useState<number | undefined>(undefined);
