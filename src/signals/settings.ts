@@ -5,10 +5,12 @@
  */
 
 import { signal, effect, computed } from "@preact/signals";
+import { loadUiFontFamily, loadCodeFontFamily } from "@/lib/font-loader";
 import {
   type TimeFormat,
   type FontSize,
   type FontFamily,
+  type CodeFontFamily,
   type NewChatSettings,
   type AppMode,
   getTimeFormat,
@@ -17,6 +19,8 @@ import {
   setFontSize,
   getFontFamily,
   setFontFamily,
+  getCodeFontFamily,
+  setCodeFontFamily,
   getNewChatSettings,
   setNewChatSettings,
   getAppMode,
@@ -26,7 +30,14 @@ import {
 } from "@/lib/storage";
 
 // Re-export types for consumers
-export type { TimeFormat, FontSize, FontFamily, NewChatSettings, AppMode } from "@/lib/storage";
+export type {
+  TimeFormat,
+  FontSize,
+  FontFamily,
+  CodeFontFamily,
+  NewChatSettings,
+  AppMode,
+} from "@/lib/storage";
 
 // ============================================
 // Signals
@@ -40,6 +51,9 @@ export const fontSize = signal<FontSize>(getFontSize());
 
 /** Font family preference */
 export const fontFamily = signal<FontFamily>(getFontFamily());
+
+/** Monospace font family preference for code/editor surfaces */
+export const codeFontFamily = signal<CodeFontFamily>(getCodeFontFamily());
 
 /** New chat creation settings */
 export const newChatSettings = signal<NewChatSettings>(getNewChatSettings());
@@ -67,6 +81,7 @@ export const isSingleChatMode = computed(() => appMode.value === "single");
 effect(() => setTimeFormat(timeFormat.value));
 effect(() => setFontSize(fontSize.value));
 effect(() => setFontFamily(fontFamily.value));
+effect(() => setCodeFontFamily(codeFontFamily.value));
 effect(() => setNewChatSettings(newChatSettings.value));
 effect(() => setAppMode(appMode.value));
 effect(() => setCanvasNodeEnabled(canvasNodeEnabled.value));
@@ -106,6 +121,8 @@ effect(() => {
 
 /** Apply font family to document */
 effect(() => {
+  void loadUiFontFamily(fontFamily.value);
+
   const families: Record<FontFamily, string> = {
     geist: '"Geist Sans", ui-sans-serif, system-ui, sans-serif',
     inter: '"Inter", ui-sans-serif, system-ui, sans-serif',
@@ -114,6 +131,23 @@ effect(() => {
     mono: '"JetBrains Mono", ui-monospace, monospace',
   };
   document.documentElement.style.setProperty("--font-family-override", families[fontFamily.value]);
+});
+
+/** Apply code font family to document */
+effect(() => {
+  void loadCodeFontFamily(codeFontFamily.value);
+
+  const families: Record<CodeFontFamily, string> = {
+    jetbrains:
+      '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    system:
+      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    fira:
+      '"Fira Code", "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+    source:
+      '"Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  };
+  document.documentElement.style.setProperty("--font-mono", families[codeFontFamily.value]);
 });
 
 // ============================================
@@ -134,6 +168,13 @@ export const FONT_FAMILY_OPTIONS: { value: FontFamily; labelKey: string }[] = [
   { value: "dyslexic", labelKey: "settings.appearance.fontDyslexic" },
 ];
 
+export const CODE_FONT_FAMILY_OPTIONS: { value: CodeFontFamily; labelKey: string }[] = [
+  { value: "system", labelKey: "settings.appearance.codeFontSystem" },
+  { value: "jetbrains", labelKey: "settings.appearance.codeFontJetBrains" },
+  { value: "fira", labelKey: "settings.appearance.codeFontFira" },
+  { value: "source", labelKey: "settings.appearance.codeFontSource" },
+];
+
 export const TIME_FORMAT_OPTIONS: { value: TimeFormat; labelKey: string }[] = [
   { value: "relative", labelKey: "settings.preferences.timeRelative" },
   { value: "local", labelKey: "settings.preferences.timeAbsolute" },
@@ -146,6 +187,7 @@ export const TIME_FORMAT_OPTIONS: { value: TimeFormat; labelKey: string }[] = [
 export function resetToDefaults(): void {
   fontSize.value = "md";
   fontFamily.value = "geist";
+  codeFontFamily.value = "jetbrains";
   timeFormat.value = "relative";
   newChatSettings.value = {
     useDefaults: true,
