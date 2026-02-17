@@ -80,6 +80,7 @@ function NavItemComponent({ item }: NavItemComponentProps) {
     <button
       type="button"
       onClick={() => {
+        currentPath.value = itemPath;
         route(itemPath);
         closeSidebarOnMobile();
       }}

@@ -32,7 +32,7 @@ import { NavSections } from "./NavSection";
 import type { Session } from "@/types/sessions";
 
 // Track current path for active state (updated by router)
-export const currentPath = signal<string>(window.location.pathname);
+export const currentPath = signal<string>(window.location.pathname.replace(/\/+$/, "") || "/");
 
 /**
  * Chat navigation button with proper active state
@@ -45,6 +45,7 @@ function ChatNavButton({ isStreaming }: { isStreaming: boolean }) {
     <button
       type="button"
       onClick={() => {
+        currentPath.value = "/chat";
         route("/chat");
         closeSidebarOnMobile();
       }}

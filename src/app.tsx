@@ -182,9 +182,18 @@ export function App() {
 /**
  * Handle route changes - sync to signal for sidebar active state
  */
-function handleRouteChange(e: { url: string }) {
-  // Strip query params for sidebar path matching only
-  const pathOnly = e.url.split("?")[0];
+function normalizePath(url: string): string {
+  try {
+    const path = new URL(url, window.location.origin).pathname;
+    return path.replace(/\/+$/, "") || "/";
+  } catch {
+    const path = (url.split(/[?#]/)[0] || "/").replace(/\/+$/, "");
+    return path || "/";
+  }
+}
+
+function handleRouteChange(e: { url?: string }) {
+  const pathOnly = normalizePath(e.url || window.location.pathname);
 
   // Track previous route for "back" navigation (e.g., settings toggle)
   // Only update if navigating TO settings from a non-settings page
