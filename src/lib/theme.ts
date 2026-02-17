@@ -6,8 +6,13 @@
  */
 
 import { signal, effect, computed } from "@preact/signals";
-import type { Theme, ThemePreference, ThemeColors } from "@/types/theme";
-import { DEFAULT_THEME_PREFERENCE } from "@/types/theme";
+import {
+  DEFAULT_THEME_PREFERENCE,
+  normalizeTheme,
+  type Theme,
+  type ThemePreference,
+  type ThemeColors,
+} from "@/types/theme";
 import { getTheme, builtInThemes } from "@/lib/themes";
 import {
   getThemePreference,
@@ -20,7 +25,7 @@ import {
 export const themePreference = signal<ThemePreference>(loadPreference());
 
 /** Custom themes (user-created) */
-const customThemes = signal<Theme[]>(getCustomThemes());
+const customThemes = signal<Theme[]>(getCustomThemes().map(normalizeTheme));
 
 /** The currently active theme (resolved) */
 const activeTheme = computed<Theme>(() => {
@@ -61,14 +66,11 @@ function applyThemeColors(colors: ThemeColors): void {
  * Cache the theme for the inline script (prevents FOUC on reload)
  */
 function cacheTheme(theme: Theme): void {
-  setThemeCache(
-    theme.id,
-    JSON.stringify({
-      id: theme.id,
-      appearance: theme.appearance,
-      colors: theme.colors,
-    }),
-  );
+  setThemeCache({
+    id: theme.id,
+    appearance: theme.appearance,
+    colors: theme.colors,
+  });
 }
 
 /**

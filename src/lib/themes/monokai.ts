@@ -1,65 +1,65 @@
-import type { Theme } from "@/types/theme";
+import { defineTheme } from "@/types/theme";
 
-export const monokaiTheme: Theme = {
+export const monokaiTheme = defineTheme({
   id: "monokai",
   name: "Monokai",
   appearance: "dark",
   builtIn: true,
-  colors: {
+  tokens: {
     // Backgrounds (Monokai Pro palette)
-    "--color-bg-primary": "#272822",
-    "--color-bg-secondary": "#1e1f1c",
-    "--color-bg-tertiary": "#2d2e27",
-    "--color-bg-surface": "#3e3d32",
-    "--color-bg-elevated": "#49483e",
-    "--color-bg-hover": "#3e3d32",
-    "--color-bg-active": "#49483e",
+    bgPrimary: "#272822",
+    bgSecondary: "#1e1f1c",
+    bgTertiary: "#2d2e27",
+    bgSurface: "#3e3d32",
+    bgElevated: "#49483e",
+    bgHover: "#3e3d32",
+    bgActive: "#49483e",
 
     // Text
-    "--color-text-primary": "#f8f8f2",
-    "--color-text-secondary": "#e6e6e0",
-    "--color-text-tertiary": "#b8b8b0",
-    "--color-text-muted": "#75715e",
-    "--color-text-inverse": "#272822",
+    textPrimary: "#f8f8f2",
+    textSecondary: "#e6e6e0",
+    textTertiary: "#b8b8b0",
+    textMuted: "#75715e",
+    textInverse: "#272822",
 
     // Accent (Monokai pink)
-    "--color-accent": "#f92672",
-    "--color-accent-hover": "#e01f65",
-    "--color-accent-active": "#c01a58",
-    "--color-accent-muted": "#402030",
-    "--color-accent-text": "#ffffff",
+    accent: "#f92672",
+    accentHover: "#e01f65",
+    accentActive: "#c01a58",
+    accentMuted: "#402030",
+    accentText: "#ffffff",
 
     // Status
-    "--color-success": "#a6e22e",
-    "--color-success-muted": "#2a3a20",
-    "--color-warning": "#e6db74",
-    "--color-warning-muted": "#3a3a25",
-    "--color-error": "#f92672",
-    "--color-error-muted": "#402030",
-    "--color-info": "#66d9ef",
-    "--color-info-muted": "#203540",
+    success: "#a6e22e",
+    successMuted: "#2a3a20",
+    warning: "#e6db74",
+    warningMuted: "#3a3a25",
+    error: "#f92672",
+    errorMuted: "#402030",
+    info: "#66d9ef",
+    infoMuted: "#203540",
 
     // Borders
-    "--color-border": "#49483e",
-    "--color-border-hover": "#5a5950",
-    "--color-border-focus": "#f92672",
+    border: "#49483e",
+    borderHover: "#5a5950",
+    borderFocus: "#f92672",
 
     // Shadows
-    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.4)",
-    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
-    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
+    shadowSm: "0 1px 2px 0 rgb(0 0 0 / 0.4)",
+    shadowMd: "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
+    shadowLg: "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
 
     // Syntax highlighting (Monokai)
-    "--color-syntax-comment": "#75715e",
-    "--color-syntax-string": "#e6db74",
-    "--color-syntax-keyword": "#f92672",
-    "--color-syntax-function": "#a6e22e",
-    "--color-syntax-number": "#ae81ff",
-    "--color-syntax-operator": "#f92672",
-    "--color-syntax-variable": "#f8f8f2",
-    "--color-syntax-punctuation": "#f8f8f2",
-    "--color-syntax-property": "#66d9ef",
-    "--color-syntax-tag": "#f92672",
-    "--color-syntax-class": "#a6e22e",
+    syntaxComment: "#75715e",
+    syntaxString: "#e6db74",
+    syntaxKeyword: "#f92672",
+    syntaxFunction: "#a6e22e",
+    syntaxNumber: "#ae81ff",
+    syntaxOperator: "#f92672",
+    syntaxVariable: "#f8f8f2",
+    syntaxPunctuation: "#f8f8f2",
+    syntaxProperty: "#66d9ef",
+    syntaxTag: "#f92672",
+    syntaxClass: "#a6e22e",
   },
-};
+});

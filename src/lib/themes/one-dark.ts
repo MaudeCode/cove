@@ -1,65 +1,65 @@
-import type { Theme } from "@/types/theme";
+import { defineTheme } from "@/types/theme";
 
-export const oneDarkTheme: Theme = {
+export const oneDarkTheme = defineTheme({
   id: "one-dark",
   name: "One Dark",
   appearance: "dark",
   builtIn: true,
-  colors: {
+  tokens: {
     // Backgrounds (Atom One Dark palette)
-    "--color-bg-primary": "#282c34",
-    "--color-bg-secondary": "#21252b",
-    "--color-bg-tertiary": "#2c313a",
-    "--color-bg-surface": "#3a3f4b",
-    "--color-bg-elevated": "#3e4451",
-    "--color-bg-hover": "#3a3f4b",
-    "--color-bg-active": "#4b5263",
+    bgPrimary: "#282c34",
+    bgSecondary: "#21252b",
+    bgTertiary: "#2c313a",
+    bgSurface: "#3a3f4b",
+    bgElevated: "#3e4451",
+    bgHover: "#3a3f4b",
+    bgActive: "#4b5263",
 
     // Text
-    "--color-text-primary": "#abb2bf",
-    "--color-text-secondary": "#9da5b4",
-    "--color-text-tertiary": "#7f848e",
-    "--color-text-muted": "#5c6370",
-    "--color-text-inverse": "#282c34",
+    textPrimary: "#abb2bf",
+    textSecondary: "#9da5b4",
+    textTertiary: "#7f848e",
+    textMuted: "#5c6370",
+    textInverse: "#282c34",
 
     // Accent (One Dark cyan)
-    "--color-accent": "#61afef",
-    "--color-accent-hover": "#528bcc",
-    "--color-accent-active": "#4678a8",
-    "--color-accent-muted": "#2a3a48",
-    "--color-accent-text": "#282c34",
+    accent: "#61afef",
+    accentHover: "#528bcc",
+    accentActive: "#4678a8",
+    accentMuted: "#2a3a48",
+    accentText: "#282c34",
 
     // Status
-    "--color-success": "#98c379",
-    "--color-success-muted": "#2a3a28",
-    "--color-warning": "#e5c07b",
-    "--color-warning-muted": "#3a3828",
-    "--color-error": "#e06c75",
-    "--color-error-muted": "#3a2828",
-    "--color-info": "#56b6c2",
-    "--color-info-muted": "#203a3a",
+    success: "#98c379",
+    successMuted: "#2a3a28",
+    warning: "#e5c07b",
+    warningMuted: "#3a3828",
+    error: "#e06c75",
+    errorMuted: "#3a2828",
+    info: "#56b6c2",
+    infoMuted: "#203a3a",
 
     // Borders
-    "--color-border": "#3a3f4b",
-    "--color-border-hover": "#4b5263",
-    "--color-border-focus": "#61afef",
+    border: "#3a3f4b",
+    borderHover: "#4b5263",
+    borderFocus: "#61afef",
 
     // Shadows
-    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.4)",
-    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
-    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
+    shadowSm: "0 1px 2px 0 rgb(0 0 0 / 0.4)",
+    shadowMd: "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
+    shadowLg: "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
 
     // Syntax highlighting (One Dark)
-    "--color-syntax-comment": "#5c6370",
-    "--color-syntax-string": "#98c379",
-    "--color-syntax-keyword": "#c678dd",
-    "--color-syntax-function": "#61afef",
-    "--color-syntax-number": "#d19a66",
-    "--color-syntax-operator": "#56b6c2",
-    "--color-syntax-variable": "#e06c75",
-    "--color-syntax-punctuation": "#abb2bf",
-    "--color-syntax-property": "#e06c75",
-    "--color-syntax-tag": "#e06c75",
-    "--color-syntax-class": "#e5c07b",
+    syntaxComment: "#5c6370",
+    syntaxString: "#98c379",
+    syntaxKeyword: "#c678dd",
+    syntaxFunction: "#61afef",
+    syntaxNumber: "#d19a66",
+    syntaxOperator: "#56b6c2",
+    syntaxVariable: "#e06c75",
+    syntaxPunctuation: "#abb2bf",
+    syntaxProperty: "#e06c75",
+    syntaxTag: "#e06c75",
+    syntaxClass: "#e5c07b",
   },
-};
+});

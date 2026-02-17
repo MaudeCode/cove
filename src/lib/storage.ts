@@ -15,7 +15,7 @@ import type { Message } from "@/types/messages";
 import type { Session } from "@/types/sessions";
 import type { UsageSummary } from "@/types/usage";
 import type { SessionsUsageResult } from "@/types/server-stats";
-import type { Theme } from "@/types/theme";
+import type { Theme, ThemeAppearance, ThemeColors } from "@/types/theme";
 
 // ============================================
 // Configuration
@@ -328,8 +328,14 @@ export function getCustomThemes(): Theme[] {
   return getRaw<Theme[]>("custom-themes") ?? [];
 }
 
-export function setThemeCache(id: string, css: string): void {
-  setRaw("theme-cache", { id, css });
+export interface ThemeCache {
+  id: string;
+  appearance: ThemeAppearance;
+  colors: ThemeColors;
+}
+
+export function setThemeCache(cache: ThemeCache): void {
+  setRaw("theme-cache", cache);
 }
 
 // ============================================

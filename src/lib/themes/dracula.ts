@@ -1,65 +1,65 @@
-import type { Theme } from "@/types/theme";
+import { defineTheme } from "@/types/theme";
 
-export const draculaTheme: Theme = {
+export const draculaTheme = defineTheme({
   id: "dracula",
   name: "Dracula",
   appearance: "dark",
   builtIn: true,
-  colors: {
+  tokens: {
     // Backgrounds - more contrast (Dracula palette)
-    "--color-bg-primary": "#282a36", // Content area
-    "--color-bg-secondary": "#1e1f29", // Chrome/shell (darker)
-    "--color-bg-tertiary": "#191a23",
-    "--color-bg-surface": "#343746", // Cards, inputs (between primary and comment)
-    "--color-bg-elevated": "#44475a",
-    "--color-bg-hover": "#3c3f52",
-    "--color-bg-active": "#44475a",
+    bgPrimary: "#282a36", // Content area
+    bgSecondary: "#1e1f29", // Chrome/shell (darker)
+    bgTertiary: "#191a23",
+    bgSurface: "#343746", // Cards, inputs (between primary and comment)
+    bgElevated: "#44475a",
+    bgHover: "#3c3f52",
+    bgActive: "#44475a",
 
     // Text
-    "--color-text-primary": "#f8f8f2",
-    "--color-text-secondary": "#e6e6e0",
-    "--color-text-tertiary": "#bfbfb8",
-    "--color-text-muted": "#6272a4",
-    "--color-text-inverse": "#282a36",
+    textPrimary: "#f8f8f2",
+    textSecondary: "#e6e6e0",
+    textTertiary: "#bfbfb8",
+    textMuted: "#6272a4",
+    textInverse: "#282a36",
 
     // Accent (Dracula purple - more vibrant)
-    "--color-accent": "#bd93f9",
-    "--color-accent-hover": "#caa9fa",
-    "--color-accent-active": "#a67bf5",
-    "--color-accent-muted": "#3d3560",
-    "--color-accent-text": "#282a36",
+    accent: "#bd93f9",
+    accentHover: "#caa9fa",
+    accentActive: "#a67bf5",
+    accentMuted: "#3d3560",
+    accentText: "#282a36",
 
     // Status (Dracula colors - vibrant)
-    "--color-success": "#50fa7b",
-    "--color-success-muted": "#1f3528",
-    "--color-warning": "#f1fa8c",
-    "--color-warning-muted": "#35351f",
-    "--color-error": "#ff5555",
-    "--color-error-muted": "#402020",
-    "--color-info": "#8be9fd",
-    "--color-info-muted": "#1f3538",
+    success: "#50fa7b",
+    successMuted: "#1f3528",
+    warning: "#f1fa8c",
+    warningMuted: "#35351f",
+    error: "#ff5555",
+    errorMuted: "#402020",
+    info: "#8be9fd",
+    infoMuted: "#1f3538",
 
     // Borders
-    "--color-border": "#44475a",
-    "--color-border-hover": "#565970",
-    "--color-border-focus": "#bd93f9",
+    border: "#44475a",
+    borderHover: "#565970",
+    borderFocus: "#bd93f9",
 
     // Shadows
-    "--shadow-sm": "0 1px 2px 0 rgb(0 0 0 / 0.4)",
-    "--shadow-md": "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
-    "--shadow-lg": "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
+    shadowSm: "0 1px 2px 0 rgb(0 0 0 / 0.4)",
+    shadowMd: "0 4px 6px -1px rgb(0 0 0 / 0.5), 0 2px 4px -2px rgb(0 0 0 / 0.5)",
+    shadowLg: "0 10px 15px -3px rgb(0 0 0 / 0.6), 0 4px 6px -4px rgb(0 0 0 / 0.6)",
 
     // Syntax highlighting (Dracula palette)
-    "--color-syntax-comment": "#6272a4",
-    "--color-syntax-string": "#f1fa8c",
-    "--color-syntax-keyword": "#ff79c6",
-    "--color-syntax-function": "#50fa7b",
-    "--color-syntax-number": "#bd93f9",
-    "--color-syntax-operator": "#ff79c6",
-    "--color-syntax-variable": "#f8f8f2",
-    "--color-syntax-punctuation": "#f8f8f2",
-    "--color-syntax-property": "#66d9ef",
-    "--color-syntax-tag": "#ff79c6",
-    "--color-syntax-class": "#8be9fd",
+    syntaxComment: "#6272a4",
+    syntaxString: "#f1fa8c",
+    syntaxKeyword: "#ff79c6",
+    syntaxFunction: "#50fa7b",
+    syntaxNumber: "#bd93f9",
+    syntaxOperator: "#ff79c6",
+    syntaxVariable: "#f8f8f2",
+    syntaxPunctuation: "#f8f8f2",
+    syntaxProperty: "#66d9ef",
+    syntaxTag: "#ff79c6",
+    syntaxClass: "#8be9fd",
   },
-};
+});
