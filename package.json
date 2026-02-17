@@ -53,9 +53,12 @@
     "server": "bun run server.ts"
   },
   "dependencies": {
+    "@fontsource/fira-code": "^5.2.7",
     "@fontsource/geist-sans": "^5.2.5",
     "@fontsource/inter": "^5.2.8",
+    "@fontsource/jetbrains-mono": "^5.2.8",
     "@fontsource/opendyslexic": "^5.2.5",
+    "@fontsource/source-code-pro": "^5.2.7",
     "@preact/signals": "^2.7.0",
     "dompurify": "^3.3.1",
     "lucide-preact": "^0.563.0",
