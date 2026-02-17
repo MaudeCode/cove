@@ -38,7 +38,7 @@ export function InstallDepsModal({ skill, onClose, onSuccess }: InstallDepsModal
     isInstalling.value = true;
 
     try {
-      const result = await send<{ ok: boolean; message?: string }>("skills.install", {
+      const result = await send("skills.install", {
         name: skill.name,
         installId,
         timeoutMs: 60000,

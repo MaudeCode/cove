@@ -8,7 +8,7 @@
 import { signal, computed } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { formatJson } from "@/lib/utils";
-import { isConnected, send } from "@/lib/gateway";
+import { isConnected, sendUnknown } from "@/lib/gateway";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -127,7 +127,7 @@ async function callRpc() {
 
   try {
     const params = getEffectiveParams();
-    const result = await send<unknown>(rpcMethod.value, params);
+    const result = await sendUnknown(rpcMethod.value, params);
     rpcResult.value = { ok: true, data: result };
   } catch (err) {
     rpcError.value = err instanceof Error ? err.message : "RPC call failed";

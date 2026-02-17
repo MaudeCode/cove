@@ -26,7 +26,6 @@ import { isUserCreatedChat } from "@/lib/session-utils";
 import { t } from "@/lib/i18n";
 import { loadHistory } from "./history";
 import type { Message, MessageImage } from "@/types/messages";
-import type { ChatSendResult } from "@/types/chat";
 import type { AttachmentPayload } from "@/types/attachments";
 
 /**
@@ -126,7 +125,7 @@ export async function sendMessage(
   try {
     log.chat.debug("Sending message to session:", sessionKey);
 
-    const result = await send<ChatSendResult>("chat.send", {
+    const result = await send("chat.send", {
       sessionKey,
       message,
       thinking: options?.thinking,

@@ -17,7 +17,7 @@
 import { signal, computed } from "@preact/signals";
 import { send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
-import type { ModelChoice, ModelsListResult } from "@/types/models";
+import type { ModelChoice } from "@/types/models";
 
 // ============================================
 // State
@@ -58,15 +58,6 @@ export const modelsByProvider = computed(() => {
 // Actions
 // ============================================
 
-/** Status response shape (partial - just what we need) */
-interface StatusResult {
-  sessions?: {
-    defaults?: {
-      model?: string | null;
-    };
-  };
-}
-
 /**
  * Load available models from the gateway
  */
@@ -77,8 +68,8 @@ export async function loadModels(): Promise<void> {
   try {
     // Load models list and default model in parallel
     const [modelsResult, statusResult] = await Promise.all([
-      send<ModelsListResult>("models.list", {}),
-      send<StatusResult>("status", {}).catch(() => null), // Don't fail if status unavailable
+      send("models.list", {}),
+      send("status", {}).catch(() => null), // Don't fail if status unavailable
     ]);
 
     models.value = modelsResult.models ?? [];

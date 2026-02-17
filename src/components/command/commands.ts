@@ -35,7 +35,7 @@ interface CronJob {
 /** Fetch cron jobs list with error handling */
 async function fetchCronJobs(): Promise<CronJob[]> {
   try {
-    const result = await send<{ jobs: CronJob[] }>("cron.list", {});
+    const result = await send("cron.list", {});
     return result.jobs || [];
   } catch {
     return [];

@@ -14,15 +14,6 @@ import { useExpandableFromQueryParamSet } from "@/hooks/useExpandableFromQueryPa
 import { parseLogLine, resetLineIdCounter } from "@/components/logs";
 import type { ParsedLogLine, LogLevel } from "@/components/logs";
 
-interface LogsResponse {
-  file: string;
-  cursor: number;
-  size: number;
-  lines: string[];
-  truncated: boolean;
-  reset: boolean;
-}
-
 export const logLines = signal<ParsedLogLine[]>([]);
 export const cursor = signal<number>(0);
 export const logFile = signal<string>("");
@@ -49,7 +40,7 @@ export async function fetchLogs(reset = false): Promise<void> {
   error.value = null;
 
   try {
-    const response = await send<LogsResponse>("logs.tail", {
+    const response = await send("logs.tail", {
       cursor: reset ? undefined : cursor.value || undefined,
       limit: 500,
       maxBytes: 250000,

@@ -131,7 +131,7 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
   historyError.value = null;
 
   try {
-    const result = await send<ChatHistoryResult>("chat.history", { sessionKey, limit });
+    const result = await send("chat.history", { sessionKey, limit });
 
     // First pass: collect tool results
     const toolResults = collectToolResults(result.messages);

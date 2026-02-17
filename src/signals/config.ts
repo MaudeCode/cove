@@ -7,13 +7,7 @@
 import { signal, computed } from "@preact/signals";
 import { send } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
-import type {
-  JsonSchema,
-  ConfigUiHints,
-  ConfigGetResponse,
-  ConfigSchemaResponse,
-  ConfigSaveResponse,
-} from "@/types/config";
+import type { JsonSchema, ConfigUiHints } from "@/types/config";
 import { setValueAtPath } from "@/lib/config/schema-utils";
 
 // ============================================
@@ -92,8 +86,8 @@ export async function loadConfig(): Promise<void> {
   try {
     // Load config and schema in parallel
     const [configRes, schemaRes] = await Promise.all([
-      send<ConfigGetResponse>("config.get", {}),
-      send<ConfigSchemaResponse>("config.schema", {}),
+      send("config.get", {}),
+      send("config.schema", {}),
     ]);
 
     // Store schema
@@ -155,7 +149,7 @@ export async function saveConfig(): Promise<boolean> {
     // Build patch (diff between original and draft)
     const patch = buildPatch(originalConfig.value, draftConfig.value);
 
-    const result = await send<ConfigSaveResponse>("config.patch", {
+    const result = await send("config.patch", {
       raw: JSON.stringify(patch),
       baseHash: baseHash.value,
     });
@@ -167,7 +161,7 @@ export async function saveConfig(): Promise<boolean> {
       configPath.value = result.path;
 
       // Reload to get new hash
-      const newConfig = await send<ConfigGetResponse>("config.get", {});
+      const newConfig = await send("config.get", {});
       baseHash.value = newConfig.hash ?? null;
 
       return true;

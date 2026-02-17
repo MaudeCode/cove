@@ -9,6 +9,7 @@ import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { isConnected, send } from "@/lib/gateway";
+import type { GatewayRpcMap } from "@/types/gateway-rpc";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
@@ -27,40 +28,7 @@ import { JsonBlock } from "./JsonBlock";
 // Types
 // ============================================
 
-interface SessionStatus {
-  agentId?: string;
-  key?: string;
-  kind?: string;
-  model?: string;
-  inputTokens?: number;
-  outputTokens?: number;
-  totalTokens?: number;
-  remainingTokens?: number;
-  percentUsed?: number;
-  contextTokens?: number;
-  updatedAt?: number;
-}
-
-interface StatusData {
-  heartbeat?: {
-    defaultAgentId?: string;
-    agents?: Array<{
-      agentId: string;
-      enabled: boolean;
-      every?: string;
-      everyMs?: number;
-    }>;
-  };
-  sessions?: {
-    count?: number;
-    defaults?: {
-      model?: string;
-      contextTokens?: number;
-    };
-    recent?: SessionStatus[];
-  };
-  queuedSystemEvents?: number;
-}
+type StatusData = GatewayRpcMap["status"]["result"];
 
 interface ChannelHealth {
   configured?: boolean;
@@ -70,12 +38,12 @@ interface ChannelHealth {
 }
 
 interface HealthData {
-  ok?: boolean;
-  ts?: number;
-  durationMs?: number;
+  ok?: GatewayRpcMap["health"]["result"]["ok"];
+  ts?: GatewayRpcMap["health"]["result"]["ts"];
+  durationMs?: GatewayRpcMap["health"]["result"]["durationMs"];
   channels?: Record<string, ChannelHealth>;
-  channelOrder?: string[];
-  channelLabels?: Record<string, string>;
+  channelOrder?: GatewayRpcMap["health"]["result"]["channelOrder"];
+  channelLabels?: GatewayRpcMap["health"]["result"]["channelLabels"];
 }
 
 // ============================================
@@ -115,8 +83,8 @@ async function fetchSnapshots() {
   isLoading.value = true;
   try {
     const [status, health] = await Promise.all([
-      send<StatusData>("status").catch(() => null),
-      send<HealthData>("health").catch(() => null),
+      send("status").catch(() => null),
+      send("health").catch(() => null),
     ]);
     statusData.value = status;
     healthData.value = health;

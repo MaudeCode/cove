@@ -4,8 +4,8 @@ import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { t } from "@/lib/i18n";
 import { formatAgentName } from "@/types/agents";
-import type { WorkspaceFile, WorkspaceFilesResult } from "@/types/workspace";
-import type { Agent, AgentsListResponse } from "@/types/agents";
+import type { WorkspaceFile } from "@/types/workspace";
+import type { Agent } from "@/types/agents";
 
 export type AgentsTab = "overview" | "files" | "tools" | "skills";
 
@@ -54,7 +54,7 @@ export const selectedAgent = computed(() => {
 
 export async function loadAgents(): Promise<void> {
   try {
-    const result = await send<AgentsListResponse>("agents.list", {});
+    const result = await send("agents.list", {});
     agents.value = result.agents;
     defaultAgentId.value = result.defaultId;
     if (!result.agents.find((a) => a.id === selectedAgentId.value)) {
@@ -70,7 +70,7 @@ export async function loadFiles(): Promise<void> {
   error.value = null;
 
   try {
-    const result = await send<WorkspaceFilesResult>("agents.files.list", {
+    const result = await send("agents.files.list", {
       agentId: selectedAgentId.value,
     });
     files.value = result.files;

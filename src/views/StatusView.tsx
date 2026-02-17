@@ -85,11 +85,7 @@ async function fetchDashboardData() {
   if (!isConnected.value) return;
   // Fetch cron status
   try {
-    const cronResult = await send<{
-      enabled: boolean;
-      jobs: number;
-      nextWakeAtMs?: number;
-    }>("cron.status");
+    const cronResult = await send("cron.status");
 
     cronStatus.value = {
       enabled: cronResult.enabled ?? false,
@@ -102,19 +98,7 @@ async function fetchDashboardData() {
 
   // Fetch channels
   try {
-    const channelsResult = await send<{
-      channelOrder: string[];
-      channelAccounts: Record<
-        string,
-        Array<{
-          accountId: string;
-          name?: string | null;
-          connected?: boolean | null;
-          running?: boolean | null;
-          configured?: boolean | null;
-        }>
-      >;
-    }>("channels.status");
+    const channelsResult = await send("channels.status");
 
     // Count total accounts and connected accounts across all channels
     const allAccounts: ChannelStatus[] = [];
@@ -138,9 +122,7 @@ async function fetchDashboardData() {
 
   // Fetch skills status
   try {
-    const skillsResult = await send<{
-      skills?: Array<{ eligible: boolean }>;
-    }>("skills.status");
+    const skillsResult = await send("skills.status");
 
     const skills = skillsResult.skills ?? [];
     skillsStatus.value = {

@@ -113,7 +113,7 @@ export async function loadAdminSessions(): Promise<void> {
   error.value = null;
 
   try {
-    const result = await send<{ sessions: Session[] }>("sessions.list", { limit: 200 });
+    const result = await send("sessions.list", { limit: 200 });
     adminSessions.value = result.sessions ?? [];
   } catch (err) {
     error.value = getErrorMessage(err);

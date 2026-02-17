@@ -5,7 +5,7 @@
  */
 
 import { signal, computed } from "@preact/signals";
-import type { Agent, AgentsListResponse } from "@/types/agents";
+import type { Agent } from "@/types/agents";
 import { send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 
@@ -58,7 +58,7 @@ export async function loadAgents(): Promise<void> {
 
   try {
     log.gateway.debug("loadAgents: fetching from gateway");
-    const response = await send<AgentsListResponse>("agents.list", {});
+    const response = await send("agents.list", {});
 
     if (response && Array.isArray(response.agents)) {
       agents.value = response.agents;

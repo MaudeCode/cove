@@ -32,12 +32,7 @@ import {
   Settings,
 } from "lucide-preact";
 import { PageLayout } from "@/components/ui/PageLayout";
-import type {
-  ChannelsStatusResponse,
-  ChannelDisplayData,
-  ChannelAccountSnapshot,
-  ChannelStatus,
-} from "@/types/channels";
+import type { ChannelDisplayData, ChannelAccountSnapshot, ChannelStatus } from "@/types/channels";
 import { transformChannelsResponse, getChannelLastActivity } from "@/types/channels";
 import type { RouteProps } from "@/types/routes";
 import { route } from "preact-router";
@@ -91,7 +86,7 @@ async function loadChannels(probe = false): Promise<void> {
   error.value = null;
 
   try {
-    const result = await send<ChannelsStatusResponse>("channels.status", {
+    const result = await send("channels.status", {
       probe,
       timeoutMs: probe ? 15000 : 10000,
     });

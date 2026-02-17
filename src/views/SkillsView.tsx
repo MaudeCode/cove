@@ -42,7 +42,7 @@ import {
 } from "lucide-preact";
 import { TabNav } from "@/components/ui/TabNav";
 import { PageLayout } from "@/components/ui/PageLayout";
-import type { SkillStatusReport, SkillStatusEntry, SkillStatus, SkillSource } from "@/types/skills";
+import type { SkillStatusEntry, SkillStatus, SkillSource } from "@/types/skills";
 import { getSkillStatus } from "@/types/skills";
 import {
   ClawHubBrowser,
@@ -143,7 +143,7 @@ async function loadSkills(): Promise<void> {
   error.value = null;
 
   try {
-    const result = await send<SkillStatusReport>("skills.status", {});
+    const result = await send("skills.status", {});
     skills.value = result.skills;
     workspaceDir.value = result.workspaceDir;
     managedSkillsDir.value = result.managedSkillsDir;

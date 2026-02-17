@@ -46,7 +46,6 @@ import {
 import { PageLayout } from "@/components/ui/PageLayout";
 import type { RouteProps } from "@/types/routes";
 import type {
-  DeviceListResponse,
   DevicePendingRequest,
   PairedDevice,
   DeviceRole,
@@ -137,7 +136,7 @@ async function loadDevices(): Promise<void> {
   error.value = null;
 
   try {
-    const result = await send<DeviceListResponse>("device.pair.list", {});
+    const result = await send("device.pair.list", {});
     devices.value = result.paired;
     pendingRequests.value = result.pending;
   } catch (err) {
@@ -170,7 +169,7 @@ async function rejectRequest(requestId: string): Promise<void> {
 async function rotateToken(device: PairedDevice, role: string): Promise<void> {
   rotatingToken.value = true;
   try {
-    const result = await send<{ token: string }>("device.token.rotate", {
+    const result = await send("device.token.rotate", {
       deviceId: device.deviceId,
       role,
     });

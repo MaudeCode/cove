@@ -26,6 +26,7 @@ import "prismjs/components/prism-toml";
 import { IconButton } from "@/components/ui/IconButton";
 import { XIcon } from "@/components/ui/icons";
 import { t } from "@/lib/i18n";
+import { log } from "@/lib/logger";
 import { sanitizeCodeHtml } from "@/lib/sanitize";
 
 interface OutputModalProps {
@@ -153,7 +154,7 @@ export function OutputModal({ open, onClose, content, title, language }: OutputM
   const handleCopy = async () => {
     const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : null;
     if (!clipboard?.writeText) {
-      console.warn("Clipboard API not available");
+      log.ui.warn("Clipboard API not available");
       return;
     }
 
@@ -162,7 +163,7 @@ export function OutputModal({ open, onClose, content, title, language }: OutputM
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
-      console.warn("Failed to copy output to clipboard", error);
+      log.ui.warn("Failed to copy output to clipboard", error);
     }
   };
 

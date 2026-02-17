@@ -3,7 +3,7 @@ import { send } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { t } from "@/lib/i18n";
-import type { SkillStatusReport, SkillStatusEntry } from "@/types/skills";
+import type { SkillStatusEntry } from "@/types/skills";
 import { selectedAgentId } from "./agents-core-state";
 import { gatewayConfig } from "./agents-tools-state";
 
@@ -24,7 +24,7 @@ export function syncSkillsAllowlist(allowlist: string[] | null): void {
 export async function loadSkills(): Promise<void> {
   skillsLoading.value = true;
   try {
-    const result = await send<SkillStatusReport>("skills.status", {});
+    const result = await send("skills.status", {});
     skills.value = result.skills;
   } catch (err) {
     toast.error(getErrorMessage(err));

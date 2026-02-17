@@ -42,12 +42,36 @@ import type { GatewayConfig } from "./agents-tools-state";
 export async function loadToolsConfig(): Promise<void> {
   toolsLoading.value = true;
   try {
-    const result = await send<{ config: GatewayConfig }>("config.get", {});
-    gatewayConfig.value = result.config;
+    const result = await send("config.get", {});
+    const config = result.config;
+    const normalizedConfig: GatewayConfig = {
+      ...config,
+      tools: config.tools
+        ? {
+            ...config.tools,
+            profile: normalizeToolProfile(config.tools.profile),
+          }
+        : undefined,
+      agents: config.agents
+        ? {
+            ...config.agents,
+            list: config.agents.list?.map((agent) => ({
+              ...agent,
+              tools: agent.tools
+                ? {
+                    ...agent.tools,
+                    profile: normalizeToolProfile(agent.tools.profile),
+                  }
+                : undefined,
+            })),
+          }
+        : undefined,
+    };
+    gatewayConfig.value = normalizedConfig;
 
-    const agentEntry = result.config.agents?.list?.find((a) => a.id === selectedAgentId.value);
+    const agentEntry = normalizedConfig.agents?.list?.find((a) => a.id === selectedAgentId.value);
     localToolsConfig.value = {
-      profile: normalizeToolProfile(agentEntry?.tools?.profile ?? result.config.tools?.profile),
+      profile: normalizeToolProfile(agentEntry?.tools?.profile ?? normalizedConfig.tools?.profile),
       alsoAllow: agentEntry?.tools?.alsoAllow ?? [],
       deny: agentEntry?.tools?.deny ?? [],
     };
@@ -90,7 +114,13 @@ export async function saveOverviewEdit(): Promise<void> {
 
   overviewSaving.value = true;
   try {
-    const params: Record<string, string> = { agentId: agent.id };
+    const params: {
+      agentId: string;
+      name?: string;
+      avatar?: string;
+      workspace?: string;
+      model?: string;
+    } = { agentId: agent.id };
 
     const newName = editName.value.trim();
     const oldName = agent.identity?.name || agent.name || "";
@@ -149,12 +179,12 @@ export async function createAgent(): Promise<void> {
 
   createSaving.value = true;
   try {
-    const params: Record<string, string> = { name, workspace };
+    const params: { name: string; workspace: string; emoji?: string } = { name, workspace };
     if (createEmoji.value.trim()) {
       params.emoji = createEmoji.value.trim();
     }
 
-    const result = await send<{ ok: boolean; agentId: string }>("agents.create", params);
+    const result = await send("agents.create", params);
     if (result.ok) {
       await loadAgents();
       selectedAgentId.value = result.agentId;

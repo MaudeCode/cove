@@ -16,9 +16,7 @@ import type {
   CronSchedule,
   CronPayload,
   CronStatusResult,
-  CronListResult,
   CronRunLogEntry,
-  CronRunsResult,
   UseCronJobsResult,
 } from "@/types/cron";
 
@@ -109,8 +107,8 @@ async function loadCronJobs(): Promise<void> {
   error.value = null;
 
   const [statusResult, listResult] = await Promise.allSettled([
-    send<CronStatusResult>("cron.status", {}),
-    send<CronListResult>("cron.list", { includeDisabled: true }),
+    send("cron.status", {}),
+    send("cron.list", { includeDisabled: true }),
   ]);
 
   if (statusResult.status === "fulfilled") {
@@ -138,7 +136,7 @@ async function loadCronJobs(): Promise<void> {
 async function loadJobRuns(jobId: string): Promise<void> {
   isLoadingRuns.value = true;
   try {
-    const result = await send<CronRunsResult>("cron.runs", { jobId, limit: 20 });
+    const result = await send("cron.runs", { jobId, limit: 20 });
     selectedJobRuns.value = result.entries ?? [];
   } catch {
     selectedJobRuns.value = [];

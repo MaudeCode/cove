@@ -20,7 +20,7 @@ import {
 import { createDebouncedSignal } from "@/lib/debounced-signal";
 import { SESSION_DELETE_ANIMATION_MS } from "@/lib/constants";
 import { getSessionsCache, setSessionsCache } from "@/lib/storage";
-import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
+import type { Session, SessionsListParams } from "@/types/sessions";
 
 // ============================================
 // State
@@ -176,7 +176,7 @@ export async function loadSessions(params?: SessionsListParams): Promise<void> {
   sessionsError.value = null;
 
   try {
-    const result = await send<SessionsListResult>("sessions.list", {
+    const result = await send("sessions.list", {
       limit: params?.limit ?? 100,
       ...params,
     });

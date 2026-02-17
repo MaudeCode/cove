@@ -15,6 +15,7 @@
 
 import { signal, computed } from "@preact/signals";
 import type { GatewayMessage, GatewayResponse, GatewayEvent, HelloPayload } from "@/types/gateway";
+import type { GatewayRpcMap } from "@/types/gateway-rpc";
 import { log } from "./logger";
 
 // ============================================
@@ -428,7 +429,7 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
     params.auth.password = config.password;
   }
 
-  const result = await send<HelloPayload>("connect", params);
+  const result = await send("connect", params);
   return result;
 }
 
@@ -485,11 +486,11 @@ export interface RequestOptions {
 /**
  * Send a request to the gateway
  */
-export function send<T = unknown>(
-  method: string,
-  params?: unknown,
-  options?: RequestOptions,
-): Promise<T> {
+type SendParamsTuple<M extends keyof GatewayRpcMap> = undefined extends GatewayRpcMap[M]["params"]
+  ? [params?: GatewayRpcMap[M]["params"], options?: RequestOptions]
+  : [params: GatewayRpcMap[M]["params"], options?: RequestOptions];
+
+function sendRaw(method: string, params?: unknown, options?: RequestOptions): Promise<unknown> {
   return new Promise((resolve, reject) => {
     if (!ws || ws.readyState !== WebSocket.OPEN) {
       reject(new Error("Not connected"));
@@ -519,6 +520,25 @@ export function send<T = unknown>(
 
     ws.send(JSON.stringify(request));
   });
+}
+
+export function send<M extends keyof GatewayRpcMap>(
+  method: M,
+  ...args: SendParamsTuple<M>
+): Promise<GatewayRpcMap[M]["result"]> {
+  return sendRaw(method, args[0], args[1]) as Promise<GatewayRpcMap[M]["result"]>;
+}
+
+/**
+ * Send a request for methods that are not part of the typed RPC map.
+ * Use this sparingly (e.g. manual debug RPC panel).
+ */
+export function sendUnknown<T = unknown>(
+  method: string,
+  params?: unknown,
+  options?: RequestOptions,
+): Promise<T> {
+  return sendRaw(method, params, options) as Promise<T>;
 }
 
 /**

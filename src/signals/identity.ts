@@ -36,16 +36,6 @@ function resolveAvatarUrl(avatar: string | null | undefined): string | null {
 }
 
 // ============================================
-// Types
-// ============================================
-
-export interface AssistantIdentity {
-  name: string;
-  avatar: string | null;
-  agentId: string | null;
-}
-
-// ============================================
 // Defaults
 // ============================================
 
@@ -81,7 +71,7 @@ export async function loadAssistantIdentity(sessionKey?: string): Promise<void> 
 
   try {
     const params = sessionKey ? { sessionKey } : {};
-    const result = await send<Partial<AssistantIdentity>>("agent.identity.get", params);
+    const result = await send("agent.identity.get", params);
 
     if (result) {
       if (result.name) {

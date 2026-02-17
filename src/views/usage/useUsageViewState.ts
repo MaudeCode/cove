@@ -13,7 +13,6 @@ import type {
   SessionsUsageResult,
   SessionUsageEntry,
   SessionUsageTimeSeries,
-  SessionLogsResult,
   SessionLogEntry,
 } from "@/types/server-stats";
 
@@ -44,7 +43,7 @@ export async function loadHealth(): Promise<void> {
   error.value = null;
 
   try {
-    const result = await send<HealthSummary>("health", { probe: false });
+    const result = await send("health", { probe: false });
     healthData.value = result;
   } catch (err) {
     error.value = getErrorMessage(err);
@@ -59,7 +58,7 @@ export async function loadUsage(days: number = 30): Promise<void> {
   usageDays.value = days;
 
   try {
-    const result = await send<CostUsageSummary>("usage.cost", { days });
+    const result = await send("usage.cost", { days });
     usageData.value = result;
   } catch (err) {
     // Usage might not be available.
@@ -80,7 +79,7 @@ export async function loadSessionsUsage(days: number = 30): Promise<void> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
-    const result = await send<SessionsUsageResult>("sessions.usage", {
+    const result = await send("sessions.usage", {
       startDate: startDate.toISOString().split("T")[0],
       endDate: endDate.toISOString().split("T")[0],
       limit: 100,
@@ -108,7 +107,7 @@ export async function loadSessionTimeseries(key: string): Promise<void> {
   sessionTimeseries.value = null;
 
   try {
-    const result = await send<SessionUsageTimeSeries>("sessions.usage.timeseries", { key });
+    const result = await send("sessions.usage.timeseries", { key });
     sessionTimeseries.value = result;
   } catch (err) {
     // Timeseries may not be available.
@@ -124,7 +123,7 @@ export async function loadSessionLogs(key: string): Promise<void> {
   sessionLogs.value = [];
 
   try {
-    const result = await send<SessionLogsResult>("sessions.usage.logs", { key, limit: 100 });
+    const result = await send("sessions.usage.logs", { key, limit: 100 });
     sessionLogs.value = result?.logs ?? [];
   } catch (err) {
     // Logs may not be available.

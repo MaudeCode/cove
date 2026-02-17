@@ -69,7 +69,7 @@ async function loadInstances(): Promise<void> {
   error.value = null;
 
   try {
-    const result = await send<SystemPresence[]>("system-presence", {});
+    const result = await send("system-presence", {});
     instances.value = result ?? [];
   } catch (err) {
     error.value = getErrorMessage(err);

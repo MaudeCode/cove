@@ -22,7 +22,7 @@ import { ArrowLeft, Save, Eye, Pencil } from "lucide-preact";
 import { ViewErrorBoundary } from "@/components/ui/ViewErrorBoundary";
 import type { ComponentChildren } from "preact";
 import type { RouteProps } from "@/types/routes";
-import type { WorkspaceFileResult, WorkspaceFile } from "@/types/workspace";
+import type { WorkspaceFile } from "@/types/workspace";
 import { WORKSPACE_FILE_META, normalizeWorkspaceFilename } from "@/types/workspace";
 
 interface WorkspaceEditorViewProps extends RouteProps {
@@ -75,7 +75,7 @@ async function loadFile(filename: string, agentId: string): Promise<void> {
   currentAgentId.value = agentId;
 
   try {
-    const result = await send<WorkspaceFileResult>("agents.files.get", {
+    const result = await send("agents.files.get", {
       agentId,
       name: filename,
     });

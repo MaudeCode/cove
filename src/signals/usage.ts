@@ -97,7 +97,7 @@ async function fetchUsage(): Promise<void> {
   usageError.value = null;
 
   try {
-    const result = await gateway.send<UsageSummary>("usage.status");
+    const result = await gateway.send("usage.status");
     usageSummary.value = result;
     setUsageCache(result);
     log.usage.debug("Usage fetched:", result);
