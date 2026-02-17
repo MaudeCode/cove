@@ -19,6 +19,7 @@ import {
   RUN_ERROR_CLEANUP_DELAY_MS,
   RUN_ABORT_CLEANUP_DELAY_MS,
 } from "@/lib/constants";
+import { createDebouncedSignal } from "@/lib/debounced-signal";
 import { isHeartbeatMessage } from "@/lib/message-detection";
 import { getMessagesCache, setMessagesCache } from "@/lib/storage";
 import { isForActiveSession } from "@/signals/sessions";
@@ -91,20 +92,7 @@ export const heartbeatCount = computed(() => heartbeatMessages.value.length);
 export const searchQuery = signal<string>("");
 
 /** Debounced search query for filtering (300ms delay) */
-export const debouncedSearchQuery = signal<string>("");
-
-/** Debounce timer for search */
-let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-/** Update debounced search query with delay */
-searchQuery.subscribe((value) => {
-  if (searchDebounceTimer) {
-    clearTimeout(searchDebounceTimer);
-  }
-  searchDebounceTimer = setTimeout(() => {
-    debouncedSearchQuery.value = value;
-  }, 300);
-});
+export const debouncedSearchQuery = createDebouncedSignal(searchQuery, 300);
 
 /** Whether search is active (panel open) */
 export const isSearchOpen = signal<boolean>(false);

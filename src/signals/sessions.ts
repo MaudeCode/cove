@@ -17,6 +17,7 @@ import {
   isChannelSession,
   groupSessionsByTime,
 } from "@/lib/session-utils";
+import { createDebouncedSignal } from "@/lib/debounced-signal";
 import { SESSION_DELETE_ANIMATION_MS } from "@/lib/constants";
 import { getSessionsCache, setSessionsCache } from "@/lib/storage";
 import type { Session, SessionsListResult, SessionsListParams } from "@/types/sessions";
@@ -38,20 +39,7 @@ export const sessionKindFilter = signal<string | null>(null);
 export const sessionSearchQuery = signal<string>("");
 
 /** Debounced session search query for filtering (300ms delay) */
-const debouncedSessionSearchQuery = signal<string>("");
-
-/** Debounce timer for session search */
-let sessionSearchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
-
-/** Update debounced session search query with delay */
-sessionSearchQuery.subscribe((value) => {
-  if (sessionSearchDebounceTimer) {
-    clearTimeout(sessionSearchDebounceTimer);
-  }
-  sessionSearchDebounceTimer = setTimeout(() => {
-    debouncedSessionSearchQuery.value = value;
-  }, 300);
-});
+const debouncedSessionSearchQuery = createDebouncedSignal(sessionSearchQuery, 300);
 
 /** Whether to show cron sessions (hidden by default) */
 export const showCronSessions = signal<boolean>(false);
