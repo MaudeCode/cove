@@ -175,7 +175,7 @@ const sessionCommands: Command[] = [
       const sessionKey = effectiveSessionKey.value;
       if (sessionKey && confirm(t("common.deleteThisSession"))) {
         try {
-          await send("sessions.delete", { sessionKey });
+          await send("sessions.delete", { key: sessionKey });
         } catch {
           // Session may already be deleted
         }
@@ -219,7 +219,7 @@ const modelCommands: Command[] = [
           const sessionKey = effectiveSessionKey.value;
           if (sessionKey) {
             try {
-              await send("sessions.patch", { sessionKey, model: model.id });
+              await send("sessions.patch", { key: sessionKey, model: model.id });
             } catch {
               // Failed to update model
             }
