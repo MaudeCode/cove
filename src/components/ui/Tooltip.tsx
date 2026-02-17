@@ -8,7 +8,14 @@
  */
 
 import { createContext } from "preact";
-import { useState, useRef, useEffect, useCallback, useContext } from "preact/hooks";
+import {
+  useState,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useContext,
+} from "preact/hooks";
 import type { ComponentChildren } from "preact";
 import { createPortal } from "preact/compat";
 
@@ -30,6 +37,7 @@ export interface TooltipProps {
 }
 
 interface TooltipState {
+  ownerId: symbol;
   content: ComponentChildren;
   placement: TooltipPlacement;
   triggerRect: DOMRect | null;
@@ -38,8 +46,8 @@ interface TooltipState {
 
 interface TooltipContextValue {
   show: (state: Omit<TooltipState, "isVisible">) => void;
-  hide: () => void;
-  update: (triggerRect: DOMRect) => void;
+  hide: (ownerId?: symbol) => void;
+  update: (triggerRect: DOMRect, ownerId: symbol) => void;
 }
 
 const TooltipContext = createContext<TooltipContextValue | null>(null);
@@ -51,6 +59,7 @@ const TooltipContext = createContext<TooltipContextValue | null>(null);
 export function TooltipProvider({ children }: { children: ComponentChildren }) {
   const [state, setState] = useState<TooltipState | null>(null);
   const [shouldRender, setShouldRender] = useState(false);
+  const currentOwnerRef = useRef<symbol | null>(null);
   // Track animation frame and timeout for cleanup
   const rafRef = useRef<number | null>(null);
   const hideTimeoutRef = useRef<number | null>(null);
@@ -69,6 +78,7 @@ export function TooltipProvider({ children }: { children: ComponentChildren }) {
       clearTimeout(hideTimeoutRef.current);
       hideTimeoutRef.current = null;
     }
+    currentOwnerRef.current = newState.ownerId;
     setShouldRender(true);
     // Small delay for mount animation
     rafRef.current = requestAnimationFrame(() => {
@@ -77,23 +87,37 @@ export function TooltipProvider({ children }: { children: ComponentChildren }) {
     });
   }, []);
 
-  const hide = useCallback(() => {
+  const hide = useCallback((ownerId?: symbol) => {
+    if (ownerId && currentOwnerRef.current && ownerId !== currentOwnerRef.current) {
+      return;
+    }
+
     // Cancel any pending show animation
     if (rafRef.current) {
       cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
     }
+
+    const ownerAtHide = currentOwnerRef.current;
     setState((prev) => (prev ? { ...prev, isVisible: false } : null));
     // Wait for fade out
     hideTimeoutRef.current = window.setTimeout(() => {
+      if (ownerAtHide !== currentOwnerRef.current) {
+        hideTimeoutRef.current = null;
+        return;
+      }
       setShouldRender(false);
       setState(null);
+      currentOwnerRef.current = null;
       hideTimeoutRef.current = null;
     }, 150);
   }, []);
 
-  const update = useCallback((triggerRect: DOMRect) => {
-    setState((prev) => (prev ? { ...prev, triggerRect } : null));
+  const update = useCallback((triggerRect: DOMRect, ownerId: symbol) => {
+    setState((prev) => {
+      if (!prev || prev.ownerId !== ownerId) return prev;
+      return { ...prev, triggerRect };
+    });
   }, []);
 
   // Global escape key handler - only active when tooltip is visible
@@ -122,11 +146,14 @@ export function TooltipProvider({ children }: { children: ComponentChildren }) {
 function TooltipPortal({ state }: { state: TooltipState | null }) {
   const tooltipRef = useRef<HTMLDivElement>(null);
   const [finalPlacement, setFinalPlacement] = useState<TooltipPlacement>("top");
-  const [position, setPosition] = useState({ top: 0, left: 0 });
+  const [position, setPosition] = useState<{ top: number; left: number } | null>(null);
 
-  // Calculate position after render (need tooltip dimensions)
-  useEffect(() => {
-    if (!state?.triggerRect || !tooltipRef.current) return;
+  // Measure and position before paint to avoid a visible flash at (0, 0).
+  useLayoutEffect(() => {
+    if (!state?.triggerRect || !tooltipRef.current) {
+      setPosition(null);
+      return;
+    }
 
     const tooltip = tooltipRef.current;
     const tooltipRect = tooltip.getBoundingClientRect();
@@ -143,6 +170,7 @@ function TooltipPortal({ state }: { state: TooltipState | null }) {
   if (!state?.triggerRect) return null;
 
   const { content, isVisible } = state;
+  const isPositioned = position !== null;
 
   return (
     <div
@@ -151,11 +179,12 @@ function TooltipPortal({ state }: { state: TooltipState | null }) {
       class={`
         fixed z-[9999] pointer-events-none
         transition-opacity duration-150
-        ${isVisible ? "opacity-100" : "opacity-0"}
+        ${isVisible && isPositioned ? "opacity-100" : "opacity-0"}
       `}
       style={{
-        top: `${position.top}px`,
-        left: `${position.left}px`,
+        top: isPositioned ? `${position.top}px` : "-9999px",
+        left: isPositioned ? `${position.left}px` : "-9999px",
+        visibility: isPositioned ? "visible" : "hidden",
       }}
     >
       {/* Tooltip content */}
@@ -300,6 +329,7 @@ export function Tooltip({
   const context = useContext(TooltipContext);
   const timeoutRef = useRef<number | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
+  const ownerIdRef = useRef<symbol>(Symbol("tooltip-owner"));
 
   // Disable tooltips on touch devices
   const isDisabled = disabled || isTouchDevice();
@@ -310,7 +340,7 @@ export function Tooltip({
     timeoutRef.current = window.setTimeout(() => {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        context.show({ content, placement, triggerRect: rect });
+        context.show({ ownerId: ownerIdRef.current, content, placement, triggerRect: rect });
       }
     }, delay);
   }, [context, content, placement, delay, isDisabled]);
@@ -320,7 +350,7 @@ export function Tooltip({
       clearTimeout(timeoutRef.current);
       timeoutRef.current = null;
     }
-    context?.hide();
+    context?.hide(ownerIdRef.current);
   }, [context]);
 
   // Cleanup on unmount
