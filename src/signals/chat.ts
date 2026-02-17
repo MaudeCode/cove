@@ -4,11 +4,11 @@
  * Reactive state for chat messages and streaming.
  *
  * Usage:
- *   import { messages, isStreaming, streamingContent, streamingToolCalls } from '@/signals/chat'
+ *   import { messages, isStreaming } from '@/signals/chat'
  *
  *   // In components
  *   {messages.value.map(msg => <Message key={msg.id} message={msg} />)}
- *   {isStreaming.value && <StreamingMessage content={streamingContent.value} toolCalls={streamingToolCalls.value} />}
+ *   {isStreaming.value && <StreamingMessage />}
  */
 
 import { signal, computed } from "@preact/signals";
@@ -174,10 +174,18 @@ export const hasQueuedMessages = computed(() => messageQueue.value.length > 0);
 /** Active chat runs (keyed by runId) */
 export const activeRuns = signal<Map<string, ChatRun>>(new Map());
 
-/** Direct signals for streaming state (more reliable than computed with Maps) */
-export const isStreaming = signal<boolean>(false);
-const streamingContent = signal<string>("");
-const streamingToolCalls = signal<ToolCall[]>([]);
+/** First active streaming run across sessions (derived from activeRuns) */
+const currentStreamingRun = computed<ChatRun | null>(() => {
+  for (const run of activeRuns.value.values()) {
+    if (run.status === "pending" || run.status === "streaming") {
+      return run;
+    }
+  }
+  return null;
+});
+
+/** Global streaming flags/content derived from activeRuns (single source of truth) */
+export const isStreaming = computed<boolean>(() => currentStreamingRun.value !== null);
 
 /** Get the current streaming run for a session (if any) */
 export function getStreamingRun(sessionKey: string): ChatRun | null {
@@ -215,27 +223,6 @@ export function getStreamingStateForSession(sessionKey: string): {
 // ============================================
 
 /**
- * Update the streaming display signals from activeRuns.
- * Called after every run state change.
- */
-function syncStreamingSignals(): void {
-  let foundStreaming = false;
-  for (const run of activeRuns.value.values()) {
-    if (run.status === "pending" || run.status === "streaming") {
-      foundStreaming = true;
-      streamingContent.value = run.content;
-      streamingToolCalls.value = run.toolCalls;
-      break;
-    }
-  }
-  if (!foundStreaming) {
-    streamingContent.value = "";
-    streamingToolCalls.value = [];
-  }
-  isStreaming.value = foundStreaming;
-}
-
-/**
  * Update a run in the activeRuns map (immutable update pattern).
  */
 function updateRun(runId: string, updates: Partial<ChatRun>): void {
@@ -245,7 +232,6 @@ function updateRun(runId: string, updates: Partial<ChatRun>): void {
   const newRuns = new Map(activeRuns.value);
   newRuns.set(runId, { ...run, ...updates });
   activeRuns.value = newRuns;
-  syncStreamingSignals();
 }
 
 /**
@@ -256,7 +242,6 @@ function scheduleRunCleanup(runId: string, delayMs: number): void {
     const runs = new Map(activeRuns.value);
     runs.delete(runId);
     activeRuns.value = runs;
-    syncStreamingSignals();
   }, delayMs);
 }
 
@@ -332,7 +317,6 @@ export function startRun(runId: string, sessionKey: string): void {
     toolCalls: [],
   });
   activeRuns.value = newRuns;
-  syncStreamingSignals();
 }
 
 /** Update a chat run with streaming content and tool calls */
@@ -451,7 +435,6 @@ export function abortRun(runId: string): void {
 /** Clear all active runs (used on reconnect when gateway state is lost) */
 export function clearActiveRuns(): void {
   activeRuns.value = new Map();
-  syncStreamingSignals();
 }
 
 // ============================================
