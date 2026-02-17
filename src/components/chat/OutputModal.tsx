@@ -151,9 +151,19 @@ export function OutputModal({ open, onClose, content, title, language }: OutputM
   }, [open]);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    const clipboard = typeof navigator !== "undefined" ? navigator.clipboard : null;
+    if (!clipboard?.writeText) {
+      console.warn("Clipboard API not available");
+      return;
+    }
+
+    try {
+      await clipboard.writeText(content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.warn("Failed to copy output to clipboard", error);
+    }
   };
 
   if (!open) return null;
