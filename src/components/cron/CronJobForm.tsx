@@ -10,6 +10,7 @@ import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { getTimeZoneSuggestions } from "@/lib/timezones";
 import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
+import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Disclosure } from "@/components/ui/Disclosure";
@@ -17,6 +18,7 @@ import { FormField } from "@/components/ui/FormField";
 import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
 import { ChipButtonGroup } from "@/components/ui/ChipButton";
+import { Maximize2 } from "lucide-preact";
 import {
   msToDatetimeLocal,
   datetimeLocalToMs,
@@ -78,8 +80,24 @@ export function CronJobForm({
 }: CronJobFormProps) {
   const errors = formErrors.value;
   const showAdvancedScheduleOptions = useSignal(false);
+  const showPayloadFullscreenEditor = useSignal(false);
   const timeZoneQuery = editScheduleTz.value.trim();
   const timeZoneSuggestions = getTimeZoneSuggestions(timeZoneQuery, 8);
+
+  const setActivePayloadValue = (value: string) => {
+    if (editSessionTarget.value === "main") {
+      editPayloadText.value = value;
+      return;
+    }
+    editPayloadMessage.value = value;
+  };
+
+  const activePayloadValue =
+    editSessionTarget.value === "main" ? editPayloadText.value : editPayloadMessage.value;
+  const activePayloadPlaceholder =
+    editSessionTarget.value === "main"
+      ? t("cron.form.systemEventPlaceholder")
+      : t("cron.form.agentMessagePlaceholder");
 
   useEffect(() => {
     if (editScheduleKind.value !== "cron") {
@@ -242,6 +260,18 @@ export function CronJobForm({
       {/* Payload */}
       <FormField
         label={t("cron.form.payload")}
+        labelAction={
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            icon={<Maximize2 class="w-4 h-4" />}
+            onClick={() => (showPayloadFullscreenEditor.value = true)}
+            class="sm:hidden"
+          >
+            {t("cron.form.expandPayloadEditor")}
+          </Button>
+        }
         error={errors.payload}
         hint={
           editSessionTarget.value === "main"
@@ -277,6 +307,35 @@ export function CronJobForm({
           </div>
         )}
       </FormField>
+
+      {showPayloadFullscreenEditor.value && (
+        <div class="fixed inset-0 z-[60] sm:hidden bg-[var(--color-bg-surface)] flex flex-col">
+          <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--color-border)]">
+            <h4 class="text-base font-semibold text-[var(--color-text-primary)]">
+              {t("cron.form.fullscreenPayloadTitle")}
+            </h4>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={() => (showPayloadFullscreenEditor.value = false)}
+            >
+              {t("actions.done")}
+            </Button>
+          </div>
+          <div class="flex-1 p-4 pb-[max(env(safe-area-inset-bottom),1rem)] overflow-y-auto">
+            <Textarea
+              value={activePayloadValue}
+              onInput={(e) => setActivePayloadValue((e.target as HTMLTextAreaElement).value)}
+              placeholder={activePayloadPlaceholder}
+              error={!!errors.payload}
+              rows={12}
+              fullWidth
+              class="min-h-[60vh] h-full resize-none"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

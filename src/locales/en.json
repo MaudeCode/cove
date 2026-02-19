@@ -593,6 +593,8 @@
       "payload": "Payload",
       "payloadHintMain": "Text injected as a system event into the main session.",
       "payloadHintIsolated": "Runs as an agent turn in an isolated session.",
+      "expandPayloadEditor": "Expand editor",
+      "fullscreenPayloadTitle": "Payload Editor",
       "systemEventPlaceholder": "Text to inject as system event",
       "agentMessagePlaceholder": "Message to send to the agent",
       "modelPlaceholder": "Model override (optional)",
