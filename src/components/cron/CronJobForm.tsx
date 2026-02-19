@@ -5,9 +5,14 @@
  */
 
 import type { Signal } from "@preact/signals";
+import { useSignal } from "@preact/signals";
+import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
+import { getTimeZoneSuggestions } from "@/lib/timezones";
+import { AutocompleteInput } from "@/components/ui/AutocompleteInput";
 import { Input } from "@/components/ui/Input";
 import { Dropdown } from "@/components/ui/Dropdown";
+import { Disclosure } from "@/components/ui/Disclosure";
 import { FormField } from "@/components/ui/FormField";
 import { Textarea } from "@/components/ui/Textarea";
 import { Toggle } from "@/components/ui/Toggle";
@@ -26,6 +31,7 @@ interface CronJobFormProps {
   editScheduleKind: Signal<"cron" | "every" | "at">;
   editScheduleExpr: Signal<string>;
   editScheduleTz: Signal<string>;
+  editScheduleStaggerMs: Signal<string>;
   editScheduleEveryMs: Signal<string>;
   editScheduleAtMs: Signal<string>;
   editSessionTarget: Signal<"main" | "isolated">;
@@ -59,6 +65,7 @@ export function CronJobForm({
   editScheduleKind,
   editScheduleExpr,
   editScheduleTz,
+  editScheduleStaggerMs,
   editScheduleEveryMs,
   editScheduleAtMs,
   editSessionTarget,
@@ -70,6 +77,19 @@ export function CronJobForm({
   formErrors,
 }: CronJobFormProps) {
   const errors = formErrors.value;
+  const showAdvancedScheduleOptions = useSignal(false);
+  const timeZoneQuery = editScheduleTz.value.trim();
+  const timeZoneSuggestions = getTimeZoneSuggestions(timeZoneQuery, 8);
+
+  useEffect(() => {
+    if (editScheduleKind.value !== "cron") {
+      showAdvancedScheduleOptions.value = false;
+      return;
+    }
+    if (editScheduleStaggerMs.value.trim()) {
+      showAdvancedScheduleOptions.value = true;
+    }
+  }, [editScheduleKind.value, editScheduleStaggerMs.value]);
 
   return (
     <div class="space-y-4 sm:space-y-5">
@@ -110,19 +130,46 @@ export function CronJobForm({
                   placeholder={t("cron.form.cronPlaceholder")}
                   fullWidth
                 />
-                <Input
+                <AutocompleteInput
                   value={editScheduleTz.value}
-                  onInput={(e) => (editScheduleTz.value = (e.target as HTMLInputElement).value)}
+                  onValueChange={(val) => (editScheduleTz.value = val)}
+                  suggestions={timeZoneSuggestions}
                   placeholder={t("cron.form.timezonePlaceholder")}
+                  aria-label={t("cron.form.timezone")}
+                  minCharsToOpen={0}
+                  clearable
+                  clearAriaLabel={t("actions.clear")}
                   fullWidth
                 />
               </div>
+              <p class="text-xs text-[var(--color-text-muted)]">{t("cron.form.timezoneHint")}</p>
               <ChipButtonGroup
                 options={CRON_EXAMPLES.map(({ expr, label }) => ({ value: expr, label }))}
                 value={editScheduleExpr.value}
                 onChange={(expr) => (editScheduleExpr.value = expr)}
                 size="sm"
               />
+              <Disclosure
+                isOpen={showAdvancedScheduleOptions.value}
+                onToggle={(nextOpen) => (showAdvancedScheduleOptions.value = nextOpen)}
+                collapsedLabel={t("cron.form.showAdvanced")}
+                expandedLabel={t("cron.form.hideAdvanced")}
+                contentClass="mt-2"
+              >
+                <FormField label={t("cron.form.staggerMs")} hint={t("cron.form.staggerMsHint")}>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={editScheduleStaggerMs.value}
+                    onInput={(e) =>
+                      (editScheduleStaggerMs.value = (e.target as HTMLInputElement).value)
+                    }
+                    placeholder={t("cron.form.staggerMsPlaceholder")}
+                    fullWidth
+                  />
+                </FormField>
+              </Disclosure>
             </div>
           )}
           {editScheduleKind.value === "every" && (

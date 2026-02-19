@@ -10,6 +10,7 @@ import { useEffect } from "preact/hooks";
 import { t } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
+import { isValidTimeZone } from "@/lib/timezones";
 import { isValidCronExpr } from "@/components/cron";
 import type {
   CronJob,
@@ -48,6 +49,7 @@ const editEnabled = signal<boolean>(true);
 const editScheduleKind = signal<"cron" | "every" | "at">("cron");
 const editScheduleExpr = signal<string>("");
 const editScheduleTz = signal<string>("");
+const editScheduleStaggerMs = signal<string>("");
 const editScheduleEveryMs = signal<string>("");
 const editScheduleAtMs = signal<string>("");
 const editWakeMode = signal<"next-heartbeat" | "now">("next-heartbeat");
@@ -57,6 +59,20 @@ const editPayloadText = signal<string>("");
 const editPayloadMessage = signal<string>("");
 const editPayloadModel = signal<string>("");
 const formErrors = signal<Record<string, string>>({});
+
+function parseNonNegativeInteger(raw: string): number | undefined | null {
+  const trimmed = raw.trim();
+  if (!trimmed) return undefined;
+  // Strict integer parsing: reject decimals, exponents, and mixed text.
+  if (!/^\d+$/.test(trimmed)) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isSafeInteger(parsed) || parsed < 0) return null;
+  return parsed;
+}
+
+function normalizeTimeZone(raw: string | undefined): string {
+  return raw?.trim() ?? "";
+}
 
 // ============================================
 // Computed
@@ -150,9 +166,16 @@ function populateEditForm(job: CronJob) {
   editDescription.value = job.description ?? "";
   editEnabled.value = job.enabled;
   editScheduleKind.value = job.schedule.kind;
+  editScheduleExpr.value = "";
+  editScheduleTz.value = "";
+  editScheduleStaggerMs.value = "";
+  editScheduleEveryMs.value = "";
+  editScheduleAtMs.value = "";
   if (job.schedule.kind === "cron") {
     editScheduleExpr.value = job.schedule.expr;
     editScheduleTz.value = job.schedule.tz ?? "";
+    editScheduleStaggerMs.value =
+      job.schedule.staggerMs !== undefined ? String(job.schedule.staggerMs) : "";
   } else if (job.schedule.kind === "every") {
     editScheduleEveryMs.value = String(job.schedule.everyMs);
   } else if (job.schedule.kind === "at") {
@@ -177,6 +200,7 @@ function resetEditForm() {
   editScheduleKind.value = "cron";
   editScheduleExpr.value = "";
   editScheduleTz.value = "";
+  editScheduleStaggerMs.value = "";
   editScheduleEveryMs.value = "";
   editScheduleAtMs.value = "";
   editWakeMode.value = "next-heartbeat";
@@ -220,6 +244,13 @@ function validateForm(): boolean {
       errors.schedule = t("cron.validation.cronRequired");
     } else if (!isValidCronExpr(editScheduleExpr.value)) {
       errors.schedule = t("cron.validation.cronInvalid");
+    } else if (editScheduleTz.value.trim() && !isValidTimeZone(editScheduleTz.value.trim())) {
+      errors.schedule = t("cron.validation.timezoneInvalid");
+    } else {
+      const staggerMs = parseNonNegativeInteger(editScheduleStaggerMs.value);
+      if (staggerMs === null) {
+        errors.schedule = t("cron.validation.staggerNonNegative");
+      }
     }
   } else if (editScheduleKind.value === "every") {
     const ms = parseInt(editScheduleEveryMs.value, 10);
@@ -249,12 +280,16 @@ function validateForm(): boolean {
 
 function buildSchedule(): CronSchedule {
   switch (editScheduleKind.value) {
-    case "cron":
+    case "cron": {
+      const parsedStagger = parseNonNegativeInteger(editScheduleStaggerMs.value);
+      const parsedTimeZone = editScheduleTz.value.trim();
       return {
         kind: "cron",
         expr: editScheduleExpr.value,
-        ...(editScheduleTz.value ? { tz: editScheduleTz.value } : {}),
+        ...(parsedTimeZone ? { tz: parsedTimeZone } : {}),
+        ...(typeof parsedStagger === "number" ? { staggerMs: parsedStagger } : {}),
       };
+    }
     case "every":
       return {
         kind: "every",
@@ -381,7 +416,11 @@ export function useCronJobs(): UseCronJobsResult {
 
     if (job.schedule.kind === "cron" && editScheduleKind.value === "cron") {
       if (editScheduleExpr.value !== job.schedule.expr) return true;
-      if (editScheduleTz.value !== (job.schedule.tz ?? "")) return true;
+      if (normalizeTimeZone(editScheduleTz.value) !== normalizeTimeZone(job.schedule.tz))
+        return true;
+      const parsedEditStagger = parseNonNegativeInteger(editScheduleStaggerMs.value);
+      if (parsedEditStagger === null) return true;
+      if ((parsedEditStagger ?? undefined) !== (job.schedule.staggerMs ?? undefined)) return true;
     } else if (job.schedule.kind === "every" && editScheduleKind.value === "every") {
       if (editScheduleEveryMs.value !== String(job.schedule.everyMs)) return true;
     } else if (job.schedule.kind === "at" && editScheduleKind.value === "at") {
@@ -423,6 +462,7 @@ export function useCronJobs(): UseCronJobsResult {
       editScheduleKind,
       editScheduleExpr,
       editScheduleTz,
+      editScheduleStaggerMs,
       editScheduleEveryMs,
       editScheduleAtMs,
       editWakeMode,

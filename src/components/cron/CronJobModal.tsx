@@ -40,6 +40,7 @@ interface CronJobModalProps {
   editScheduleKind: Signal<"cron" | "every" | "at">;
   editScheduleExpr: Signal<string>;
   editScheduleTz: Signal<string>;
+  editScheduleStaggerMs: Signal<string>;
   editScheduleEveryMs: Signal<string>;
   editScheduleAtMs: Signal<string>;
   editSessionTarget: Signal<"main" | "isolated">;
@@ -71,6 +72,7 @@ export function CronJobModal({
   editScheduleKind,
   editScheduleExpr,
   editScheduleTz,
+  editScheduleStaggerMs,
   editScheduleEveryMs,
   editScheduleAtMs,
   editSessionTarget,
@@ -183,6 +185,7 @@ export function CronJobModal({
           editScheduleKind={editScheduleKind}
           editScheduleExpr={editScheduleExpr}
           editScheduleTz={editScheduleTz}
+          editScheduleStaggerMs={editScheduleStaggerMs}
           editScheduleEveryMs={editScheduleEveryMs}
           editScheduleAtMs={editScheduleAtMs}
           editSessionTarget={editSessionTarget}

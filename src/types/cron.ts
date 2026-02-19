@@ -23,6 +23,7 @@ export type CronScheduleCron = {
   kind: "cron";
   expr: string;
   tz?: string;
+  staggerMs?: number;
 };
 
 export type CronSchedule = CronScheduleAt | CronScheduleEvery | CronScheduleCron;
@@ -158,6 +159,7 @@ export interface CronJobsForm {
   editScheduleKind: Signal<"cron" | "every" | "at">;
   editScheduleExpr: Signal<string>;
   editScheduleTz: Signal<string>;
+  editScheduleStaggerMs: Signal<string>;
   editScheduleEveryMs: Signal<string>;
   editScheduleAtMs: Signal<string>;
   editWakeMode: Signal<CronWakeMode>;

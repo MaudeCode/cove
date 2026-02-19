@@ -29,7 +29,11 @@ export function datetimeLocalToMs(val: string): number {
 export function formatSchedule(schedule: CronSchedule): string {
   switch (schedule.kind) {
     case "cron":
-      return schedule.expr + (schedule.tz ? ` (${schedule.tz})` : "");
+      return (
+        schedule.expr +
+        (schedule.tz ? ` (${schedule.tz})` : "") +
+        (schedule.staggerMs !== undefined ? ` +${schedule.staggerMs}ms` : "")
+      );
     case "every": {
       const ms = schedule.everyMs;
       if (ms >= 86400000) return `Every ${Math.round(ms / 86400000)}d`;
