@@ -149,6 +149,7 @@ function SessionRow({ session }: { session: Session }) {
             {isEditing ? (
               <div
                 class="flex items-center gap-2"
+                role="group"
                 onClick={(e) => e.stopPropagation()}
                 onKeyDown={(e) => e.stopPropagation()}
               >

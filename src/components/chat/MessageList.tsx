@@ -349,29 +349,26 @@ export function MessageList({
                 rendered.push(<CollapsedMessage key={`cron-${idx}`} messages={[group.message]} />);
               } else {
                 const message = group.message;
-                const handleNavigate = isSearchOpen.value
-                  ? () => {
-                      scrollToMessageId.value = message.id;
-                      searchQuery.value = "";
-                      isSearchOpen.value = false;
-                    }
-                  : undefined;
+                const searchActive = isSearchOpen.value;
+                const handleNavigate = () => {
+                  scrollToMessageId.value = message.id;
+                  searchQuery.value = "";
+                  isSearchOpen.value = false;
+                };
 
                 rendered.push(
                   <div
                     key={message.id}
                     data-message-id={message.id}
-                    onClick={handleNavigate}
-                    onKeyDown={
-                      handleNavigate
-                        ? (e: KeyboardEvent) => {
-                            if (e.key === "Enter") handleNavigate();
-                          }
-                        : undefined
-                    }
-                    role={isSearchOpen.value ? "button" : undefined}
-                    tabIndex={isSearchOpen.value ? 0 : undefined}
-                    class={`-mx-2 px-2 py-1 rounded-lg ${isSearchOpen.value ? MESSAGE_HIGHLIGHT_HOVER : ""}`}
+                    {...(searchActive && {
+                      onClick: handleNavigate,
+                      onKeyDown: (e: KeyboardEvent) => {
+                        if (e.key === "Enter") handleNavigate();
+                      },
+                      role: "button",
+                      tabIndex: 0,
+                    })}
+                    class={`-mx-2 px-2 py-1 rounded-lg ${searchActive ? MESSAGE_HIGHLIGHT_HOVER : ""}`}
                   >
                     <ChatMessage
                       message={message}

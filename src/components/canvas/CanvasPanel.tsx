@@ -293,6 +293,8 @@ export function CanvasPanel() {
           flex items-center gap-2 px-3 cursor-grab active:cursor-grabbing select-none shrink-0
           ${isMinimized.value ? "py-2" : "py-2 border-b border-[var(--color-border)]"}
         `}
+        role="toolbar"
+        aria-label="Canvas panel controls"
         style={{ height: `${HEADER_HEIGHT}px` }}
         onMouseDown={handleDragStart}
         onTouchStart={handleDragStart}
@@ -366,42 +368,52 @@ export function CanvasPanel() {
       {/* Resize handles (floating mode only) */}
       {dockPosition.value === "floating" && !isMinimized.value && (
         <>
-          {/* Corners */}
+          {/* Corners - aria-hidden as they duplicate edge functionality */}
           <div
             class="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize z-10 touch-none"
+            aria-hidden="true"
             onMouseDown={(e) => handleResizeStart(e, "se")}
             onTouchStart={(e) => handleResizeStart(e, "se")}
           />
           <div
             class="absolute bottom-0 left-0 w-4 h-4 cursor-sw-resize z-10 touch-none"
+            aria-hidden="true"
             onMouseDown={(e) => handleResizeStart(e, "sw")}
             onTouchStart={(e) => handleResizeStart(e, "sw")}
           />
           <div
             class="absolute top-11 right-0 w-4 h-4 cursor-ne-resize z-10 touch-none"
+            aria-hidden="true"
             onMouseDown={(e) => handleResizeStart(e, "ne")}
             onTouchStart={(e) => handleResizeStart(e, "ne")}
           />
           <div
             class="absolute top-11 left-0 w-4 h-4 cursor-nw-resize z-10 touch-none"
+            aria-hidden="true"
             onMouseDown={(e) => handleResizeStart(e, "nw")}
             onTouchStart={(e) => handleResizeStart(e, "nw")}
           />
           {/* Edges */}
           <div
             class="absolute right-0 w-2 cursor-e-resize touch-none"
+            role="separator"
+            aria-orientation="vertical"
             style={{ top: "60px", height: "calc(100% - 76px)" }}
             onMouseDown={(e) => handleResizeStart(e, "e")}
             onTouchStart={(e) => handleResizeStart(e, "e")}
           />
           <div
             class="absolute left-0 w-2 cursor-w-resize touch-none"
+            role="separator"
+            aria-orientation="vertical"
             style={{ top: "60px", height: "calc(100% - 76px)" }}
             onMouseDown={(e) => handleResizeStart(e, "w")}
             onTouchStart={(e) => handleResizeStart(e, "w")}
           />
           <div
             class="absolute bottom-0 h-2 cursor-s-resize touch-none"
+            role="separator"
+            aria-orientation="horizontal"
             style={{ left: "16px", width: "calc(100% - 32px)" }}
             onMouseDown={(e) => handleResizeStart(e, "s")}
             onTouchStart={(e) => handleResizeStart(e, "s")}
@@ -413,18 +425,24 @@ export function CanvasPanel() {
       {dockPosition.value === "left" && !isMinimized.value && (
         <div
           class="absolute right-0 top-0 w-2 h-full cursor-e-resize"
+          role="separator"
+          aria-orientation="vertical"
           onMouseDown={handleDockedResizeStart}
         />
       )}
       {dockPosition.value === "right" && !isMinimized.value && (
         <div
           class="absolute left-0 top-0 w-2 h-full cursor-w-resize"
+          role="separator"
+          aria-orientation="vertical"
           onMouseDown={handleDockedResizeStart}
         />
       )}
       {dockPosition.value === "top" && !isMinimized.value && (
         <div
           class="absolute left-0 bottom-0 w-full h-2 cursor-s-resize"
+          role="separator"
+          aria-orientation="horizontal"
           onMouseDown={handleDockedResizeStart}
         />
       )}

@@ -294,6 +294,9 @@ export function CommandPalette() {
       {/* Palette */}
       <div
         class="relative w-full max-w-xl mx-4 bg-[var(--color-bg-surface)] border border-[var(--color-border)] rounded-xl shadow-soft-xl overflow-hidden animate-scale-in"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Command palette"
         onClick={(e) => e.stopPropagation()}
         onKeyDown={(e) => e.stopPropagation()}
       >
