@@ -411,7 +411,7 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
     minProtocol: PROTOCOL_VERSION,
     maxProtocol: PROTOCOL_VERSION,
     client: {
-      id: "webchat",
+      id: "openclaw-control-ui",
       displayName: "Cove",
       version: __APP_VERSION__,
       platform: getBrowserPlatform(),
