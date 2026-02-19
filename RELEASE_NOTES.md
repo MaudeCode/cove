@@ -1,41 +1,26 @@
-## 🔗 Shareable URLs
+## ⏰ Cron Job Editor Improvements
 
-Every view now supports URL query parameters for bookmarkable, shareable links:
+The cron job editor gets a major usability upgrade:
 
-- **Deep linking** — Share links to specific sessions, jobs, skills, or logs
-- **Filter persistence** — Search queries and filters survive page refresh
-- **Browser history** — Back/forward navigation works naturally
-
----
-
-## 🛠️ Tool Call Display
-
-Redesigned tool call visualization with specialized blocks per tool:
-
-- **Syntax highlighting** — Code blocks with language detection
-- **Collapsible output** — Long results collapse with fullscreen option
-- **Structured displays** — Custom layouts for message, cron, search, and status tools
+- **Fullscreen payload editor** — Edit complex payloads with a proper code editor, not cramped inline fields
+- **Timezone autocomplete** — Fuzzy search through timezones instead of typing IANA identifiers from memory
+- **Stagger support** — Configure job stagger settings directly in the UI
 
 ---
 
-## 🦞 ClawHub Discovery
+## 🔤 Code Font Selection
 
-Browse and install skills from ClawHub — now with CORS headers enabled! (Thanks @steipete 🙏)
+Customize the monospace font used for code blocks and the editor:
 
-- **Trending carousel** — See what's popular at a glance
-- **Sort options** — Popular, Trending, Most Starred, Newest
-- **Auto-search** — Results update as you type with debounced search
-- **Rich detail modal** — Stats, author info, changelog, and install button
-
----
-
-## 📱 Mobile
-
-- **Responsive layouts** — Agents page and tab bars work properly on narrow screens
-- **Deep link support** — URL params open modals correctly on mobile
+- **Multiple font options** — JetBrains Mono, Source Code Pro, OpenDyslexic, and system default
+- **Instant preview** — Changes apply immediately across all code in the UI
+- **Persisted preference** — Your choice syncs with other Cove settings
 
 ---
 
-## 🎨 Polish
+## 👁️ Better Context Visibility
 
-- **Friendly error pages** — When something breaks, you'll see a confused lobster instead of a scary stack trace
+See what the model actually sees in long conversations:
+
+- **History truncation indicator** — Shows when older messages were dropped to fit context
+- **Omitted image placeholders** — Clear markers when images were excluded from context
