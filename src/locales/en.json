@@ -375,6 +375,8 @@
     "addImage": "Add Image",
     "noImages": "No images attached",
     "imageCount": "{count} image",
+    "omittedImage": "Image omitted from history ({size})",
+    "omittedImageNoSize": "Image omitted from history",
     "scrollToBottom": "Scroll to bottom",
     "search": "Search messages",
     "searchPlaceholder": "Search in conversation...",

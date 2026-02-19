@@ -46,11 +46,15 @@ export interface ImageBlock {
   source?: {
     type: "base64";
     media_type: string;
-    data: string;
+    data?: string;
+    omitted?: boolean;
+    bytes?: number;
   };
   /** Alternative format: data URL or base64 */
   data?: string;
   mimeType?: string;
+  omitted?: boolean;
+  bytes?: number;
 }
 
 /** Thinking/reasoning content block */
@@ -195,6 +199,24 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
       }
 
       case "image": {
+        const isOmitted = block.omitted === true || block.source?.omitted === true;
+        const bytes =
+          typeof block.bytes === "number"
+            ? block.bytes
+            : typeof block.source?.bytes === "number"
+              ? block.source.bytes
+              : undefined;
+
+        if (isOmitted) {
+          images.push({
+            url: "",
+            alt: "Image omitted",
+            omitted: true,
+            bytes,
+          });
+          break;
+        }
+
         // Handle different image formats
         if (block.source?.type === "base64" && block.source.data) {
           // Anthropic format: { type: "base64", media_type: "image/png", data: "..." }

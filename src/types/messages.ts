@@ -12,10 +12,14 @@ export type MessageStatus = "queued" | "sending" | "sent" | "failed";
 
 /** Image in a message */
 export interface MessageImage {
-  /** Data URL (data:image/...;base64,...) or URL */
+  /** Data URL (data:image/...;base64,...) or URL. Can be empty for omitted placeholders. */
   url: string;
   /** Alt text */
   alt?: string;
+  /** True when gateway omitted image bytes from history payload. */
+  omitted?: boolean;
+  /** Original image size in bytes (when omitted). */
+  bytes?: number;
 }
 
 export interface Message {

@@ -34,7 +34,11 @@ export function isToolResultBlock(
 
 export function isImageBlock(block: ContentBlock): block is ContentBlock & { type: "image" } {
   return (
-    block.type === "image" && (block.source?.type === "base64" || typeof block.data === "string")
+    block.type === "image" &&
+    (block.source?.type === "base64" ||
+      typeof block.data === "string" ||
+      block.omitted === true ||
+      block.source?.omitted === true)
   );
 }
 
