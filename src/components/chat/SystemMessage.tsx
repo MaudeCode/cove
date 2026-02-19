@@ -7,6 +7,7 @@
 import { Info } from "lucide-preact";
 import type { Message } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
+import { HistoryTruncationIndicator } from "./HistoryTruncationIndicator";
 
 interface SystemMessageProps {
   message: Message;
@@ -22,6 +23,9 @@ export function SystemMessage({ message }: SystemMessageProps) {
 
       {/* Content */}
       <div class="flex-1 text-sm text-[var(--color-text-muted)] italic">
+        {message.historyTruncated && (
+          <HistoryTruncationIndicator reason={message.historyTruncationReason} class="mb-1" />
+        )}
         <MessageContent content={message.content} />
       </div>
     </div>

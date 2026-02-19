@@ -98,6 +98,14 @@ function mergeIntoMessage(prev: Message, curr: Message): void {
 
   // Update timestamp to latest
   prev.timestamp = Math.max(prev.timestamp, curr.timestamp);
+
+  // Preserve truncation metadata if any message in this merged turn was truncated in history
+  if (curr.historyTruncated) {
+    prev.historyTruncated = true;
+    if (!prev.historyTruncationReason && curr.historyTruncationReason) {
+      prev.historyTruncationReason = curr.historyTruncationReason;
+    }
+  }
 }
 
 /**

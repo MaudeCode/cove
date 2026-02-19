@@ -14,6 +14,7 @@ import { BouncingDots } from "@/components/ui/BouncingDots";
 import { formatTimestamp, t } from "@/lib/i18n";
 import { isAvatarUrl } from "@/lib/utils";
 import { retryMessage } from "@/lib/chat/send";
+import { HistoryTruncationIndicator } from "./HistoryTruncationIndicator";
 
 interface UserMessageProps {
   message: Message;
@@ -106,6 +107,11 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
           <div class={`text-[var(--color-text-primary)] ${message.images?.length ? "mt-2" : ""}`}>
             <MessageContent content={message.content} />
           </div>
+        )}
+
+        {/* History truncation marker (inside bubble so it stays visible with long text) */}
+        {!isPending && message.historyTruncated && (
+          <HistoryTruncationIndicator reason={message.historyTruncationReason} class="mt-2" />
         )}
 
         {/* Retry button for failed messages */}

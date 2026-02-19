@@ -58,6 +58,12 @@ export interface Message {
 
   /** Message kind for special rendering (e.g., compaction dividers) */
   kind?: "compaction";
+
+  /** True when gateway truncated this message in chat.history payloads. */
+  historyTruncated?: boolean;
+
+  /** Gateway-provided truncation reason (e.g., "oversized"). */
+  historyTruncationReason?: string;
 }
 
 export interface ToolCall {

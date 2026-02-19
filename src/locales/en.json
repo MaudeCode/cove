@@ -407,7 +407,10 @@
     "dateTo": "To",
     "attachImage": "Attach image",
     "dropFiles": "Drop files here",
-    "copyMarkdown": "Copy markdown"
+    "copyMarkdown": "Copy markdown",
+    "historyTruncatedLabel": "Truncated in history",
+    "historyTruncatedHint": "This message was truncated in chat history and is not the full original content.",
+    "historyTruncatedHintWithReason": "This message was truncated in chat history ({reason}) and is not the full original content."
   },
   "sessions": {
     "pinned": "Pinned",

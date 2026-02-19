@@ -17,6 +17,7 @@ import { formatTimestamp, t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { isAvatarUrl } from "@/lib/utils";
 import { parseMediaFromContent, mediaUrlsToImages } from "@/lib/media-parse";
+import { HistoryTruncationIndicator } from "./HistoryTruncationIndicator";
 
 interface AssistantMessageProps {
   message: Message;
@@ -174,6 +175,11 @@ export function AssistantMessage({
           <span class="text-xs text-[var(--color-text-muted)]">
             {formatTimestamp(message.timestamp)}
           </span>
+        )}
+
+        {/* History truncation marker */}
+        {!isStreaming && message.historyTruncated && (
+          <HistoryTruncationIndicator reason={message.historyTruncationReason} />
         )}
 
         {/* Spacer */}

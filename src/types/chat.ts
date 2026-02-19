@@ -92,7 +92,13 @@ export interface RawMessage {
   __openclaw?: {
     kind?: string;
     id?: string;
+    truncated?: boolean;
+    reason?: string;
   };
+  "__openclaw.kind"?: string;
+  "__openclaw.id"?: string;
+  "__openclaw.truncated"?: boolean;
+  "__openclaw.reason"?: string;
 }
 
 /** Chat history response */
@@ -174,6 +180,9 @@ export interface ParsedContent {
   /** Thinking/reasoning content extracted from thinking blocks */
   thinking?: string;
 }
+
+const CHAT_HISTORY_OVERSIZED_PLACEHOLDER = "[chat.history omitted: message too large]";
+const CHAT_HISTORY_TRUNCATED_LINE_RE = /(?:\r?\n)\.\.\.\(truncated\)\.\.\.\s*$/u;
 
 /**
  * Parse raw message content into text, tool calls, images, and thinking
@@ -296,10 +305,13 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
  */
 export function normalizeMessage(raw: RawMessage, id: string): Message {
   const parsed = parseMessageContent(raw.content);
+  const openclawMeta = getOpenClawMetadata(raw);
   // Filter role - toolResult should not be passed here (they're merged into assistant messages)
   const role = raw.role === "toolResult" ? "assistant" : raw.role;
   // Strip gateway envelope metadata from user messages
-  const content = role === "user" ? stripEnvelopeMetadata(parsed.text) : parsed.text;
+  const baseContent = role === "user" ? stripEnvelopeMetadata(parsed.text) : parsed.text;
+  const truncatedByContent = isHistoryTruncatedByContent(baseContent);
+  const content = stripHistoryTruncationSuffix(baseContent);
   const msg: Message = {
     id,
     role,
@@ -312,11 +324,85 @@ export function normalizeMessage(raw: RawMessage, id: string): Message {
   };
 
   // Carry through structured compaction markers from gateway
-  if (raw.__openclaw?.kind === "compaction") {
+  if (openclawMeta.kind === "compaction") {
     msg.kind = "compaction";
   }
 
+  // Carry through chat.history truncation markers from gateway
+  if (openclawMeta.truncated === true) {
+    msg.historyTruncated = true;
+    if (typeof openclawMeta.reason === "string" && openclawMeta.reason.length > 0) {
+      msg.historyTruncationReason = openclawMeta.reason;
+    }
+  } else if (truncatedByContent) {
+    msg.historyTruncated = true;
+    if (msg.content.includes(CHAT_HISTORY_OVERSIZED_PLACEHOLDER)) {
+      msg.historyTruncationReason = "oversized";
+    }
+  }
+
   return msg;
+}
+
+interface OpenClawMetadata {
+  kind?: string;
+  id?: string;
+  truncated?: boolean;
+  reason?: string;
+}
+
+function getOpenClawMetadata(raw: RawMessage): OpenClawMetadata {
+  const record = raw as unknown as Record<string, unknown>;
+  const nested = raw.__openclaw;
+
+  const kind =
+    typeof nested?.kind === "string"
+      ? nested.kind
+      : typeof record["__openclaw.kind"] === "string"
+        ? (record["__openclaw.kind"] as string)
+        : undefined;
+
+  const id =
+    typeof nested?.id === "string"
+      ? nested.id
+      : typeof record["__openclaw.id"] === "string"
+        ? (record["__openclaw.id"] as string)
+        : undefined;
+
+  const truncated =
+    typeof nested?.truncated === "boolean"
+      ? nested.truncated
+      : typeof record["__openclaw.truncated"] === "boolean"
+        ? (record["__openclaw.truncated"] as boolean)
+        : undefined;
+
+  const reason =
+    typeof nested?.reason === "string"
+      ? nested.reason
+      : typeof record["__openclaw.reason"] === "string"
+        ? (record["__openclaw.reason"] as string)
+        : undefined;
+
+  return { kind, id, truncated, reason };
+}
+
+function isHistoryTruncatedByContent(content: string): boolean {
+  const trimmed = content.trim();
+  if (!trimmed) return false;
+
+  if (CHAT_HISTORY_TRUNCATED_LINE_RE.test(content)) {
+    return true;
+  }
+
+  if (trimmed.includes(CHAT_HISTORY_OVERSIZED_PLACEHOLDER)) {
+    return true;
+  }
+
+  return false;
+}
+
+function stripHistoryTruncationSuffix(content: string): string {
+  return content.replace(CHAT_HISTORY_TRUNCATED_LINE_RE, "");
 }
 
 /**
