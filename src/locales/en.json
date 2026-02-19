@@ -511,7 +511,8 @@
       "defaultAgentDescription": "Which agent to use for new chats"
     },
     "data": {
-      "resetDefaults": "Reset to Defaults"
+      "resetDefaults": "Reset to Defaults",
+      "clearSavedLogin": "Clear Saved Login"
     }
   },
   "cron": {

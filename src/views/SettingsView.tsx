@@ -384,11 +384,9 @@ if (visible.length >= 2 && visible[0] <= visible[1]) {
             <Button variant="secondary" onClick={() => resetToDefaults()}>
               {t("settings.data.resetDefaults")}
             </Button>
-            {isConnected.value && (
-              <Button variant="secondary" onClick={() => logout()}>
-                {t("common.logout")}
-              </Button>
-            )}
+            <Button variant="secondary" onClick={() => logout()}>
+              {isConnected.value ? t("common.logout") : t("settings.data.clearSavedLogin")}
+            </Button>
           </div>
         </div>
       </SettingsSection>
