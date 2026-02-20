@@ -415,7 +415,7 @@ async function sendConnectRequest(config: ConnectConfig): Promise<HelloPayload> 
       displayName: "Cove",
       version: __APP_VERSION__,
       platform: getBrowserPlatform(),
-      mode: "webchat",
+      mode: "ui",
     },
     caps: ["tool-events"],
     role: "operator",
