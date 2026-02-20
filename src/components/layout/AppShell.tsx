@@ -18,6 +18,7 @@ import {
 import { useEdgeSwipe, sidebarDragOffset, isDraggingSidebar } from "@/hooks/useEdgeSwipe";
 import { ResizeHandle } from "@/components/ui/ResizeHandle";
 import { TopBar } from "./TopBar";
+import { UpdateBanner } from "./UpdateBanner";
 import { Sidebar } from "./Sidebar";
 import {
   dockPosition,
@@ -67,6 +68,7 @@ export function AppShell({ children }: AppShellProps) {
       </a>
 
       <TopBar />
+      <UpdateBanner />
 
       <div class="flex-1 flex overflow-hidden" style={contentStyle}>
         {/* Mobile overlay when sidebar is open or dragging */}

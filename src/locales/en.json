@@ -98,6 +98,7 @@
     "showMore": "Show More",
     "showLess": "Show Less",
     "remove": "Remove",
+    "dismiss": "Dismiss",
     "view": "View"
   },
   "common": {
@@ -1053,5 +1054,9 @@
       "moveDown": "Move down",
       "invalidJson": "Invalid JSON"
     }
+  },
+  "update": {
+    "gatewayLabel": "Gateway update available",
+    "viewRelease": "View release"
   }
 }

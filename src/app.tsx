@@ -23,6 +23,7 @@ import { setActiveSession, loadSessions } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
+import { initUpdateSubscription } from "@/signals/update";
 import { loadAgents } from "@/signals/agents";
 
 import { AppShell } from "@/components/layout/AppShell";
@@ -287,6 +288,9 @@ async function tryAutoConnect() {
 
     // Initialize exec approval listener
     initExecApproval();
+
+    // Subscribe to update notifications
+    initUpdateSubscription();
 
     // Start node connection for canvas support (if enabled)
     import("@/signals/settings").then(({ canvasNodeEnabled }) => {
