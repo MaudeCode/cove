@@ -7,7 +7,8 @@
 import type { ComponentChildren } from "preact";
 import { t, formatTimestamp } from "@/lib/i18n";
 import { IconButton } from "@/components/ui/IconButton";
-import { Shield, RotateCcw } from "lucide-preact";
+import { Button } from "@/components/ui/Button";
+import { Shield, RotateCcw, Trash2 } from "lucide-preact";
 import type { PairedDevice, DeviceTokenSummary } from "@/types/devices";
 
 interface DeviceDetailsProps {
@@ -16,6 +17,8 @@ interface DeviceDetailsProps {
   bare?: boolean;
   /** Callback to open token management modal */
   onOpenTokenModal?: (device: PairedDevice) => void;
+  /** Callback to remove the device */
+  onRemoveDevice?: (device: PairedDevice) => void;
 }
 
 /** Simple label: value row */
@@ -55,7 +58,12 @@ function TokenCardCompact({
   );
 }
 
-export function DeviceDetails({ device, bare = false, onOpenTokenModal }: DeviceDetailsProps) {
+export function DeviceDetails({
+  device,
+  bare = false,
+  onOpenTokenModal,
+  onRemoveDevice,
+}: DeviceDetailsProps) {
   const tokens = device.tokens ?? [];
 
   const containerClass = bare
@@ -104,6 +112,20 @@ export function DeviceDetails({ device, bare = false, onOpenTokenModal }: Device
           )}
         </div>
       </div>
+
+      {/* Remove device action */}
+      {onRemoveDevice && (
+        <div class="mt-4 pt-4 border-t border-[var(--color-border)]">
+          <Button
+            variant="danger"
+            size="sm"
+            icon={<Trash2 class="w-4 h-4" />}
+            onClick={() => onRemoveDevice(device)}
+          >
+            {t("devices.removeDevice")}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

@@ -21,6 +21,7 @@ interface DeviceRowProps {
   isExpanded: boolean;
   onToggleExpand: () => void;
   onOpenTokenModal: (device: PairedDevice) => void;
+  onRemoveDevice: (device: PairedDevice) => void;
 }
 
 export function DeviceRow({
@@ -28,6 +29,7 @@ export function DeviceRow({
   isExpanded,
   onToggleExpand,
   onOpenTokenModal,
+  onRemoveDevice,
 }: DeviceRowProps) {
   const role = getDeviceRole(device);
   const tokenCount = device.tokens?.length ?? 0;
@@ -87,7 +89,13 @@ export function DeviceRow({
       </button>
 
       {/* Expanded details */}
-      {isExpanded && <DeviceDetails device={device} onOpenTokenModal={onOpenTokenModal} />}
+      {isExpanded && (
+        <DeviceDetails
+          device={device}
+          onOpenTokenModal={onOpenTokenModal}
+          onRemoveDevice={onRemoveDevice}
+        />
+      )}
     </div>
   );
 }

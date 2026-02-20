@@ -930,6 +930,10 @@
     "tokenRotated": "Token rotated and copied to clipboard",
     "tokenCopied": "New token copied to clipboard",
     "toggleDetails": "Toggle details for {name}",
+    "removeDevice": "Remove Device",
+    "removeConfirm": "Are you sure you want to remove \"{name}\"?",
+    "removeWarning": "This device will need to be re-paired to connect again.",
+    "removeSuccess": "Device removed",
     "filters": {
       "allRoles": "All Roles"
     }

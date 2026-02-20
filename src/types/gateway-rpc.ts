@@ -225,6 +225,10 @@ export interface GatewayRpcMap {
     params: { requestId: string };
     result: { ok?: boolean };
   };
+  "device.pair.remove": {
+    params: { deviceId: string };
+    result: { deviceId: string };
+  };
   "device.token.revoke": {
     params: { deviceId: string; role: string };
     result: { ok?: boolean };

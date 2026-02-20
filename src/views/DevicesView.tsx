@@ -26,6 +26,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { StatCard } from "@/components/ui/StatCard";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
+import { DeleteConfirmFooter } from "@/components/ui/ModalFooter";
 import { HintBox } from "@/components/ui/HintBox";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -77,7 +78,9 @@ const roleFilter = signal<DeviceRole>("all");
 const expandedDevices = signal<Set<string>>(new Set());
 const tokenModal = signal<PairedDevice | null>(null);
 const mobileDetailModal = signal<PairedDevice | null>(null);
+const removeModal = signal<PairedDevice | null>(null);
 const rotatingToken = signal(false);
+const removingDevice = signal(false);
 
 // ============================================
 // Constants
@@ -197,6 +200,21 @@ async function revokeToken(device: PairedDevice, role: string): Promise<void> {
     await loadDevices();
   } catch (err) {
     toast.error(getErrorMessage(err));
+  }
+}
+
+async function removeDevice(device: PairedDevice): Promise<void> {
+  removingDevice.value = true;
+  try {
+    await send("device.pair.remove", { deviceId: device.deviceId });
+    toast.success(t("devices.removeSuccess"));
+    removeModal.value = null;
+    mobileDetailModal.value = null;
+    await loadDevices();
+  } catch (err) {
+    toast.error(getErrorMessage(err));
+  } finally {
+    removingDevice.value = false;
   }
 }
 
@@ -345,6 +363,34 @@ function TokenModal() {
           {t("actions.close")}
         </Button>
       </div>
+    </Modal>
+  );
+}
+
+function RemoveModal() {
+  const device = removeModal.value;
+  if (!device) return null;
+
+  return (
+    <Modal
+      open={true}
+      onClose={() => {
+        removeModal.value = null;
+      }}
+      title={t("devices.removeDevice")}
+    >
+      <p class="text-sm text-[var(--color-text-muted)] mb-4">{t("devices.removeWarning")}</p>
+
+      <DeleteConfirmFooter
+        message={t("devices.removeConfirm", {
+          name: device.displayName || formatDeviceId(device.deviceId),
+        })}
+        onCancel={() => {
+          removeModal.value = null;
+        }}
+        onDelete={() => removeDevice(device)}
+        isDeleting={removingDevice.value}
+      />
     </Modal>
   );
 }
@@ -560,6 +606,9 @@ export function DevicesView(_props: RouteProps) {
                         onOpenTokenModal={(d) => {
                           tokenModal.value = d;
                         }}
+                        onRemoveDevice={(d) => {
+                          removeModal.value = d;
+                        }}
                       />
                     </div>
                   ))}
@@ -591,12 +640,16 @@ export function DevicesView(_props: RouteProps) {
               mobileDetailModal.value = null;
               tokenModal.value = d;
             }}
+            onRemoveDevice={(d) => {
+              removeModal.value = d;
+            }}
           />
         )}
       </Modal>
 
       {/* Token modal */}
       <TokenModal />
+      <RemoveModal />
     </PageLayout>
   );
 }
