@@ -7,7 +7,7 @@
 
 import { signal } from "@preact/signals";
 import { useEffect } from "preact/hooks";
-import { t } from "@/lib/i18n";
+import { t, formatDuration } from "@/lib/i18n";
 import { isConnected, send } from "@/lib/gateway";
 import type { GatewayRpcMap } from "@/types/gateway-rpc";
 import { Card } from "@/components/ui/Card";
@@ -69,12 +69,6 @@ function formatTokens(n: number | undefined): string {
 function formatPercent(n: number | undefined): string {
   if (n == null) return "—";
   return `${Math.round(n)}%`;
-}
-
-function formatDuration(ms: number | undefined): string {
-  if (ms == null) return "—";
-  if (ms < 1000) return `${ms}ms`;
-  return `${(ms / 1000).toFixed(1)}s`;
 }
 
 async function fetchSnapshots() {

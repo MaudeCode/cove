@@ -263,3 +263,21 @@ export function formatTokens(tokens: number): string {
   if (tokens < 10000) return `${(tokens / 1000).toFixed(1)}K`;
   return `${Math.round(tokens / 1000)}K`;
 }
+
+/**
+ * Format a duration in milliseconds for display.
+ *
+ * @example
+ * formatDuration(500)      // "500ms"
+ * formatDuration(2300)     // "2.3s"
+ * formatDuration(65000)    // "1m 5s"
+ * formatDuration(undefined) // "—"
+ */
+export function formatDuration(ms: number | undefined): string {
+  if (ms == null) return "—";
+  if (ms < 1000) return `${ms}ms`;
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+  const mins = Math.floor(ms / 60000);
+  const secs = Math.floor((ms % 60000) / 1000);
+  return `${mins}m ${secs}s`;
+}

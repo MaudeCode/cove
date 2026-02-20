@@ -324,6 +324,16 @@
     "sessionStatus": "Session status",
     "messageAction": "Message action"
   },
+  "gateway": {
+    "updateRun": "Update gateway",
+    "updateComplete": "Update complete",
+    "version": "Version",
+    "mode": "Mode",
+    "duration": "Duration",
+    "restart": "Restart",
+    "restartOk": "Restarting",
+    "restartFailed": "Failed"
+  },
   "toolBlock": {
     "showRaw": "Show raw",
     "showFormatted": "Show formatted"

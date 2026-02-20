@@ -15,6 +15,7 @@ import { SessionStatusResultBlock } from "./session-status";
 import { BrowserResultBlock } from "./browser";
 import { CronResultBlock } from "./cron";
 import { MessageResultBlock } from "./message";
+import { GatewayResultBlock } from "./gateway";
 
 // ============================================
 // Error Result Block
@@ -75,6 +76,9 @@ export function ResultBlock({ result, error, toolName, filePath }: ResultBlockPr
 
     case "message":
       return <MessageResultBlock result={result} />;
+
+    case "gateway":
+      return <GatewayResultBlock result={result} />;
 
     default:
       return <CodeBlock content={result} maxLines={20} error={error} filePath={filePath} />;

@@ -14,7 +14,7 @@ import type { ToolCall as ToolCallType } from "@/types/messages";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { Spinner } from "@/components/ui/Spinner";
 import { Button } from "@/components/ui/Button";
-import { t } from "@/lib/i18n";
+import { t, formatDuration } from "@/lib/i18n";
 import {
   execApprovalBusy,
   execApprovalError,
@@ -48,6 +48,7 @@ import {
   CronInputBlock,
   SessionStatusInputBlock,
   MessageInputBlock,
+  GatewayInputBlock,
   ResultBlock,
   parseErrorResult,
 } from "./tool-blocks";
@@ -253,6 +254,9 @@ function InputBlock({ toolCall }: { toolCall: ToolCallType }) {
   }
   if (toolCall.name === "message") {
     return <MessageInputBlock args={args} />;
+  }
+  if (toolCall.name === "gateway") {
+    return <GatewayInputBlock args={args} />;
   }
 
   return <CodeBlock content={args} />;
@@ -510,12 +514,4 @@ function truncateUrl(url: string): string {
   } catch {
     return truncateText(url, 50);
   }
-}
-
-function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  const mins = Math.floor(ms / 60000);
-  const secs = Math.floor((ms % 60000) / 1000);
-  return `${mins}m ${secs}s`;
 }
