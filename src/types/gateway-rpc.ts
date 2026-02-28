@@ -291,6 +291,8 @@ export interface GatewayRpcMap {
       endDate: string;
       limit?: number;
       includeContextWeight?: boolean;
+      mode?: "utc" | "gateway" | "specific";
+      utcOffset?: string;
     };
     result: SessionsUsageResult;
   };

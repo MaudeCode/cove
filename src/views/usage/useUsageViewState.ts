@@ -26,6 +26,8 @@ export const isLoadingSessionsUsage = signal<boolean>(false);
 export const error = signal<string | null>(null);
 export const USAGE_DAY_OPTIONS = [7, 14, 30, 90] as const;
 export const usageDays = signal<number>(30);
+export type UsageTimezoneMode = "gateway" | "specific" | "utc";
+export const usageTimezoneMode = signal<UsageTimezoneMode>("gateway");
 export const sessionsSortBy = signal<"cost" | "tokens" | "recent">("recent");
 export const sessionsSortDesc = signal<boolean>(true);
 export const sessionsPage = signal<number>(0);
@@ -37,6 +39,15 @@ export const sessionTimeseries = signal<SessionUsageTimeSeries | null>(null);
 export const sessionLogs = signal<SessionLogEntry[]>([]);
 export const isLoadingTimeseries = signal<boolean>(false);
 export const isLoadingLogs = signal<boolean>(false);
+
+function getBrowserUtcOffset(): string {
+  const timezoneOffsetMinutes = -new Date().getTimezoneOffset();
+  const sign = timezoneOffsetMinutes >= 0 ? "+" : "-";
+  const absoluteMinutes = Math.abs(timezoneOffsetMinutes);
+  const hours = Math.floor(absoluteMinutes / 60);
+  const minutes = absoluteMinutes % 60;
+  return `UTC${sign}${hours}${minutes === 0 ? "" : `:${String(minutes).padStart(2, "0")}`}`;
+}
 
 export async function loadHealth(): Promise<void> {
   isLoading.value = true;
@@ -79,11 +90,15 @@ export async function loadSessionsUsage(days: number = 30): Promise<void> {
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
 
+    const mode = usageTimezoneMode.value;
+    const utcOffset = mode === "specific" ? getBrowserUtcOffset() : undefined;
     const result = await send("sessions.usage", {
       startDate: startDate.toISOString().split("T")[0],
       endDate: endDate.toISOString().split("T")[0],
       limit: 100,
       includeContextWeight: true,
+      mode,
+      ...(utcOffset ? { utcOffset } : {}),
     });
     sessionsUsage.value = result;
     if (result) setSessionsUsageCache(result);

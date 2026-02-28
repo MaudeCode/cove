@@ -963,6 +963,11 @@
     "daily": {
       "title": "Daily Activity"
     },
+    "timezone": {
+      "utc": "UTC",
+      "gateway": "Gateway",
+      "local": "Local"
+    },
     "agents": {
       "sessions": "sessions"
     },

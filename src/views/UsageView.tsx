@@ -25,11 +25,20 @@ import {
   isLoadingUsage,
   loadAll,
   loadUsage,
+  loadSessionsUsage,
   USAGE_DAY_OPTIONS,
+  usageTimezoneMode,
   useUsageViewQuerySync,
   useUsageViewInitialLoad,
 } from "@/views/usage/useUsageViewState";
 import type { RouteProps } from "@/types/routes";
+import type { UsageTimezoneMode } from "@/views/usage/useUsageViewState";
+
+const TIMEZONE_OPTIONS: { mode: UsageTimezoneMode; label: string }[] = [
+  { mode: "gateway", label: t("usage.timezone.gateway") },
+  { mode: "specific", label: t("usage.timezone.local") },
+  { mode: "utc", label: t("usage.timezone.utc") },
+];
 
 export function UsageView(_props: RouteProps) {
   useUsageViewQuerySync();
@@ -80,20 +89,38 @@ export function UsageView(_props: RouteProps) {
       )}
 
       {usageData.value && (
-        <div class="flex justify-center gap-2">
-          {USAGE_DAY_OPTIONS.map((days) => (
-            <Button
-              key={days}
-              variant={usageDays.value === days ? "primary" : "ghost"}
-              size="sm"
-              onClick={() => {
-                void loadUsage(days);
-              }}
-              disabled={isLoadingUsage.value}
-            >
-              {days}d
-            </Button>
-          ))}
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          <div class="flex gap-2">
+            {USAGE_DAY_OPTIONS.map((days) => (
+              <Button
+                key={days}
+                variant={usageDays.value === days ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  void loadUsage(days);
+                }}
+                disabled={isLoadingUsage.value}
+              >
+                {days}d
+              </Button>
+            ))}
+          </div>
+          <div class="flex gap-1" role="group" aria-label="Timezone">
+            {TIMEZONE_OPTIONS.map(({ mode, label }) => (
+              <Button
+                key={mode}
+                variant={usageTimezoneMode.value === mode ? "primary" : "ghost"}
+                size="sm"
+                onClick={() => {
+                  usageTimezoneMode.value = mode;
+                  void loadSessionsUsage(usageDays.value);
+                }}
+                disabled={isLoadingUsage.value}
+              >
+                {label}
+              </Button>
+            ))}
+          </div>
         </div>
       )}
 

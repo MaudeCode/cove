@@ -24,6 +24,17 @@ import {
 import { Clock, Play, CheckCircle, XCircle } from "lucide-preact";
 import type { CronJob, CronRunLogEntry } from "@/types/cron";
 
+function formatUsageSummary(run: CronRunLogEntry): string | null {
+  if (!run.usage) return null;
+  const input = run.usage.input_tokens;
+  const output = run.usage.output_tokens;
+  if (input == null && output == null) return null;
+  return t("cron.runUsage", {
+    input: formatTokens(input ?? 0).toLowerCase(),
+    output: formatTokens(output ?? 0).toLowerCase(),
+  });
+}
+
 interface CronJobModalProps {
   mode: "create" | "edit" | null;
   job: CronJob | null;
@@ -93,17 +104,6 @@ export function CronJobModal({
 
   const isEdit = mode === "edit";
   const status = job ? getJobStatusBadge(job) : null;
-
-  const formatUsageSummary = (run: CronRunLogEntry): string | null => {
-    if (!run.usage) return null;
-    const input = run.usage.input_tokens;
-    const output = run.usage.output_tokens;
-    if (input == null && output == null) return null;
-    return t("cron.runUsage", {
-      input: formatTokens(input ?? 0).toLowerCase(),
-      output: formatTokens(output ?? 0).toLowerCase(),
-    });
-  };
 
   return (
     <Modal
