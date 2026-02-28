@@ -3,7 +3,13 @@ import type { AgentsListResponse } from "@/types/agents";
 import type { ChatHistoryResult, ChatSendResult } from "@/types/chat";
 import type { ChannelsStatusResponse } from "@/types/channels";
 import type { ConfigGetResponse, ConfigSaveResponse, ConfigSchemaResponse } from "@/types/config";
-import type { CronJob, CronListResult, CronRunsResult, CronStatusResult } from "@/types/cron";
+import type {
+  CronDeliveryStatus,
+  CronJob,
+  CronListResult,
+  CronRunsResult,
+  CronStatusResult,
+} from "@/types/cron";
 import type { DeviceListResponse } from "@/types/devices";
 import type { ExecApprovalDecision } from "@/types/exec";
 import type { HelloPayload } from "@/types/gateway";
@@ -190,7 +196,17 @@ export interface GatewayRpcMap {
     result: { ok?: boolean; jobId?: string };
   };
   "cron.list": {
-    params: { includeDisabled?: boolean } | EmptyParams;
+    params:
+      | {
+          includeDisabled?: boolean;
+          limit?: number;
+          offset?: number;
+          query?: string;
+          enabled?: "all" | "enabled" | "disabled";
+          sortBy?: "nextRunAtMs" | "updatedAtMs" | "name";
+          sortDir?: "asc" | "desc";
+        }
+      | EmptyParams;
     result: CronListResult;
   };
   "cron.remove": {
@@ -202,7 +218,19 @@ export interface GatewayRpcMap {
     result: { ran?: boolean; runId?: string };
   };
   "cron.runs": {
-    params: { jobId: string; limit?: number; offset?: number; status?: "ok" | "error" | "skipped" };
+    params: {
+      scope?: "job" | "all";
+      id?: string;
+      jobId?: string;
+      limit?: number;
+      offset?: number;
+      statuses?: Array<"ok" | "error" | "skipped">;
+      status?: "ok" | "error" | "skipped";
+      deliveryStatuses?: Array<CronDeliveryStatus>;
+      deliveryStatus?: CronDeliveryStatus;
+      query?: string;
+      sortDir?: "asc" | "desc";
+    };
     result: CronRunsResult;
   };
   "cron.status": {
@@ -245,6 +273,14 @@ export interface GatewayRpcMap {
     params: EmptyParams;
     result: { ok?: boolean };
   };
+  "doctor.memory.status": {
+    params: EmptyParams;
+    result: {
+      agentId: string;
+      provider?: string;
+      embedding: { ok: boolean; error?: string };
+    };
+  };
   health: {
     params: { probe?: boolean } | undefined;
     result: HealthSummary & {
@@ -268,6 +304,10 @@ export interface GatewayRpcMap {
   "models.list": {
     params: EmptyParams;
     result: ModelsListResult;
+  };
+  "secrets.reload": {
+    params: EmptyParams;
+    result: { ok: boolean; warningCount: number };
   };
   ping: {
     params: EmptyParams;
@@ -315,6 +355,31 @@ export interface GatewayRpcMap {
   "skills.update": {
     params: { skillKey: string; enabled: boolean };
     result: { ok?: boolean };
+  };
+  "tools.catalog": {
+    params: {
+      agentId?: string;
+      includePlugins?: boolean;
+    };
+    result: {
+      agentId: string;
+      profiles: Array<{ id: "minimal" | "coding" | "messaging" | "full"; label: string }>;
+      groups: Array<{
+        id: string;
+        label: string;
+        source: "core" | "plugin";
+        pluginId?: string;
+        tools: Array<{
+          id: string;
+          label: string;
+          description: string;
+          source: "core" | "plugin";
+          pluginId?: string;
+          optional?: boolean;
+          defaultProfiles: Array<"minimal" | "coding" | "messaging" | "full">;
+        }>;
+      }>;
+    };
   };
   status: {
     params: EmptyParams | undefined;

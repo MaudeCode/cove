@@ -42,6 +42,7 @@ export interface ConfigUiHint {
   label?: string;
   help?: string;
   group?: string;
+  tags?: string[];
   order?: number;
   advanced?: boolean;
   sensitive?: boolean;

@@ -26,9 +26,7 @@ export function GatewayInfoCard({ healthData }: GatewayInfoCardProps) {
         <div class="p-2 rounded-lg bg-[var(--color-accent)]/10">
           <Server class="w-5 h-5 text-[var(--color-accent)]" />
         </div>
-        <div>
-          <h3 class="font-semibold">{t("common.gateway")}</h3>
-        </div>
+        <h3 class="font-semibold">{t("common.gateway")}</h3>
         {gatewayVersion.value && (
           <Badge variant="default" size="sm" class="ml-auto">
             {formatVersion(gatewayVersion.value)}
