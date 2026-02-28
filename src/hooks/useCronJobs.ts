@@ -150,9 +150,21 @@ async function loadCronJobs(): Promise<void> {
 }
 
 async function loadJobRuns(jobId: string): Promise<void> {
+  await fetchJobRuns(jobId, { limit: 20, offset: 0 });
+}
+
+async function fetchJobRuns(
+  jobId: string,
+  options?: { limit?: number; offset?: number; status?: CronRunLogEntry["status"] },
+): Promise<void> {
   isLoadingRuns.value = true;
   try {
-    const result = await send("cron.runs", { jobId, limit: 20 });
+    const result = await send("cron.runs", {
+      jobId,
+      limit: options?.limit,
+      offset: options?.offset,
+      status: options?.status,
+    });
     selectedJobRuns.value = result.entries ?? [];
   } catch {
     selectedJobRuns.value = [];

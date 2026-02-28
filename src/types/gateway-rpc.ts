@@ -202,7 +202,7 @@ export interface GatewayRpcMap {
     result: { ran?: boolean; runId?: string };
   };
   "cron.runs": {
-    params: { jobId: string; limit?: number };
+    params: { jobId: string; limit?: number; offset?: number; status?: "ok" | "error" | "skipped" };
     result: CronRunsResult;
   };
   "cron.status": {

@@ -553,7 +553,14 @@
     "lastRun": "Last Run",
     "lastDuration": "Last Duration",
     "recentRuns": "Recent Runs",
+    "runUsage": "{input} in / {output} out",
     "noRuns": "No runs recorded yet.",
+    "deliveryStatus": {
+      "delivered": "Delivered",
+      "notDelivered": "Not Delivered",
+      "unknown": "Unknown",
+      "notRequested": "—"
+    },
     "searchPlaceholder": "Search jobs...",
     "emptyTitle": "No Cron Jobs",
     "emptyDescription": "Create a job to schedule automated tasks.",

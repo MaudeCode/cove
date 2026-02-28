@@ -5,7 +5,7 @@
  */
 
 import type { Signal } from "@preact/signals";
-import { t, formatTimestamp } from "@/lib/i18n";
+import { t, formatTimestamp, formatTokens } from "@/lib/i18n";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Spinner } from "@/components/ui/Spinner";
@@ -14,7 +14,13 @@ import { Toggle } from "@/components/ui/Toggle";
 import { MiniStat } from "@/components/ui/MiniStat";
 import { DeleteConfirmFooter, EditFooter } from "@/components/ui/ModalFooter";
 import { CronJobForm } from "./CronJobForm";
-import { formatSchedule, formatNextRun, formatLastRun, getJobStatusBadge } from "./cron-helpers";
+import {
+  formatSchedule,
+  formatNextRun,
+  formatLastRun,
+  getJobStatusBadge,
+  getDeliveryStatusInfo,
+} from "./cron-helpers";
 import { Clock, Play, CheckCircle, XCircle } from "lucide-preact";
 import type { CronJob, CronRunLogEntry } from "@/types/cron";
 
@@ -87,6 +93,17 @@ export function CronJobModal({
 
   const isEdit = mode === "edit";
   const status = job ? getJobStatusBadge(job) : null;
+
+  const formatUsageSummary = (run: CronRunLogEntry): string | null => {
+    if (!run.usage) return null;
+    const input = run.usage.input_tokens;
+    const output = run.usage.output_tokens;
+    if (input == null && output == null) return null;
+    return t("cron.runUsage", {
+      input: formatTokens(input ?? 0).toLowerCase(),
+      output: formatTokens(output ?? 0).toLowerCase(),
+    });
+  };
 
   return (
     <Modal
@@ -211,34 +228,57 @@ export function CronJobModal({
               </p>
             ) : (
               <div class="space-y-2 max-h-48 overflow-y-auto">
-                {runs.map((run) => (
-                  <div
-                    key={run.runAtMs}
-                    class="flex items-center gap-3 p-2 rounded-lg bg-[var(--color-bg-secondary)] text-sm"
-                  >
-                    {run.status === "ok" ? (
-                      <CheckCircle class="w-4 h-4 text-[var(--color-success)]" />
-                    ) : run.status === "error" ? (
-                      <XCircle class="w-4 h-4 text-[var(--color-error)]" />
-                    ) : (
-                      <Clock class="w-4 h-4 text-[var(--color-warning)]" />
-                    )}
-                    <span class="flex-1">{formatTimestamp(run.runAtMs)}</span>
-                    {run.durationMs && (
-                      <span class="text-[var(--color-text-muted)]">
-                        {Math.round(run.durationMs / 1000)}s
-                      </span>
-                    )}
-                    {run.error && (
-                      <span
-                        class="text-[var(--color-error)] truncate max-w-[200px]"
-                        title={run.error}
-                      >
-                        {run.error}
-                      </span>
-                    )}
-                  </div>
-                ))}
+                {runs.map((run) => {
+                  const deliveryInfo = run.deliveryStatus
+                    ? getDeliveryStatusInfo(run.deliveryStatus)
+                    : null;
+                  const usageSummary = formatUsageSummary(run);
+
+                  return (
+                    <div
+                      key={run.runAtMs}
+                      class="p-2 rounded-lg bg-[var(--color-bg-secondary)] text-sm"
+                    >
+                      <div class="flex items-center gap-3">
+                        {run.status === "ok" ? (
+                          <CheckCircle class="w-4 h-4 text-[var(--color-success)]" />
+                        ) : run.status === "error" ? (
+                          <XCircle class="w-4 h-4 text-[var(--color-error)]" />
+                        ) : (
+                          <Clock class="w-4 h-4 text-[var(--color-warning)]" />
+                        )}
+                        <span class="flex-1">{formatTimestamp(run.runAtMs)}</span>
+                        {run.durationMs && (
+                          <span class="text-[var(--color-text-muted)]">
+                            {Math.round(run.durationMs / 1000)}s
+                          </span>
+                        )}
+                      </div>
+                      {(deliveryInfo || run.model || usageSummary) && (
+                        <div class="mt-1 pl-7 flex flex-wrap items-center gap-2">
+                          {deliveryInfo && (
+                            <Badge variant={deliveryInfo.variant} size="sm">
+                              {deliveryInfo.label}
+                            </Badge>
+                          )}
+                          {run.model && (
+                            <span class="text-xs text-[var(--color-text-muted)]">{run.model}</span>
+                          )}
+                          {usageSummary && (
+                            <span class="text-xs text-[var(--color-text-muted)]">
+                              {usageSummary}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {run.error && (
+                        <div class="mt-1 pl-7 text-[var(--color-error)] truncate" title={run.error}>
+                          {run.error}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
           </div>

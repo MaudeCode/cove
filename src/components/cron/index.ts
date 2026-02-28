@@ -8,6 +8,7 @@ export {
   formatNextRun,
   formatLastRun,
   getJobStatusBadge,
+  getDeliveryStatusInfo,
   isValidCronExpr,
   INTERVAL_PRESETS,
   CRON_EXAMPLES,

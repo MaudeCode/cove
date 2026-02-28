@@ -5,7 +5,8 @@
  */
 
 import { t, formatTimestamp } from "@/lib/i18n";
-import type { CronJob, CronSchedule } from "@/types/cron";
+import type { BadgeVariant } from "@/components/ui/Badge";
+import type { CronDeliveryStatus, CronJob, CronSchedule } from "@/types/cron";
 
 /**
  * Convert milliseconds to datetime-local input format.
@@ -68,7 +69,7 @@ export function formatLastRun(job: CronJob): string {
  * Get status badge properties for a job.
  */
 export function getJobStatusBadge(job: CronJob): {
-  variant: "success" | "error" | "warning" | "default";
+  variant: BadgeVariant;
   label: string;
 } {
   if (!job.enabled) return { variant: "default", label: t("common.disabled") };
@@ -76,6 +77,25 @@ export function getJobStatusBadge(job: CronJob): {
   if (job.state.lastStatus === "error") return { variant: "error", label: t("cron.lastFailed") };
   if (job.state.lastStatus === "ok") return { variant: "success", label: t("cron.lastOk") };
   return { variant: "default", label: t("common.pending") };
+}
+
+/**
+ * Get badge properties for cron run delivery status.
+ */
+export function getDeliveryStatusInfo(status: CronDeliveryStatus): {
+  variant: BadgeVariant;
+  label: string;
+} {
+  switch (status) {
+    case "delivered":
+      return { variant: "success", label: t("cron.deliveryStatus.delivered") };
+    case "not-delivered":
+      return { variant: "error", label: t("cron.deliveryStatus.notDelivered") };
+    case "unknown":
+      return { variant: "warning", label: t("cron.deliveryStatus.unknown") };
+    case "not-requested":
+      return { variant: "default", label: t("cron.deliveryStatus.notRequested") };
+  }
 }
 
 /**
