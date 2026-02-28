@@ -177,8 +177,6 @@
     "nextRun": "Next Run",
     "schedule": "Schedule",
     "version": "Version",
-    "host": "Host",
-    "commit": "Commit",
     "uptime": "Uptime",
     "platform": "Platform",
     "clear": "Clear",
@@ -949,9 +947,6 @@
   "usage": {
     "description": "Token usage and cost analytics",
     "loadError": "Failed to load usage data",
-    "gateway": {
-      "unknown": "Unknown host"
-    },
     "summary": {
       "title": "Token Usage",
       "period": "Last {days} days",
