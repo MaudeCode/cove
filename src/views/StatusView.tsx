@@ -16,8 +16,6 @@ import {
   connectionState,
   gatewayVersion,
   gatewayUrl,
-  gatewayCommit,
-  gatewayHost,
   gatewayUptime,
   connectedAt,
   presence,
@@ -376,8 +374,6 @@ export function StatusView(_props: RouteProps) {
         <Card title={t("overview.serverInfo")} padding="md">
           <div class="divide-y divide-[var(--color-border)]">
             <InfoRow label={t("common.version")} value={gatewayVersion.value} />
-            <InfoRow label={t("common.commit")} value={gatewayCommit.value?.substring(0, 8)} />
-            <InfoRow label={t("common.host")} value={gatewayHost.value} />
             <InfoRow
               label={t("overview.capabilities")}
               value={

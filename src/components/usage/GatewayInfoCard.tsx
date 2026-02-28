@@ -5,13 +5,7 @@
  */
 
 import { t } from "@/lib/i18n";
-import {
-  gatewayVersion,
-  gatewayHost,
-  gatewayUptime,
-  gatewayConfigPath,
-  gatewayStateDir,
-} from "@/lib/gateway";
+import { gatewayVersion, gatewayUptime, gatewayConfigPath, gatewayStateDir } from "@/lib/gateway";
 import { formatVersion } from "@/lib/session-utils";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -34,9 +28,6 @@ export function GatewayInfoCard({ healthData }: GatewayInfoCardProps) {
         </div>
         <div>
           <h3 class="font-semibold">{t("common.gateway")}</h3>
-          <p class="text-sm text-[var(--color-text-muted)]">
-            {gatewayHost.value || t("usage.gateway.unknown")}
-          </p>
         </div>
         {gatewayVersion.value && (
           <Badge variant="default" size="sm" class="ml-auto">

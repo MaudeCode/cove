@@ -76,12 +76,6 @@ const capabilities = signal<string[]>([]);
 /** Reconnect attempt count */
 export const reconnectAttempt = signal<number>(0);
 
-/** Server commit hash */
-export const gatewayCommit = signal<string | null>(null);
-
-/** Server host name */
-export const gatewayHost = signal<string | null>(null);
-
 /** Canvas host URL from gateway (for transforming localhost canvas URLs) */
 export const canvasHostUrl = signal<string | null>(null);
 
@@ -329,8 +323,6 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
 
                 // Server info
                 gatewayVersion.value = hello.server?.version ?? null;
-                gatewayCommit.value = hello.server?.commit ?? null;
-                gatewayHost.value = hello.server?.host ?? null;
                 connectionId.value = hello.server?.connId ?? null;
                 canvasHostUrl.value = hello.canvasHostUrl ?? null;
 
@@ -464,8 +456,6 @@ export function disconnect(): void {
   connectionState.value = "disconnected";
   connectedAt.value = null;
   gatewayVersion.value = null;
-  gatewayCommit.value = null;
-  gatewayHost.value = null;
   gatewayUrl.value = null;
   connectionId.value = null;
   mainSessionKey.value = null;
@@ -725,12 +715,6 @@ export const gateway = {
 
   /** Gateway version */
   version: gatewayVersion,
-
-  /** Gateway commit hash */
-  commit: gatewayCommit,
-
-  /** Gateway host name */
-  host: gatewayHost,
 
   /** Gateway URL */
   url: gatewayUrl,

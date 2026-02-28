@@ -41,8 +41,6 @@ export interface HelloPayload {
   protocol: number;
   server: {
     version: string;
-    commit?: string;
-    host?: string;
     connId: string;
   };
   features: {

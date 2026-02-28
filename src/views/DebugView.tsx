@@ -16,8 +16,6 @@ import {
   connectionState,
   gatewayVersion,
   gatewayUrl,
-  gatewayCommit,
-  gatewayHost,
   gatewayUptime,
   connectedAt,
   reconnectAttempt,
@@ -399,14 +397,6 @@ export function DebugView(_props: RouteProps) {
           </div>
           <div class="space-y-0">
             <InfoRow icon={Server} label={t("common.version")} value={gatewayVersion.value} />
-            <InfoRow icon={Monitor} label={t("common.host")} value={gatewayHost.value} />
-            <InfoRow
-              icon={FileText}
-              label={t("common.commit")}
-              value={gatewayCommit.value?.slice(0, 8)}
-              copyable
-              mono
-            />
             <InfoRow icon={Clock} label={t("common.uptime")} value={formattedUptime.value} />
             <InfoRow
               icon={Clock}

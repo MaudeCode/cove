@@ -55,13 +55,19 @@ export type CronPayload = CronPayloadSystemEvent | CronPayloadAgentTurn;
 // Job State
 // ============================================
 
+export type CronDeliveryStatus = "delivered" | "not-delivered" | "unknown" | "not-requested";
+
 export interface CronJobState {
   nextRunAtMs?: number;
   runningAtMs?: number;
   lastRunAtMs?: number;
   lastStatus?: "ok" | "error" | "skipped";
+  lastRunStatus?: "ok" | "error" | "skipped";
   lastError?: string;
   lastDurationMs?: number;
+  lastDelivered?: boolean;
+  lastDeliveryStatus?: CronDeliveryStatus;
+  lastDeliveryError?: string;
 }
 
 // ============================================
@@ -78,6 +84,7 @@ export interface CronDelivery {
   channel?: string;
   to?: string;
   bestEffort?: boolean;
+  accountId?: string;
 }
 
 export interface CronJob {
@@ -107,6 +114,19 @@ export interface CronRunLogEntry {
   status: "ok" | "error" | "skipped";
   error?: string;
   durationMs?: number;
+  delivered?: boolean;
+  deliveryStatus?: CronDeliveryStatus;
+  deliveryError?: string;
+  model?: string;
+  provider?: string;
+  usage?: {
+    input_tokens?: number;
+    output_tokens?: number;
+    total_tokens?: number;
+    cache_read_tokens?: number;
+    cache_write_tokens?: number;
+  };
+  jobName?: string;
 }
 
 // ============================================
