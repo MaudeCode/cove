@@ -1,15 +1,17 @@
-## 🔔 Update Notifications
+## 🔧 Gateway 2026.3 Compatibility
 
-Know when a new OpenClaw version is available with a floating notification banner:
+Updated to work with OpenClaw 2026.3.x gateway changes:
 
-- **Persistent but dismissible** — Swipe up on mobile or click X to dismiss; won't show again until a newer version is released
-- **Quick access** — Links directly to the GitHub release page
+- **Cron schedule fix** — Handles the new ISO-8601 `at` field for one-time schedules (fixes crash on cron page)
+- **Status field split** — Reads `lastRunStatus` with `lastStatus` fallback for correct job status display
+- **New delivery modes** — Types updated for `webhook` delivery, failure destinations, and failure alerts
 
 ---
 
-## 🗑️ Device Removal
+## 📊 Cron Run History
 
-Remove paired devices directly from the Devices page:
+Richer details when reviewing cron job execution history:
 
-- **Confirmation modal** — Prevents accidental removals
-- **Works everywhere** — Available in both desktop expanded view and mobile detail modal
+- **Delivery status** — See whether job output was delivered, with status badges
+- **Model & usage** — View which model ran and token counts per execution
+- **Pagination** — Better handling of large job lists
