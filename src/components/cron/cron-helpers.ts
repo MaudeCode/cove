@@ -9,6 +9,18 @@ import type { BadgeVariant } from "@/components/ui/Badge";
 import type { CronDeliveryStatus, CronJob, CronSchedule } from "@/types/cron";
 
 /**
+ * Extract milliseconds from a CronScheduleAt (handles both `at` string and legacy `atMs` number).
+ */
+export function resolveAtMs(schedule: { at?: string; atMs?: number }): number | undefined {
+  if (typeof schedule.atMs === "number" && Number.isFinite(schedule.atMs)) return schedule.atMs;
+  if (typeof schedule.at === "string") {
+    const ms = new Date(schedule.at).getTime();
+    return Number.isFinite(ms) ? ms : undefined;
+  }
+  return undefined;
+}
+
+/**
  * Convert milliseconds to datetime-local input format.
  */
 export function msToDatetimeLocal(ms: number): string {
@@ -42,8 +54,10 @@ export function formatSchedule(schedule: CronSchedule): string {
       if (ms >= 60000) return `Every ${Math.round(ms / 60000)}m`;
       return `Every ${Math.round(ms / 1000)}s`;
     }
-    case "at":
-      return `Once at ${formatTimestamp(schedule.atMs)}`;
+    case "at": {
+      const ms = resolveAtMs(schedule);
+      return ms ? `Once at ${formatTimestamp(ms)}` : t("cron.noTimeSet");
+    }
   }
 }
 

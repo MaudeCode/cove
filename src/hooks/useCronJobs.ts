@@ -11,7 +11,7 @@ import { t } from "@/lib/i18n";
 import { send, isConnected } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import { isValidTimeZone } from "@/lib/timezones";
-import { isValidCronExpr } from "@/components/cron";
+import { isValidCronExpr, resolveAtMs } from "@/components/cron";
 import type {
   CronJob,
   CronSchedule,
@@ -191,7 +191,7 @@ function populateEditForm(job: CronJob) {
   } else if (job.schedule.kind === "every") {
     editScheduleEveryMs.value = String(job.schedule.everyMs);
   } else if (job.schedule.kind === "at") {
-    editScheduleAtMs.value = String(job.schedule.atMs);
+    editScheduleAtMs.value = String(resolveAtMs(job.schedule) ?? "");
   }
   editWakeMode.value = job.wakeMode;
   editSessionTarget.value = job.sessionTarget;
@@ -310,7 +310,7 @@ function buildSchedule(): CronSchedule {
     case "at":
       return {
         kind: "at",
-        atMs: parseInt(editScheduleAtMs.value, 10) || Date.now(),
+        at: new Date(parseInt(editScheduleAtMs.value, 10) || Date.now()).toISOString(),
       };
   }
 }
@@ -436,7 +436,7 @@ export function useCronJobs(): UseCronJobsResult {
     } else if (job.schedule.kind === "every" && editScheduleKind.value === "every") {
       if (editScheduleEveryMs.value !== String(job.schedule.everyMs)) return true;
     } else if (job.schedule.kind === "at" && editScheduleKind.value === "at") {
-      if (editScheduleAtMs.value !== String(job.schedule.atMs)) return true;
+      if (editScheduleAtMs.value !== String(resolveAtMs(job.schedule) ?? "")) return true;
     }
 
     if (job.payload.kind === "systemEvent" && editSessionTarget.value === "main") {

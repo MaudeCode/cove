@@ -13,16 +13,10 @@ import { ToolInputContainer, ToolBadge, ToolOutputContainer } from "./shared";
 /** Safely format schedule, handling API response variations */
 function safeFormatSchedule(schedule: unknown): string {
   if (!schedule || typeof schedule !== "object") return "";
-  const s = schedule as Record<string, unknown>;
-
-  // API sometimes returns "at" as ISO string instead of "atMs" as number
-  if (s.kind === "at" && typeof s.at === "string") {
-    return `Once at ${formatTimestamp(new Date(s.at as string).getTime(), { relative: true })}`;
-  }
-
   try {
     return formatSchedule(schedule as CronSchedule);
   } catch {
+    const s = schedule as Record<string, unknown>;
     return String(s.kind || "");
   }
 }

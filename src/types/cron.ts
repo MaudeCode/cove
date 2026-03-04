@@ -10,7 +10,10 @@
 
 export type CronScheduleAt = {
   kind: "at";
-  atMs: number;
+  /** Canonical ISO-8601 string (gateway 2026.3+). */
+  at?: string;
+  /** Legacy numeric milliseconds (gateway <2026.3). */
+  atMs?: number;
 };
 
 export type CronScheduleEvery = {
@@ -41,8 +44,11 @@ export type CronPayloadAgentTurn = {
   kind: "agentTurn";
   message: string;
   model?: string;
+  fallbacks?: string[];
   thinking?: string;
   timeoutSeconds?: number;
+  allowUnsafeExternalContent?: boolean;
+  lightContext?: boolean;
   deliver?: boolean;
   channel?: string;
   to?: string;
@@ -68,6 +74,9 @@ export interface CronJobState {
   lastDelivered?: boolean;
   lastDeliveryStatus?: CronDeliveryStatus;
   lastDeliveryError?: string;
+  consecutiveErrors?: number;
+  lastFailureAlertAtMs?: number;
+  scheduleErrorCount?: number;
 }
 
 // ============================================
@@ -77,7 +86,14 @@ export interface CronJobState {
 export type CronSessionTarget = "main" | "isolated";
 export type CronWakeMode = "next-heartbeat" | "now";
 
-export type CronDeliveryMode = "none" | "announce";
+export type CronDeliveryMode = "none" | "announce" | "webhook";
+
+export interface CronFailureDestination {
+  channel?: string;
+  to?: string;
+  accountId?: string;
+  mode?: "announce" | "webhook";
+}
 
 export interface CronDelivery {
   mode: CronDeliveryMode;
@@ -85,6 +101,7 @@ export interface CronDelivery {
   to?: string;
   bestEffort?: boolean;
   accountId?: string;
+  failureDestination?: CronFailureDestination;
 }
 
 export interface CronJob {
@@ -101,7 +118,17 @@ export interface CronJob {
   wakeMode: CronWakeMode;
   payload: CronPayload;
   delivery?: CronDelivery;
+  failureAlert?: CronFailureAlert | false;
   state: CronJobState;
+}
+
+export interface CronFailureAlert {
+  after?: number;
+  channel?: string;
+  to?: string;
+  cooldownMs?: number;
+  mode?: "announce" | "webhook";
+  accountId?: string;
 }
 
 // ============================================
