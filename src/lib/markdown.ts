@@ -108,6 +108,18 @@ function createMarkdownRenderer(): Marked {
 
         return `<a href="${escapeHtml(href)}"${title}>${text}</a>`;
       },
+      // Flatten remote images to text links so model output can't trigger
+      // automatic remote fetches (tracking pixels, SSRF, etc.).
+      // Data URIs (base64) are allowed since they don't make network requests.
+      image(token) {
+        const src = token.href;
+        const alt = token.text || "image";
+        if (src.startsWith("data:")) {
+          return `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" />`;
+        }
+        // Flatten to a text link
+        return `<a href="${escapeHtml(src)}" target="_blank" rel="noopener noreferrer">[${escapeHtml(alt)}]</a>`;
+      },
       // Escape raw HTML instead of rendering it.
       // Prevents pasted HTML (e.g., error pages) from rendering as formatted output.
       // Security is handled by DOMPurify, but this improves UX.
@@ -124,8 +136,14 @@ function createMarkdownRenderer(): Marked {
 const marked = createMarkdownRenderer();
 
 /**
- * Render markdown to HTML
+ * Render markdown to HTML.
+ * Falls back to escaped plain text if marked throws (e.g., malformed recursive markdown).
  */
 export function renderMarkdown(content: string): string {
-  return marked.parse(content) as string;
+  try {
+    return marked.parse(content) as string;
+  } catch {
+    // Fallback: render as escaped plain text so the message is still visible
+    return `<pre style="white-space:pre-wrap">${escapeHtml(content)}</pre>`;
+  }
 }

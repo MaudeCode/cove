@@ -550,8 +550,11 @@ function handleFinalEvent(event: ChatEvent): void {
     }
   }
 
+  // The gateway final event only sends merged text (no tool_use blocks).
+  // Tool call positions were set during streaming based on the streamed content.
+  // We must keep the streamed content + positions together since they're consistent.
+  // Only fall back to the final message text if we have no streamed content.
   let finalContent = existingRun?.content ?? "";
-  let finalParsedToolCalls: ToolCall[] = [];
 
   if (message?.content) {
     const parsed = parseMessageContent(message.content);
@@ -561,20 +564,17 @@ function handleFinalEvent(event: ChatEvent): void {
       parsedTextLen: parsed.text.length,
       parsedToolCallsCount: parsed.toolCalls.length,
       existingContentLen: finalContent.length,
-      willUseFinaContent: parsed.text.length >= finalContent.length,
+      existingToolCallsCount: existingRun?.toolCalls?.length,
     });
 
-    if (parsed.text.length >= finalContent.length) {
+    // If the final message has tool_use blocks (history replay), use its text + positions
+    if (parsed.toolCalls.length > 0) {
       finalContent = parsed.text;
-      finalParsedToolCalls = parsed.toolCalls;
-    } else if (parsed.text) {
-      log.chat.debug("Final merging partial text", {
-        existingLen: finalContent.length,
-        parsedLen: parsed.text.length,
-      });
-      const merged = mergeDeltaText(finalContent, parsed.text, existingRun?.lastBlockStart);
-      finalContent = merged.content;
+    } else if (!finalContent && parsed.text) {
+      // No streamed content — use the final message text
+      finalContent = parsed.text;
     }
+    // Otherwise keep streamed content — it's consistent with tool call positions
   }
 
   log.chat.debug("Final content determined", {
@@ -583,18 +583,13 @@ function handleFinalEvent(event: ChatEvent): void {
     finalContentPreview: finalContent.slice(-200),
   });
 
-  // Build final tool calls list
+  // Keep streaming tool calls with their original positions (consistent with finalContent)
   const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
     const updated = { ...tc };
 
     if (updated.status === "running" || updated.status === "pending") {
       updated.status = "complete";
       updated.completedAt = Date.now();
-    }
-
-    const parsedTc = finalParsedToolCalls.find((p) => p.id === tc.id);
-    if (parsedTc?.insertedAtContentLength !== undefined) {
-      updated.insertedAtContentLength = parsedTc.insertedAtContentLength;
     }
 
     delete updated.contentSnapshotAtStart;
