@@ -242,8 +242,9 @@ function handleCompactionEvent(evt: AgentEvent): void {
 function handleAssistantStreamEvent(evt: AgentEvent): void {
   const { runId, sessionKey, data } = evt;
   const text = typeof data?.text === "string" ? data.text : null;
+  const delta = typeof data?.delta === "string" ? data.delta : null;
 
-  if (!text) return;
+  if (!text && !delta) return;
 
   // Skip compaction runs
   if (compactionRunIds.has(runId)) return;
@@ -264,13 +265,35 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
 
   if (!run) return;
 
-  // Use mergeDeltaText to handle block boundaries correctly
-  // It detects when text resets (new block) vs continues (same block)
-  const { content: newContent, lastBlockStart: newLastBlockStart } = mergeDeltaText(
-    run.content,
-    text,
-    run.lastBlockStart,
-  );
+  // Merge text using the same approach as the gateway's resolveMergedAssistantText:
+  // - If text is a prefix continuation of existing content, use it directly
+  // - If delta is available, append it (handles tool boundary resets)
+  // - Fall back to mergeDeltaText for edge cases
+  let newContent: string;
+  let newLastBlockStart: number | undefined = run.lastBlockStart;
+
+  const existing = run.content;
+
+  if (!existing) {
+    // First content
+    newContent = text ?? delta ?? "";
+  } else if (text && text.startsWith(existing)) {
+    // Simple prefix continuation — text is the full accumulated content
+    newContent = text;
+  } else if (text && existing.startsWith(text) && !delta) {
+    // Stale/shorter text arrived — keep what we have
+    newContent = existing;
+  } else if (delta) {
+    // Delta available — append it directly (handles tool boundary text resets)
+    newContent = existing + delta;
+  } else if (text) {
+    // No delta, text is not a prefix — use mergeDeltaText for block detection
+    const merged = mergeDeltaText(existing, text, run.lastBlockStart);
+    newContent = merged.content;
+    newLastBlockStart = merged.lastBlockStart;
+  } else {
+    return;
+  }
 
   updateRunContent(runId, newContent, run.toolCalls, newLastBlockStart);
 }
