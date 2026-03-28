@@ -65,9 +65,17 @@ function generateDiff(oldStr: string, newStr: string, filePath?: string): string
 }
 
 export function EditDiffBlock({ args }: EditDiffBlockProps) {
-  const oldStr = (args.old_string ?? args.oldText ?? "") as string;
-  const newStr = (args.new_string ?? args.newText ?? "") as string;
-  const filePath = (args.file_path ?? args.path ?? "") as string;
+  const oldStr = (args.old_text ??
+    args.old_string ??
+    args.oldText ??
+    args.oldString ??
+    "") as string;
+  const newStr = (args.new_text ??
+    args.new_string ??
+    args.newText ??
+    args.newString ??
+    "") as string;
+  const filePath = (args.file ?? args.file_path ?? args.filePath ?? args.path ?? "") as string;
 
   if (!oldStr && !newStr) {
     return <CodeBlock content={args} />;
