@@ -441,6 +441,13 @@ function handleToolEvent(evt: AgentEvent): void {
 function handleChatEvent(event: ChatEvent): void {
   const { runId, state, errorMessage } = event;
 
+  // Filter out events from other sessions — without this, hook/cron/channel sessions
+  // create phantom runs in activeRuns, which sets the global isStreaming flag and
+  // blocks the user from sending messages in the active session.
+  if (!isForActiveSession(event.sessionKey)) {
+    return;
+  }
+
   // Skip compaction runs — they don't produce user-visible messages
   if (compactionRunIds.has(runId)) {
     log.chat.debug("Skipping chat event for compaction run:", runId, state);
