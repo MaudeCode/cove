@@ -135,7 +135,12 @@ export function OverviewTab() {
             <div class="flex flex-col sm:flex-row sm:items-center gap-4">
               {/* Avatar + Name row (mobile: side by side, desktop: part of horizontal layout) */}
               <div class="flex items-center gap-3 sm:gap-4">
-                <AgentAvatar agentId={agent.id} emoji={identityEmoji} size="lg" />
+                <AgentAvatar
+                  agentId={agent.id}
+                  emoji={identityEmoji}
+                  avatarUrl={agent.identity?.avatarUrl ?? agent.identity?.avatar}
+                  size="lg"
+                />
 
                 {/* Name + Emoji + Default Badge */}
                 <div class="flex-1 min-w-0 sm:hidden">

@@ -6,7 +6,6 @@
  */
 
 import { signal } from "@preact/signals";
-import { gatewayUrl } from "@/lib/gateway";
 
 // Track which avatars have loaded successfully (keyed by agentId)
 export const avatarLoadedState = signal<Record<string, boolean>>({});
@@ -16,6 +15,8 @@ interface AgentAvatarProps {
   agentId: string;
   /** Fallback emoji if no avatar */
   emoji?: string;
+  /** Resolved image URL/data URI from the gateway */
+  avatarUrl?: string | null;
   /** Size variant */
   size?: "sm" | "md" | "lg";
   /** Additional class names */
@@ -36,24 +37,30 @@ const sizeClassesImg = {
 
 /**
  * Get the avatar URL for an agent.
- * Uses the gateway's /avatar/{agentId} endpoint.
+ * Uses the already-resolved avatarUrl from agents.list. Do not construct
+ * /avatar/{agentId} here: that endpoint is gateway-authenticated, and plain
+ * <img> tags cannot attach the Authorization header.
  */
-export function getAvatarUrl(agentId: string): string | null {
-  const wsUrl = gatewayUrl.value;
-  if (!wsUrl) return null;
-
-  // Convert ws:// to http://, wss:// to https://
-  const httpUrl = wsUrl.replace(/^ws/, "http");
-  return `${httpUrl}/avatar/${encodeURIComponent(agentId)}`;
+export function getAvatarUrl(avatarUrl?: string | null): string | null {
+  if (!avatarUrl) return null;
+  if (
+    avatarUrl.startsWith("http://") ||
+    avatarUrl.startsWith("https://") ||
+    avatarUrl.startsWith("data:")
+  ) {
+    return avatarUrl;
+  }
+  return null;
 }
 
 export function AgentAvatar({
   agentId,
   emoji = "🤖",
+  avatarUrl: resolvedAvatarUrl,
   size = "md",
   class: className = "",
 }: AgentAvatarProps) {
-  const avatarUrl = getAvatarUrl(agentId);
+  const avatarUrl = getAvatarUrl(resolvedAvatarUrl);
   const isLoaded = avatarLoadedState.value[agentId];
   const sizeClass = sizeClasses[size];
   const imgSizeClass = sizeClassesImg[size];

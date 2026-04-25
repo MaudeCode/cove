@@ -5,33 +5,51 @@
  */
 
 import { signal } from "@preact/signals";
-import { send, gatewayUrl } from "@/lib/gateway";
+import { send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 
 /**
- * Resolve avatar URL to absolute URL.
- * - HTTP URLs and data URIs are returned as-is
- * - Relative paths (like /avatar/main) are prefixed with gateway URL
- * - Emoji strings are returned as-is (for fallback display)
+ * Check whether an avatar value can be used directly as an image source.
  */
-function resolveAvatarUrl(avatar: string | null | undefined): string | null {
+function isImageAvatar(avatar: string | null | undefined): boolean {
+  return Boolean(
+    avatar &&
+    (avatar.startsWith("http://") || avatar.startsWith("https://") || avatar.startsWith("data:")),
+  );
+}
+
+/**
+ * Resolve avatar URL for display.
+ *
+ * OpenClaw may return relative /avatar/{agentId} paths from agent.identity.get.
+ * Those HTTP endpoints require gateway auth, and <img> cannot attach the
+ * Authorization header, so prefer the data URI already exposed via agents.list.
+ */
+async function resolveAvatarUrl(
+  avatar: string | null | undefined,
+  agentId: string | null | undefined,
+): Promise<string | null> {
   if (!avatar) return null;
 
-  // Already absolute URL or data URI
-  if (avatar.startsWith("http://") || avatar.startsWith("https://") || avatar.startsWith("data:")) {
+  if (isImageAvatar(avatar)) {
     return avatar;
   }
 
-  // Relative path starting with / - prefix with gateway URL
-  if (avatar.startsWith("/")) {
-    const wsUrl = gatewayUrl.value;
-    if (wsUrl) {
-      const httpUrl = wsUrl.replace(/^ws/, "http");
-      return `${httpUrl}${avatar}`;
+  if (avatar.startsWith("/") && agentId) {
+    try {
+      const result = await send("agents.list", {});
+      const agent = result.agents.find((entry) => entry.id === agentId);
+      const resolvedAvatar = agent?.identity?.avatarUrl ?? agent?.identity?.avatar;
+      if (isImageAvatar(resolvedAvatar)) {
+        return resolvedAvatar ?? null;
+      }
+    } catch (err) {
+      log.ui.debug("Failed to resolve assistant avatar from agents.list:", err);
     }
+    return null;
   }
 
-  // Emoji or other string - return as-is for fallback display
+  // Emoji or other short text fallback.
   return avatar;
 }
 
@@ -77,12 +95,11 @@ export async function loadAssistantIdentity(sessionKey?: string): Promise<void> 
       if (result.name) {
         assistantName.value = result.name;
       }
-      if (result.avatar) {
-        // Resolve relative avatar URLs to absolute gateway URLs
-        assistantAvatar.value = resolveAvatarUrl(result.avatar);
-      }
       if (result.agentId) {
         assistantAgentId.value = result.agentId;
+      }
+      if (result.avatar) {
+        assistantAvatar.value = await resolveAvatarUrl(result.avatar, result.agentId);
       }
 
       log.ui.info(

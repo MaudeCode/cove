@@ -34,7 +34,12 @@ export function AgentSelector() {
         aria-expanded={isOpen}
         aria-haspopup="listbox"
       >
-        <AgentAvatar agentId={agent.id} emoji={emoji} size="md" />
+        <AgentAvatar
+          agentId={agent.id}
+          emoji={emoji}
+          avatarUrl={agent.identity?.avatarUrl ?? agent.identity?.avatar}
+          size="md"
+        />
         <span class="flex-1 text-left font-medium truncate">{name}</span>
         <ChevronDown
           class={`w-4 h-4 text-[var(--color-text-muted)] transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -76,7 +81,12 @@ export function AgentSelector() {
                     isSelected ? "bg-[var(--color-bg-tertiary)]" : ""
                   }`}
                 >
-                  <AgentAvatar agentId={a.id} emoji={aEmoji} size="sm" />
+                  <AgentAvatar
+                    agentId={a.id}
+                    emoji={aEmoji}
+                    avatarUrl={a.identity?.avatarUrl ?? a.identity?.avatar}
+                    size="sm"
+                  />
                   <div class="flex-1 min-w-0">
                     <div class="font-medium truncate">{aName}</div>
                     {aName !== a.id && (
