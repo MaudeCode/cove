@@ -120,10 +120,14 @@ export interface ChatSendResult {
 export interface ChatEvent {
   runId: string;
   sessionKey: string;
+  spawnedBy?: string;
   seq: number;
   state: "delta" | "final" | "aborted" | "error";
   message?: RawMessage;
+  deltaText?: string;
+  replace?: boolean;
   errorMessage?: string;
+  errorKind?: "refusal" | "timeout" | "rate_limit" | "context_length" | "unknown";
   usage?: {
     input?: number;
     output?: number;

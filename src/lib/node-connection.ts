@@ -181,6 +181,7 @@ let currentCredential: string | undefined = undefined;
 
 const PING_INTERVAL_MS = 15000; // Send ping every 15 seconds
 const CANVAS_OPERATION_TIMEOUT_MS = 10000; // Timeout for eval/snapshot operations
+const PROTOCOL_VERSION = 4;
 const pendingRequests = new Map<
   string,
   {
@@ -293,8 +294,8 @@ async function sendConnectRequest(nonce?: string) {
     });
 
     const params: Record<string, unknown> = {
-      minProtocol: 3,
-      maxProtocol: 3,
+      minProtocol: PROTOCOL_VERSION,
+      maxProtocol: PROTOCOL_VERSION,
       role: "node",
       client: {
         id: "node-host",

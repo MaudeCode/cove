@@ -22,7 +22,7 @@ import {
   getDeliveryStatusInfo,
 } from "./cron-helpers";
 import { Clock, Play, CheckCircle, XCircle } from "lucide-preact";
-import type { CronJob, CronRunLogEntry } from "@/types/cron";
+import type { CronJob, CronRunLogEntry, CronSessionTarget } from "@/types/cron";
 
 function formatUsageSummary(run: CronRunLogEntry): string | null {
   if (!run.usage) return null;
@@ -60,7 +60,7 @@ interface CronJobModalProps {
   editScheduleStaggerMs: Signal<string>;
   editScheduleEveryMs: Signal<string>;
   editScheduleAtMs: Signal<string>;
-  editSessionTarget: Signal<"main" | "isolated">;
+  editSessionTarget: Signal<CronSessionTarget>;
   editWakeMode: Signal<"next-heartbeat" | "now">;
   editDeliveryAnnounce: Signal<boolean>;
   editPayloadText: Signal<string>;

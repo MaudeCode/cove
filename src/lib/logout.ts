@@ -7,7 +7,7 @@
 import { route } from "preact-router";
 import { disconnect } from "@/lib/gateway";
 import { cleanupChat } from "@/lib/chat/init";
-import { clearSessions } from "@/signals/sessions";
+import { clearSessions, cleanupSessionEventSubscription } from "@/signals/sessions";
 import { clearAuth } from "@/lib/storage";
 
 /**
@@ -27,6 +27,7 @@ export function logout(clearCredentials = true): void {
   cleanupChat();
 
   // Clear session state
+  cleanupSessionEventSubscription();
   clearSessions();
 
   // Disconnect from gateway

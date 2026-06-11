@@ -19,7 +19,7 @@ import {
 } from "@/lib/storage";
 import { isConnected, connect, connectionState } from "@/lib/gateway";
 import { initChat } from "@/lib/chat/init";
-import { setActiveSession, loadSessions } from "@/signals/sessions";
+import { setActiveSession, loadSessions, initSessionEventSubscription } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
@@ -269,6 +269,7 @@ async function tryAutoConnect() {
 
     // Load sessions list for sidebar
     await loadSessions();
+    initSessionEventSubscription();
 
     // Load available agents
     await loadAgents();

@@ -9,7 +9,8 @@
  */
 
 import { signal, computed } from "@preact/signals";
-import { send, mainSessionKey } from "@/lib/gateway";
+import { send, on, mainSessionKey, isConnected } from "@/lib/gateway";
+import { log } from "@/lib/logger";
 import {
   isMainSession,
   isCronSession,
@@ -21,6 +22,12 @@ import { createDebouncedSignal } from "@/lib/debounced-signal";
 import { SESSION_DELETE_ANIMATION_MS } from "@/lib/constants";
 import { getSessionsCache, setSessionsCache } from "@/lib/storage";
 import type { Session, SessionsListParams } from "@/types/sessions";
+
+interface SessionsChangedEvent extends Partial<Session> {
+  sessionKey?: string;
+  reason?: string;
+  ts?: number;
+}
 
 // ============================================
 // State
@@ -55,6 +62,8 @@ export const deletingSessionKey = signal<string | null>(null);
 
 /** Error from loading sessions */
 const sessionsError = signal<string | null>(null);
+let sessionEventsUnsubscribe: (() => void) | null = null;
+let sessionReloadTimer: ReturnType<typeof setTimeout> | null = null;
 
 // ============================================
 // Derived State
@@ -191,6 +200,82 @@ export async function loadSessions(params?: SessionsListParams): Promise<void> {
   }
 }
 
+function scheduleSessionsReload(): void {
+  if (sessionReloadTimer) return;
+  sessionReloadTimer = setTimeout(() => {
+    sessionReloadTimer = null;
+    loadSessions().catch((err) => {
+      log.ui.warn("Failed to refresh sessions after session event:", err);
+    });
+  }, 250);
+}
+
+function applySessionsChanged(payload: unknown): void {
+  if (!payload || typeof payload !== "object") {
+    scheduleSessionsReload();
+    return;
+  }
+
+  const event = payload as SessionsChangedEvent;
+  const key = event.sessionKey ?? event.key;
+  if (!key) {
+    scheduleSessionsReload();
+    return;
+  }
+
+  const reason = event.reason ?? "";
+  if (["delete", "deleted", "session-delete"].includes(reason)) {
+    removeSession(key);
+    setSessionsCache(sessions.value);
+    return;
+  }
+
+  const nextSession: Session = {
+    ...event,
+    key,
+    updatedAt: event.updatedAt ?? event.ts ?? Date.now(),
+  };
+  delete (nextSession as { sessionKey?: string }).sessionKey;
+  delete (nextSession as { reason?: string }).reason;
+  delete (nextSession as { ts?: number }).ts;
+
+  const existingIndex = sessions.value.findIndex((session) => session.key === key);
+  if (existingIndex >= 0) {
+    sessions.value = sessions.value.map((session, index) =>
+      index === existingIndex ? { ...session, ...nextSession } : session,
+    );
+  } else {
+    sessions.value = [nextSession, ...sessions.value];
+  }
+  setSessionsCache(sessions.value);
+}
+
+export function initSessionEventSubscription(): void {
+  cleanupSessionEventSubscription();
+
+  send("sessions.subscribe", {}).catch((err) => {
+    log.ui.warn("Failed to subscribe to session changes:", err);
+  });
+
+  sessionEventsUnsubscribe = on("sessions.changed", applySessionsChanged);
+}
+
+export function cleanupSessionEventSubscription(): void {
+  if (sessionEventsUnsubscribe && isConnected.value) {
+    send("sessions.unsubscribe", {}).catch((err) => {
+      log.ui.warn("Failed to unsubscribe from session changes:", err);
+    });
+  }
+  if (sessionEventsUnsubscribe) {
+    sessionEventsUnsubscribe();
+    sessionEventsUnsubscribe = null;
+  }
+  if (sessionReloadTimer) {
+    clearTimeout(sessionReloadTimer);
+    sessionReloadTimer = null;
+  }
+}
+
 /**
  * Set the active session
  */
@@ -223,6 +308,7 @@ export function toggleCronSessions(): void {
  * Clear sessions
  */
 export function clearSessions(): void {
+  cleanupSessionEventSubscription();
   sessions.value = [];
   activeSessionKey.value = null;
   sessionsError.value = null;
@@ -259,3 +345,11 @@ export function removeSessionAnimated(sessionKey: string): Promise<void> {
     }, SESSION_DELETE_ANIMATION_MS);
   });
 }
+
+let prevConnected = false;
+isConnected.subscribe((connected) => {
+  if (prevConnected && !connected) {
+    cleanupSessionEventSubscription();
+  }
+  prevConnected = connected;
+});

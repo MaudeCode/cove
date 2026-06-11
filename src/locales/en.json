@@ -581,7 +581,8 @@
     },
     "sessionTarget": {
       "main": "Main Session",
-      "isolated": "Isolated Session"
+      "isolated": "Isolated Session",
+      "current": "Current Session"
     },
     "wakeMode": {
       "nextHeartbeat": "Next Heartbeat",

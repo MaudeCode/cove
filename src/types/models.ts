@@ -14,6 +14,9 @@ export interface ModelChoice {
   /** Provider (e.g., "anthropic", "openai") */
   provider: string;
 
+  /** Optional provider/catalog alias. */
+  alias?: string;
+
   /** Context window size in tokens */
   contextWindow?: number;
 

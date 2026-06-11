@@ -22,7 +22,7 @@ import { log } from "./logger";
 // Configuration
 // ============================================
 
-const PROTOCOL_VERSION = 3;
+const PROTOCOL_VERSION = 4;
 const RECONNECT_BASE_MS = 1000;
 const RECONNECT_MAX_MS = 30000;
 const RECONNECT_MULTIPLIER = 1.5;
@@ -235,7 +235,7 @@ export function probeGateway(url: string, signal?: AbortSignal): Promise<ProbeRe
         try {
           const msg = JSON.parse(event.data);
           // Check if it's a connect.challenge event
-          if (msg.type === "evt" && msg.event === "connect.challenge") {
+          if ((msg.type === "evt" || msg.type === "event") && msg.event === "connect.challenge") {
             log.gateway.debug("Probe: Received connect.challenge, gateway is valid");
             succeed(msg.payload?.version);
           } else {
@@ -324,7 +324,8 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
                 // Server info
                 gatewayVersion.value = hello.server?.version ?? null;
                 connectionId.value = hello.server?.connId ?? null;
-                canvasHostUrl.value = hello.canvasHostUrl ?? null;
+                canvasHostUrl.value =
+                  hello.canvasHostUrl ?? hello.pluginSurfaceUrls?.canvas ?? null;
 
                 // Features & policy
                 capabilities.value = hello.features?.methods ?? [];

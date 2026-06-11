@@ -5,7 +5,7 @@
  */
 
 import { batch } from "@preact/signals";
-import { on } from "@/lib/gateway";
+import { on, subscribe } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import { isChatEvent, isAgentEvent } from "@/lib/type-guards";
 import { mergeDeltaText } from "@/lib/streaming";
@@ -21,6 +21,7 @@ import {
   showCompletedCompaction,
   compactionInsertIndex,
   messages,
+  addMessage,
 } from "@/signals/chat";
 import { isForActiveSession } from "@/signals/sessions";
 import type { Message, ToolCall } from "@/types/messages";
@@ -33,15 +34,17 @@ import { extractToolResultContent } from "@/lib/tool-utils";
 
 let chatEventUnsubscribe: (() => void) | null = null;
 let agentEventUnsubscribe: (() => void) | null = null;
+let sideResultUnsubscribe: (() => void) | null = null;
 
 /** Track runIds that belong to compaction — lifecycle handlers should ignore these */
 const compactionRunIds = new Set<string>();
+const chatDeltaFallbackRunIds = new Set<string>();
 
 /**
  * Subscribe to chat events from the gateway.
  */
 export function subscribeToChatEvents(): () => void {
-  if (chatEventUnsubscribe && agentEventUnsubscribe) {
+  if (chatEventUnsubscribe && agentEventUnsubscribe && sideResultUnsubscribe) {
     return unsubscribeFromChatEvents;
   }
 
@@ -77,6 +80,11 @@ export function subscribeToChatEvents(): () => void {
     }
   });
 
+  sideResultUnsubscribe = subscribe((event) => {
+    if (event.event !== "chat.side_result") return;
+    handleSideResultEvent(event.payload, event.seq);
+  });
+
   return unsubscribeFromChatEvents;
 }
 
@@ -92,7 +100,12 @@ export function unsubscribeFromChatEvents(): void {
     agentEventUnsubscribe();
     agentEventUnsubscribe = null;
   }
+  if (sideResultUnsubscribe) {
+    sideResultUnsubscribe();
+    sideResultUnsubscribe = null;
+  }
   compactionRunIds.clear();
+  chatDeltaFallbackRunIds.clear();
 }
 
 /**
@@ -264,6 +277,10 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
   }
 
   if (!run) return;
+
+  if (text) {
+    chatDeltaFallbackRunIds.delete(runId);
+  }
 
   // Merge text using the same approach as the gateway's resolveMergedAssistantText:
   // - If text is a prefix continuation of existing content, use it directly
@@ -466,10 +483,12 @@ function handleChatEvent(event: ChatEvent): void {
       break;
 
     case "aborted":
+      chatDeltaFallbackRunIds.delete(runId);
       abortRunSignal(runId);
       break;
 
     case "error":
+      chatDeltaFallbackRunIds.delete(runId);
       errorRun(runId, errorMessage ?? "Unknown error");
       break;
   }
@@ -482,10 +501,9 @@ function handleChatEvent(event: ChatEvent): void {
  * Chat delta only processes tool calls as a supplement to tool events.
  */
 function handleDeltaEvent(event: ChatEvent): void {
-  const { runId, sessionKey, message } = event;
-  if (!message) return;
+  const { runId, sessionKey, message, deltaText, replace } = event;
 
-  const parsed = parseMessageContent(message.content);
+  const parsed = message ? parseMessageContent(message.content) : null;
   let existingRun = activeRuns.value.get(runId);
 
   // If no run exists (e.g., page refreshed mid-stream), create one on-the-fly
@@ -495,6 +513,22 @@ function handleDeltaEvent(event: ChatEvent): void {
     existingRun = activeRuns.value.get(runId);
     if (!existingRun) return;
   }
+
+  const shouldUseTextFallback =
+    typeof deltaText === "string" &&
+    deltaText.length > 0 &&
+    (!existingRun.content || chatDeltaFallbackRunIds.has(runId));
+  if (shouldUseTextFallback) {
+    chatDeltaFallbackRunIds.add(runId);
+    const nextContent = replace ? deltaText : existingRun.content + deltaText;
+    const nextToolCalls = parsed?.toolCalls.length
+      ? mergeToolCalls(existingRun.toolCalls, parsed.toolCalls)
+      : existingRun.toolCalls;
+    updateRunContent(runId, nextContent, nextToolCalls, existingRun.lastBlockStart);
+    return;
+  }
+
+  if (!parsed) return;
 
   // Only process if there are tool calls to merge
   // Text content is handled by assistant stream events (faster, not throttled)
@@ -513,6 +547,22 @@ function handleDeltaEvent(event: ChatEvent): void {
 
   // Keep existing content, only update tool calls
   updateRunContent(runId, existingRun.content, mergedToolCalls, existingRun.lastBlockStart);
+}
+
+function handleSideResultEvent(payload: unknown, seq?: number): void {
+  if (!payload || typeof payload !== "object") return;
+  const data = payload as { sessionKey?: string; text?: string; title?: string };
+  if (!isForActiveSession(data.sessionKey)) return;
+
+  const text = typeof data.text === "string" ? data.text.trim() : "";
+  if (!text) return;
+
+  addMessage({
+    id: `side_${data.sessionKey ?? "session"}_${seq ?? Date.now()}`,
+    role: "system",
+    content: data.title ? `**${data.title}**\n\n${text}` : text,
+    timestamp: Date.now(),
+  });
 }
 
 /**
@@ -612,6 +662,7 @@ function handleFinalEvent(event: ChatEvent): void {
   };
 
   completeRun(runId, finalMessage);
+  chatDeltaFallbackRunIds.delete(runId);
 
   // Process next queued message after a short delay
   setTimeout(() => {

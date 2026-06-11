@@ -50,8 +50,15 @@ export interface ConnectParams {
 
 export interface ChatSendParams {
   sessionKey: string;
+  sessionId?: string;
   message: string;
   thinking?: string;
+  fastMode?: boolean;
+  deliver?: boolean;
+  originatingChannel?: string;
+  originatingTo?: string;
+  originatingAccountId?: string;
+  originatingThreadId?: string;
   timeoutMs?: number;
   idempotencyKey?: string;
   attachments?: AttachmentPayload[];
@@ -59,11 +66,28 @@ export interface ChatSendParams {
 
 export interface SessionsPatchParams {
   key: string;
-  label?: string;
-  model?: string;
-  thinking?: string;
-  verbose?: string;
-  reasoning?: string;
+  label?: string | null;
+  model?: string | null;
+  thinkingLevel?: string | null;
+  fastMode?: boolean | null;
+  verboseLevel?: string | null;
+  traceLevel?: string | null;
+  reasoningLevel?: string | null;
+  responseUsage?: "off" | "tokens" | "full" | "on" | null;
+  elevatedLevel?: string | null;
+  execHost?: string | null;
+  execSecurity?: string | null;
+  execAsk?: string | null;
+  execNode?: string | null;
+  spawnedBy?: string | null;
+  spawnedWorkspaceDir?: string | null;
+  spawnDepth?: number | null;
+  subagentRole?: "orchestrator" | "leaf" | null;
+  subagentControlScope?: "children" | "none" | null;
+  inheritedToolAllow?: string[] | null;
+  inheritedToolDeny?: string[] | null;
+  sendPolicy?: "allow" | "deny" | null;
+  groupActivation?: "mention" | "always" | null;
 }
 
 export interface CronJobUpsert {
@@ -74,7 +98,20 @@ export interface CronJobUpsert {
   sessionTarget: CronJob["sessionTarget"];
   wakeMode: CronJob["wakeMode"];
   payload: CronJob["payload"];
-  delivery?: { mode: string; channel?: string; to?: string; bestEffort?: boolean };
+  delivery?: {
+    mode: string;
+    channel?: string;
+    to?: string;
+    threadId?: string | number;
+    bestEffort?: boolean;
+    accountId?: string;
+    failureDestination?: {
+      channel?: string;
+      to?: string;
+      accountId?: string;
+      mode?: "announce" | "webhook";
+    };
+  };
 }
 
 export interface LogsTailParams {
@@ -114,7 +151,7 @@ export interface GatewayRpcMap {
     result: { name?: string; avatar?: string | null; agentId?: string | null };
   };
   "agents.create": {
-    params: { name: string; workspace: string; emoji?: string };
+    params: { name: string; workspace: string; model?: string; emoji?: string; avatar?: string };
     result: { ok: boolean; agentId: string };
   };
   "agents.delete": {
@@ -150,7 +187,7 @@ export interface GatewayRpcMap {
     result: { ok?: boolean };
   };
   "chat.history": {
-    params: { sessionKey: string; limit?: number };
+    params: { sessionKey: string; limit?: number; maxChars?: number };
     result: ChatHistoryResult;
   };
   "chat.send": {
@@ -302,7 +339,7 @@ export interface GatewayRpcMap {
     result: LogsTailResult;
   };
   "models.list": {
-    params: EmptyParams;
+    params: { view?: "default" | "configured" | "all" } | EmptyParams;
     result: ModelsListResult;
   };
   "secrets.reload": {
@@ -314,24 +351,93 @@ export interface GatewayRpcMap {
     result: { ok?: boolean };
   };
   "sessions.delete": {
-    params: { key: string };
+    params: { key: string; deleteTranscript?: boolean; emitLifecycleHooks?: boolean };
     result: { ok?: boolean };
+  };
+  "sessions.create": {
+    params: {
+      key?: string;
+      agentId?: string;
+      label?: string;
+      model?: string;
+      parentSessionKey?: string;
+      emitCommandHooks?: boolean;
+      task?: string;
+      message?: string;
+    };
+    result: { ok?: boolean; key: string; sessionId?: string };
   };
   "sessions.list": {
     params: SessionsListParams | { limit?: number };
     result: SessionsListResult;
   };
+  "sessions.subscribe": {
+    params: EmptyParams | undefined;
+    result: { ok?: boolean };
+  };
+  "sessions.unsubscribe": {
+    params: EmptyParams | undefined;
+    result: { ok?: boolean };
+  };
+  "sessions.messages.subscribe": {
+    params: { key: string };
+    result: { ok?: boolean };
+  };
+  "sessions.messages.unsubscribe": {
+    params: { key: string };
+    result: { ok?: boolean };
+  };
+  "sessions.abort": {
+    params: { key?: string; runId?: string; agentId?: string };
+    result: { ok?: boolean };
+  };
   "sessions.patch": {
     params: SessionsPatchParams;
     result: { ok?: boolean };
   };
+  "sessions.pluginPatch": {
+    params: { key: string; pluginId: string; namespace: string; value?: unknown; unset?: boolean };
+    result: { ok: true; key: string; value?: unknown };
+  };
+  "sessions.cleanup": {
+    params: {
+      agent?: string;
+      allAgents?: boolean;
+      enforce?: boolean;
+      activeKey?: string;
+      fixMissing?: boolean;
+      fixDmScope?: boolean;
+    };
+    result: unknown;
+  };
+  "sessions.compaction.list": {
+    params: { key: string };
+    result: { ok: true; key: string; checkpoints: unknown[] };
+  };
+  "sessions.compaction.get": {
+    params: { key: string; checkpointId: string };
+    result: { ok: true; key: string; checkpoint: unknown };
+  };
+  "sessions.compaction.branch": {
+    params: { key: string; checkpointId: string };
+    result: { ok: true; sourceKey: string; key: string; sessionId: string; checkpoint: unknown };
+  };
+  "sessions.compaction.restore": {
+    params: { key: string; checkpointId: string };
+    result: { ok: true; key: string; sessionId: string; checkpoint: unknown };
+  };
   "sessions.usage": {
     params: {
-      startDate: string;
-      endDate: string;
+      key?: string;
+      agentId?: string;
+      startDate?: string;
+      endDate?: string;
       limit?: number;
       includeContextWeight?: boolean;
       mode?: "utc" | "gateway" | "specific";
+      range?: "7d" | "30d" | "90d" | "1y" | "all";
+      groupBy?: "instance" | "family";
+      includeHistorical?: boolean;
       utcOffset?: string;
     };
     result: SessionsUsageResult;
@@ -376,9 +482,53 @@ export interface GatewayRpcMap {
           source: "core" | "plugin";
           pluginId?: string;
           optional?: boolean;
+          risk?: "low" | "medium" | "high";
+          tags?: string[];
           defaultProfiles: Array<"minimal" | "coding" | "messaging" | "full">;
         }>;
       }>;
+    };
+  };
+  "tools.effective": {
+    params: { agentId?: string; sessionKey: string };
+    result: {
+      agentId: string;
+      profile: string;
+      groups: Array<{
+        id: "core" | "plugin" | "channel";
+        label: string;
+        source: "core" | "plugin" | "channel";
+        tools: Array<{
+          id: string;
+          label: string;
+          description: string;
+          rawDescription: string;
+          source: "core" | "plugin" | "channel";
+          pluginId?: string;
+          channelId?: string;
+          risk?: "low" | "medium" | "high";
+          tags?: string[];
+        }>;
+      }>;
+    };
+  };
+  "tools.invoke": {
+    params: {
+      name: string;
+      args?: Record<string, unknown>;
+      sessionKey?: string;
+      agentId?: string;
+      confirm?: boolean;
+      idempotencyKey?: string;
+    };
+    result: {
+      ok: boolean;
+      toolName: string;
+      output?: unknown;
+      requiresApproval?: boolean;
+      approvalId?: string;
+      source?: string;
+      error?: { code: string; message: string; details?: unknown };
     };
   };
   status: {

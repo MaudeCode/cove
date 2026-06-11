@@ -19,8 +19,11 @@ export interface GatewayResponse {
   ok: boolean;
   payload?: unknown;
   error?: {
-    message: string;
     code?: string;
+    message: string;
+    details?: unknown;
+    retryable?: boolean;
+    retryAfterMs?: number;
   };
 }
 
@@ -52,6 +55,7 @@ export interface HelloPayload {
     stateVersion: {
       presence: number;
       health: number;
+      [key: string]: number;
     };
     health?: unknown;
     sessionDefaults?: {
@@ -65,11 +69,18 @@ export interface HelloPayload {
     stateDir?: string;
   };
   canvasHostUrl?: string;
+  pluginSurfaceUrls?: Record<string, string>;
   auth?: {
-    deviceToken: string;
+    deviceToken?: string;
     role: string;
     scopes: string[];
     issuedAtMs?: number;
+    deviceTokens?: Array<{
+      deviceToken: string;
+      role: string;
+      scopes: string[];
+      issuedAtMs: number;
+    }>;
   };
   policy: {
     maxPayload: number;

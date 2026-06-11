@@ -49,6 +49,8 @@ export type CronPayloadAgentTurn = {
   timeoutSeconds?: number;
   allowUnsafeExternalContent?: boolean;
   lightContext?: boolean;
+  toolsAllow?: string[];
+  /** Legacy delivery fields from older gateways. */
   deliver?: boolean;
   channel?: string;
   to?: string;
@@ -74,6 +76,8 @@ export interface CronJobState {
   lastDelivered?: boolean;
   lastDeliveryStatus?: CronDeliveryStatus;
   lastDeliveryError?: string;
+  lastFailureNotification?: CronFailureNotificationDelivery;
+  lastDiagnostics?: CronRunDiagnostics;
   consecutiveErrors?: number;
   lastFailureAlertAtMs?: number;
   scheduleErrorCount?: number;
@@ -83,7 +87,7 @@ export interface CronJobState {
 // Job
 // ============================================
 
-export type CronSessionTarget = "main" | "isolated";
+export type CronSessionTarget = "main" | "isolated" | "current" | `session:${string}`;
 export type CronWakeMode = "next-heartbeat" | "now";
 
 export type CronDeliveryMode = "none" | "announce" | "webhook";
@@ -99,6 +103,7 @@ export interface CronDelivery {
   mode: CronDeliveryMode;
   channel?: string;
   to?: string;
+  threadId?: string | number;
   bestEffort?: boolean;
   accountId?: string;
   failureDestination?: CronFailureDestination;
@@ -127,8 +132,41 @@ export interface CronFailureAlert {
   channel?: string;
   to?: string;
   cooldownMs?: number;
+  includeSkipped?: boolean;
   mode?: "announce" | "webhook";
   accountId?: string;
+}
+
+export type CronRunDiagnosticSeverity = "info" | "warn" | "error";
+
+export type CronRunDiagnosticSource =
+  | "cron-preflight"
+  | "cron-setup"
+  | "model-preflight"
+  | "agent-run"
+  | "tool"
+  | "exec"
+  | "delivery";
+
+export interface CronRunDiagnostic {
+  ts: number;
+  source: CronRunDiagnosticSource;
+  severity: CronRunDiagnosticSeverity;
+  message: string;
+  toolName?: string;
+  exitCode?: number | null;
+  truncated?: boolean;
+}
+
+export interface CronRunDiagnostics {
+  summary?: string;
+  entries: CronRunDiagnostic[];
+}
+
+export interface CronFailureNotificationDelivery {
+  delivered?: boolean;
+  status: CronDeliveryStatus;
+  error?: string;
 }
 
 // ============================================
@@ -144,6 +182,8 @@ export interface CronRunLogEntry {
   delivered?: boolean;
   deliveryStatus?: CronDeliveryStatus;
   deliveryError?: string;
+  failureNotification?: CronFailureNotificationDelivery;
+  diagnostics?: CronRunDiagnostics;
   model?: string;
   provider?: string;
   usage?: {

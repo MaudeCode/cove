@@ -26,8 +26,14 @@ export interface Session {
   /** Last channel used */
   lastChannel?: string;
 
+  /** Channel target metadata from the last routed turn */
+  lastTo?: string | number;
+  lastAccountId?: string;
+  lastThreadId?: string | number;
+
   /** Model being used */
   model?: string;
+  modelProvider?: string;
 
   /** When the session was last updated (ms since epoch) */
   updatedAt?: number;
@@ -40,6 +46,11 @@ export interface Session {
 
   /** Total tokens used */
   totalTokens?: number;
+  inputTokens?: number;
+  outputTokens?: number;
+  totalTokensFresh?: boolean;
+  estimatedCostUsd?: number;
+  responseUsage?: "off" | "tokens" | "full" | "on";
 
   /** Transcript file path */
   transcriptPath?: string;
@@ -49,6 +60,7 @@ export interface Session {
     channel?: string;
     to?: string;
     accountId?: string;
+    threadId?: string | number;
   };
 
   /** Last messages (when requested) */
@@ -58,13 +70,41 @@ export interface Session {
   }>;
 
   /** Thinking level override */
+  thinkingLevel?: string | null;
   thinking?: string;
 
   /** Verbose level override */
+  verboseLevel?: string | null;
   verbose?: string;
 
+  /** Trace level override */
+  traceLevel?: string | null;
+
   /** Reasoning level override */
+  reasoningLevel?: string | null;
   reasoning?: string;
+
+  /** Runtime/session lifecycle metadata */
+  status?: string;
+  hasActiveRun?: boolean;
+  startedAt?: number;
+  endedAt?: number;
+  runtimeMs?: number;
+  spawnedBy?: string;
+  spawnedWorkspaceDir?: string;
+  forkedFromParent?: boolean;
+  spawnDepth?: number;
+  subagentRole?: "orchestrator" | "leaf";
+  subagentControlScope?: "children" | "none";
+  parentSessionKey?: string;
+  childSessions?: string[];
+  sendPolicy?: "allow" | "deny";
+  groupActivation?: "mention" | "always";
+  systemSent?: boolean;
+  abortedLastRun?: boolean;
+  compactionCheckpointCount?: number;
+  latestCompactionCheckpoint?: unknown;
+  pluginExtensions?: Record<string, unknown>;
 }
 
 export interface SessionsListResult {
@@ -76,15 +116,22 @@ export interface SessionsListResult {
 }
 
 export interface SessionsListParams {
-  /** Filter by session kinds */
-  kinds?: string[];
-
   /** Only sessions active in the last N minutes */
   activeMinutes?: number;
 
   /** Maximum number of sessions to return */
   limit?: number;
 
-  /** Number of last messages to include per session */
-  messageLimit?: number;
+  /** Offset for paginated session lists */
+  offset?: number;
+
+  includeGlobal?: boolean;
+  includeUnknown?: boolean;
+  configuredAgentsOnly?: boolean;
+  includeDerivedTitles?: boolean;
+  includeLastMessage?: boolean;
+  label?: string;
+  spawnedBy?: string;
+  agentId?: string;
+  search?: string;
 }

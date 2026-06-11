@@ -25,6 +25,7 @@ import {
   INTERVAL_PRESETS,
   CRON_EXAMPLES,
 } from "./cron-helpers";
+import type { CronSessionTarget } from "@/types/cron";
 
 interface CronJobFormProps {
   // Form signals
@@ -36,7 +37,7 @@ interface CronJobFormProps {
   editScheduleStaggerMs: Signal<string>;
   editScheduleEveryMs: Signal<string>;
   editScheduleAtMs: Signal<string>;
-  editSessionTarget: Signal<"main" | "isolated">;
+  editSessionTarget: Signal<CronSessionTarget>;
   editWakeMode: Signal<"next-heartbeat" | "now">;
   editDeliveryAnnounce: Signal<boolean>;
   editPayloadText: Signal<string>;
@@ -54,6 +55,7 @@ const SCHEDULE_KIND_OPTIONS = [
 const SESSION_TARGET_OPTIONS = [
   { value: "main", label: t("cron.sessionTarget.main") },
   { value: "isolated", label: t("cron.sessionTarget.isolated") },
+  { value: "current", label: t("cron.sessionTarget.current") },
 ];
 
 const WAKE_MODE_OPTIONS = [
@@ -226,7 +228,7 @@ export function CronJobForm({
           <Dropdown
             value={editSessionTarget.value}
             onChange={(val) => {
-              editSessionTarget.value = val as "main" | "isolated";
+              editSessionTarget.value = val as CronSessionTarget;
             }}
             options={SESSION_TARGET_OPTIONS}
           />

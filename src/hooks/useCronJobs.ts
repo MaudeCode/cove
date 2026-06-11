@@ -18,6 +18,7 @@ import type {
   CronPayload,
   CronStatusResult,
   CronRunLogEntry,
+  CronSessionTarget,
   UseCronJobsResult,
 } from "@/types/cron";
 
@@ -53,7 +54,7 @@ const editScheduleStaggerMs = signal<string>("");
 const editScheduleEveryMs = signal<string>("");
 const editScheduleAtMs = signal<string>("");
 const editWakeMode = signal<"next-heartbeat" | "now">("next-heartbeat");
-const editSessionTarget = signal<"main" | "isolated">("main");
+const editSessionTarget = signal<CronSessionTarget>("main");
 const editDeliveryAnnounce = signal<boolean>(false);
 const editPayloadText = signal<string>("");
 const editPayloadMessage = signal<string>("");

@@ -52,6 +52,14 @@ export const editThinking = signal<string>("inherit");
 export const editVerbose = signal<string>("inherit");
 export const editReasoning = signal<string>("inherit");
 
+function getSessionLevel(
+  session: Session,
+  canonicalKey: "thinkingLevel" | "verboseLevel" | "reasoningLevel",
+  legacyKey: "thinking" | "verbose" | "reasoning",
+): string {
+  return session[canonicalKey] ?? session[legacyKey] ?? "inherit";
+}
+
 export function formatTokenCount(session: Session): string {
   return (session.totalTokens ?? 0).toLocaleString();
 }
@@ -125,9 +133,9 @@ export async function loadAdminSessions(): Promise<void> {
 export function openSessionDetail(session: Session): void {
   selectedSession.value = session;
   editLabel.value = session.label ?? "";
-  editThinking.value = session.thinking ?? "inherit";
-  editVerbose.value = session.verbose ?? "inherit";
-  editReasoning.value = session.reasoning ?? "inherit";
+  editThinking.value = getSessionLevel(session, "thinkingLevel", "thinking");
+  editVerbose.value = getSessionLevel(session, "verboseLevel", "verbose");
+  editReasoning.value = getSessionLevel(session, "reasoningLevel", "reasoning");
 }
 
 export function closeSessionDetail(): void {
@@ -147,14 +155,14 @@ export async function saveSession(): Promise<void> {
     if (editLabel.value !== (session.label ?? "")) {
       updates.label = editLabel.value || undefined;
     }
-    if (editThinking.value !== (session.thinking ?? "inherit")) {
-      updates.thinking = editThinking.value;
+    if (editThinking.value !== getSessionLevel(session, "thinkingLevel", "thinking")) {
+      updates.thinkingLevel = editThinking.value === "inherit" ? null : editThinking.value;
     }
-    if (editVerbose.value !== (session.verbose ?? "inherit")) {
-      updates.verbose = editVerbose.value;
+    if (editVerbose.value !== getSessionLevel(session, "verboseLevel", "verbose")) {
+      updates.verboseLevel = editVerbose.value === "inherit" ? null : editVerbose.value;
     }
-    if (editReasoning.value !== (session.reasoning ?? "inherit")) {
-      updates.reasoning = editReasoning.value;
+    if (editReasoning.value !== getSessionLevel(session, "reasoningLevel", "reasoning")) {
+      updates.reasoningLevel = editReasoning.value === "inherit" ? null : editReasoning.value;
     }
 
     if (Object.keys(updates).length > 0) {

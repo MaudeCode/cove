@@ -3,15 +3,8 @@
  *
  * Available model choices from the gateway.
  *
- * KNOWN ISSUE: OpenClaw's models.list returns ALL known models, not just those
- * the user has auth for. This is a bug in OpenClaw's loadModelCatalog() which
- * should filter by hasAuthForProvider().
- *
- * WORKAROUND: ModelPicker filters to only show models from the current session's
- * provider. This prevents users from seeing models they can't use.
- *
- * PROPER FIX: In openclaw/src/agents/model-catalog.ts, filter the catalog to
- * only include models where the provider has valid auth (env key or profile).
+ * OpenClaw 2026.5+ supports a configured catalog view, so Cove asks the
+ * gateway for models backed by active credentials.
  */
 
 import { signal, computed } from "@preact/signals";
@@ -68,7 +61,7 @@ export async function loadModels(): Promise<void> {
   try {
     // Load models list and default model in parallel
     const [modelsResult, statusResult] = await Promise.all([
-      send("models.list", {}),
+      send("models.list", { view: "configured" }),
       send("status", {}).catch(() => null), // Don't fail if status unavailable
     ]);
 

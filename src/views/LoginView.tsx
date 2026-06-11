@@ -9,11 +9,12 @@ import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
 import { initChat } from "@/lib/chat/init";
-import { setActiveSession, loadSessions } from "@/signals/sessions";
+import { setActiveSession, loadSessions, initSessionEventSubscription } from "@/signals/sessions";
 import { loadAgents } from "@/signals/agents";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
+import { initExecApproval } from "@/signals/exec";
 import { getAuth, saveAuth, getSessionCredential } from "@/lib/storage";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -82,6 +83,7 @@ export function LoginView() {
 
       // Load sessions list for sidebar
       await loadSessions();
+      initSessionEventSubscription();
 
       // Load available agents
       await loadAgents();
@@ -98,6 +100,9 @@ export function LoginView() {
 
       // Load available models
       loadModels();
+
+      // Initialize approval listener
+      initExecApproval();
     } catch (err) {
       log.auth.error("Connect failed:", err);
     } finally {

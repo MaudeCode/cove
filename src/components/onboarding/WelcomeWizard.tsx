@@ -11,10 +11,11 @@ import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError, disconnect, probeGateway } from "@/lib/gateway";
 import { initChat } from "@/lib/chat/init";
-import { setActiveSession, loadSessions } from "@/signals/sessions";
+import { setActiveSession, loadSessions, initSessionEventSubscription } from "@/signals/sessions";
 import { loadAssistantIdentity } from "@/signals/identity";
 import { startUsagePolling } from "@/signals/usage";
 import { loadModels } from "@/signals/models";
+import { initExecApproval } from "@/signals/exec";
 import { saveAuth, completeOnboarding, setPendingTour } from "@/lib/storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -172,6 +173,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
 
       // Load sessions list for sidebar
       await loadSessions();
+      initSessionEventSubscription();
 
       // Load assistant identity
       await loadAssistantIdentity();
@@ -185,6 +187,9 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
 
       // Load available models
       loadModels();
+
+      // Initialize approval listener
+      initExecApproval();
 
       connected.value = true;
     } catch (err) {
