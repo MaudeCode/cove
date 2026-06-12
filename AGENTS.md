@@ -213,6 +213,24 @@ See ROADMAP.md for full details.
 - [ ] Phase 3 - Operations (status, cron, config)
 - [ ] Phase 4 - Nice to Have
 
+## Linear Project
+
+Cove is tracked in Linear under the `Cove` project. Treat Linear as the live
+planning system and `ROADMAP.md` as the repo-local roadmap summary.
+
+When starting non-trivial work, check the `Cove` Linear project for:
+- current priorities and milestone/roadmap status
+- active or related work that could overlap with the change
+- product-quality expectations that may not be obvious from the code alone
+- parent/child relationships between larger initiatives and implementation tasks
+
+If Linear and the repo docs disagree, do not guess. Note the mismatch and verify
+the intended scope before changing roadmap or planning language.
+
+Keep this file public-safe. Do not add Linear team IDs, project IDs, issue IDs,
+private Linear URLs, customer/private context, or issue-specific notes here.
+Refer to the project by name and keep Linear guidance general.
+
 ## Notes for LLMs
 
 ### Code Style
