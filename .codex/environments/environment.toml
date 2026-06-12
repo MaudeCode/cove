@@ -1,0 +1,20 @@
+version = 1
+name = "Cove"
+
+[setup]
+script = "./scripts/bootstrap-worktree.sh"
+
+[[actions]]
+name = "Run"
+icon = "run"
+command = "bun run dev"
+
+[[actions]]
+name = "Check"
+icon = "check"
+command = "bun run check"
+
+[[actions]]
+name = "Build"
+icon = "check"
+command = "bun run build"

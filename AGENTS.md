@@ -180,6 +180,9 @@ logout()                                        // Clear + disconnect
 # Install
 bun install
 
+# Bootstrap a new git worktree for Codex work
+bun run worktree:bootstrap
+
 # Dev server (hot reload)
 bun run dev
 
@@ -193,6 +196,22 @@ bun run format
 # Build for production
 bun run build
 ```
+
+### Codex Worktrees
+
+When creating a Codex worktree, bootstrap it before editing:
+
+```bash
+bun run worktree:bootstrap
+```
+
+This copies required ignored local files from the main checkout, currently
+`.env.local` when present, and then runs `bun install --frozen-lockfile` so the
+worktree has its own `node_modules`. To copy more ignored local config files,
+set `COVE_WORKTREE_COPY` to a colon-separated list before running the command.
+The Codex app local environment is checked in at
+`.codex/environments/environment.toml`; select the `Cove` environment when
+starting a Worktree thread so Codex runs this setup automatically.
 
 ## Protocol Reference
 

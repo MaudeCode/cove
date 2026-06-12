@@ -43,6 +43,7 @@
     "format": "oxfmt --write src/",
     "format:check": "oxfmt --check src/",
     "typecheck": "tsc -b --noEmit",
+    "worktree:bootstrap": "bash scripts/bootstrap-worktree.sh",
     "knip": "knip",
     "check": "bun run lint && bun run format:check && bun run typecheck && pnpm knip",
     "i18n:check": "bun scripts/check-i18n.ts",
