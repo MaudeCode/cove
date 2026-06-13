@@ -37,7 +37,7 @@
     "test": "bun run test:all",
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
-    "test:e2e": "bun test tests/e2e --pass-with-no-tests",
+    "test:e2e": "playwright test",
     "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:coverage": "bun test --coverage tests/unit tests/integration",
     "preview": "vite preview",
@@ -79,6 +79,7 @@
   "devDependencies": {
     "@commitlint/cli": "^20.4.1",
     "@commitlint/config-conventional": "^20.4.1",
+    "@playwright/test": "^1.60.0",
     "@preact/preset-vite": "^2.10.3",
     "@tailwindcss/vite": "^4.2.0",
     "@testing-library/preact": "^3.2.4",

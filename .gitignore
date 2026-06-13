@@ -25,3 +25,5 @@ dist-ssr
 debug.log
 .env.local
 docs/.vitepress/cache/
+playwright-report/
+test-results/
