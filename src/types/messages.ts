@@ -1,3 +1,5 @@
+import type { AttachmentPayload } from "./attachments";
+
 /**
  * Message Types
  *
@@ -34,6 +36,9 @@ export interface Message {
 
   /** Images attached to this message */
   images?: MessageImage[];
+
+  /** Original attachments retained while a queued message waits to be sent. */
+  pendingAttachments?: AttachmentPayload[];
 
   /** Tool calls made in this message (assistant only) */
   toolCalls?: ToolCall[];

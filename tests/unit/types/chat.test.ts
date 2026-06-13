@@ -1,7 +1,8 @@
 import { describe, expect, mock, test } from "bun:test";
 import type { ContentBlock, RawMessage } from "../../../src/types/chat";
 
-mock.module("@/lib/message-detection", () => import("../../../src/lib/message-detection"));
+const messageDetection = await import("../../../src/lib/message-detection");
+mock.module("@/lib/message-detection", () => messageDetection);
 
 const { mergeToolCalls, normalizeMessage, parseMessageContent } =
   await import("../../../src/types/chat");

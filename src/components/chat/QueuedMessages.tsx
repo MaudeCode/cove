@@ -10,6 +10,7 @@ import { messageQueue, dequeueMessage, updateQueuedMessage } from "@/signals/cha
 import { t } from "@/lib/i18n";
 import { compressImage } from "@/hooks/useAttachments";
 import { isSupportedImage } from "@/types/attachments";
+import { buildQueuedMessageAttachments } from "./queued-message-utils";
 import { Modal } from "@/components/ui/Modal";
 import { ModalFooter } from "@/components/ui/ModalFooter";
 import { Button } from "@/components/ui/Button";
@@ -80,7 +81,8 @@ export function QueuedMessages() {
       updateQueuedMessage(
         editingMessage.id,
         editContent.trim(),
-        editImages.length > 0 ? editImages : undefined,
+        editImages,
+        buildQueuedMessageAttachments(editingMessage, editImages),
       );
       setEditingMessage(null);
       setEditContent("");

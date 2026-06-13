@@ -2,8 +2,11 @@ import { describe, expect, mock, test } from "bun:test";
 
 (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
 
-mock.module("@/lib/constants", () => import("../../../../src/lib/constants"));
-mock.module("@/lib/tool-utils", () => import("../../../../src/lib/tool-utils"));
+const constants = await import("../../../../src/lib/constants");
+const toolUtils = await import("../../../../src/lib/tool-utils");
+
+mock.module("@/lib/constants", () => constants);
+mock.module("@/lib/tool-utils", () => toolUtils);
 mock.module("@/types/chat", () => ({
   normalizeMessage: (
     raw: { content: unknown; role: "assistant"; timestamp?: number },

@@ -12,6 +12,7 @@
  */
 
 import { signal, computed } from "@preact/signals";
+import type { AttachmentPayload } from "@/types/attachments";
 import type { Message, MessageImage, MessageStatus, ToolCall } from "@/types/messages";
 import type { ChatRun } from "@/types/chat";
 import {
@@ -456,9 +457,19 @@ export function updateQueuedMessage(
   messageId: string,
   newContent: string,
   newImages?: MessageImage[],
+  newPendingAttachments?: AttachmentPayload[],
 ): void {
   messageQueue.value = messageQueue.value.map((m) =>
-    m.id === messageId ? { ...m, content: newContent, images: newImages } : m,
+    m.id === messageId
+      ? {
+          ...m,
+          content: newContent,
+          ...(newImages !== undefined ? { images: newImages } : {}),
+          ...(newPendingAttachments !== undefined
+            ? { pendingAttachments: newPendingAttachments }
+            : {}),
+        }
+      : m,
   );
 }
 

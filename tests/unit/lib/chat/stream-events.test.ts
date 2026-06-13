@@ -2,7 +2,9 @@ import { describe, expect, mock, test } from "bun:test";
 
 (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
 
-mock.module("@/lib/streaming", () => import("../../../../src/lib/streaming"));
+const streaming = await import("../../../../src/lib/streaming");
+
+mock.module("@/lib/streaming", () => streaming);
 
 const { mergeAssistantStreamContent } = await import("../../../../src/lib/chat/stream-events");
 

@@ -29,9 +29,13 @@ mock.module("@/lib/gateway", () => ({
   disconnect: () => {
     calls.disconnect++;
   },
+  isConnected: { value: true },
+  mainSessionKey: { value: "main" },
+  on: () => () => undefined,
   send: () => {
     throw new Error("send is not used by logout tests");
   },
+  subscribe: () => () => undefined,
 }));
 
 mock.module("@/lib/node-connection", () => ({

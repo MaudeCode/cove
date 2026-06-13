@@ -91,6 +91,7 @@ export async function sendMessage(
     role: "user",
     content: message,
     images: attachmentsToImages(options?.attachments),
+    pendingAttachments: options?.attachments,
     timestamp: Date.now(),
     isStreaming: false,
     status: "sending",
@@ -202,7 +203,10 @@ async function resendMessage(message: Message): Promise<void> {
   }
 
   const idempotencyKey = message.id.replace(/^user_/, "");
-  await sendMessage(message.sessionKey, message.content, { messageId: idempotencyKey });
+  await sendMessage(message.sessionKey, message.content, {
+    attachments: message.pendingAttachments,
+    messageId: idempotencyKey,
+  });
 }
 
 /**

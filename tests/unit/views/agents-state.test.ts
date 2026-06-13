@@ -19,11 +19,17 @@ let configGetResult: {
 };
 
 mock.module("@/lib/gateway", () => ({
+  disconnect: () => undefined,
+  isConnected: { value: true },
+  mainSessionKey: { value: "main" },
+  on: () => () => undefined,
   send: (method: string, params: unknown) => sendResponder.value(method, params),
+  subscribe: () => () => undefined,
 }));
 
 mock.module("@/lib/session-utils", () => ({
   getErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
+  isUserCreatedChat: (sessionKey: string) => /^agent:[^:]+:chat:[^:]+$/.test(sessionKey),
 }));
 
 mock.module("@/lib/i18n", () => ({
