@@ -9,7 +9,18 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: maudecode/cove
 
+permissions:
+  contents: read
+
 jobs:
+  release-ci-gate:
+    name: Release CI Gate
+    uses: ./.github/workflows/ci.yml
+
+  release-test-gate:
+    name: Release Test Gate
+    uses: ./.github/workflows/tests.yml
+
   # ============================================
   # PHASE 1: BUILD (parallel, no publishing)
   # ============================================
@@ -17,6 +28,7 @@ jobs:
   build-docker:
     name: Build Docker (${{ matrix.platform }})
     runs-on: ${{ matrix.runner }}
+    needs: [release-ci-gate, release-test-gate]
     permissions:
       contents: read
     strategy:
@@ -52,6 +64,7 @@ jobs:
   build-npm:
     name: Build npm package
     runs-on: blacksmith-4vcpu-ubuntu-2404
+    needs: [release-ci-gate, release-test-gate]
     steps:
       - uses: actions/checkout@v4
 
@@ -61,7 +74,7 @@ jobs:
 
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
       - name: Install and build
         run: |
@@ -243,7 +256,7 @@ jobs:
       # --- GitHub Release ---
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version: 1.3.14
 
       - name: Install dependencies (for changelog)
         run: bun install --frozen-lockfile
