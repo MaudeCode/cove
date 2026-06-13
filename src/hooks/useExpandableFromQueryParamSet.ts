@@ -26,6 +26,14 @@ interface UseExpandableFromQueryParamSetOptions<T extends string | number> {
   scrollDelayMs?: number;
 }
 
+function areSetsEqual<T>(left: Set<T>, right: Set<T>): boolean {
+  if (left.size !== right.size) return false;
+  for (const item of left) {
+    if (!right.has(item)) return false;
+  }
+  return true;
+}
+
 /**
  * Shared URL <-> expanded set sync for views that support
  * deep-link expansion, mobile modal opening, and optional auto-scroll.
@@ -63,19 +71,26 @@ export function useExpandableFromQueryParamSet<T extends string | number>(
       onMobileOpenFirst(newItems[0]);
     }
 
+    let scrollTimer: ReturnType<typeof setTimeout> | undefined;
     if (!mobile || scrollOnMobile) {
-      setTimeout(() => {
+      scrollTimer = setTimeout(() => {
         const selector = getItemSelector(newItems[0]);
         const els = document.querySelectorAll(selector);
         const el = Array.from(els).find((e) => (e as HTMLElement).offsetParent !== null);
         el?.scrollIntoView({ behavior: "smooth", block: "center" });
       }, scrollDelayMs);
     }
+
+    return () => {
+      if (scrollTimer !== undefined) {
+        clearTimeout(scrollTimer);
+      }
+    };
   }, [expandedParam.value, ready]);
 
   useEffect(() => {
-    if (expandedInitialized.value) {
+    if (expandedInitialized.value && !areSetsEqual(expandedParam.value, expandedState.value)) {
       setExpandedParam(expandedState.value);
     }
-  }, [expandedState.value, expandedInitialized.value]);
+  }, [expandedParam.value, expandedState.value, expandedInitialized.value]);
 }

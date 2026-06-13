@@ -153,6 +153,18 @@ interface ToggleSetValueOptions {
   pushHistory?: boolean;
 }
 
+function parseQueryParamSet<T extends string | number>(
+  value: string | null,
+  parse: (s: string) => T,
+): T[] {
+  return value
+    ? value
+        .split(",")
+        .filter((item) => item !== "")
+        .map(parse)
+    : [];
+}
+
 /**
  * Toggle a value in a Set-backed signal immutably.
  *
@@ -200,13 +212,13 @@ export function useQueryParamSet<T extends string | number>(
 
   // Derived Set signal
   const setSignal = useMemo(() => {
-    const items = param.value ? param.value.split(",").map(parse).filter(Boolean) : [];
+    const items = parseQueryParamSet(param.value, parse);
     return signal(new Set(items));
   }, [key]);
 
   // Keep set in sync with param
   useEffect(() => {
-    const items = param.value ? param.value.split(",").map(parse).filter(Boolean) : [];
+    const items = parseQueryParamSet(param.value, parse);
     setSignal.value = new Set(items);
   }, [param.value]);
 
