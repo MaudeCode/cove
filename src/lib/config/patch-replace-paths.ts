@@ -25,12 +25,22 @@ function hasSameJsonShape(left: unknown, right: unknown): boolean {
   return JSON.stringify(left) === JSON.stringify(right);
 }
 
-function idKeyedArrayPreservesBaseIds(
+function idKeyedArrayPreservesBaseIdsAndOrder(
   base: Array<JsonRecord & { id: string }>,
   merged: unknown[],
 ): boolean {
-  const mergedIds = new Set(merged.filter(isObjectWithStringId).map((entry) => entry.id));
-  return base.every((entry) => mergedIds.has(entry.id));
+  const mergedIds = merged.filter(isObjectWithStringId).map((entry) => entry.id);
+  let searchFromIndex = 0;
+
+  for (const entry of base) {
+    const matchIndex = mergedIds.indexOf(entry.id, searchFromIndex);
+    if (matchIndex === -1) {
+      return false;
+    }
+    searchFromIndex = matchIndex + 1;
+  }
+
+  return true;
 }
 
 function arrayPreservesBaseEntries(base: unknown[], merged: unknown[]): boolean {
@@ -100,6 +110,84 @@ function collectDestructiveIdKeyedArrayEntryPatchPaths(params: {
         path: `${params.path}[]`,
       }),
     );
+    paths.push(
+      ...collectDestructiveMergedArrayPaths({
+        base: baseEntry,
+        merged: mergedEntry,
+        path: `${params.path}[]`,
+      }),
+    );
+  }
+
+  return paths;
+}
+
+function collectDestructiveMergedArrayPaths(params: {
+  base: unknown;
+  merged: unknown;
+  path: string;
+}): string[] {
+  if (Array.isArray(params.base)) {
+    if (!Array.isArray(params.merged)) {
+      return [params.path];
+    }
+
+    if (isIdKeyedArray(params.base)) {
+      if (!idKeyedArrayPreservesBaseIdsAndOrder(params.base, params.merged)) {
+        return [params.path];
+      }
+
+      return collectDestructiveIdKeyedArrayEntryMergedPaths({
+        base: params.base,
+        merged: params.merged,
+        path: params.path,
+      });
+    }
+
+    return arrayPreservesBaseEntries(params.base, params.merged) ? [] : [params.path];
+  }
+
+  if (!isPlainObject(params.base)) {
+    return [];
+  }
+
+  const merged = isPlainObject(params.merged) ? params.merged : {};
+  const paths: string[] = [];
+  for (const [key, baseValue] of Object.entries(params.base)) {
+    paths.push(
+      ...collectDestructiveMergedArrayPaths({
+        base: baseValue,
+        merged: merged[key],
+        path: formatConfigPath(params.path, key),
+      }),
+    );
+  }
+  return paths;
+}
+
+function collectDestructiveIdKeyedArrayEntryMergedPaths(params: {
+  base: Array<JsonRecord & { id: string }>;
+  merged: unknown[];
+  path: string;
+}): string[] {
+  const mergedById = new Map(
+    params.merged.filter(isObjectWithStringId).map((entry) => [entry.id, entry]),
+  );
+  const paths: string[] = [];
+
+  for (const baseEntry of params.base) {
+    const mergedEntry = mergedById.get(baseEntry.id);
+    if (!mergedEntry) {
+      continue;
+    }
+
+    paths.push(
+      ...collectDestructiveMergedArrayPaths({
+        base: baseEntry,
+        merged: mergedEntry,
+        path: `${params.path}[]`,
+      }),
+    );
   }
 
   return paths;
@@ -131,7 +219,7 @@ function collectDestructiveArrayPatchPaths(params: {
 
       if (Array.isArray(mergedValue)) {
         if (isIdKeyedArray(baseValue)) {
-          if (!idKeyedArrayPreservesBaseIds(baseValue, mergedValue)) {
+          if (!idKeyedArrayPreservesBaseIdsAndOrder(baseValue, mergedValue)) {
             paths.push(path);
             continue;
           }

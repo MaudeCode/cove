@@ -70,6 +70,28 @@ describe("getConfigPatchReplacePaths", () => {
     ).toEqual(["agents.list"]);
   });
 
+  test("marks id-keyed array reorders at the array path", () => {
+    expect(
+      getConfigPatchReplacePaths({
+        original: {
+          agents: {
+            list: [{ id: "main" }, { id: "builder" }],
+          },
+        },
+        patch: {
+          agents: {
+            list: [{ id: "builder" }, { id: "main" }],
+          },
+        },
+        draft: {
+          agents: {
+            list: [{ id: "builder" }, { id: "main" }],
+          },
+        },
+      }),
+    ).toEqual(["agents.list"]);
+  });
+
   test("marks destructive nested array edits inside id-keyed entries", () => {
     expect(
       getConfigPatchReplacePaths({
@@ -86,6 +108,28 @@ describe("getConfigPatchReplacePaths", () => {
         draft: {
           agents: {
             list: [{ id: "main", skills: ["code"] }],
+          },
+        },
+      }),
+    ).toEqual(["agents.list[].skills"]);
+  });
+
+  test("marks omitted nested arrays inside id-keyed entries", () => {
+    expect(
+      getConfigPatchReplacePaths({
+        original: {
+          agents: {
+            list: [{ id: "main", skills: ["code", "review"] }],
+          },
+        },
+        patch: {
+          agents: {
+            list: [{ id: "main", model: "b" }],
+          },
+        },
+        draft: {
+          agents: {
+            list: [{ id: "main", model: "b" }],
           },
         },
       }),
