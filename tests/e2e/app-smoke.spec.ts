@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { installMockGateway, mockGatewayMethods } from "./support/mock-gateway";
 
 type RecordedRequest = {
@@ -12,6 +12,36 @@ type RecordedRequest = {
     scopes?: string[];
   };
 };
+
+async function prepareApp(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    localStorage.setItem("cove:hasCompletedOnboarding", JSON.stringify(true));
+  });
+  await installMockGateway(page);
+}
+
+async function connectToMockGateway(page: Page): Promise<void> {
+  await prepareApp(page);
+  await page.goto("/");
+
+  await expect(page).toHaveTitle(/Cove/);
+  await expect(page.getByRole("heading", { name: "Cove" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Connect to Gateway" })).toBeVisible();
+
+  await page.getByLabel("Gateway URL").fill("ws://gateway.test");
+  await page.getByLabel("Token").fill("test-token");
+  await page.getByRole("button", { name: "Connect" }).click();
+
+  await expectConnectedChat(page);
+}
+
+async function expectConnectedChat(page: Page): Promise<void> {
+  await expect(page.getByRole("main")).toContainText("Chat with Test Assistant");
+  await expect(page.getByRole("main")).toContainText(
+    "Send a message to begin chatting with your assistant",
+  );
+  await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+}
 
 test.describe("Cove app smoke", () => {
   test("loads the connected shell through a mocked gateway", async ({ page }) => {
@@ -27,25 +57,7 @@ test.describe("Cove app smoke", () => {
       pageErrors.push(error.message);
     });
 
-    await page.addInitScript(() => {
-      localStorage.setItem("cove:hasCompletedOnboarding", JSON.stringify(true));
-    });
-    await installMockGateway(page);
-    await page.goto("/");
-
-    await expect(page).toHaveTitle(/Cove/);
-    await expect(page.getByRole("heading", { name: "Cove" })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Connect to Gateway" })).toBeVisible();
-
-    await page.getByLabel("Gateway URL").fill("ws://gateway.test");
-    await page.getByLabel("Token").fill("test-token");
-    await page.getByRole("button", { name: "Connect" }).click();
-
-    await expect(page.getByRole("main")).toContainText("Chat with Test Assistant");
-    await expect(page.getByRole("main")).toContainText(
-      "Send a message to begin chatting with your assistant",
-    );
-    await expect(page.getByRole("button", { name: "Send" })).toBeVisible();
+    await connectToMockGateway(page);
 
     const requests = await page.evaluate(
       () =>
@@ -78,5 +90,64 @@ test.describe("Cove app smoke", () => {
 
     expect(pageErrors).toEqual([]);
     expect(consoleErrors).toEqual([]);
+  });
+
+  test("supports desktop shell navigation, fallback routes, and skip link", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "desktop sidebar navigation is covered by the desktop project");
+
+    await prepareApp(page);
+    await page.goto("/");
+    await expect(page.getByRole("heading", { name: "Connect to Gateway" })).toBeVisible();
+
+    await page.keyboard.press("Tab");
+    const skipLink = page.getByRole("link", { name: "Skip to content" });
+    await expect(skipLink).toBeFocused();
+    await expect(skipLink).toBeVisible();
+    await skipLink.press("Enter");
+    await expect(page).toHaveURL(/#main-content$/);
+
+    await page.getByLabel("Gateway URL").fill("ws://gateway.test");
+    await page.getByLabel("Token").fill("test-token");
+    await page.getByRole("button", { name: "Connect" }).click();
+    await expectConnectedChat(page);
+
+    await page.getByRole("button", { name: "Overview" }).click();
+    await expect(page).toHaveURL(/\/overview$/);
+    await expect(page.getByRole("main")).toContainText("Gateway Connection");
+
+    await page.getByRole("button", { name: "Chat" }).click();
+    await expect(page).toHaveURL(/\/chat$/);
+    await expectConnectedChat(page);
+
+    await page.goto("/missing-route");
+    await expectConnectedChat(page);
+    await expect(page).toHaveURL(/\/missing-route$/);
+  });
+
+  test("renders standalone canvas without the app shell", async ({ page }) => {
+    await prepareApp(page);
+    await page.goto("/canvas");
+
+    await expect(page.getByText("No content to display")).toBeVisible();
+    await expect(page.getByRole("banner")).toHaveCount(0);
+    await expect(page.getByRole("complementary")).toHaveCount(0);
+  });
+
+  test("opens and closes the mobile sidebar overlay", async ({ page, isMobile }) => {
+    test.skip(!isMobile, "mobile overlay is only visible in the mobile project");
+
+    await connectToMockGateway(page);
+
+    await page.getByRole("button", { name: "Toggle sidebar" }).click();
+    await expect(page.getByRole("complementary")).toBeVisible();
+    await expect(page.locator('div[aria-hidden="true"].fixed.inset-0')).toBeVisible();
+
+    await page.getByRole("button", { name: "Overview" }).click();
+    await expect(page).toHaveURL(/\/overview$/);
+    await expect(page.getByRole("main")).toContainText("Gateway Connection");
+    await expect(page.locator('div[aria-hidden="true"].fixed.inset-0')).toHaveCount(0);
   });
 });
