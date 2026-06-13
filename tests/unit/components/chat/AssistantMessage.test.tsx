@@ -24,13 +24,6 @@ mock.module("../../../../src/components/chat/MessageContent", () => ({
     <span data-testid="message-content">{content}</span>
   ),
 }));
-mock.module("../../../../src/components/chat/MessageImages", () => ({
-  MessageImages: ({ images }: { images: Array<{ alt?: string; url: string }> }) => (
-    <div data-testid="message-images">
-      {images.map((image) => image.alt || image.url).join("|")}
-    </div>
-  ),
-}));
 mock.module("../../../../src/components/chat/MessageActions", () => ({
   MessageActions: () => <span data-testid="message-actions" />,
 }));
@@ -111,7 +104,8 @@ describe("AssistantMessage", () => {
     );
 
     expect(screen.getByText("Here is media")).toBeTruthy();
-    expect(screen.getByTestId("message-images").textContent).toBe("inline image|Image 1");
+    expect(screen.getByRole("img", { name: "inline image" })).toBeTruthy();
+    expect(screen.getByRole("img", { name: "Image 1" })).toBeTruthy();
     expect(screen.getByText("📎 File: /tmp/private.txt")).toBeTruthy();
     expect(screen.getByLabelText("truncated:oversized")).toBeTruthy();
   });

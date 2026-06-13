@@ -7,11 +7,16 @@ const defaultTranslate: Translate = (key, values) =>
 
 export function installI18nMock(
   overrides: {
+    formatBytes?: (bytes: number) => string;
+    formatDuration?: (ms: number | undefined) => string;
     formatTimestamp?: (timestamp: number) => string;
     t?: Translate;
   } = {},
 ): void {
   mock.module("@/lib/i18n", () => ({
+    formatBytes: overrides.formatBytes ?? ((bytes: number) => `${bytes} B`),
+    formatDuration:
+      overrides.formatDuration ?? ((ms: number | undefined) => (ms == null ? "—" : `${ms}ms`)),
     formatTimestamp: overrides.formatTimestamp ?? ((timestamp: number) => `time:${timestamp}`),
     t: overrides.t ?? defaultTranslate,
   }));
