@@ -144,11 +144,10 @@ function handleCanvasContent(cmdParams: Record<string, unknown>): {
   const imageBase64 = cmdParams.imageBase64 as string | undefined;
   const imageMimeType = (cmdParams.imageMimeType as string) || "image/png";
 
-  revokePreviousBlobUrl();
-
   if (imageBase64) {
     try {
       const blobUrl = createBlobUrlFromBase64(imageBase64, imageMimeType);
+      revokePreviousBlobUrl();
       canvasBlobUrl.value = blobUrl;
       canvasContentType.value = imageMimeType;
       canvasUrl.value = null;
@@ -164,6 +163,7 @@ function handleCanvasContent(cmdParams: Record<string, unknown>): {
 
   if (url) {
     const transformedUrl = transformCanvasUrl(url);
+    revokePreviousBlobUrl();
     canvasUrl.value = transformedUrl;
     lastBase64 = null;
     lastBase64Mime = null;
@@ -179,6 +179,7 @@ let refreshReconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let pingInterval: ReturnType<typeof setInterval> | null = null;
 let currentAuthMode: "token" | "password" | undefined = undefined;
 let currentCredential: string | undefined = undefined;
+let connectionEpoch = 0;
 
 const PING_INTERVAL_MS = 15000; // Send ping every 15 seconds
 const CANVAS_OPERATION_TIMEOUT_MS = 10000; // Timeout for eval/snapshot operations
@@ -194,6 +195,18 @@ const pendingRequests = new Map<
 let requestId = 0;
 
 const REQUEST_TIMEOUT_MS = 30000;
+
+function rejectPendingRequests(error: Error): void {
+  for (const [id, pending] of pendingRequests) {
+    clearTimeout(pending.timeout);
+    pending.reject(error);
+    pendingRequests.delete(id);
+  }
+}
+
+function isCurrentConnection(epoch: number): boolean {
+  return epoch === connectionEpoch;
+}
 
 function send(method: string, params?: Record<string, unknown>): Promise<unknown> {
   return new Promise((resolve, reject) => {
@@ -217,7 +230,9 @@ function send(method: string, params?: Record<string, unknown>): Promise<unknown
   });
 }
 
-function handleMessage(data: string) {
+function handleMessage(data: string, epoch: number) {
+  if (!isCurrentConnection(epoch)) return;
+
   try {
     const msg = JSON.parse(data);
 
@@ -243,7 +258,7 @@ function handleMessage(data: string) {
         handleInvokeRequest(msg.payload);
         return;
       }
-      handleEvent(msg.event, msg.payload);
+      handleEvent(msg.event, msg.payload, epoch);
       return;
     }
   } catch (e) {
@@ -251,7 +266,7 @@ function handleMessage(data: string) {
   }
 }
 
-function handleEvent(event: string, payload: unknown) {
+function handleEvent(event: string, payload: unknown, epoch: number) {
   log.node.debug("Event:", event, payload);
 
   // Handle connect.challenge - this triggers us to send the connect request
@@ -259,7 +274,7 @@ function handleEvent(event: string, payload: unknown) {
     const p = payload as { nonce?: string; ts?: number };
     const nonce = typeof p.nonce === "string" ? p.nonce : undefined;
     log.node.debug("Received connect.challenge with nonce:", nonce?.slice(0, 8) + "...");
-    sendConnectRequest(nonce);
+    sendConnectRequest(nonce, epoch);
     return;
   }
 
@@ -277,7 +292,7 @@ function handleEvent(event: string, payload: unknown) {
   }
 }
 
-async function sendConnectRequest(nonce?: string) {
+async function sendConnectRequest(nonce: string | undefined, epoch: number) {
   try {
     // Get or create persistent device identity (Ed25519 keys stored in localStorage)
     const identity = await getDeviceIdentity();
@@ -290,9 +305,11 @@ async function sendConnectRequest(nonce?: string) {
       clientMode: "node",
       role: "node",
       scopes: [],
-      token: currentCredential ?? null,
+      token: currentAuthMode === "token" ? (currentCredential ?? null) : null,
       nonce, // Include challenge nonce in signature
     });
+
+    if (!isCurrentConnection(epoch)) return;
 
     const params: Record<string, unknown> = {
       minProtocol: PROTOCOL_VERSION,
@@ -329,6 +346,8 @@ async function sendConnectRequest(nonce?: string) {
     log.node.debug("Sending connect request with device:", device.id.slice(0, 16) + "...");
 
     const connectResult = await send("connect", params);
+
+    if (!isCurrentConnection(epoch)) return;
 
     log.node.debug("Connect result:", connectResult);
 
@@ -388,14 +407,16 @@ async function handleInvokeRequest(payload: unknown) {
     switch (p.command) {
       case "canvas.present": {
         const contentResult = handleCanvasContent(cmdParams);
+        if (!contentResult) {
+          error = { code: "INVALID_PARAMS", message: "url or imageBase64 parameter required" };
+          break;
+        }
         // Toggle to ensure subscribers see the change even if already true
         canvasVisible.value = false;
         canvasVisible.value = true;
-        if (contentResult) {
-          log.node.debug(
-            `Canvas presented: ${contentResult.type === "base64" ? `(${contentResult.detail})` : contentResult.detail}`,
-          );
-        }
+        log.node.debug(
+          `Canvas presented: ${contentResult.type === "base64" ? `(${contentResult.detail})` : contentResult.detail}`,
+        );
         break;
       }
       case "canvas.hide": {
@@ -405,14 +426,16 @@ async function handleInvokeRequest(payload: unknown) {
       }
       case "canvas.navigate": {
         const contentResult = handleCanvasContent(cmdParams);
+        if (!contentResult) {
+          error = { code: "INVALID_PARAMS", message: "url or imageBase64 parameter required" };
+          break;
+        }
         // Toggle to ensure subscribers see the change even if already true
         canvasVisible.value = false;
         canvasVisible.value = true;
-        if (contentResult) {
-          log.node.debug(
-            `Canvas navigated: ${contentResult.type === "base64" ? `(${contentResult.detail})` : contentResult.detail}`,
-          );
-        }
+        log.node.debug(
+          `Canvas navigated: ${contentResult.type === "base64" ? `(${contentResult.detail})` : contentResult.detail}`,
+        );
         break;
       }
       case "canvas.eval": {
@@ -424,13 +447,15 @@ async function handleInvokeRequest(payload: unknown) {
         }
         try {
           const evalResult = await new Promise<unknown>((resolve, reject) => {
-            pendingCanvasEval.value = {
+            pendingCanvasEval.value?.reject("Superseded by a newer canvas.eval request");
+            const request: NonNullable<typeof pendingCanvasEval.value> = {
               js,
               resolve,
-              reject: (msg) => reject(new Error(msg)),
+              reject: (msg: string) => reject(new Error(msg)),
             };
+            pendingCanvasEval.value = request;
             setTimeout(() => {
-              if (pendingCanvasEval.value?.js === js) {
+              if (pendingCanvasEval.value === request) {
                 pendingCanvasEval.value = null;
                 reject(new Error("Canvas eval timeout"));
               }
@@ -446,19 +471,21 @@ async function handleInvokeRequest(payload: unknown) {
         const maxWidth = (cmdParams.maxWidth as number) || 800;
         const quality = (cmdParams.quality as number) || 0.8;
         const formatParam = (cmdParams.outputFormat as string) || "jpeg";
-        const outputFormat = formatParam === "png" ? "png" : "jpeg";
+        const outputFormat: "jpeg" | "png" = formatParam === "png" ? "png" : "jpeg";
         log.node.debug("canvas.snapshot requested:", { maxWidth, quality, outputFormat });
         try {
           const dataUrl = await new Promise<string>((resolve, reject) => {
-            pendingCanvasSnapshot.value = {
+            pendingCanvasSnapshot.value?.reject("Superseded by a newer canvas.snapshot request");
+            const request: NonNullable<typeof pendingCanvasSnapshot.value> = {
               maxWidth,
               quality,
               outputFormat,
               resolve,
-              reject: (msg) => reject(new Error(msg)),
+              reject: (msg: string) => reject(new Error(msg)),
             };
+            pendingCanvasSnapshot.value = request;
             setTimeout(() => {
-              if (pendingCanvasSnapshot.value) {
+              if (pendingCanvasSnapshot.value === request) {
                 pendingCanvasSnapshot.value = null;
                 reject(new Error("Canvas snapshot timeout"));
               }
@@ -515,17 +542,22 @@ async function connectNode() {
   const wsUrl = url.replace(/^http/, "ws");
   log.node.debug("Connecting to gateway as node");
 
-  ws = new WebSocket(wsUrl);
+  const epoch = ++connectionEpoch;
+  const socket = new WebSocket(wsUrl);
+  ws = socket;
 
-  ws.onopen = () => {
+  socket.onopen = () => {
+    if (!isCurrentConnection(epoch) || ws !== socket) return;
     log.node.debug("WebSocket connected, waiting for connect.challenge");
   };
 
-  ws.onmessage = (event) => {
-    handleMessage(String(event.data));
+  socket.onmessage = (event) => {
+    if (!isCurrentConnection(epoch) || ws !== socket) return;
+    handleMessage(String(event.data), epoch);
   };
 
-  ws.onclose = (event) => {
+  socket.onclose = (event) => {
+    if (!isCurrentConnection(epoch) || ws !== socket) return;
     log.node.debug("WebSocket closed:", event.code, event.reason);
     nodeConnected.value = false;
     ws = null;
@@ -545,7 +577,8 @@ async function connectNode() {
     }
   };
 
-  ws.onerror = () => {
+  socket.onerror = () => {
+    if (!isCurrentConnection(epoch) || ws !== socket) return;
     log.node.error("WebSocket error");
   };
 }
@@ -562,10 +595,12 @@ export function startNodeConnection() {
 /** Stop the node connection (for cleanup) */
 export function refreshNodeRegistration() {
   log.node.debug("refreshNodeRegistration called - doing full reconnect");
+  connectionEpoch++;
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
   }
+  rejectPendingRequests(new Error("Connection refreshing"));
   // Close existing connection and reconnect fresh
   if (ws) {
     ws.onclose = null;
@@ -584,6 +619,7 @@ export function refreshNodeRegistration() {
 }
 
 export function stopNodeConnection() {
+  connectionEpoch++;
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
@@ -597,11 +633,7 @@ export function stopNodeConnection() {
     pingInterval = null;
   }
   // Clean up pending requests
-  for (const [id, pending] of pendingRequests) {
-    clearTimeout(pending.timeout);
-    pending.reject(new Error("Connection closed"));
-    pendingRequests.delete(id);
-  }
+  rejectPendingRequests(new Error("Connection closed"));
   if (ws) {
     ws.onclose = null;
     ws.close();
