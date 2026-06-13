@@ -9,7 +9,8 @@
     "src/lib/type-guards.ts",
     "src/lib/node-connection.ts",
     "src/components/ui/StateRenderer.tsx",
-    "src/locales/index.ts"
+    "src/locales/index.ts",
+    "tests/**/*.test.ts"
   ],
   "ignoreDependencies": [
     "@types/dompurify",

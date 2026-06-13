@@ -221,7 +221,7 @@ export interface GatewayRpcMap {
     };
   };
   "config.patch": {
-    params: { raw: string; baseHash?: string | null };
+    params: { raw: string; baseHash?: string | null; replacePaths?: string[] };
     result: ConfigSaveResponse;
   };
   "config.schema": {

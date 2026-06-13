@@ -9,6 +9,7 @@ import { send } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
 import { setValueAtPath } from "@/lib/config/schema-utils";
+import { getConfigPatchReplacePaths } from "@/lib/config/patch-replace-paths";
 
 // ============================================
 // Core State
@@ -148,10 +149,16 @@ export async function saveConfig(): Promise<boolean> {
   try {
     // Build patch (diff between original and draft)
     const patch = buildPatch(originalConfig.value, draftConfig.value);
+    const replacePaths = getConfigPatchReplacePaths({
+      original: originalConfig.value,
+      patch,
+      draft: draftConfig.value,
+    });
 
     const result = await send("config.patch", {
       raw: JSON.stringify(patch),
       baseHash: baseHash.value,
+      ...(replacePaths.length > 0 ? { replacePaths } : {}),
     });
 
     if (result.ok) {
