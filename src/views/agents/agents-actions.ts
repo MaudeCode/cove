@@ -48,21 +48,27 @@ export async function loadToolsConfig(): Promise<void> {
     const normalizedConfig = normalizeGatewayConfig(result.config as GatewayConfig);
     gatewayConfig.value = normalizedConfig;
     gatewayConfigHash.value = result.hash ?? null;
-
-    const agentEntry = normalizedConfig.agents?.list?.find((a) => a.id === selectedAgentId.value);
-    localToolsConfig.value = {
-      profile: normalizeToolProfile(agentEntry?.tools?.profile ?? normalizedConfig.tools?.profile),
-      alsoAllow: agentEntry?.tools?.alsoAllow ?? [],
-      deny: agentEntry?.tools?.deny ?? [],
-    };
-    toolsDirty.value = false;
-
-    syncSkillsAllowlist(agentEntry?.skills ?? null);
+    syncLocalAgentConfig();
   } catch (err) {
     toast.error(getErrorMessage(err));
   } finally {
     toolsLoading.value = false;
   }
+}
+
+export function syncLocalAgentConfig(): void {
+  const config = gatewayConfig.value;
+  if (!config) return;
+
+  const agentEntry = config.agents?.list?.find((a) => a.id === selectedAgentId.value);
+  localToolsConfig.value = {
+    profile: normalizeToolProfile(agentEntry?.tools?.profile ?? config.tools?.profile),
+    alsoAllow: agentEntry?.tools?.alsoAllow ?? [],
+    deny: agentEntry?.tools?.deny ?? [],
+  };
+  toolsDirty.value = false;
+
+  syncSkillsAllowlist(agentEntry?.skills ?? null);
 }
 
 export async function startOverviewEdit(): Promise<void> {
@@ -74,7 +80,7 @@ export async function startOverviewEdit(): Promise<void> {
   }
 
   editName.value = agent.identity?.name || agent.name || "";
-  editAvatar.value = agent.identity?.avatar || "";
+  editAvatar.value = agent.identity?.avatar ?? agent.identity?.avatarUrl ?? "";
   editWorkspace.value = workspacePath.value || "";
   editModel.value = getAgentModel(agent.id) || "";
   overviewEditing.value = true;
@@ -109,7 +115,7 @@ export async function saveOverviewEdit(): Promise<void> {
     }
 
     const newAvatar = editAvatar.value.trim();
-    const oldAvatar = agent.identity?.avatar || "";
+    const oldAvatar = agent.identity?.avatar ?? agent.identity?.avatarUrl ?? "";
     if (newAvatar !== oldAvatar) {
       params.avatar = newAvatar;
     }
@@ -234,8 +240,9 @@ export async function refresh(): Promise<void> {
 
 export function selectAgent(agentId: string): void {
   selectedAgentId.value = agentId;
+  syncLocalAgentConfig();
   loadFiles();
-  if (activeTab.value === "tools" || activeTab.value === "skills") {
+  if (!gatewayConfig.value && (activeTab.value === "tools" || activeTab.value === "skills")) {
     loadToolsConfig();
   }
 }
@@ -244,13 +251,19 @@ export function selectTab(tab: AgentsTab): void {
   activeTab.value = tab;
   if (tab === "overview" && !gatewayConfig.value) {
     loadToolsConfig();
-  } else if (tab === "tools" && !gatewayConfig.value) {
-    loadToolsConfig();
+  } else if (tab === "tools") {
+    if (gatewayConfig.value) {
+      syncLocalAgentConfig();
+    } else {
+      loadToolsConfig();
+    }
   } else if (tab === "skills") {
     if (skills.value.length === 0) {
       loadSkills();
     }
-    if (!gatewayConfig.value) {
+    if (gatewayConfig.value) {
+      syncLocalAgentConfig();
+    } else {
       loadToolsConfig();
     }
   }

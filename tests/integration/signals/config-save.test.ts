@@ -1,6 +1,10 @@
-import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { afterAll, beforeEach, describe, expect, mock, test } from "bun:test";
 import { getConfigPatchReplacePaths } from "../../../src/lib/config/patch-replace-paths";
-import { createGatewaySendRecorder } from "../../helpers/gateway";
+import {
+  createGatewaySendRecorder,
+  integrationGatewayMock,
+  setIntegrationGatewaySend,
+} from "../../helpers/gateway";
 import { resetSignals } from "../../helpers/signals";
 
 const defaultConfigGet = {
@@ -36,8 +40,9 @@ const gateway = createGatewaySendRecorder({
 });
 
 mock.module("@/lib/gateway", () => ({
+  isConnected: integrationGatewayMock.isConnected,
   mainSessionKey: { value: null },
-  send: gateway.send,
+  send: (method: string, params?: unknown) => integrationGatewayMock.send(method, params),
 }));
 
 mock.module("@/lib/session-utils", () => ({
@@ -45,6 +50,9 @@ mock.module("@/lib/session-utils", () => ({
 }));
 
 mock.module("@/lib/i18n", () => ({
+  formatBytes: (value: number) => `${value} B`,
+  formatTimestampCompact: (value: number) => String(value),
+  formatTokens: (value: number) => String(value),
   t: (key: string) => key,
 }));
 
@@ -75,8 +83,14 @@ const {
 } = await import("../../../src/signals/config");
 
 describe("config signals", () => {
+  afterAll(() => {
+    mock.restore();
+  });
+
   beforeEach(() => {
     gateway.clear();
+    integrationGatewayMock.isConnected.value = false;
+    setIntegrationGatewaySend(gateway.send);
     gateway.setResponse("config.get", defaultConfigGet);
     gateway.setResponse("config.schema", defaultSchema);
     gateway.setResponse("config.patch", (_method: string, params: unknown) => {

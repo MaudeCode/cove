@@ -1,4 +1,5 @@
 import { mock } from "bun:test";
+import { signal } from "@preact/signals";
 
 export type GatewaySendCall = [method: string, params: unknown];
 type GatewaySendResponse =
@@ -44,4 +45,17 @@ export function createGatewaySendRecorder(
       methodResponses.set(method, response);
     },
   };
+}
+
+type GatewaySend = (method: string, params?: unknown) => Promise<unknown>;
+
+export const integrationGatewayMock = {
+  isConnected: signal(false),
+  send: async (method: string, _params?: unknown): Promise<unknown> => {
+    throw new Error(`Unexpected gateway method: ${method}`);
+  },
+};
+
+export function setIntegrationGatewaySend(send: GatewaySend): void {
+  integrationGatewayMock.send = send;
 }

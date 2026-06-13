@@ -25,10 +25,13 @@ import {
   workspacePath,
   isLoading,
   error,
+  skills,
+  skillsLoading,
   skillsSearchQuery,
   loadAgents,
   loadFiles,
   loadToolsConfig,
+  loadSkills,
   openCreateModal,
   refresh,
   selectTab,
@@ -56,6 +59,10 @@ const AGENT_TABS = [
   { id: "skills", label: "common.skills", icon: <Sparkles class="w-4 h-4" /> },
 ] as const;
 
+function isAgentsTab(value: string | null): value is AgentsTab {
+  return AGENT_TABS.some((tab) => tab.id === value);
+}
+
 // ============================================
 // Main View
 // ============================================
@@ -69,20 +76,48 @@ export function AgentsView(_props: RouteProps) {
 
   // Sync URL → state on mount
   useInitFromParam(agentParam, selectedAgentId, (s) => s);
-  useInitFromParam(tabParam, activeTab, (s) => s as AgentsTab);
-  useInitFromParam(searchParam, skillsSearchQuery, (s) => s);
 
   // Sync state → URL (omit defaults from URL)
   useSyncFilterToParam(selectedAgentId, setAgentParam, "main");
+
+  useEffect(() => {
+    if (!isAgentsTab(tabParam.value)) return;
+
+    if (activeTab.value !== tabParam.value) {
+      if (isConnected.value) {
+        selectTab(tabParam.value);
+      } else {
+        activeTab.value = tabParam.value;
+      }
+    }
+  }, [tabParam.value, isConnected.value]);
+
   useSyncFilterToParam(activeTab, setTabParam, "overview");
 
-  // Only sync search when on skills tab
+  // Only hydrate and persist search when on skills tab.
+  useEffect(() => {
+    if (activeTab.value === "skills") {
+      skillsSearchQuery.value = searchParam.value ?? "";
+    } else {
+      if (skillsSearchQuery.value) {
+        skillsSearchQuery.value = "";
+      }
+      // Clear search param when leaving skills tab
+      if (searchParam.value) {
+        setSearchParam(null);
+      }
+    }
+  }, [activeTab.value]);
+
+  useEffect(() => {
+    if (activeTab.value === "skills" && searchParam.value !== skillsSearchQuery.value) {
+      skillsSearchQuery.value = searchParam.value ?? "";
+    }
+  }, [searchParam.value]);
+
   useEffect(() => {
     if (activeTab.value === "skills") {
       setSearchParam(skillsSearchQuery.value || null);
-    } else if (searchParam.value) {
-      // Clear search param when leaving skills tab
-      setSearchParam(null);
     }
   }, [skillsSearchQuery.value, activeTab.value]);
 
@@ -101,6 +136,9 @@ export function AgentsView(_props: RouteProps) {
       loadAgents().then(() => {
         loadFiles();
         loadToolsConfig(); // Load config for model info on overview
+        if (activeTab.value === "skills" && skills.value.length === 0 && !skillsLoading.value) {
+          loadSkills();
+        }
       });
     }
   }, [isConnected.value]);
