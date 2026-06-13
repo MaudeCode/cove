@@ -1,39 +1,35 @@
 /** @jsxImportSource preact */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { fireEvent, renderComponent, screen } from "../../../helpers/dom";
+import { fireEvent, renderComponent, screen, waitFor } from "../../../helpers/dom";
 import { installI18nMock } from "../../../helpers/i18n";
 import {
   installChatSignalAliases,
   installUiComponentAliases,
 } from "../../../helpers/module-aliases";
-import type { AttachmentPayload } from "../../../../src/types/attachments";
+import {
+  isSupportedImage,
+  MAX_FILE_SIZE,
+  MAX_IMAGE_DIMENSION,
+  MAX_PAYLOAD_SIZE,
+  SUPPORTED_IMAGE_TYPES,
+  type AttachmentPayload,
+} from "../../../../src/types/attachments";
 
 installI18nMock({ t: (key: string) => key });
 await installChatSignalAliases();
 await installUiComponentAliases();
 
-const attachmentPayloads: AttachmentPayload[] = [];
-let clearAttachmentsCalls = 0;
-
 const chat = await import("../../../../src/signals/chat");
 mock.module("@/signals/chat", () => chat);
-mock.module("@/hooks/useAttachments", () => ({
-  compressImage: async () => ({ content: "data:image/png;base64,mock", size: 4 }),
-  useAttachments: () => ({
-    addFiles: async () => undefined,
-    attachments: [],
-    clearAttachments: () => {
-      clearAttachmentsCalls += 1;
-      attachmentPayloads.length = 0;
-    },
-    clearError: () => undefined,
-    error: null,
-    getPayloads: () => [...attachmentPayloads],
-    handlePaste: async () => false,
-    isProcessing: false,
-    removeAttachment: () => undefined,
-  }),
+mock.module("@/types/attachments", () => ({
+  isSupportedImage,
+  MAX_FILE_SIZE,
+  MAX_IMAGE_DIMENSION,
+  MAX_PAYLOAD_SIZE,
+  SUPPORTED_IMAGE_TYPES,
 }));
+const useAttachmentsModule = await import("../../../../src/hooks/useAttachments");
+mock.module("@/hooks/useAttachments", () => useAttachmentsModule);
 mock.module("@/components/ui/Tooltip", () => ({
   Tooltip: ({ children }: { children: preact.ComponentChildren }) => <>{children}</>,
 }));
@@ -44,12 +40,8 @@ mock.module("@/components/ui/Modal", () => ({
 mock.module("@/components/ui/ModalFooter", () => ({
   ModalFooter: () => <div />,
 }));
-mock.module("@/types/attachments", () => import("../../../../src/types/attachments"));
 mock.module("../../../../src/components/chat/ModelPicker", () => ({
   ModelPicker: () => <div data-testid="model-picker" />,
-}));
-mock.module("../../../../src/components/chat/AttachmentPreview", () => ({
-  AttachmentPreview: () => <div data-testid="attachment-preview" />,
 }));
 
 const utils = await import("../../../../src/lib/utils");
@@ -60,8 +52,6 @@ const { ChatInput } = await import("../../../../src/components/chat/ChatInput");
 describe("ChatInput", () => {
   beforeEach(() => {
     chat.chatDrafts.value = new Map();
-    attachmentPayloads.length = 0;
-    clearAttachmentsCalls = 0;
   });
 
   test("restores drafts, sends on Enter, and clears the saved draft", () => {
@@ -82,7 +72,55 @@ describe("ChatInput", () => {
 
     expect(sends).toEqual([["saved draft", undefined]]);
     expect(chat.chatDrafts.value.has("session-a")).toBe(false);
-    expect(clearAttachmentsCalls).toBe(1);
+  });
+
+  test("sends attachment payloads and clears previews after send", async () => {
+    const originalFileReader = globalThis.FileReader;
+    const sends: Array<[string, AttachmentPayload[] | undefined]> = [];
+    globalThis.FileReader = class MockFileReader {
+      onerror: (() => void) | null = null;
+      onload: (() => void) | null = null;
+      result: string | ArrayBuffer | null = null;
+
+      readAsDataURL(readFile: File): void {
+        this.result = `data:${readFile.type};base64,aGVsbG8=`;
+        queueMicrotask(() => this.onload?.());
+      }
+    } as unknown as typeof FileReader;
+
+    try {
+      renderComponent(
+        <ChatInput onSend={(message, attachments) => sends.push([message, attachments])} />,
+      );
+
+      const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
+      const container = document.querySelector('[data-tour="chat-input"]') as HTMLDivElement;
+      const attachment = new File(["hello"], "notes.txt", { type: "text/plain" });
+
+      fireEvent.drop(container, { dataTransfer: { files: [attachment] } });
+
+      await waitFor(() => expect(screen.getByText("TXT")).toBeTruthy());
+
+      fireEvent.input(textbox, { target: { value: "with attachment" } });
+      fireEvent.keyDown(textbox, { key: "Enter" });
+
+      expect(sends).toEqual([
+        [
+          "with attachment",
+          [
+            {
+              content: "data:text/plain;charset=utf-8;base64,aGVsbG8=",
+              fileName: "notes.txt",
+              mimeType: "text/plain;charset=utf-8",
+              type: "file",
+            },
+          ],
+        ],
+      ]);
+      await waitFor(() => expect(screen.queryByText("TXT")).toBeNull());
+    } finally {
+      globalThis.FileReader = originalFileReader;
+    }
   });
 
   test("does not send on Shift+Enter and sends on Ctrl+Enter", () => {
