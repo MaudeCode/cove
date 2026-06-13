@@ -22,6 +22,13 @@ export function isImageUrl(url: string | null): boolean {
 }
 
 /**
+ * Extract the MIME type from a base64 data URL.
+ */
+export function getDataUrlMimeType(base64: string): string | null {
+  return parseBase64DataUrl(base64)?.mimeType ?? null;
+}
+
+/**
  * Create a blob URL from base64 data
  * Handles both raw base64 and data URL format (data:mime;base64,...)
  */
@@ -30,12 +37,10 @@ export function createBlobUrlFromBase64(base64: string, mimeType: string): strin
   let detectedMime = mimeType;
 
   // Handle data URL format
-  if (base64.startsWith("data:")) {
-    const match = base64.match(/^data:([^;]+);base64,(.+)$/);
-    if (match) {
-      detectedMime = match[1];
-      rawBase64 = match[2];
-    }
+  const dataUrl = parseBase64DataUrl(base64);
+  if (dataUrl) {
+    detectedMime = dataUrl.mimeType;
+    rawBase64 = dataUrl.base64;
   }
 
   let binary: string;
@@ -51,4 +56,10 @@ export function createBlobUrlFromBase64(base64: string, mimeType: string): strin
   }
   const blob = new Blob([bytes], { type: detectedMime });
   return URL.createObjectURL(blob);
+}
+
+function parseBase64DataUrl(base64: string): { base64: string; mimeType: string } | null {
+  const match = base64.match(/^data:([^;]+);base64,(.*)$/);
+  if (!match) return null;
+  return { mimeType: match[1], base64: match[2] };
 }

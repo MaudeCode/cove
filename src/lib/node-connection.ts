@@ -14,7 +14,7 @@ import {
   getDeviceIdentity,
   getDeviceDisplayName,
 } from "./device-identity";
-import { createBlobUrlFromBase64 } from "./canvas-utils";
+import { createBlobUrlFromBase64, getDataUrlMimeType } from "./canvas-utils";
 
 // Connection state
 export const nodeConnected = signal(false);
@@ -65,13 +65,15 @@ function broadcastCanvasContent() {
 canvasChannel?.addEventListener("message", (e) => {
   if (e.data.type === "canvas-content") {
     if (e.data.url) {
+      revokePreviousBlobUrl();
       canvasUrl.value = e.data.url;
-      canvasBlobUrl.value = null;
     } else if (e.data.base64) {
       try {
-        const blobUrl = createBlobUrlFromBase64(e.data.base64, e.data.mimeType || "image/png");
+        const mimeType = getDataUrlMimeType(e.data.base64) || e.data.mimeType || "image/png";
+        const blobUrl = createBlobUrlFromBase64(e.data.base64, mimeType);
+        revokePreviousBlobUrl();
         canvasBlobUrl.value = blobUrl;
-        canvasContentType.value = e.data.mimeType;
+        canvasContentType.value = mimeType;
         canvasUrl.value = null;
       } catch {
         // Ignore errors
@@ -146,15 +148,16 @@ function handleCanvasContent(cmdParams: Record<string, unknown>): {
 
   if (imageBase64) {
     try {
-      const blobUrl = createBlobUrlFromBase64(imageBase64, imageMimeType);
+      const detectedMimeType = getDataUrlMimeType(imageBase64) || imageMimeType;
+      const blobUrl = createBlobUrlFromBase64(imageBase64, detectedMimeType);
       revokePreviousBlobUrl();
       canvasBlobUrl.value = blobUrl;
-      canvasContentType.value = imageMimeType;
+      canvasContentType.value = detectedMimeType;
       canvasUrl.value = null;
       lastBase64 = imageBase64;
-      lastBase64Mime = imageMimeType;
+      lastBase64Mime = detectedMimeType;
       broadcastCanvasContent();
-      return { type: "base64", detail: imageMimeType };
+      return { type: "base64", detail: detectedMimeType };
     } catch (e) {
       log.node.error("Failed to create blob from base64:", e);
       return null;

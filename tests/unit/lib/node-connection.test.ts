@@ -6,6 +6,56 @@ import { connectChallengeFrame, eventFrame, responseFrame } from "../../fixtures
 import { installMockWebSocket, MockWebSocket } from "../../mocks/websocket";
 import type { GatewayRequest } from "../../../src/types/gateway";
 
+const originalBroadcastChannel = globalThis.BroadcastChannel;
+const originalCreateObjectUrl = URL.createObjectURL;
+const originalRevokeObjectUrl = URL.revokeObjectURL;
+
+class MockBroadcastChannel {
+  static instances: MockBroadcastChannel[] = [];
+
+  name: string;
+  posted: unknown[] = [];
+  #listeners: Array<(event: MessageEvent) => void> = [];
+
+  constructor(name: string) {
+    this.name = name;
+    MockBroadcastChannel.instances.push(this);
+  }
+
+  addEventListener(type: string, listener: EventListener): void {
+    if (type === "message") {
+      this.#listeners.push(listener as (event: MessageEvent) => void);
+    }
+  }
+
+  postMessage(data: unknown): void {
+    this.posted.push(data);
+  }
+
+  emit(data: unknown): void {
+    for (const listener of this.#listeners) {
+      listener({ data } as MessageEvent);
+    }
+  }
+
+  close(): void {}
+}
+
+const createdBlobs: Blob[] = [];
+const revokedUrls: string[] = [];
+
+Object.defineProperty(globalThis, "BroadcastChannel", {
+  configurable: true,
+  value: MockBroadcastChannel,
+});
+URL.createObjectURL = ((blob: Blob) => {
+  createdBlobs.push(blob);
+  return `blob:node-${createdBlobs.length}`;
+}) as typeof URL.createObjectURL;
+URL.revokeObjectURL = ((url: string) => {
+  revokedUrls.push(url);
+}) as typeof URL.revokeObjectURL;
+
 const restoreStorage = installStorageMocks();
 const originalDateNow = Date.now;
 const fixedNow = 1_700_000_000_000;
@@ -15,6 +65,9 @@ Date.now = () => fixedNow;
 const { gatewayUrl } = await import("../../../src/lib/gateway");
 const { clearAuth, saveAuth } = await import("../../../src/lib/storage");
 const {
+  canvasBlobUrl,
+  canvasContentType,
+  canvasUrl,
   canvasVisible,
   nodeConnected,
   nodeId,
@@ -27,12 +80,19 @@ const {
 } = await import("../../../src/lib/node-connection");
 const { clearDeviceIdentityCache } = await import("../../../src/lib/device-identity");
 
+const canvasChannel = MockBroadcastChannel.instances[0]!;
 let sockets: ReturnType<typeof installMockWebSocket>;
 let timers: FakeTimers;
 let cryptoFixture: DeterministicCryptoFixture;
 
 afterAll(() => {
   Date.now = originalDateNow;
+  Object.defineProperty(globalThis, "BroadcastChannel", {
+    configurable: true,
+    value: originalBroadcastChannel,
+  });
+  URL.createObjectURL = originalCreateObjectUrl;
+  URL.revokeObjectURL = originalRevokeObjectUrl;
   restoreStorage();
 });
 
@@ -43,6 +103,9 @@ beforeEach(() => {
   cryptoFixture = installDeterministicCrypto();
   clearDeviceIdentityCache();
   gatewayUrl.value = "wss://gateway.example.test";
+  canvasBlobUrl.value = null;
+  canvasContentType.value = null;
+  canvasUrl.value = null;
   canvasVisible.value = false;
   nodeConnected.value = false;
   nodeId.value = null;
@@ -51,6 +114,9 @@ beforeEach(() => {
   pendingCanvasSnapshot.value = null;
   timers = installFakeTimers();
   sockets = installMockWebSocket();
+  canvasChannel.posted = [];
+  createdBlobs.length = 0;
+  revokedUrls.length = 0;
   stopNodeConnection();
 });
 
@@ -231,6 +297,196 @@ describe("node connection", () => {
       },
     });
     expect(canvasVisible.value).toBe(false);
+  });
+
+  test("prefers data URL MIME for direct canvas content", async () => {
+    const { socket, connectRequest } = await connectNode();
+    socket.receive(responseFrame(connectRequest.id, { type: "hello-ok" }));
+    await flushPromises();
+
+    socket.receive(
+      eventFrame("node.invoke.request", {
+        id: "invoke-present",
+        command: "canvas.present",
+        params: {
+          imageBase64: "data:image/jpeg;base64,aGk=",
+          imageMimeType: "image/png",
+        },
+      }),
+    );
+    await flushPromises();
+
+    expect(canvasBlobUrl.value).toBe("blob:node-1");
+    expect(canvasContentType.value).toBe("image/jpeg");
+    expect(canvasUrl.value).toBeNull();
+    expect(canvasVisible.value).toBe(true);
+    expect(createdBlobs[0]?.type).toBe("image/jpeg");
+    expect(await createdBlobs[0]?.text()).toBe("hi");
+    expect(canvasChannel.posted.at(-1)).toEqual({
+      type: "canvas-content",
+      url: null,
+      base64: "data:image/jpeg;base64,aGk=",
+      mimeType: "image/jpeg",
+    });
+  });
+
+  test("receives cross-tab canvas content with MIME detection and blob cleanup", async () => {
+    canvasBlobUrl.value = "blob:old";
+    canvasContentType.value = "image/png";
+
+    canvasChannel.emit({
+      type: "canvas-content",
+      base64: "data:image/jpeg;base64,aGk=",
+      mimeType: "image/png",
+    });
+
+    expect(canvasBlobUrl.value).toBe("blob:node-1");
+    expect(canvasContentType.value).toBe("image/jpeg");
+    expect(canvasUrl.value).toBeNull();
+    expect(revokedUrls).toEqual(["blob:old"]);
+    expect(createdBlobs[0]?.type).toBe("image/jpeg");
+
+    canvasChannel.emit({ type: "canvas-content", url: "https://example.test/canvas.png" });
+
+    expect(canvasUrl.value).toBe("https://example.test/canvas.png");
+    expect(canvasBlobUrl.value).toBeNull();
+    expect(canvasContentType.value).toBeNull();
+    expect(revokedUrls).toEqual(["blob:old", "blob:node-1"]);
+  });
+
+  test("sends eval invoke results for resolved and rejected canvas eval requests", async () => {
+    const { socket, connectRequest } = await connectNode();
+    socket.receive(responseFrame(connectRequest.id, { type: "hello-ok" }));
+    await flushPromises();
+
+    socket.receive(
+      eventFrame("node.invoke.request", {
+        id: "eval-ok",
+        command: "canvas.eval",
+        params: { javaScript: "window.answer" },
+      }),
+    );
+    await flushPromises();
+
+    expect(pendingCanvasEval.value?.js).toBe("window.answer");
+    pendingCanvasEval.value?.resolve("forty-two");
+    await flushPromises();
+
+    expect(lastSentRequest(socket)).toEqual({
+      type: "req",
+      id: expect.stringMatching(/^\d+$/),
+      method: "node.invoke.result",
+      params: {
+        id: "eval-ok",
+        nodeId: cryptoFixture.deviceIdForSeed(1),
+        ok: true,
+        payload: { result: "forty-two" },
+      },
+    });
+    pendingCanvasEval.value = null;
+
+    socket.receive(
+      eventFrame("node.invoke.request", {
+        id: "eval-error",
+        command: "canvas.eval",
+        params: { javaScript: "throw new Error('boom')" },
+      }),
+    );
+    await flushPromises();
+
+    const evalErrorRequest = pendingCanvasEval.value as unknown as {
+      reject: (error: string) => void;
+    };
+    evalErrorRequest.reject("boom");
+    await flushPromises();
+
+    expect(lastSentRequest(socket)).toEqual({
+      type: "req",
+      id: expect.stringMatching(/^\d+$/),
+      method: "node.invoke.result",
+      params: {
+        id: "eval-error",
+        nodeId: cryptoFixture.deviceIdForSeed(1),
+        ok: false,
+        error: {
+          code: "EVAL_ERROR",
+          message: "Error: boom",
+        },
+      },
+    });
+    pendingCanvasEval.value = null;
+  });
+
+  test("sends snapshot invoke results with requested and default options", async () => {
+    const { socket, connectRequest } = await connectNode();
+    socket.receive(responseFrame(connectRequest.id, { type: "hello-ok" }));
+    await flushPromises();
+
+    socket.receive(
+      eventFrame("node.invoke.request", {
+        id: "snapshot-ok",
+        command: "canvas.snapshot",
+        params: { maxWidth: 320, outputFormat: "png", quality: 0.6 },
+      }),
+    );
+    await flushPromises();
+
+    expect(pendingCanvasSnapshot.value).toMatchObject({
+      maxWidth: 320,
+      outputFormat: "png",
+      quality: 0.6,
+    });
+    pendingCanvasSnapshot.value?.resolve("data:image/png;base64,snapshot");
+    await flushPromises();
+
+    expect(lastSentRequest(socket)).toEqual({
+      type: "req",
+      id: expect.stringMatching(/^\d+$/),
+      method: "node.invoke.result",
+      params: {
+        id: "snapshot-ok",
+        nodeId: cryptoFixture.deviceIdForSeed(1),
+        ok: true,
+        payload: { dataUrl: "data:image/png;base64,snapshot" },
+      },
+    });
+    pendingCanvasSnapshot.value = null;
+
+    socket.receive(
+      eventFrame("node.invoke.request", {
+        id: "snapshot-error",
+        command: "canvas.snapshot",
+        params: {},
+      }),
+    );
+    await flushPromises();
+
+    expect(pendingCanvasSnapshot.value).toMatchObject({
+      maxWidth: 800,
+      outputFormat: "jpeg",
+      quality: 0.8,
+    });
+    const snapshotErrorRequest = pendingCanvasSnapshot.value as unknown as {
+      reject: (error: string) => void;
+    };
+    snapshotErrorRequest.reject("no canvas");
+    await flushPromises();
+
+    expect(lastSentRequest(socket)).toEqual({
+      type: "req",
+      id: expect.stringMatching(/^\d+$/),
+      method: "node.invoke.result",
+      params: {
+        id: "snapshot-error",
+        nodeId: cryptoFixture.deviceIdForSeed(1),
+        ok: false,
+        error: {
+          code: "SNAPSHOT_ERROR",
+          message: "Error: no canvas",
+        },
+      },
+    });
+    pendingCanvasSnapshot.value = null;
   });
 
   test("eval and snapshot superseded requests return errors without clearing newer requests", async () => {

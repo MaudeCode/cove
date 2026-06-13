@@ -6,7 +6,7 @@
  */
 
 import { signal } from "@preact/signals";
-import { createBlobUrlFromBase64 } from "./canvas-utils";
+import { createBlobUrlFromBase64, getDataUrlMimeType } from "./canvas-utils";
 
 export const canvasUrl = signal<string | null>(null);
 export const canvasBlobUrl = signal<string | null>(null);
@@ -20,18 +20,21 @@ const canvasChannel =
 canvasChannel?.addEventListener("message", (e) => {
   if (e.data.type === "canvas-content") {
     if (e.data.url) {
+      if (canvasBlobUrl.value) {
+        URL.revokeObjectURL(canvasBlobUrl.value);
+      }
       canvasUrl.value = e.data.url;
       canvasBlobUrl.value = null;
       canvasContentType.value = null;
     } else if (e.data.base64) {
       try {
-        // Revoke previous blob URL
+        const mimeType = getDataUrlMimeType(e.data.base64) || e.data.mimeType || "image/png";
+        const blobUrl = createBlobUrlFromBase64(e.data.base64, mimeType);
         if (canvasBlobUrl.value) {
           URL.revokeObjectURL(canvasBlobUrl.value);
         }
-        const blobUrl = createBlobUrlFromBase64(e.data.base64, e.data.mimeType || "image/png");
         canvasBlobUrl.value = blobUrl;
-        canvasContentType.value = e.data.mimeType;
+        canvasContentType.value = mimeType;
         canvasUrl.value = null;
       } catch {
         // Ignore errors

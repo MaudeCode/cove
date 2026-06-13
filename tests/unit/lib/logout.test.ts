@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { signal } from "@preact/signals";
 
 const calls = {
   cleanupChat: 0,
@@ -39,6 +40,14 @@ mock.module("@/lib/gateway", () => ({
 }));
 
 mock.module("@/lib/node-connection", () => ({
+  canvasBlobUrl: signal<string | null>(null),
+  canvasContent: signal<string | null>(null),
+  canvasContentType: signal<string | null>(null),
+  canvasUrl: signal<string | null>(null),
+  canvasVisible: signal(false),
+  pendingCanvasEval: signal(null),
+  pendingCanvasSnapshot: signal(null),
+  standaloneCanvasOpen: signal(false),
   stopNodeConnection: () => {
     calls.stopNodeConnection++;
   },
