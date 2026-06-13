@@ -10,7 +10,8 @@
     "src/lib/node-connection.ts",
     "src/components/ui/StateRenderer.tsx",
     "src/locales/index.ts",
-    "tests/**/*.test.ts"
+    "tests/**/*.test.ts",
+    "tests/**/*.test.tsx"
   ],
   "ignoreDependencies": [
     "@types/dompurify",
