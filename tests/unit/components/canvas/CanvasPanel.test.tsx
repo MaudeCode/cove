@@ -56,9 +56,13 @@ mock.module("@/lib/node-connection", () => ({
   canvasContentType: mockCanvasContentType,
   canvasUrl: mockCanvasUrl,
   canvasVisible: mockCanvasVisible,
+  nodeConnected: signal(false),
+  nodePairingStatus: signal("unpaired"),
   pendingCanvasEval: mockPendingCanvasEval,
   pendingCanvasSnapshot: mockPendingCanvasSnapshot,
   standaloneCanvasOpen: mockStandaloneCanvasOpen,
+  startNodeConnection: () => undefined,
+  stopNodeConnection: () => undefined,
 }));
 mock.module("@/signals/ui", () => ({ canvasPanelOpen }));
 const canvasUtils = await import("../../../../src/lib/canvas-utils");

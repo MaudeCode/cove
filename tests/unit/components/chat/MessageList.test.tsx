@@ -4,6 +4,7 @@ import { signal } from "@preact/signals";
 import { fireEvent, renderComponent, screen, waitFor } from "../../../helpers/dom";
 import { installI18nMock } from "../../../helpers/i18n";
 import { installUiComponentAliases } from "../../../helpers/module-aliases";
+import { createSessionSignalsMock } from "../../../helpers/module-mocks";
 import type { Message } from "../../../../src/types/messages";
 
 (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
@@ -36,13 +37,7 @@ mock.module("@/lib/utils", () => ({
   ...utils,
   isAvatarUrl: (value?: string) => !!value?.startsWith("http"),
 }));
-mock.module("@/signals/sessions", () => ({
-  cleanupSessionEventSubscription: () => undefined,
-  clearSessions: () => undefined,
-  isForActiveSession: () => true,
-  sessions,
-  updateSession: () => undefined,
-}));
+mock.module("@/signals/sessions", () => createSessionSignalsMock({ sessions }));
 mock.module("../../../../src/components/chat/SearchBar", () => ({
   SearchBar: () => <div data-testid="search-bar" />,
 }));

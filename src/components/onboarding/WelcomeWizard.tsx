@@ -62,6 +62,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const rememberMe = useSignal(true);
   const connecting = useSignal(false);
   const connected = useSignal(false);
+  const connectError = useSignal<string | null>(null);
   const urlError = useSignal<string | null>(null);
   const probing = useSignal(false);
   const probeSuccess = useSignal(false);
@@ -151,6 +152,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const handleConnect = async () => {
     connecting.value = true;
     connected.value = false;
+    connectError.value = null;
 
     try {
       await connect({
@@ -159,17 +161,6 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
         password: authMode.value === "password" ? credential.value : undefined,
         autoReconnect: true,
       });
-
-      // Save auth settings and credential
-      saveAuth({
-        url: url.value,
-        authMode: authMode.value,
-        rememberMe: rememberMe.value,
-        credential: credential.value,
-      });
-
-      // Mark onboarding complete
-      completeOnboarding();
 
       // Load sessions list for sidebar
       await loadSessions();
@@ -191,10 +182,23 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
       // Initialize approval listener
       initExecApproval();
 
+      // Save auth only after the connected app state is ready.
+      saveAuth({
+        url: url.value,
+        authMode: authMode.value,
+        rememberMe: rememberMe.value,
+        credential: credential.value,
+      });
+
+      // Mark onboarding complete only after the connected app state is ready.
+      completeOnboarding();
+
       connected.value = true;
     } catch (err) {
       log.auth.error("Connect failed:", err);
       connected.value = false;
+      connectError.value =
+        lastError.value ?? (err instanceof Error ? err.message : t("errors.unknown"));
     } finally {
       connecting.value = false;
     }
@@ -203,6 +207,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const handleRetry = () => {
     disconnect();
     connected.value = false;
+    connectError.value = null;
     step.value = "auth";
   };
 
@@ -310,7 +315,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
           <ConnectStep
             connecting={connecting.value}
             connected={connected.value}
-            error={lastError.value}
+            error={connectError.value}
             showTour={showTour.value}
             onShowTourChange={(v) => (showTour.value = v)}
             selectedMode={selectedMode.value}

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
+import { createGatewayMock, createSessionSignalsMock } from "../../../helpers/module-mocks";
 
 const calls = {
   clearActiveRuns: 0,
@@ -22,15 +23,14 @@ const messageDetection = await import("../../../../src/lib/message-detection");
 const storage = await import("../../../../src/lib/storage");
 const toolUtils = await import("../../../../src/lib/tool-utils");
 
-mock.module("@/lib/gateway", () => ({
-  disconnect: () => undefined,
-  isConnected: signal(true),
-  mainSessionKey: signal<string | null>("main"),
-  on: () => () => undefined,
-  send: async (method: string, params?: unknown) =>
-    gatewayHarness.send?.(method, params) ?? { messages: [] },
-  subscribe: () => () => undefined,
-}));
+mock.module("@/lib/gateway", () =>
+  createGatewayMock({
+    isConnected: signal(true),
+    mainSessionKey: signal<string | null>("main"),
+    send: async (method: string, params?: unknown) =>
+      gatewayHarness.send?.(method, params) ?? { messages: [] },
+  }),
+);
 mock.module("@/lib/logger", () => ({
   log: {
     chat: {
@@ -50,13 +50,7 @@ mock.module("@/lib/tool-utils", () => toolUtils);
 const typesChat = await import("../../../../src/types/chat");
 
 mock.module("@/types/chat", () => typesChat);
-mock.module("@/signals/sessions", () => ({
-  cleanupSessionEventSubscription: () => undefined,
-  clearSessions: () => undefined,
-  isForActiveSession: () => true,
-  sessions,
-  updateSession: () => undefined,
-}));
+mock.module("@/signals/sessions", () => createSessionSignalsMock({ sessions }));
 
 const chat = await import("../../../../src/signals/chat");
 

@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { installI18nMock } from "../../helpers/i18n";
+import { createGatewayMock } from "../../helpers/module-mocks";
 import type { GatewayConfig } from "../../../src/views/agents/agents-tools-state";
 import type { Agent } from "../../../src/types/agents";
 
@@ -30,12 +31,13 @@ let filesListResult: { files: unknown[]; workspace: string };
 let skillsStatusResult: { skills: unknown[] };
 
 mock.module("@/lib/gateway", () => ({
-  disconnect: () => undefined,
-  isConnected: { value: true },
-  mainSessionKey: { value: "main" },
-  on: () => () => undefined,
+  ...createGatewayMock({
+    isConnected: { value: true },
+    lastError: { value: null },
+    mainSessionKey: { value: "main" },
+    send: (method: string, params: unknown) => sendResponder.value(method, params),
+  }),
   send: (method: string, params: unknown) => sendResponder.value(method, params),
-  subscribe: () => () => undefined,
 }));
 
 mock.module("@/lib/session-utils", () => ({

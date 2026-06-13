@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
+import { createSessionSignalsMock } from "../../helpers/module-mocks";
 import { installFakeTimers, type FakeTimers } from "../../helpers/timers";
 import { installStorageMocks } from "../../helpers/storage";
 import type { Message } from "../../../src/types/messages";
@@ -20,13 +21,9 @@ mock.module("@/lib/constants", () => constants);
 mock.module("@/lib/debounced-signal", () => debouncedSignal);
 mock.module("@/lib/message-detection", () => messageDetection);
 mock.module("@/lib/storage", () => storage);
-mock.module("@/signals/sessions", () => ({
-  cleanupSessionEventSubscription: () => undefined,
-  clearSessions: () => undefined,
-  isForActiveSession: () => activeSessionMatches,
-  sessions,
-  updateSession: () => undefined,
-}));
+mock.module("@/signals/sessions", () =>
+  createSessionSignalsMock({ isForActiveSession: () => activeSessionMatches, sessions }),
+);
 
 const chat = await import("../../../src/signals/chat");
 

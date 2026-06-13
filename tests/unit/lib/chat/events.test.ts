@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
 import { installI18nMock } from "../../../helpers/i18n";
+import { createGatewayMock, createSessionSignalsMock } from "../../../helpers/module-mocks";
 import { installFakeTimers, type FakeTimers } from "../../../helpers/timers";
 import { installStorageMocks } from "../../../helpers/storage";
 import type { AgentEvent, ChatEvent } from "../../../../src/types/chat";
@@ -33,9 +34,12 @@ const typeGuards = await import("../../../../src/lib/type-guards");
 const utils = await import("../../../../src/lib/utils");
 
 mock.module("@/lib/gateway", () => ({
-  disconnect: () => undefined,
-  isConnected,
-  mainSessionKey,
+  ...createGatewayMock({
+    isConnected,
+    mainSessionKey,
+    send: async (method: string, params?: unknown) =>
+      gatewayHarness.send?.(method, params) ?? { messages: [] },
+  }),
   on: (event: string, handler: NamedHandler) => {
     namedHandlers.set(event, handler);
     return () => namedHandlers.delete(event);
@@ -76,11 +80,8 @@ const typesChat = await import("../../../../src/types/chat");
 mock.module("@/lib/session-utils", () => sessionUtils);
 mock.module("@/types/chat", () => typesChat);
 mock.module("@/signals/sessions", () => ({
-  cleanupSessionEventSubscription: () => undefined,
-  clearSessions: () => undefined,
+  ...createSessionSignalsMock({ isForActiveSession: () => activeSessionMatches, sessions }),
   isForActiveSession: () => activeSessionMatches,
-  sessions,
-  updateSession: () => undefined,
 }));
 
 const chat = await import("../../../../src/signals/chat");

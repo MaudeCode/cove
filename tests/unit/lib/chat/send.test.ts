@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
 import { installI18nMock } from "../../../helpers/i18n";
+import { createGatewayMock, createSessionSignalsMock } from "../../../helpers/module-mocks";
 import { installFakeTimers, type FakeTimers } from "../../../helpers/timers";
 import { installStorageMocks } from "../../../helpers/storage";
 import type { AttachmentPayload } from "../../../../src/types/attachments";
@@ -34,14 +35,9 @@ const debouncedSignal = await import("../../../../src/lib/debounced-signal");
 const messageDetection = await import("../../../../src/lib/message-detection");
 const storage = await import("../../../../src/lib/storage");
 
-mock.module("@/lib/gateway", () => ({
-  disconnect: () => undefined,
-  isConnected,
-  mainSessionKey,
-  on: () => () => undefined,
-  send: gatewaySend,
-  subscribe: () => () => undefined,
-}));
+mock.module("@/lib/gateway", () =>
+  createGatewayMock({ isConnected, mainSessionKey, send: gatewaySend }),
+);
 mock.module("@/lib/logger", () => ({
   log: {
     chat: {
@@ -56,12 +52,7 @@ mock.module("@/lib/constants", () => constants);
 mock.module("@/lib/debounced-signal", () => debouncedSignal);
 mock.module("@/lib/message-detection", () => messageDetection);
 mock.module("@/lib/storage", () => storage);
-mock.module("@/signals/sessions", () => ({
-  cleanupSessionEventSubscription: () => undefined,
-  clearSessions: () => undefined,
-  isForActiveSession: () => true,
-  sessions,
-}));
+mock.module("@/signals/sessions", () => createSessionSignalsMock({ sessions }));
 mock.module("@/lib/session-utils", () => ({
   getErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
   isUserCreatedChat: (sessionKey: string) => /^agent:[^:]+:chat:[^:]+$/.test(sessionKey),

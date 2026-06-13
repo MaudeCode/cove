@@ -23,6 +23,7 @@ mock.module("@/signals/exec", () => ({
   handleExecApprovalDecisionDirect: async (approvalId: string, decision: string) => {
     approvalDecisions.push({ approvalId, decision });
   },
+  initExecApproval: () => undefined,
   resolvedApprovalIds,
 }));
 
