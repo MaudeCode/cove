@@ -79,9 +79,21 @@ export function installFakeTimers(startAt = 0): FakeTimers {
       return now;
     },
     runAll() {
-      while (timers.size > 0) {
-        now = Math.min(...[...timers.values()].map((timer) => timer.dueAt));
-        runDueTimers();
+      while (true) {
+        const nextTimeout = [...timers.values()]
+          .filter((timer) => timer.intervalMs == null)
+          .sort((a, b) => a.dueAt - b.dueAt || a.id - b.id)[0];
+
+        if (!nextTimeout) {
+          if (timers.size > 0) {
+            throw new Error("Cannot run all fake timers while intervals are pending.");
+          }
+          return;
+        }
+
+        now = nextTimeout.dueAt;
+        timers.delete(nextTimeout.id);
+        nextTimeout.callback(...nextTimeout.args);
       }
     },
     uninstall() {

@@ -83,4 +83,37 @@ describe("shared test helpers", () => {
       timers.uninstall();
     }
   });
+
+  test("runs all pending timeout callbacks with fake timers", () => {
+    const timers = installFakeTimers();
+    const calls: string[] = [];
+
+    try {
+      setTimeout(() => calls.push("later"), 20);
+      setTimeout(() => calls.push("sooner"), 10);
+
+      timers.runAll();
+
+      expect(calls).toEqual(["sooner", "later"]);
+      expect(timers.now()).toBe(20);
+    } finally {
+      timers.uninstall();
+    }
+  });
+
+  test("rejects uncleared intervals in runAll without looping forever", () => {
+    const timers = installFakeTimers();
+    const calls: string[] = [];
+
+    try {
+      setInterval(() => calls.push("interval"), 10);
+
+      expect(() => timers.runAll()).toThrow(
+        "Cannot run all fake timers while intervals are pending.",
+      );
+      expect(calls).toEqual([]);
+    } finally {
+      timers.uninstall();
+    }
+  });
 });

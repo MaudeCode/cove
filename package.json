@@ -38,7 +38,7 @@
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
     "test:e2e": "bun test tests/e2e --pass-with-no-tests",
-    "test:all": "bun run test:unit && bun run test:integration",
+    "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:coverage": "bun test --coverage tests/unit tests/integration",
     "preview": "vite preview",
     "lint": "oxlint src/ tests/",
