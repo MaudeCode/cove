@@ -44,10 +44,8 @@ mock.module("@/lib/session-utils", () => ({
   getErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
 }));
 
-mock.module("@/lib/config/schema-utils", () => ({
-  setValueAtPath: () => {
-    throw new Error("setValueAtPath is not used by config signal tests");
-  },
+mock.module("@/lib/i18n", () => ({
+  t: (key: string) => key,
 }));
 
 mock.module("@/lib/config/patch-replace-paths", () => ({
@@ -61,6 +59,7 @@ const {
   configPath,
   configValid,
   draftConfig,
+  draftRevision,
   error,
   isDirty,
   isLoading,
@@ -122,6 +121,7 @@ describe("config signals", () => {
     expect(originalConfig.value).toEqual(defaultConfigGet.config);
     expect(draftConfig.value).toEqual(defaultConfigGet.config);
     expect(draftConfig.value).not.toBe(originalConfig.value);
+    expect(draftRevision.value).toBe(1);
     expect(baseHash.value).toBe("hash-before-save");
     expect(configPath.value).toBe("/tmp/config.json");
     expect(configExists.value).toBe(true);
@@ -129,6 +129,20 @@ describe("config signals", () => {
     expect(validationErrors.value).toEqual({});
     expect(error.value).toBeNull();
     expect(isLoading.value).toBe(false);
+  });
+
+  test("resetDraft restores original config and advances draft revision", async () => {
+    const { resetDraft } = await import("../../../src/signals/config");
+    originalConfig.value = { nested: { limit: 3 } };
+    draftConfig.value = { nested: { limit: 4 } };
+    validationErrors.value = { "nested.limit": "Invalid" };
+
+    resetDraft();
+
+    expect(draftConfig.value).toEqual({ nested: { limit: 3 } });
+    expect(draftConfig.value).not.toBe(originalConfig.value);
+    expect(validationErrors.value).toEqual({});
+    expect(draftRevision.value).toBe(1);
   });
 
   test("records load failures and stops loading", async () => {
@@ -174,10 +188,22 @@ describe("config signals", () => {
 
     validationErrors.value = { "nested.enabled": "Invalid" };
     expect(canSave.value).toBe(false);
+    expect(isDirty.value).toBe(true);
 
     validationErrors.value = {};
     isSaving.value = true;
     expect(canSave.value).toBe(false);
+  });
+
+  test("tracks validation errors even when the draft is otherwise unchanged", () => {
+    originalConfig.value = { nested: { limit: 3 } };
+    draftConfig.value = { nested: { limit: 3 } };
+
+    validationErrors.value = { "nested.limit": "config.validation.mustBeNumber" };
+
+    expect(isDirty.value).toBe(false);
+    expect(canSave.value).toBe(false);
+    expect(Object.keys(validationErrors.value)).toHaveLength(1);
   });
 
   test("does not save unchanged configs", async () => {
@@ -351,6 +377,7 @@ describe("config signals", () => {
     expect(originalConfig.value).toEqual({ model: "new", theme: "dark" });
     expect(draftConfig.value).toEqual({ model: "new", theme: "dark" });
     expect(draftConfig.value).not.toBe(originalConfig.value);
+    expect(draftRevision.value).toBe(1);
     expect(configPath.value).toBe("/tmp/config.json");
     expect(baseHash.value).toBe("hash-after-save");
     expect(error.value).toBeNull();
@@ -367,6 +394,7 @@ function resetConfigSignals(): void {
     [uiHints, {}],
     [originalConfig, {}],
     [draftConfig, {}],
+    [draftRevision, 0],
     [baseHash, null],
     [configPath, null],
     [configExists, false],

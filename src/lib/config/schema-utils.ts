@@ -271,7 +271,9 @@ export function validateValue(value: unknown, schema: JsonSchema): string | null
 
     case "number":
     case "integer":
-      if (typeof value !== "number") return t("config.validation.mustBeNumber");
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        return t("config.validation.mustBeNumber");
+      }
       if (schema.minimum !== undefined && value < schema.minimum) {
         return t("config.validation.minimum", { min: schema.minimum });
       }

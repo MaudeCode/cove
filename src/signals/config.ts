@@ -8,8 +8,8 @@ import { signal, computed } from "@preact/signals";
 import { send } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
-import { setValueAtPath } from "@/lib/config/schema-utils";
 import { getConfigPatchReplacePaths } from "@/lib/config/patch-replace-paths";
+import { setValueAtPath } from "../lib/config/schema-utils";
 
 // ============================================
 // Core State
@@ -35,6 +35,9 @@ export const originalConfig = signal<Record<string, unknown>>({});
 
 /** Draft config (with user edits) */
 export const draftConfig = signal<Record<string, unknown>>({});
+
+/** Increments when the draft is replaced wholesale */
+export const draftRevision = signal(0);
 
 /** Content hash for optimistic locking */
 export const baseHash = signal<string | null>(null);
@@ -99,6 +102,7 @@ export async function loadConfig(): Promise<void> {
     // Store config
     originalConfig.value = configRes.config;
     draftConfig.value = structuredClone(configRes.config);
+    draftRevision.value += 1;
     baseHash.value = configRes.hash ?? null;
     configPath.value = configRes.path ?? null;
     configExists.value = configRes.exists;
@@ -121,6 +125,7 @@ export function updateField(path: (string | number)[], value: unknown): void {
 /** Reset draft to original */
 export function resetDraft(): void {
   draftConfig.value = structuredClone(originalConfig.value);
+  draftRevision.value += 1;
   validationErrors.value = {};
 }
 
@@ -165,6 +170,7 @@ export async function saveConfig(): Promise<boolean> {
       // Update state with saved config
       originalConfig.value = result.config;
       draftConfig.value = structuredClone(result.config);
+      draftRevision.value += 1;
       configPath.value = result.path;
 
       // Reload to get new hash

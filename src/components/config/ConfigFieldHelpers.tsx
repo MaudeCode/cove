@@ -115,9 +115,10 @@ export function JsonEditor({
   const [text, setText] = useState(() => JSON.stringify(value, null, 2) ?? "");
   const [parseError, setParseError] = useState<string | null>(null);
 
-  const handleBlur = () => {
+  const handleBlur = (event: FocusEvent) => {
+    const currentText = (event.currentTarget as HTMLTextAreaElement).value;
     try {
-      const parsed = JSON.parse(text);
+      const parsed = JSON.parse(currentText);
       onChange(parsed);
       setParseError(null);
     } catch {

@@ -139,6 +139,9 @@ describe("schema utils", () => {
     expect(schemaUtils.validateValue(1.5, { type: "integer" })).toBe(
       "config.validation.mustBeInteger",
     );
+    expect(schemaUtils.validateValue(Infinity, { type: "number" })).toBe(
+      "config.validation.mustBeNumber",
+    );
     expect(schemaUtils.validateValue(2, { maximum: 3, minimum: 1, type: "integer" })).toBeNull();
   });
 });

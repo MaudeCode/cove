@@ -5,12 +5,14 @@
  * Routes to specialized components for object, array, and union types.
  */
 
+import { useEffect, useState } from "preact/hooks";
+import { useSignalEffect } from "@preact/signals";
 import { Input } from "@/components/ui/Input";
 import { Toggle } from "@/components/ui/Toggle";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { Textarea } from "@/components/ui/Textarea";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
-import { updateField, validationErrors, setValidationError } from "@/signals/config";
+import { draftRevision, updateField, validationErrors, setValidationError } from "@/signals/config";
 import {
   schemaType,
   hintForPath,
@@ -122,19 +124,12 @@ export function ConfigNode({
           error={errorMsg}
           inline
         >
-          <Input
-            type="number"
-            value={value === undefined || value === null ? "" : String(value)}
+          <NumericInput
+            schema={schema}
+            value={value}
+            path={path}
+            fieldKey={key}
             placeholder={hint.placeholder}
-            onInput={(e) => {
-              const val = (e.target as HTMLInputElement).value;
-              const num = val === "" ? undefined : Number(val);
-              updateField(path, num);
-              setValidationError(key, validateValue(num, schema));
-            }}
-            min={schema.minimum}
-            max={schema.maximum}
-            class="w-full sm:w-24 text-right"
           />
         </SettingRow>
       );
@@ -159,6 +154,57 @@ export function ConfigNode({
         </SettingRow>
       );
   }
+}
+
+function NumericInput({
+  schema,
+  value,
+  path,
+  fieldKey,
+  placeholder,
+}: {
+  schema: JsonSchema;
+  value: unknown;
+  path: (string | number)[];
+  fieldKey: string;
+  placeholder?: string;
+}) {
+  const [inputValue, setInputValue] = useState(() =>
+    value === undefined || value === null ? "" : String(value),
+  );
+
+  useEffect(() => {
+    setInputValue(value === undefined || value === null ? "" : String(value));
+  }, [value]);
+
+  useSignalEffect(() => {
+    void draftRevision.value;
+    setInputValue(value === undefined || value === null ? "" : String(value));
+  });
+
+  return (
+    <Input
+      type="number"
+      value={inputValue}
+      placeholder={placeholder}
+      onInput={(e) => {
+        const val = (e.target as HTMLInputElement).value;
+        setInputValue(val);
+        const num = val === "" ? undefined : Number(val);
+        const validationError = validateValue(num, schema);
+        if (typeof num === "number" && !Number.isFinite(num)) {
+          setValidationError(fieldKey, validationError);
+          return;
+        }
+
+        updateField(path, num);
+        setValidationError(fieldKey, validationError);
+      }}
+      min={schema.minimum}
+      max={schema.maximum}
+      class="w-full sm:w-24 text-right"
+    />
+  );
 }
 
 // ============================================
