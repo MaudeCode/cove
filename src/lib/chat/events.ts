@@ -8,7 +8,6 @@ import { batch } from "@preact/signals";
 import { on, subscribe } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import { isChatEvent, isAgentEvent } from "@/lib/type-guards";
-import { mergeDeltaText } from "@/lib/streaming";
 import {
   activeRuns,
   startRun,
@@ -31,6 +30,7 @@ import { isHeartbeatResponse } from "@/lib/message-detection";
 import { processNextQueuedMessage } from "./send";
 import { loadHistory } from "./history";
 import { extractToolResultContent } from "@/lib/tool-utils";
+import { mergeAssistantStreamContent } from "./stream-events";
 
 let chatEventUnsubscribe: (() => void) | null = null;
 let agentEventUnsubscribe: (() => void) | null = null;
@@ -282,37 +282,10 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
     chatDeltaFallbackRunIds.delete(runId);
   }
 
-  // Merge text using the same approach as the gateway's resolveMergedAssistantText:
-  // - If text is a prefix continuation of existing content, use it directly
-  // - If delta is available, append it (handles tool boundary resets)
-  // - Fall back to mergeDeltaText for edge cases
-  let newContent: string;
-  let newLastBlockStart: number | undefined = run.lastBlockStart;
+  const merged = mergeAssistantStreamContent(run, text, delta);
+  if (!merged) return;
 
-  const existing = run.content;
-
-  if (!existing) {
-    // First content
-    newContent = text ?? delta ?? "";
-  } else if (text && text.startsWith(existing)) {
-    // Simple prefix continuation — text is the full accumulated content
-    newContent = text;
-  } else if (text && existing.startsWith(text) && !delta) {
-    // Stale/shorter text arrived — keep what we have
-    newContent = existing;
-  } else if (delta) {
-    // Delta available — append it directly (handles tool boundary text resets)
-    newContent = existing + delta;
-  } else if (text) {
-    // No delta, text is not a prefix — use mergeDeltaText for block detection
-    const merged = mergeDeltaText(existing, text, run.lastBlockStart);
-    newContent = merged.content;
-    newLastBlockStart = merged.lastBlockStart;
-  } else {
-    return;
-  }
-
-  updateRunContent(runId, newContent, run.toolCalls, newLastBlockStart);
+  updateRunContent(runId, merged.content, run.toolCalls, merged.lastBlockStart);
 }
 
 /**

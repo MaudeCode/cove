@@ -206,6 +206,9 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
   for (const block of content) {
     switch (block.type) {
       case "text": {
+        if (textParts.length > 0) {
+          currentTextLength += 1;
+        }
         textParts.push(block.text);
         currentTextLength += block.text.length;
         break;
@@ -428,7 +431,7 @@ export function mergeToolCalls(existing: ToolCall[], incoming: ToolCall[]): Tool
       // Update existing - take latest status and result
       merged.set(tc.id, {
         ...prev,
-        ...tc,
+        ...withoutUndefinedFields(tc),
         // Keep earlier startedAt
         startedAt: prev.startedAt ?? tc.startedAt,
       });
@@ -439,4 +442,9 @@ export function mergeToolCalls(existing: ToolCall[], incoming: ToolCall[]): Tool
   }
 
   return Array.from(merged.values());
+}
+
+function withoutUndefinedFields(toolCall: ToolCall): Partial<ToolCall> {
+  const entries = Object.entries(toolCall).filter(([, value]) => value !== undefined);
+  return Object.fromEntries(entries) as Partial<ToolCall>;
 }

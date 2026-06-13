@@ -79,7 +79,7 @@ export function stripEnvelopeMetadata(text: string): string {
 
   // New format: "Conversation info (untrusted metadata):" block followed by JSON fence
   result = result.replace(
-    /^Conversation info \(untrusted metadata\):\s*```json\s*\{[^}]*\}\s*```\s*/s,
+    /^Conversation info \(untrusted metadata\):\s*```json[^\S\r\n]*\r?\n[\s\S]*?\r?\n```\s*/,
     "",
   );
 
