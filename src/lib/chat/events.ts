@@ -205,6 +205,10 @@ function handleLifecycleEnd(evt: AgentEvent): void {
  * On reload, the gateway's __openclaw compaction marker in history handles it.
  */
 function handleCompactionEvent(evt: AgentEvent): void {
+  if (!isForActiveSession(evt.sessionKey)) {
+    return;
+  }
+
   const phase = evt.data?.phase;
   log.chat.info(
     "Compaction event:",
@@ -278,7 +282,7 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
 
   if (!run) return;
 
-  if (text) {
+  if (text || delta) {
     chatDeltaFallbackRunIds.delete(runId);
   }
 

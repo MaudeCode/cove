@@ -108,6 +108,14 @@ function mergeIntoMessage(prev: Message, curr: Message): void {
     prev.content = prev.content ? `${prev.content}${separator}${curr.content}` : curr.content;
   }
 
+  if (curr.images?.length) {
+    prev.images = [...(prev.images ?? []), ...curr.images];
+  }
+
+  if (curr.thinking) {
+    prev.thinking = prev.thinking ? `${prev.thinking}\n\n${curr.thinking}` : curr.thinking;
+  }
+
   // Update timestamp to latest
   prev.timestamp = Math.max(prev.timestamp, curr.timestamp);
 

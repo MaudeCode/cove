@@ -25,6 +25,7 @@ mock.module("@/signals/sessions", () => ({
   clearSessions: () => undefined,
   isForActiveSession: () => activeSessionMatches,
   sessions,
+  updateSession: () => undefined,
 }));
 
 const chat = await import("../../../src/signals/chat");
