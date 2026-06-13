@@ -77,7 +77,15 @@ describe("agent config helpers", () => {
         {
           tools: { profile: "full" },
           agents: {
-            list: [{ id: "agent-1", tools: { profile: "minimal" } }, { id: "other-agent" }],
+            list: [
+              {
+                id: "agent-1",
+                model: { primary: "agent-model", fallbacks: ["fallback-model"] },
+                skills: ["existing-skill"],
+                tools: { profile: "minimal" },
+              },
+              { id: "other-agent" },
+            ],
           },
         },
         "agent-1",
@@ -93,6 +101,8 @@ describe("agent config helpers", () => {
         list: [
           {
             id: "agent-1",
+            model: { primary: "agent-model", fallbacks: ["fallback-model"] },
+            skills: ["existing-skill"],
             tools: {
               profile: "coding",
               alsoAllow: ["web_search"],
@@ -128,7 +138,15 @@ describe("agent config helpers", () => {
       buildAgentSkillsConfig(
         {
           agents: {
-            list: [{ id: "agent-1", skills: ["old-skill"] }, { id: "other-agent" }],
+            list: [
+              {
+                id: "agent-1",
+                model: "agent-model",
+                skills: ["old-skill"],
+                tools: { profile: "coding" },
+              },
+              { id: "other-agent" },
+            ],
           },
         },
         "agent-1",
@@ -136,7 +154,10 @@ describe("agent config helpers", () => {
       ),
     ).toEqual({
       agents: {
-        list: [{ id: "agent-1" }, { id: "other-agent" }],
+        list: [
+          { id: "agent-1", model: "agent-model", tools: { profile: "coding" } },
+          { id: "other-agent" },
+        ],
       },
     });
   });

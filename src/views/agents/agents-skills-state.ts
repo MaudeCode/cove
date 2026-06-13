@@ -17,8 +17,9 @@ export const agentSkillsAllowlist = signal<string[] | null>(null);
 export const localSkillsAllowlist = signal<string[] | null>(null);
 
 export function syncSkillsAllowlist(allowlist: string[] | null): void {
-  agentSkillsAllowlist.value = allowlist;
-  localSkillsAllowlist.value = allowlist ? [...allowlist] : null;
+  const normalized = normalizeSkillsAllowlist(allowlist);
+  agentSkillsAllowlist.value = normalized;
+  localSkillsAllowlist.value = normalized ? [...normalized] : null;
   skillsDirty.value = false;
 }
 
@@ -27,6 +28,9 @@ export async function loadSkills(): Promise<void> {
   try {
     const result = await send("skills.status", {});
     skills.value = result.skills;
+    const normalized = normalizeSkillsAllowlist(localSkillsAllowlist.value);
+    agentSkillsAllowlist.value = normalized;
+    localSkillsAllowlist.value = normalized ? [...normalized] : null;
   } catch (err) {
     toast.error(getErrorMessage(err));
   } finally {
@@ -35,15 +39,16 @@ export async function loadSkills(): Promise<void> {
 }
 
 export function toggleSkillInAllowlist(skillName: string): void {
+  const skillKey = getSkillAllowlistKey(skillName);
   const current = localSkillsAllowlist.value;
 
   if (current === null) {
-    const allSkillNames = skills.value.filter((s) => !s.disabled && s.eligible).map((s) => s.name);
-    localSkillsAllowlist.value = allSkillNames.filter((n) => n !== skillName);
-  } else if (current.includes(skillName)) {
-    localSkillsAllowlist.value = current.filter((n) => n !== skillName);
+    const allSkillKeys = getEligibleSkillKeys();
+    localSkillsAllowlist.value = allSkillKeys.filter((key) => key !== skillKey);
+  } else if (current.includes(skillKey)) {
+    localSkillsAllowlist.value = current.filter((key) => key !== skillKey);
   } else {
-    localSkillsAllowlist.value = [...current, skillName];
+    localSkillsAllowlist.value = [...current, skillKey];
   }
   skillsDirty.value = true;
 }
@@ -59,8 +64,7 @@ export function disableAllSkills(): void {
 }
 
 export function enableAllSkills(): void {
-  const allSkillNames = skills.value.filter((s) => !s.disabled && s.eligible).map((s) => s.name);
-  localSkillsAllowlist.value = allSkillNames;
+  localSkillsAllowlist.value = getEligibleSkillKeys();
   skillsDirty.value = true;
 }
 
@@ -68,17 +72,49 @@ export async function saveSkillsAllowlist(): Promise<void> {
   if (!gatewayConfig.value) return;
 
   skillsSaving.value = true;
+  const submittedAllowlist = localSkillsAllowlist.value;
   try {
-    const skillsUpdate = localSkillsAllowlist.value;
-    const config = buildAgentSkillsConfig(gatewayConfig.value, selectedAgentId.value, skillsUpdate);
+    const config = buildAgentSkillsConfig(
+      gatewayConfig.value,
+      selectedAgentId.value,
+      submittedAllowlist,
+    );
 
     await applyGatewayConfig(config);
-    agentSkillsAllowlist.value = localSkillsAllowlist.value;
-    skillsDirty.value = false;
+    agentSkillsAllowlist.value = submittedAllowlist;
+    if (skillsAllowlistsEqual(localSkillsAllowlist.value, submittedAllowlist)) {
+      skillsDirty.value = false;
+    }
     toast.success(t("actions.saved"));
   } catch (err) {
     toast.error(getErrorMessage(err));
   } finally {
     skillsSaving.value = false;
   }
+}
+
+function getEligibleSkillKeys(): string[] {
+  return skills.value.filter((s) => !s.disabled && s.eligible).map((s) => s.skillKey);
+}
+
+function normalizeSkillsAllowlist(allowlist: string[] | null): string[] | null {
+  return allowlist?.map(getSkillAllowlistKey) ?? null;
+}
+
+function skillsAllowlistsEqual(left: string[] | null, right: string[] | null): boolean {
+  return (
+    JSON.stringify(normalizeAllowlistForCompare(left)) ===
+    JSON.stringify(normalizeAllowlistForCompare(right))
+  );
+}
+
+function normalizeAllowlistForCompare(allowlist: string[] | null): string[] | null {
+  return allowlist ? [...allowlist].sort() : null;
+}
+
+function getSkillAllowlistKey(skillNameOrKey: string): string {
+  return (
+    skills.value.find((skill) => skill.name === skillNameOrKey || skill.skillKey === skillNameOrKey)
+      ?.skillKey ?? skillNameOrKey
+  );
 }

@@ -29,6 +29,9 @@ mock.module("@/lib/gateway", () => ({
   disconnect: () => {
     calls.disconnect++;
   },
+  send: () => {
+    throw new Error("send is not used by logout tests");
+  },
 }));
 
 mock.module("@/lib/node-connection", () => ({

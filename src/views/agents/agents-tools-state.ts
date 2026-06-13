@@ -129,22 +129,51 @@ export async function saveToolsConfig(): Promise<void> {
   if (!gatewayConfig.value) return;
 
   toolsSaving.value = true;
+  const submittedToolsConfig = localToolsConfig.value;
   try {
+    const existingTools =
+      gatewayConfig.value.agents?.list?.find((agent) => agent.id === selectedAgentId.value)
+        ?.tools ?? {};
+    const existingToolOverrides: ToolsConfig = { ...existingTools };
+    delete existingToolOverrides.allow;
     const toolsUpdate: ToolsConfig = {
-      profile: localToolsConfig.value.profile,
-      alsoAllow: localToolsConfig.value.alsoAllow?.length
-        ? localToolsConfig.value.alsoAllow
+      ...existingToolOverrides,
+      profile: submittedToolsConfig.profile,
+      alsoAllow: submittedToolsConfig.alsoAllow?.length
+        ? submittedToolsConfig.alsoAllow
         : undefined,
-      deny: localToolsConfig.value.deny?.length ? localToolsConfig.value.deny : undefined,
+      deny: submittedToolsConfig.deny?.length ? submittedToolsConfig.deny : undefined,
     };
     const config = buildAgentToolsConfig(gatewayConfig.value, selectedAgentId.value, toolsUpdate);
 
     await applyGatewayConfig(config);
-    toolsDirty.value = false;
+    if (toolsConfigsEqual(localToolsConfig.value, submittedToolsConfig)) {
+      toolsDirty.value = false;
+    }
     toast.success(t("actions.saved"));
   } catch (err) {
     toast.error(getErrorMessage(err));
   } finally {
     toolsSaving.value = false;
   }
+}
+
+function toolsConfigsEqual(left: ToolsConfig, right: ToolsConfig): boolean {
+  return (
+    JSON.stringify(normalizeToolsConfigForCompare(left)) ===
+    JSON.stringify(normalizeToolsConfigForCompare(right))
+  );
+}
+
+function normalizeToolsConfigForCompare(config: ToolsConfig): ToolsConfig {
+  return {
+    profile: config.profile,
+    allow: normalizeList(config.allow),
+    alsoAllow: normalizeList(config.alsoAllow),
+    deny: normalizeList(config.deny),
+  };
+}
+
+function normalizeList(value: string[] | undefined): string[] | undefined {
+  return value?.length ? [...value].sort() : undefined;
 }
