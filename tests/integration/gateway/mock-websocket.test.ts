@@ -1,7 +1,18 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { connect, disconnect, type ConnectConfig } from "../../../src/lib/gateway";
+import {
+  connect,
+  connectionState,
+  disconnect,
+  on,
+  reconnectAttempt,
+  sendUnknown,
+  subscribe,
+  type ConnectConfig,
+} from "../../../src/lib/gateway";
+import { log } from "../../../src/lib/logger";
 import type { GatewayRequest } from "../../../src/types/gateway";
 import type { ConnectParams } from "../../../src/types/gateway-rpc";
+import { installFakeTimers } from "../../helpers/timers";
 import {
   connectChallengeFrame,
   errorResponseFrame,
@@ -16,7 +27,7 @@ type ConnectRequest = GatewayRequest & {
   params: ConnectParams;
 };
 
-function openGatewayConnection(config: Omit<ConnectConfig, "autoReconnect" | "url">) {
+function openGatewayConnection(config: Omit<ConnectConfig, "url">) {
   const sockets = installMockWebSocket();
   const helloPromise = connect({
     url: "ws://gateway.test",
@@ -29,6 +40,26 @@ function openGatewayConnection(config: Omit<ConnectConfig, "autoReconnect" | "ur
   return { helloPromise, socket, sockets };
 }
 
+async function connectOpenGateway(config: Omit<ConnectConfig, "url"> = {}) {
+  const { helloPromise, socket, sockets } = openGatewayConnection({
+    autoReconnect: false,
+    token: "test-token",
+    ...config,
+  });
+  const connectRequest = receiveConnectRequest(socket);
+  socket.receive(responseFrame(connectRequest.id, helloOkFrame()));
+  await helloPromise;
+  const requestBaseline = sentGatewayRequests(socket).length;
+
+  return {
+    requestsAfterConnect() {
+      return sentGatewayRequests(socket).slice(requestBaseline);
+    },
+    socket,
+    sockets,
+  };
+}
+
 function receiveConnectRequest(
   socket: ReturnType<typeof installMockWebSocket>["instances"][number],
 ) {
@@ -36,6 +67,30 @@ function receiveConnectRequest(
   const requests = socket.sentJson() as GatewayRequest[];
   expect(requests).toHaveLength(1);
   return requests[0] as ConnectRequest;
+}
+
+function sentGatewayRequests(socket: ReturnType<typeof installMockWebSocket>["instances"][number]) {
+  return socket.sentJson() as GatewayRequest[];
+}
+
+async function flushGatewayPromises(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+function captureGatewayWarnings(): { messages: unknown[][]; restore: () => void } {
+  const originalWarn = log.gateway.warn;
+  const messages: unknown[][] = [];
+  log.gateway.warn = (...args: unknown[]) => {
+    messages.push(args);
+  };
+
+  return {
+    messages,
+    restore() {
+      log.gateway.warn = originalWarn;
+    },
+  };
 }
 
 function mockUserAgent(userAgent: string): () => void {
@@ -218,6 +273,194 @@ describe("gateway mock websocket harness", () => {
 
       await expect(helloPromise).rejects.toThrow("Authentication failed");
     } finally {
+      sockets.uninstall();
+    }
+  });
+
+  test("matches responses to request ids when responses arrive out of order", async () => {
+    const { requestsAfterConnect, socket, sockets } = await connectOpenGateway();
+
+    try {
+      const firstPromise = sendUnknown("first.method");
+      const secondPromise = sendUnknown("second.method");
+      const [firstRequest, secondRequest] = requestsAfterConnect();
+
+      socket.receive(responseFrame(secondRequest.id, { value: "second" }));
+      socket.receive(responseFrame(firstRequest.id, { value: "first" }));
+
+      await expect(firstPromise).resolves.toEqual({ value: "first" });
+      await expect(secondPromise).resolves.toEqual({ value: "second" });
+    } finally {
+      sockets.uninstall();
+    }
+  });
+
+  test("ignores responses for unknown request ids", async () => {
+    const { requestsAfterConnect, socket, sockets } = await connectOpenGateway();
+
+    try {
+      const pendingPromise = sendUnknown("known.method");
+      const [request] = requestsAfterConnect();
+
+      socket.receive(responseFrame("req_missing", { value: "wrong" }));
+      socket.receive(responseFrame(request.id, { value: "right" }));
+
+      await expect(pendingPromise).resolves.toEqual({ value: "right" });
+    } finally {
+      sockets.uninstall();
+    }
+  });
+
+  test("cleans timed-out requests and ignores their late responses", async () => {
+    const timers = installFakeTimers();
+    const warnings = captureGatewayWarnings();
+    const { requestsAfterConnect, socket, sockets } = await connectOpenGateway();
+
+    try {
+      const slowPromise = sendUnknown("slow.method", undefined, { timeout: 50 });
+      const [slowRequest] = requestsAfterConnect();
+
+      timers.advanceBy(50);
+
+      await expect(slowPromise).rejects.toThrow("Request timeout: slow.method");
+
+      socket.receive(responseFrame(slowRequest.id, { value: "too-late" }));
+
+      const nextPromise = sendUnknown("next.method");
+      const nextRequest = requestsAfterConnect().at(-1);
+      expect(nextRequest?.method).toBe("next.method");
+      socket.receive(responseFrame(nextRequest?.id ?? "", { value: "next" }));
+
+      await expect(nextPromise).resolves.toEqual({ value: "next" });
+      expect(warnings.messages).toEqual([
+        [" Received response for unknown request:", slowRequest.id],
+      ]);
+    } finally {
+      warnings.restore();
+      timers.uninstall();
+      sockets.uninstall();
+    }
+  });
+
+  test("rejects pending requests when disconnect is called", async () => {
+    const { sockets } = await connectOpenGateway();
+
+    try {
+      const pendingPromise = sendUnknown("pending.method");
+
+      disconnect();
+
+      await expect(pendingPromise).rejects.toThrow("Disconnected");
+      expect(connectionState.value).toBe("disconnected");
+    } finally {
+      sockets.uninstall();
+    }
+  });
+
+  test("rejects pending requests when the server closes the socket", async () => {
+    const { socket, sockets } = await connectOpenGateway();
+
+    try {
+      const pendingPromise = sendUnknown("pending.method");
+
+      socket.serverClose();
+
+      await expect(pendingPromise).rejects.toThrow("Connection closed");
+      expect(connectionState.value).toBe("disconnected");
+    } finally {
+      sockets.uninstall();
+    }
+  });
+
+  test("rejects pending requests and starts reconnect after a connected socket closes", async () => {
+    const timers = installFakeTimers();
+    const { socket, sockets } = await connectOpenGateway({ autoReconnect: true });
+
+    try {
+      const pendingPromise = sendUnknown("pending.method");
+
+      socket.serverClose();
+
+      await expect(pendingPromise).rejects.toThrow("Connection closed");
+      expect(connectionState.value).toBe("reconnecting");
+      expect(reconnectAttempt.value).toBe(1);
+    } finally {
+      timers.uninstall();
+      sockets.uninstall();
+    }
+  });
+
+  test("reconnects after a connected socket closes", async () => {
+    const timers = installFakeTimers();
+    const { socket, sockets } = await connectOpenGateway({ autoReconnect: true });
+
+    try {
+      socket.serverClose();
+
+      expect(connectionState.value).toBe("reconnecting");
+      expect(reconnectAttempt.value).toBe(1);
+
+      timers.advanceBy(1000);
+
+      const reconnectSocket = sockets.latest();
+      expect(sockets.instances).toHaveLength(2);
+      reconnectSocket.open();
+      const connectRequest = receiveConnectRequest(reconnectSocket);
+      expect(connectRequest).toMatchObject({
+        method: "connect",
+        params: {
+          minProtocol: 4,
+          maxProtocol: 4,
+          auth: { token: "test-token" },
+        },
+      });
+      reconnectSocket.receive(responseFrame(connectRequest.id, helloOkFrame()));
+
+      await flushGatewayPromises();
+
+      expect(connectionState.value).toBe("connected");
+    } finally {
+      timers.uninstall();
+      sockets.uninstall();
+    }
+  });
+
+  test("sends heartbeat health checks while connected", async () => {
+    const timers = installFakeTimers();
+    const { socket, sockets } = await connectOpenGateway();
+
+    try {
+      timers.advanceBy(30_000);
+
+      const healthRequest = sentGatewayRequests(socket).at(-1);
+      expect(healthRequest?.method).toBe("health");
+
+      socket.receive(responseFrame(healthRequest?.id ?? "", { ok: true }));
+    } finally {
+      timers.uninstall();
+      sockets.uninstall();
+    }
+  });
+
+  test("delivers events to subscribers and removes unsubscribed handlers", async () => {
+    const { socket, sockets } = await connectOpenGateway();
+    const allEvents: string[] = [];
+    const statusPayloads: unknown[] = [];
+    const unsubscribeAll = subscribe((event) => allEvents.push(event.event));
+    const unsubscribeStatus = on("status.update", (payload) => statusPayloads.push(payload));
+
+    try {
+      socket.receive(eventFrame("status.update", { ok: true }));
+      unsubscribeStatus();
+      socket.receive(eventFrame("status.update", { ok: false }));
+      unsubscribeAll();
+      socket.receive(eventFrame("status.update", { ok: "ignored" }));
+
+      expect(allEvents).toEqual(["status.update", "status.update"]);
+      expect(statusPayloads).toEqual([{ ok: true }]);
+    } finally {
+      unsubscribeAll();
+      unsubscribeStatus();
       sockets.uninstall();
     }
   });
