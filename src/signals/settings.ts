@@ -6,6 +6,7 @@
 
 import { signal, effect, computed } from "@preact/signals";
 import { loadUiFontFamily, loadCodeFontFamily } from "@/lib/font-loader";
+import { startNodeConnection, stopNodeConnection } from "@/lib/node-connection";
 import {
   type TimeFormat,
   type FontSize,
@@ -98,13 +99,11 @@ if (typeof window !== "undefined") {
       if (canvasNodeEnabled.value !== newValue) {
         canvasNodeEnabled.value = newValue;
         // Start/stop node connection based on new value
-        import("@/lib/node-connection").then((mod) => {
-          if (newValue) {
-            mod.startNodeConnection();
-          } else {
-            mod.stopNodeConnection();
-          }
-        });
+        if (newValue) {
+          startNodeConnection();
+        } else {
+          stopNodeConnection();
+        }
       }
     }
   });

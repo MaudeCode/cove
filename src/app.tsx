@@ -53,7 +53,8 @@ import { CanvasView } from "@/views/CanvasView";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { SpotlightTour } from "@/components/tour/SpotlightTour";
 import { getTourSteps } from "@/lib/tour-steps";
-import { appMode } from "@/signals/settings";
+import { appMode, canvasNodeEnabled } from "@/signals/settings";
+import { startNodeConnection } from "@/lib/node-connection";
 import { CommandPalette, useCommandPaletteShortcut } from "@/components/command";
 
 // Lazy-loaded CanvasPanel to avoid loading node-connection.ts on /canvas route
@@ -294,11 +295,9 @@ async function tryAutoConnect() {
     initUpdateSubscription();
 
     // Start node connection for canvas support (if enabled)
-    import("@/signals/settings").then(({ canvasNodeEnabled }) => {
-      if (canvasNodeEnabled.value) {
-        import("@/lib/node-connection").then((mod) => mod.startNodeConnection());
-      }
-    });
+    if (canvasNodeEnabled.value) {
+      startNodeConnection();
+    }
   } catch {
     // Clear invalid session credential
     setSessionCredential("");

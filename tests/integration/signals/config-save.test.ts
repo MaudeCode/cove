@@ -1,31 +1,22 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { getConfigPatchReplacePaths } from "../../src/lib/config/patch-replace-paths";
+import { getConfigPatchReplacePaths } from "../../../src/lib/config/patch-replace-paths";
+import { createGatewaySendRecorder } from "../../helpers/gateway";
+import { resetSignals } from "../../helpers/signals";
 
-type SendCall = [method: string, params: unknown];
-
-let sendCalls: SendCall[] = [];
-
-const send = mock(async (method: string, params: unknown) => {
-  sendCalls.push([method, params]);
-
-  if (method === "config.patch") {
+const gateway = createGatewaySendRecorder({
+  "config.patch": (_method: string, params: unknown) => {
     return {
       ok: true,
       config: JSON.parse((params as { raw: string }).raw),
       path: "/tmp/config.json",
     };
-  }
-
-  if (method === "config.get") {
-    return { hash: "hash-after-save" };
-  }
-
-  throw new Error(`Unexpected gateway method: ${method}`);
+  },
+  "config.get": { hash: "hash-after-save" },
 });
 
 mock.module("@/lib/gateway", () => ({
   mainSessionKey: { value: null },
-  send,
+  send: gateway.send,
 }));
 
 mock.module("@/lib/session-utils", () => ({
@@ -51,18 +42,20 @@ const {
   originalConfig,
   saveConfig,
   validationErrors,
-} = await import("../../src/signals/config");
+} = await import("../../../src/signals/config");
 
 describe("saveConfig", () => {
   beforeEach(() => {
-    sendCalls = [];
-    originalConfig.value = {};
-    draftConfig.value = {};
-    baseHash.value = null;
-    configExists.value = false;
-    validationErrors.value = {};
-    isSaving.value = false;
-    error.value = null;
+    gateway.clear();
+    resetSignals([
+      [originalConfig, {}],
+      [draftConfig, {}],
+      [baseHash, null],
+      [configExists, false],
+      [validationErrors, {}],
+      [isSaving, false],
+      [error, null],
+    ]);
   });
 
   test("sends replacePaths with config.patch when saving destructive array edits", async () => {
@@ -73,7 +66,7 @@ describe("saveConfig", () => {
 
     await expect(saveConfig()).resolves.toBe(true);
 
-    expect(sendCalls[0]).toEqual([
+    expect(gateway.calls[0]).toEqual([
       "config.patch",
       {
         raw: JSON.stringify({ allowedTools: ["read"] }),

@@ -105,6 +105,29 @@ export default defineConfig(({ mode }) => {
         '@': resolve(__dirname, './src'),
       },
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes('/src/views/') || id.includes('/src/components/')) return 'app-ui'
+            if (id.includes('/src/signals/') || id.includes('/src/lib/')) return 'app-core'
+            if (!id.includes('node_modules')) return
+            if (id.includes('/preact/') || id.includes('/@preact/')) return 'vendor-preact'
+            if (id.includes('/lucide-preact/') || id.includes('/simple-icons/')) {
+              return 'vendor-icons'
+            }
+            if (
+              id.includes('/marked/') ||
+              id.includes('/prismjs/') ||
+              id.includes('/dompurify/')
+            ) {
+              return 'vendor-markdown'
+            }
+            return 'vendor'
+          },
+        },
+      },
+    },
     server: {
       allowedHosts: env.VITE_ALLOWED_HOSTS?.split(',').map(h => h.trim()).filter(Boolean) || [],
       proxy: {
