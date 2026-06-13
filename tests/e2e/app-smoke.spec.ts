@@ -136,6 +136,47 @@ test.describe("Cove app smoke", () => {
     await expect(page.getByRole("complementary")).toHaveCount(0);
   });
 
+  test("keeps rotated device tokens visible when clipboard copy fails", async ({
+    page,
+    isMobile,
+  }) => {
+    test.skip(isMobile, "desktop device token flow is covered by the desktop project");
+
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, "clipboard", {
+        configurable: true,
+        value: {
+          writeText: async () => {
+            throw new Error("clipboard denied");
+          },
+        },
+      });
+    });
+    await connectToMockGateway(page);
+
+    await page.getByRole("button", { name: "Devices" }).click();
+    await expect(page).toHaveURL(/\/devices$/);
+    await expect(page.getByRole("button", { name: "Toggle details for Laptop" })).toBeVisible();
+
+    await page.getByRole("button", { name: "Toggle details for Laptop" }).click();
+    await page.getByRole("button", { name: "Rotate token" }).click();
+    await page.getByRole("button", { name: "Rotate", exact: true }).click();
+
+    await expect(
+      page.getByText(
+        "Token rotated, but it could not be copied. Copy it before closing this dialog.",
+      ),
+    ).toBeVisible();
+    const copiedToken = page.getByRole("textbox", { name: "Token" });
+    await expect(copiedToken).toHaveValue("one-time-token");
+
+    await page.getByRole("button", { name: "Revoke" }).click();
+    await expect(copiedToken).toHaveCount(0);
+
+    await page.getByRole("button", { name: "Rotate token" }).click();
+    await expect(copiedToken).toHaveCount(0);
+  });
+
   test("opens and closes the mobile sidebar overlay", async ({ page, isMobile }) => {
     test.skip(!isMobile, "mobile overlay is only visible in the mobile project");
 

@@ -5,7 +5,8 @@ import { toast } from "@/components/ui/Toast";
 import { t } from "@/lib/i18n";
 import type { SkillStatusEntry } from "@/types/skills";
 import { selectedAgentId } from "./agents-core-state";
-import { gatewayConfig } from "./agents-tools-state";
+import { buildAgentSkillsConfig } from "./agents-config-utils";
+import { applyGatewayConfig, gatewayConfig } from "./agents-tools-state";
 
 export const skills = signal<SkillStatusEntry[]>([]);
 export const skillsLoading = signal<boolean>(false);
@@ -68,25 +69,10 @@ export async function saveSkillsAllowlist(): Promise<void> {
 
   skillsSaving.value = true;
   try {
-    const config = { ...gatewayConfig.value };
-    const agentList = [...(config.agents?.list ?? [])];
-    const agentIndex = agentList.findIndex((a) => a.id === selectedAgentId.value);
-
     const skillsUpdate = localSkillsAllowlist.value;
+    const config = buildAgentSkillsConfig(gatewayConfig.value, selectedAgentId.value, skillsUpdate);
 
-    if (agentIndex >= 0) {
-      agentList[agentIndex] = { ...agentList[agentIndex], skills: skillsUpdate ?? undefined };
-      if (skillsUpdate === null) {
-        delete agentList[agentIndex].skills;
-      }
-    } else if (skillsUpdate !== null) {
-      agentList.push({ id: selectedAgentId.value, skills: skillsUpdate });
-    }
-
-    config.agents = { ...config.agents, list: agentList };
-
-    await send("config.apply", { config });
-    gatewayConfig.value = config;
+    await applyGatewayConfig(config);
     agentSkillsAllowlist.value = localSkillsAllowlist.value;
     skillsDirty.value = false;
     toast.success(t("actions.saved"));

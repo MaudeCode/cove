@@ -56,6 +56,33 @@ export async function installMockGateway(page: Page): Promise<void> {
         sessionKey: "agent:main:main",
         messages: [],
       },
+      "device.pair.list": {
+        pending: [],
+        paired: [
+          {
+            approvedAtMs: now,
+            createdAtMs: now,
+            deviceId: "device-1",
+            displayName: "Laptop",
+            platform: "macos",
+            publicKey: "public-key",
+            role: "operator",
+            tokens: [
+              {
+                createdAtMs: now,
+                role: "operator",
+                scopes: [],
+              },
+            ],
+          },
+        ],
+      },
+      "device.token.revoke": {
+        ok: true,
+      },
+      "device.token.rotate": {
+        token: "one-time-token",
+      },
       health: {
         ok: true,
         ts: now,

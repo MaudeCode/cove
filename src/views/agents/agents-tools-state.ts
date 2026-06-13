@@ -4,9 +4,20 @@ import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { t } from "@/lib/i18n";
 import { selectedAgentId } from "./agents-core-state";
+import {
+  buildAgentToolsConfig,
+  applyGatewayConfigWithSend,
+  normalizeGatewayConfig,
+  type ToolProfile,
+} from "./agents-config-utils";
 
-export const TOOL_PROFILES = ["full", "coding", "messaging", "minimal"] as const;
-export type ToolProfile = (typeof TOOL_PROFILES)[number];
+export {
+  isToolProfile,
+  normalizeGatewayConfig,
+  normalizeToolProfile,
+  TOOL_PROFILES,
+} from "./agents-config-utils";
+export type { ToolProfile } from "./agents-config-utils";
 
 export interface ToolsConfig {
   profile?: ToolProfile;
@@ -33,18 +44,11 @@ export interface GatewayConfig {
 }
 
 export const gatewayConfig = signal<GatewayConfig | null>(null);
+export const gatewayConfigHash = signal<string | null>(null);
 export const toolsLoading = signal<boolean>(false);
 export const toolsSaving = signal<boolean>(false);
 export const toolsDirty = signal<boolean>(false);
 export const localToolsConfig = signal<ToolsConfig>({});
-
-export function isToolProfile(value: string): value is ToolProfile {
-  return TOOL_PROFILES.includes(value as ToolProfile);
-}
-
-export function normalizeToolProfile(value: string | undefined): ToolProfile {
-  return value && isToolProfile(value) ? value : "full";
-}
 
 export function extractPrimaryModel(
   model: string | { primary?: string } | undefined,
@@ -113,15 +117,19 @@ export function toggleTool(toolId: string, enabled: boolean): void {
   toolsDirty.value = true;
 }
 
+export async function applyGatewayConfig(config: GatewayConfig): Promise<GatewayConfig> {
+  const refreshed = await applyGatewayConfigWithSend(config, gatewayConfigHash.value, send);
+  gatewayConfig.value = refreshed.config;
+  gatewayConfigHash.value = refreshed.hash;
+
+  return refreshed.config;
+}
+
 export async function saveToolsConfig(): Promise<void> {
   if (!gatewayConfig.value) return;
 
   toolsSaving.value = true;
   try {
-    const config = { ...gatewayConfig.value };
-    const agentList = [...(config.agents?.list ?? [])];
-    const agentIndex = agentList.findIndex((a) => a.id === selectedAgentId.value);
-
     const toolsUpdate: ToolsConfig = {
       profile: localToolsConfig.value.profile,
       alsoAllow: localToolsConfig.value.alsoAllow?.length
@@ -129,17 +137,9 @@ export async function saveToolsConfig(): Promise<void> {
         : undefined,
       deny: localToolsConfig.value.deny?.length ? localToolsConfig.value.deny : undefined,
     };
+    const config = buildAgentToolsConfig(gatewayConfig.value, selectedAgentId.value, toolsUpdate);
 
-    if (agentIndex >= 0) {
-      agentList[agentIndex] = { ...agentList[agentIndex], tools: toolsUpdate };
-    } else {
-      agentList.push({ id: selectedAgentId.value, tools: toolsUpdate });
-    }
-
-    config.agents = { ...config.agents, list: agentList };
-
-    await send("config.apply", { config });
-    gatewayConfig.value = config;
+    await applyGatewayConfig(config);
     toolsDirty.value = false;
     toast.success(t("actions.saved"));
   } catch (err) {

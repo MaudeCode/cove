@@ -77,10 +77,21 @@ const roleFilter = signal<DeviceRole>("all");
 // UI state
 const expandedDevices = signal<Set<string>>(new Set());
 const tokenModal = signal<PairedDevice | null>(null);
+const rotatedTokenFallback = signal<string | null>(null);
 const mobileDetailModal = signal<PairedDevice | null>(null);
 const removeModal = signal<PairedDevice | null>(null);
 const rotatingToken = signal(false);
 const removingDevice = signal(false);
+
+function openTokenModal(device: PairedDevice): void {
+  rotatedTokenFallback.value = null;
+  tokenModal.value = device;
+}
+
+function closeTokenModal(): void {
+  rotatedTokenFallback.value = null;
+  tokenModal.value = null;
+}
 
 // ============================================
 // Constants
@@ -171,16 +182,24 @@ async function rejectRequest(requestId: string): Promise<void> {
 
 async function rotateToken(device: PairedDevice, role: string): Promise<void> {
   rotatingToken.value = true;
+  rotatedTokenFallback.value = null;
   try {
     const result = await send("device.token.rotate", {
       deviceId: device.deviceId,
       role,
     });
     toast.success(t("devices.tokenRotated"));
-    // Show the new token
-    await navigator.clipboard.writeText(result.token);
-    toast.success(t("devices.tokenCopied"));
-    tokenModal.value = null;
+    if (result.token) {
+      try {
+        await navigator.clipboard.writeText(result.token);
+        toast.success(t("devices.tokenCopied"));
+      } catch {
+        rotatedTokenFallback.value = result.token;
+        toast.error(t("status.copyFailed", { label: t("common.token") }));
+        return;
+      }
+    }
+    closeTokenModal();
     await loadDevices();
   } catch (err) {
     toast.error(getErrorMessage(err));
@@ -196,7 +215,7 @@ async function revokeToken(device: PairedDevice, role: string): Promise<void> {
       role,
     });
     toast.success(t("devices.tokenRevoked"));
-    tokenModal.value = null;
+    closeTokenModal();
     await loadDevices();
   } catch (err) {
     toast.error(getErrorMessage(err));
@@ -323,19 +342,25 @@ function TokenModal() {
   const tokens = device.tokens ?? [];
 
   return (
-    <Modal
-      open={true}
-      onClose={() => {
-        tokenModal.value = null;
-      }}
-      title={t("devices.tokenManagement")}
-    >
+    <Modal open={true} onClose={closeTokenModal} title={t("devices.tokenManagement")}>
       <div class="space-y-4">
         <p class="text-sm text-[var(--color-text-muted)]">
           {t("devices.tokenManagementDesc", {
             name: device.displayName || formatDeviceId(device.deviceId),
           })}
         </p>
+
+        {rotatedTokenFallback.value && (
+          <div class="space-y-2 rounded-lg border border-[var(--color-warning)] bg-[var(--color-bg-tertiary)] p-3">
+            <p class="text-sm text-[var(--color-text-secondary)]">{t("devices.tokenCopyFailed")}</p>
+            <Input
+              value={rotatedTokenFallback.value}
+              readOnly
+              fullWidth
+              aria-label={t("common.token")}
+            />
+          </div>
+        )}
 
         {tokens.length === 0 ? (
           <p class="text-sm">{t("devices.noTokens")}</p>
@@ -354,12 +379,7 @@ function TokenModal() {
       </div>
 
       <div class="mt-6 flex justify-end">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            tokenModal.value = null;
-          }}
-        >
+        <Button variant="secondary" onClick={closeTokenModal}>
           {t("actions.close")}
         </Button>
       </div>
@@ -603,9 +623,7 @@ export function DevicesView(_props: RouteProps) {
                         device={device}
                         isExpanded={expandedDevices.value.has(device.deviceId)}
                         onToggleExpand={() => toggleExpanded(device.deviceId)}
-                        onOpenTokenModal={(d) => {
-                          tokenModal.value = d;
-                        }}
+                        onOpenTokenModal={openTokenModal}
                         onRemoveDevice={(d) => {
                           removeModal.value = d;
                         }}
@@ -638,7 +656,7 @@ export function DevicesView(_props: RouteProps) {
             bare
             onOpenTokenModal={(d) => {
               mobileDetailModal.value = null;
-              tokenModal.value = d;
+              openTokenModal(d);
             }}
             onRemoveDevice={(d) => {
               removeModal.value = d;

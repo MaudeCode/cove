@@ -30,8 +30,10 @@ import {
 import type { AgentsTab } from "./agents-core-state";
 import {
   gatewayConfig,
+  gatewayConfigHash,
   getAgentModel,
   localToolsConfig,
+  normalizeGatewayConfig,
   normalizeToolProfile,
   toolsDirty,
   toolsLoading,
@@ -43,31 +45,9 @@ export async function loadToolsConfig(): Promise<void> {
   toolsLoading.value = true;
   try {
     const result = await send("config.get", {});
-    const config = result.config;
-    const normalizedConfig: GatewayConfig = {
-      ...config,
-      tools: config.tools
-        ? {
-            ...config.tools,
-            profile: normalizeToolProfile(config.tools.profile),
-          }
-        : undefined,
-      agents: config.agents
-        ? {
-            ...config.agents,
-            list: config.agents.list?.map((agent) => ({
-              ...agent,
-              tools: agent.tools
-                ? {
-                    ...agent.tools,
-                    profile: normalizeToolProfile(agent.tools.profile),
-                  }
-                : undefined,
-            })),
-          }
-        : undefined,
-    };
+    const normalizedConfig = normalizeGatewayConfig(result.config as GatewayConfig);
     gatewayConfig.value = normalizedConfig;
+    gatewayConfigHash.value = result.hash ?? null;
 
     const agentEntry = normalizedConfig.agents?.list?.find((a) => a.id === selectedAgentId.value);
     localToolsConfig.value = {
