@@ -29,7 +29,7 @@ export interface GatewayResponse {
 
 /** Event message from gateway */
 export interface GatewayEvent {
-  type: "event";
+  type: "event" | "evt";
   event: string;
   payload?: unknown;
   seq?: number;

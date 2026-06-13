@@ -310,7 +310,7 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
           // Handle connect.challenge event during authentication
           if (
             connectionState.value === "authenticating" &&
-            msg.type === "event" &&
+            (msg.type === "event" || msg.type === "evt") &&
             msg.event === "connect.challenge"
           ) {
             // Note: msg.payload contains { nonce, ts } for future HMAC auth
@@ -541,6 +541,7 @@ function handleMessage(msg: GatewayMessage): void {
       handleResponse(msg as GatewayResponse);
       break;
     case "event":
+    case "evt":
       handleEvent(msg as GatewayEvent);
       break;
     default:
