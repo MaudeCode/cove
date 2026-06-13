@@ -4,6 +4,8 @@ type TestGlobal = typeof globalThis & {
   __APP_VERSION__?: string;
 };
 
+type SendListener = (data: string, socket: MockWebSocket) => void;
+
 export class MockWebSocket {
   static readonly CONNECTING = 0;
   static readonly OPEN = 1;
@@ -28,6 +30,7 @@ export class MockWebSocket {
   url: string;
 
   private listeners = new Map<string, Set<Listener>>();
+  private sendListeners = new Set<SendListener>();
 
   constructor(url: string | URL) {
     this.url = String(url);
@@ -75,11 +78,20 @@ export class MockWebSocket {
     if (this.readyState !== MockWebSocket.OPEN) {
       throw new Error("Cannot send while WebSocket is not open");
     }
-    this.sent.push(String(data));
+    const message = String(data);
+    this.sent.push(message);
+    for (const listener of this.sendListeners) {
+      listener(message, this);
+    }
   }
 
   sentJson(): unknown[] {
     return this.sent.map((message) => JSON.parse(message));
+  }
+
+  onSend(listener: SendListener): () => void {
+    this.sendListeners.add(listener);
+    return () => this.sendListeners.delete(listener);
   }
 
   serverClose(code = 1006, reason = "", wasClean = false): void {
