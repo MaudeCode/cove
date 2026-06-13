@@ -1,5 +1,12 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { connect, disconnect, on, send, sendUnknown } from "../../../src/lib/gateway";
+import {
+  connect,
+  disconnect,
+  GatewayRpcError,
+  on,
+  send,
+  sendUnknown,
+} from "../../../src/lib/gateway";
 import { installMockGatewayRuntime } from "../../mocks/gateway-runtime";
 
 let runtime: ReturnType<typeof installMockGatewayRuntime> | null = null;
@@ -87,5 +94,27 @@ describe("mock gateway runtime", () => {
     } finally {
       unsubscribe();
     }
+  });
+
+  test("surfaces mock runtime gateway errors from sendUnknown", async () => {
+    runtime = installMockGatewayRuntime();
+
+    const helloPromise = connect({
+      url: "ws://gateway.test",
+      token: "test-token",
+      autoReconnect: false,
+    });
+
+    await runtime.acceptConnection();
+    await helloPromise;
+
+    const resultPromise = sendUnknown("missing.runtime.method");
+
+    await expect(resultPromise).rejects.toMatchObject({
+      name: "GatewayRpcError",
+      message: "No mock result for missing.runtime.method",
+      code: "METHOD_NOT_FOUND",
+    });
+    await expect(resultPromise).rejects.toBeInstanceOf(GatewayRpcError);
   });
 });

@@ -3,6 +3,7 @@ import {
   connect,
   connectionState,
   disconnect,
+  GatewayRpcError,
   on,
   reconnectAttempt,
   sendUnknown,
@@ -272,6 +273,85 @@ describe("gateway mock websocket harness", () => {
       );
 
       await expect(helloPromise).rejects.toThrow("Authentication failed");
+    } finally {
+      sockets.uninstall();
+    }
+  });
+
+  test("preserves structured gateway error fields on failed responses", async () => {
+    const { requestsAfterConnect, socket, sockets } = await connectOpenGateway();
+
+    try {
+      const resultPromise = sendUnknown("structured.error");
+      const [request] = requestsAfterConnect();
+
+      socket.receive(
+        errorResponseFrame(request.id, {
+          code: "RATE_LIMITED",
+          message: "Slow down",
+          details: { limit: 10, windowMs: 1000 },
+          retryable: true,
+          retryAfterMs: 2500,
+        }),
+      );
+
+      const error = await resultPromise.catch((err: unknown) => err);
+
+      expect(error).toBeInstanceOf(GatewayRpcError);
+      expect(error).toMatchObject({
+        name: "GatewayRpcError",
+        message: "Slow down",
+        code: "RATE_LIMITED",
+        details: { limit: 10, windowMs: 1000 },
+        retryable: true,
+        retryAfterMs: 2500,
+      });
+      expect(Object.keys(error as object)).not.toContain("details");
+    } finally {
+      sockets.uninstall();
+    }
+  });
+
+  test("preserves request-failed fallback for malformed gateway error objects", async () => {
+    const { requestsAfterConnect, socket, sockets } = await connectOpenGateway();
+
+    try {
+      const resultPromise = sendUnknown("malformed.error");
+      const [request] = requestsAfterConnect();
+
+      socket.receive({
+        type: "res",
+        id: request.id,
+        ok: false,
+        error: { code: "MALFORMED" } as never,
+      });
+
+      await expect(resultPromise).rejects.toMatchObject({
+        name: "GatewayRpcError",
+        message: "Request failed",
+        code: "MALFORMED",
+      });
+      await expect(resultPromise).rejects.toBeInstanceOf(GatewayRpcError);
+    } finally {
+      sockets.uninstall();
+    }
+  });
+
+  test("uses a plain fallback error when a failed response has no error payload", async () => {
+    const { requestsAfterConnect, socket, sockets } = await connectOpenGateway();
+
+    try {
+      const resultPromise = sendUnknown("missing.error");
+      const [request] = requestsAfterConnect();
+
+      socket.receive({
+        type: "res",
+        id: request.id,
+        ok: false,
+      });
+
+      await expect(resultPromise).rejects.toThrow("Request failed");
+      await expect(resultPromise).rejects.not.toBeInstanceOf(GatewayRpcError);
     } finally {
       sockets.uninstall();
     }

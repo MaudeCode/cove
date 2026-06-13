@@ -474,6 +474,27 @@ export interface RequestOptions {
   timeout?: number;
 }
 
+export class GatewayRpcError extends Error {
+  code?: string;
+  declare details?: unknown;
+  retryable?: boolean;
+  retryAfterMs?: number;
+
+  constructor(error: NonNullable<GatewayResponse["error"]>) {
+    super(error.message || "Request failed");
+    this.name = "GatewayRpcError";
+    this.code = error.code;
+    Object.defineProperty(this, "details", {
+      configurable: true,
+      enumerable: false,
+      value: error.details,
+      writable: true,
+    });
+    this.retryable = error.retryable;
+    this.retryAfterMs = error.retryAfterMs;
+  }
+}
+
 /**
  * Send a request to the gateway
  */
@@ -565,7 +586,7 @@ function handleResponse(res: GatewayResponse): void {
   if (res.ok) {
     pending.resolve(res.payload);
   } else {
-    pending.reject(new Error(res.error?.message ?? "Request failed"));
+    pending.reject(res.error ? new GatewayRpcError(res.error) : new Error("Request failed"));
   }
 }
 
