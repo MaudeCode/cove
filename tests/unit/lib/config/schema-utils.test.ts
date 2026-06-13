@@ -1,10 +1,8 @@
-import { beforeAll, describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
+import { installI18nMock } from "../../../helpers/i18n";
 import type { JsonSchema } from "../../../../src/types/config";
 
-mock.module("@/lib/i18n", () => ({
-  t: (key: string, params?: Record<string, unknown>) =>
-    params ? `${key}:${JSON.stringify(params)}` : key,
-}));
+installI18nMock();
 
 let schemaUtils: typeof import("../../../../src/lib/config/schema-utils");
 

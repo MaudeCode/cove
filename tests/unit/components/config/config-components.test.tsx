@@ -10,6 +10,7 @@ import {
   waitFor,
   within,
 } from "../../../helpers/dom";
+import { installI18nMock } from "../../../helpers/i18n";
 import { installConfigComponentAliases } from "../../../helpers/module-aliases";
 import type { ConfigUiHints, JsonSchema } from "../../../../src/types/config";
 
@@ -49,9 +50,7 @@ mock.module("@/signals/config", () => ({
   validationErrors,
 }));
 
-mock.module("@/lib/i18n", () => ({
-  t: (key: string) => key,
-}));
+installI18nMock({ t: (key: string) => key });
 
 await installConfigComponentAliases();
 

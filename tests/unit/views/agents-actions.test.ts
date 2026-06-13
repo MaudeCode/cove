@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { installI18nMock } from "../../helpers/i18n";
 import type { GatewayConfig } from "../../../src/views/agents/agents-tools-state";
 import type { Agent } from "../../../src/types/agents";
 
@@ -42,9 +43,7 @@ mock.module("@/lib/session-utils", () => ({
   isUserCreatedChat: (sessionKey: string) => /^agent:[^:]+:chat:[^:]+$/.test(sessionKey),
 }));
 
-mock.module("@/lib/i18n", () => ({
-  t: (key: string) => key,
-}));
+installI18nMock({ t: (key: string) => key });
 
 mock.module("@/components/ui/Toast", () => ({
   toast: {

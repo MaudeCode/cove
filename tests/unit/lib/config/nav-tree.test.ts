@@ -1,9 +1,8 @@
-import { beforeAll, describe, expect, mock, test } from "bun:test";
+import { beforeAll, describe, expect, test } from "bun:test";
+import { installI18nMock } from "../../../helpers/i18n";
 import type { JsonSchema } from "../../../../src/types/config";
 
-mock.module("@/lib/i18n", () => ({
-  t: (key: string) => key,
-}));
+installI18nMock({ t: (key: string) => key });
 
 let navTree: typeof import("../../../../src/lib/config/nav-tree");
 

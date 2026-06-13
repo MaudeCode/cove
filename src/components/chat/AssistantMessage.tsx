@@ -133,7 +133,7 @@ export function AssistantMessage({
 
   // Build content blocks using cleaned text (MEDIA: lines removed)
   const blocks = buildContentBlocks(parsedMedia.text, message.toolCalls ?? []);
-  const hasContent = blocks.length > 0 || isStreaming || allImages.length > 0 || !!message.thinking;
+  const hasContent = blocks.length > 0 || allImages.length > 0 || !!message.thinking;
 
   // Debug: log every render to track reactivity issues
   log.chat.debug("AssistantMessage render", {
@@ -230,7 +230,7 @@ export function AssistantMessage({
         )}
 
         {/* Show streaming indicator after all content */}
-        {isStreaming && (
+        {hasContent && isStreaming && (
           <span class="ml-1">
             <BouncingDots />
           </span>

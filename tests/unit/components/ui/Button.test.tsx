@@ -1,10 +1,9 @@
 /** @jsxImportSource preact */
-import { describe, expect, mock, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { renderComponent, screen, userEvent } from "../../../helpers/dom";
+import { installI18nMock } from "../../../helpers/i18n";
 
-mock.module("@/lib/i18n", () => ({
-  t: (key: string) => key,
-}));
+installI18nMock({ t: (key: string) => key });
 
 const { Button } = await import("../../../../src/components/ui/Button");
 

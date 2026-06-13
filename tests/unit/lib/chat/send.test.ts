@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
+import { installI18nMock } from "../../../helpers/i18n";
 import { installFakeTimers, type FakeTimers } from "../../../helpers/timers";
 import { installStorageMocks } from "../../../helpers/storage";
 import type { AttachmentPayload } from "../../../../src/types/attachments";
@@ -65,9 +66,7 @@ mock.module("@/lib/session-utils", () => ({
   getErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
   isUserCreatedChat: (sessionKey: string) => /^agent:[^:]+:chat:[^:]+$/.test(sessionKey),
 }));
-mock.module("@/lib/i18n", () => ({
-  t: (key: string) => (key === "common.newChat" ? "New Chat" : key),
-}));
+installI18nMock({ t: (key: string) => (key === "common.newChat" ? "New Chat" : key) });
 mock.module("../../../../src/lib/chat/auto-rename", () => ({
   autoRenameSession: async (sessionKey: string, messageText: string) => {
     autoRenameCalls.push({ sessionKey, message: messageText });

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
+import { installI18nMock } from "../../../helpers/i18n";
 import { installFakeTimers, type FakeTimers } from "../../../helpers/timers";
 import { installStorageMocks } from "../../../helpers/storage";
 import type { AgentEvent, ChatEvent } from "../../../../src/types/chat";
@@ -67,9 +68,7 @@ mock.module("@/lib/streaming", () => streaming);
 mock.module("@/lib/tool-utils", () => toolUtils);
 mock.module("@/lib/type-guards", () => typeGuards);
 mock.module("@/lib/utils", () => utils);
-mock.module("@/lib/i18n", () => ({
-  t: (key: string) => key,
-}));
+installI18nMock({ t: (key: string) => key });
 
 const sessionUtils = await import("../../../../src/lib/session-utils");
 const typesChat = await import("../../../../src/types/chat");
