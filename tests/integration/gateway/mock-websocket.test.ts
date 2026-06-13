@@ -437,6 +437,24 @@ describe("gateway mock websocket harness", () => {
     }
   });
 
+  test("disconnect cancels auto-reconnect", async () => {
+    const timers = installFakeTimers();
+    const { socket, sockets } = await connectOpenGateway({ autoReconnect: true });
+
+    try {
+      disconnect();
+      timers.advanceBy(60_000);
+
+      expect(connectionState.value).toBe("disconnected");
+      expect(reconnectAttempt.value).toBe(0);
+      expect(socket.readyState).toBe(socket.CLOSED);
+      expect(sockets.instances).toHaveLength(1);
+    } finally {
+      timers.uninstall();
+      sockets.uninstall();
+    }
+  });
+
   test("rejects pending requests when the server closes the socket", async () => {
     const { socket, sockets } = await connectOpenGateway();
 

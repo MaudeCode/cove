@@ -175,6 +175,7 @@ function handleCanvasContent(cmdParams: Record<string, unknown>): {
 }
 let ws: WebSocket | null = null;
 let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+let refreshReconnectTimer: ReturnType<typeof setTimeout> | null = null;
 let pingInterval: ReturnType<typeof setInterval> | null = null;
 let currentAuthMode: "token" | "password" | undefined = undefined;
 let currentCredential: string | undefined = undefined;
@@ -561,14 +562,23 @@ export function startNodeConnection() {
 /** Stop the node connection (for cleanup) */
 export function refreshNodeRegistration() {
   log.node.debug("refreshNodeRegistration called - doing full reconnect");
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
   // Close existing connection and reconnect fresh
   if (ws) {
+    ws.onclose = null;
     ws.close();
     ws = null;
   }
   nodeConnected.value = false;
   // Reconnect after a brief delay
-  setTimeout(() => {
+  if (refreshReconnectTimer) {
+    clearTimeout(refreshReconnectTimer);
+  }
+  refreshReconnectTimer = setTimeout(() => {
+    refreshReconnectTimer = null;
     connectNode();
   }, 500);
 }
@@ -577,6 +587,10 @@ export function stopNodeConnection() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
     reconnectTimer = null;
+  }
+  if (refreshReconnectTimer) {
+    clearTimeout(refreshReconnectTimer);
+    refreshReconnectTimer = null;
   }
   if (pingInterval) {
     clearInterval(pingInterval);
@@ -589,8 +603,11 @@ export function stopNodeConnection() {
     pendingRequests.delete(id);
   }
   if (ws) {
+    ws.onclose = null;
     ws.close();
     ws = null;
   }
+  currentAuthMode = undefined;
+  currentCredential = undefined;
   nodeConnected.value = false;
 }
