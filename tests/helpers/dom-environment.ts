@@ -22,6 +22,7 @@ export function installDomGlobals(): void {
   defineGlobal("window", testWindow);
   defineGlobal("document", testWindow.document);
   defineGlobal("navigator", testWindow.navigator);
+  defineGlobal("history", testWindow.history);
   defineGlobal("localStorage", testWindow.localStorage);
   defineGlobal("sessionStorage", testWindow.sessionStorage);
   defineGlobal("Node", testWindow.Node);

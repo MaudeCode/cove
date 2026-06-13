@@ -41,7 +41,7 @@ export function pathToParam(path: (string | number)[]): string {
 // ============================================
 
 /** Load persisted expanded nav from localStorage */
-function loadPersistedExpanded(): Set<string> {
+export function loadPersistedExpandedNav(): Set<string> {
   try {
     const stored = localStorage.getItem(STORAGE_KEY_EXPANDED);
     if (stored) return new Set(JSON.parse(stored));
@@ -59,7 +59,7 @@ function loadPersistedExpanded(): Set<string> {
 export const selectedPath = signal<(string | number)[]>(parseParamToPath());
 
 /** Expanded nav items */
-export const expandedNav = signal<Set<string>>(loadPersistedExpanded());
+export const expandedNav = signal<Set<string>>(loadPersistedExpandedNav());
 
 /** Mobile: viewing detail panel instead of nav for current path */
 export const mobileViewingDetail = signal(false);
