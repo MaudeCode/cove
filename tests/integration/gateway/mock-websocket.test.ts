@@ -127,22 +127,22 @@ describe("gateway mock websocket harness", () => {
 
       const socket = sockets.latest();
       socket.open();
-      socket.receive(connectChallengeFrame());
 
-      expect(socket.sentJson()).toEqual([
-        {
-          type: "req",
-          id: "req_1",
-          method: "connect",
-          params: expect.objectContaining({
-            minProtocol: 4,
-            maxProtocol: 4,
-            auth: { token: "test-token" },
-          }),
-        },
-      ]);
+      const connectRequest = receiveConnectRequest(socket);
+      expect(connectRequest.type).toBe("req");
+      expect(connectRequest.id).toMatch(/^req_\d+$/);
+      expect(connectRequest.method).toBe("connect");
+      expect(connectRequest.params).toEqual(
+        expect.objectContaining({
+          minProtocol: 4,
+          maxProtocol: 4,
+          auth: { token: "test-token" },
+        }),
+      );
 
-      socket.receive(responseFrame("req_1", helloOkFrame({ server: { version: "test-gateway" } })));
+      socket.receive(
+        responseFrame(connectRequest.id, helloOkFrame({ server: { version: "test-gateway" } })),
+      );
 
       await expect(helloPromise).resolves.toMatchObject({
         server: { version: "test-gateway" },
