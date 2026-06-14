@@ -222,6 +222,44 @@
   animation-delay: 300ms;
 }
 
+/* Shimmered inline loading text for assistant thinking states */
+@keyframes cove-shimmer-text {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+
+.cove-shimmer-text {
+  display: inline-block;
+  max-width: 100%;
+  color: var(--color-text-muted);
+  background-image: linear-gradient(
+    110deg,
+    var(--color-text-muted) 0%,
+    var(--color-text-muted) 34%,
+    var(--color-text-primary) 50%,
+    var(--color-text-muted) 66%,
+    var(--color-text-muted) 100%
+  );
+  background-size: 240% 100%;
+  background-position: 200% center;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: cove-shimmer-text 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cove-shimmer-text {
+    background-image: none;
+    animation: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}
+
 /* AI glow spin - rotating gradient border for streaming sessions */
 @keyframes ai-glow-spin {
   from {

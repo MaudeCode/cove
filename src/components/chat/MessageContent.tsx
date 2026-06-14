@@ -7,9 +7,9 @@
 import { useRef, useEffect, useMemo } from "preact/hooks";
 import { renderMarkdown } from "@/lib/markdown";
 import { sanitizeHtml } from "@/lib/sanitize";
-import { BouncingDots } from "@/components/ui/BouncingDots";
 import { t } from "@/lib/i18n";
 import { debouncedSearchQuery } from "@/signals/chat";
+import { ThinkingStatus } from "./ThinkingStatus";
 
 interface MessageContentProps {
   content: string;
@@ -161,12 +161,7 @@ export function MessageContent({ content, isStreaming = false }: MessageContentP
   }, [html, query]);
 
   if (!content && isStreaming) {
-    return (
-      <span class="inline-flex items-center gap-2 text-[var(--color-text-muted)]">
-        {t("chat.thinking")}
-        <BouncingDots />
-      </span>
-    );
+    return <ThinkingStatus />;
   }
 
   return (

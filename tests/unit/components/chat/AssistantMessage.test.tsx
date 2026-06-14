@@ -110,10 +110,22 @@ describe("AssistantMessage", () => {
     expect(screen.getByLabelText("truncated:oversized")).toBeTruthy();
   });
 
-  test("renders streaming indicators for empty streaming messages", () => {
+  test("renders one accessible thinking label for empty streaming messages", () => {
     renderComponent(<AssistantMessage message={assistantMessage({})} isStreaming />);
 
-    expect(screen.getByText("chat.thinking")).toBeTruthy();
-    expect(screen.getAllByTestId("bouncing-dots")).toHaveLength(1);
+    const status = screen.getByRole("status", { name: "chat.thinking" });
+    expect(status.textContent).toBe("chat.thinking");
+    expect(status.querySelector(".cove-shimmer-text")?.textContent).toBe("chat.thinking");
+    expect(document.querySelector("[data-testid='bouncing-dots']")).toBeNull();
+  });
+
+  test("does not append a dot-only streaming indicator after content", () => {
+    renderComponent(
+      <AssistantMessage message={assistantMessage({ content: "Partial answer" })} isStreaming />,
+    );
+
+    expect(screen.getByTestId("message-content").textContent).toBe("Partial answer");
+    expect(screen.queryByRole("status", { name: "chat.thinking" })).toBeNull();
+    expect(document.querySelector("[data-testid='bouncing-dots']")).toBeNull();
   });
 });
