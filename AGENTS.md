@@ -55,18 +55,21 @@ Connects to OpenClaw gateway using its WebSocket protocol.
      id: "req_1",
      method: "connect",
      params: {
-       minProtocol: 3,
-       maxProtocol: 3,
-       client: {
-         id: "webchat-ui",      // Required: known client ID
-         displayName: "Cove",
-         version: "0.1.0",
-         platform: "macos",     // or windows/linux/ios/android/web
-         mode: "webchat"        // Required: webchat/cli/ui/backend/node
-       },
-       auth: {
-         token: "...",          // OR password, not both
-       }
+      minProtocol: 4,
+      maxProtocol: 4,
+      client: {
+        id: "openclaw-control-ui", // Required: known client ID
+        displayName: "Cove",
+        version: "0.1.0",
+        platform: "macos",     // or windows/linux/ios/android/web
+        mode: "ui"             // Required: webchat/cli/ui/backend/node
+      },
+      caps: ["tool-events"],
+      role: "operator",
+      scopes: ["operator.admin", "operator.read", "operator.write"],
+      auth: {
+        token: "...",          // OR password, not both
+      }
      }
    }
    ```
@@ -90,7 +93,7 @@ if (isConnected.value) { ... }
 ```
 
 **Valid Client IDs** (from OpenClaw protocol):
-- `webchat-ui` - Web chat interface (use this for Cove)
+- `webchat-ui` - Web chat interface
 - `openclaw-control-ui` - Control panel
 - `cli` - Command line
 - `openclaw-macos/ios/android` - Native apps
@@ -220,7 +223,7 @@ The gateway protocol is defined in OpenClaw source (https://github.com/openclaw/
 - `src/gateway/protocol/client-info.ts` - Valid client IDs/modes
 - `src/gateway/server/ws-connection/message-handler.ts` - Server handling
 
-Protocol version is currently **3**.
+Protocol version is currently **4**.
 
 ## Roadmap
 

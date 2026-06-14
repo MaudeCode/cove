@@ -84,6 +84,10 @@
 
 ## 🚀 Quick Start
 
+Cove targets OpenClaw gateway protocol v4. See the
+[OpenClaw compatibility checklist](./docs/guide/openclaw-compatibility.md) before updating the
+gateway version Cove is tested against.
+
 ### Option 1: npx (Easiest)
 
 ```bash

@@ -1,4 +1,5 @@
 import type { GatewayRequest } from "../../src/types/gateway";
+import type { ConnectParams } from "../../src/types/gateway-rpc";
 import {
   connectChallengeFrame,
   errorResponseFrame,
@@ -9,6 +10,7 @@ import {
 import { installMockWebSocket, type MockWebSocket } from "./websocket";
 
 type MockGatewayResult = unknown | ((request: GatewayRequest) => unknown | Promise<unknown>);
+const REQUIRED_OPERATOR_SCOPES = ["operator.admin", "operator.read", "operator.write"] as const;
 
 export interface MockGatewayRuntimeOptions {
   hello?: Parameters<typeof helloOkFrame>[0];
@@ -82,6 +84,16 @@ export function installMockGatewayRuntime(
 
     try {
       if (request.method === "connect") {
+        const connectError = validateConnectRequest(request.params);
+        if (connectError) {
+          socket.receive(
+            errorResponseFrame(request.id, {
+              code: "INVALID_CONNECT",
+              message: connectError,
+            }),
+          );
+          return;
+        }
         socket.receive(responseFrame(request.id, helloOkFrame(options.hello)));
         return;
       }
@@ -108,6 +120,36 @@ export function installMockGatewayRuntime(
       );
     }
   }
+}
+
+function validateConnectRequest(params: unknown): string | null {
+  if (!params || typeof params !== "object") return "connect params are required";
+  const connect = params as Partial<ConnectParams>;
+  if (connect.minProtocol !== 4 || connect.maxProtocol !== 4) {
+    return "connect protocol must be v4";
+  }
+  if (connect.client?.id !== "openclaw-control-ui") {
+    return "connect client id must be openclaw-control-ui";
+  }
+  if (connect.client?.mode !== "ui") {
+    return "connect client mode must be ui";
+  }
+  if (connect.role !== "operator") {
+    return "connect role must be operator";
+  }
+  for (const scope of REQUIRED_OPERATOR_SCOPES) {
+    if (!connect.scopes?.includes(scope)) {
+      return `connect scopes must include ${scope}`;
+    }
+  }
+  if (!connect.caps?.includes("tool-events")) {
+    return "connect caps must include tool-events";
+  }
+  const authModes = [connect.auth?.token, connect.auth?.password].filter(Boolean);
+  if (authModes.length !== 1) {
+    return "connect auth must include exactly one of token or password";
+  }
+  return null;
 }
 
 function getActiveSocket(socket: MockWebSocket | null): MockWebSocket {

@@ -58,6 +58,21 @@ describe("mock gateway runtime", () => {
       "health",
       "status",
     ]);
+    expect(runtime.requests()[0]).toMatchObject({
+      method: "connect",
+      params: {
+        minProtocol: 4,
+        maxProtocol: 4,
+        client: {
+          id: "openclaw-control-ui",
+          mode: "ui",
+        },
+        caps: expect.arrayContaining(["tool-events"]),
+        role: "operator",
+        scopes: expect.arrayContaining(["operator.admin", "operator.read", "operator.write"]),
+        auth: { token: "test-token" },
+      },
+    });
   });
 
   test("emits streamed gateway events", async () => {
@@ -116,5 +131,57 @@ describe("mock gateway runtime", () => {
       code: "METHOD_NOT_FOUND",
     });
     await expect(resultPromise).rejects.toBeInstanceOf(GatewayRpcError);
+  });
+
+  test("rejects connect requests with dual auth credentials", async () => {
+    runtime = installMockGatewayRuntime();
+    const socket = new WebSocket("ws://gateway.test");
+    const received: unknown[] = [];
+    socket.onmessage = (event) => {
+      received.push(JSON.parse(event.data));
+    };
+
+    await runtime.acceptConnection();
+    socket.send(
+      JSON.stringify({
+        type: "req",
+        id: "manual-connect",
+        method: "connect",
+        params: {
+          minProtocol: 4,
+          maxProtocol: 4,
+          client: {
+            id: "openclaw-control-ui",
+            displayName: "Cove",
+            version: "test",
+            platform: "macos",
+            mode: "ui",
+          },
+          caps: ["tool-events"],
+          role: "operator",
+          scopes: ["operator.admin", "operator.read", "operator.write"],
+          auth: { token: "test-token", password: "test-password" },
+        },
+      }),
+    );
+    await Promise.resolve();
+
+    const connectResponse = received.find(
+      (message) =>
+        typeof message === "object" &&
+        message !== null &&
+        "id" in message &&
+        message.id === "manual-connect",
+    );
+
+    expect(connectResponse).toEqual({
+      type: "res",
+      id: "manual-connect",
+      ok: false,
+      error: {
+        code: "INVALID_CONNECT",
+        message: "connect auth must include exactly one of token or password",
+      },
+    });
   });
 });

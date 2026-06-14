@@ -185,6 +185,11 @@ describe("gateway mock websocket harness", () => {
           auth: { token: "test-token" },
         },
       });
+      expect(connectRequest.params.minProtocol).toBe(connectRequest.params.maxProtocol);
+      expect(connectRequest.params.client.id).toBe("openclaw-control-ui");
+      expect(connectRequest.params.client.mode).toBe("ui");
+      expect(connectRequest.params.role).toBe("operator");
+      expect(connectRequest.params.caps).toContain("tool-events");
 
       socket.receive(responseFrame(connectRequest.id, helloOkFrame()));
 

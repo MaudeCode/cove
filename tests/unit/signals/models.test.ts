@@ -63,6 +63,22 @@ describe("model signals", () => {
     expect(modelsSignal.defaultModel.value).toBeNull();
   });
 
+  test("does not fall back to unscoped model catalogs when configured view is empty", async () => {
+    gatewayResponses.set("models.list", { models: [] });
+    gatewayResponses.set("status", {
+      sessions: { defaults: { model: "anthropic/claude-sonnet-4-5" } },
+    });
+
+    await modelsSignal.loadModels();
+
+    expect(gatewayCalls).toEqual([
+      { method: "models.list", params: { view: "configured" } },
+      { method: "status", params: {} },
+    ]);
+    expect(modelsSignal.models.value).toEqual([]);
+    expect(modelsSignal.defaultModel.value).toBe("anthropic/claude-sonnet-4-5");
+  });
+
   test("extracts the default model and groups models by provider", async () => {
     gatewayResponses.set("models.list", {
       models: [

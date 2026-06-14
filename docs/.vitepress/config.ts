@@ -32,6 +32,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Configuration', link: '/guide/configuration' },
+            { text: 'OpenClaw Compatibility', link: '/guide/openclaw-compatibility' },
             { text: 'Features', link: '/guide/features' },
             { text: 'Deployment', link: '/guide/deployment' },
           ],
