@@ -208,6 +208,37 @@ describe("Tooltip", () => {
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
+  test("cancels duplicate pending focus timers before blur", async () => {
+    renderComponent(
+      <TooltipProvider>
+        <Tooltip content="Duplicate focus tooltip" delay={75}>
+          <button type="button">Duplicate focus trigger</button>
+        </Tooltip>
+      </TooltipProvider>,
+    );
+    const trigger = screen.getByRole("button", { name: "Duplicate focus trigger" });
+    setElementRect(trigger.parentElement!, {
+      bottom: 120,
+      height: 20,
+      left: 100,
+      right: 140,
+      top: 100,
+      width: 40,
+    });
+
+    await act(async () => {
+      fireEvent.focus(trigger);
+      fireEvent.focusIn(trigger);
+      timers.advanceBy(30);
+      fireEvent.focusOut(trigger);
+      await flushPromises();
+      timers.advanceBy(75);
+      await flushPromises();
+    });
+
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+
   test("does not let a stale owner hide another owner's tooltip", async () => {
     renderComponent(
       <TooltipProvider>

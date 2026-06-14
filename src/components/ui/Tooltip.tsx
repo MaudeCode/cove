@@ -346,7 +346,13 @@ export function Tooltip({
   const showTooltip = useCallback(() => {
     if (isDisabled || !context) return;
 
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+
     timeoutRef.current = window.setTimeout(() => {
+      timeoutRef.current = null;
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
         context.show({
