@@ -110,6 +110,28 @@ describe("usage signals", () => {
     expect(gatewayCalls).toEqual(["usage.status", "usage.status"]);
   });
 
+  test("skips overlapping usage status fetches", async () => {
+    gateway.isConnected.value = true;
+    const firstFetch = deferred<{ updatedAt: number; providers: [] }>();
+    gatewayResponses.push(firstFetch.promise, { updatedAt: 2, providers: [] });
+    const usage = await importUsage();
+
+    usage.startUsagePolling();
+    await flushPromises();
+    timers.advanceBy(5 * 60 * 1000);
+    await flushPromises();
+
+    expect(gatewayCalls).toEqual(["usage.status"]);
+
+    firstFetch.resolve({ updatedAt: 1, providers: [] });
+    await flushPromises();
+    timers.advanceBy(5 * 60 * 1000);
+    await flushPromises();
+
+    expect(gatewayCalls).toEqual(["usage.status", "usage.status"]);
+    expect(storage.getUsageCache()?.updatedAt).toBe(2);
+  });
+
   test("restarting polling clears the previous interval", async () => {
     gateway.isConnected.value = true;
     gatewayResponses.push(
@@ -130,6 +152,39 @@ describe("usage signals", () => {
     expect(storage.getUsageCache()?.updatedAt).toBe(3);
   });
 
+  test("disconnect stops the active polling interval", async () => {
+    gateway.isConnected.value = true;
+    gatewayResponses.push({ updatedAt: 1, providers: [] }, { updatedAt: 2, providers: [] });
+    const usage = await importUsage();
+
+    usage.startUsagePolling();
+    await flushPromises();
+    gateway.isConnected.value = false;
+    await flushPromises();
+    gateway.isConnected.value = true;
+    timers.advanceBy(5 * 60 * 1000);
+    await flushPromises();
+
+    expect(gatewayCalls).toEqual(["usage.status"]);
+
+    usage.startUsagePolling();
+    await flushPromises();
+    expect(gatewayCalls).toEqual(["usage.status", "usage.status"]);
+  });
+
+  test("failed usage fetch preserves existing cache", async () => {
+    storage.setUsageCache({ updatedAt: 1, providers: [] });
+    gateway.isConnected.value = true;
+    gatewayResponses.push(new Error("rate limited"));
+    const usage = await importUsage();
+
+    usage.startUsagePolling();
+    await flushPromises();
+
+    expect(gatewayCalls).toEqual(["usage.status"]);
+    expect(storage.getUsageCache()?.updatedAt).toBe(1);
+  });
+
   test("does not fetch while disconnected", async () => {
     const usage = await importUsage();
 
@@ -148,4 +203,12 @@ async function importUsage() {
 async function flushPromises(): Promise<void> {
   await Promise.resolve();
   await Promise.resolve();
+}
+
+function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
 }

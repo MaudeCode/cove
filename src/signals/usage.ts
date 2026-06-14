@@ -92,6 +92,7 @@ async function fetchUsage(): Promise<void> {
     log.usage.debug("Skipping usage fetch - not connected");
     return;
   }
+  if (isLoadingUsage.value) return;
 
   isLoadingUsage.value = true;
   usageError.value = null;

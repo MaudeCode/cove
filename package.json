@@ -42,7 +42,7 @@
     "test:e2e": "playwright test",
     "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:coverage": "COVE_DIRECT_FIXTURE_COVERAGE=1 bun test --coverage tests/unit tests/integration && bun run test:coverage:fixtures",
-    "test:coverage:fixtures": "bun test --coverage ./tests/fixtures/app/app-shell-routing-inner.fixture.tsx ./tests/fixtures/layout/sidebar-nav-topbar-inner.fixture.tsx",
+    "test:coverage:fixtures": "bun test --coverage ./tests/fixtures/app/app-shell-routing-inner.fixture.tsx ./tests/fixtures/layout/sidebar-nav-topbar-inner.fixture.tsx && bun test --coverage ./tests/fixtures/views/usage-table-inner.fixture.tsx",
     "preview": "vite preview",
     "lint": "oxlint src/ tests/",
     "docs:dev": "vitepress dev docs",
@@ -116,7 +116,8 @@
     ],
     "ignoreFiles": [
       "tests/fixtures/app/app-shell-routing-inner.fixture.tsx",
-      "tests/fixtures/layout/sidebar-nav-topbar-inner.fixture.tsx"
+      "tests/fixtures/layout/sidebar-nav-topbar-inner.fixture.tsx",
+      "tests/fixtures/views/usage-table-inner.fixture.tsx"
     ]
   }
 }

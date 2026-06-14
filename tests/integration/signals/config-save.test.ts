@@ -51,6 +51,8 @@ mock.module("@/lib/session-utils", () => ({
 
 mock.module("@/lib/i18n", () => ({
   formatBytes: (value: number) => `${value} B`,
+  formatTimestamp: (value: Date | number) =>
+    `time:${value instanceof Date ? value.getTime() : value}`,
   formatTimestampCompact: (value: number) => String(value),
   formatTokens: (value: number) => String(value),
   t: (key: string) => key,
