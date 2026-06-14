@@ -249,23 +249,21 @@ describe("useCronJobs", () => {
     expect(sendCalls[0]).toEqual({
       method: "cron.add",
       params: {
-        job: {
-          name: "Daily summary",
-          description: undefined,
-          enabled: false,
-          schedule: { kind: "cron", expr: "0 9 * * *", tz: "UTC", staggerMs: 250 },
-          sessionTarget: "isolated",
-          wakeMode: "now",
-          payload: { kind: "agentTurn", message: "Send agent update", model: "claude-sonnet" },
-          delivery: { mode: "announce" },
-        },
+        name: "Daily summary",
+        description: undefined,
+        enabled: false,
+        schedule: { kind: "cron", expr: "0 9 * * *", tz: "UTC", staggerMs: 250 },
+        sessionTarget: "isolated",
+        wakeMode: "now",
+        payload: { kind: "agentTurn", message: "Send agent update", model: "claude-sonnet" },
+        delivery: { mode: "announce" },
       },
     });
     expect(sendCalls.map((call) => call.method)).toEqual(["cron.add", "cron.status", "cron.list"]);
     expect(hook.modal.modalMode.value).toBeNull();
   });
 
-  test("updates existing jobs with jobId and strict every/at schedules", async () => {
+  test("updates existing jobs with id and strict every/at schedules", async () => {
     const hook = renderCronHook();
     const job = cronJob({
       id: "job-edit",
@@ -286,7 +284,7 @@ describe("useCronJobs", () => {
     expect(sendCalls[0]).toEqual({
       method: "cron.update",
       params: {
-        jobId: "job-edit",
+        id: "job-edit",
         patch: {
           name: "Daily summary",
           description: "Summarize activity",
@@ -314,6 +312,18 @@ describe("useCronJobs", () => {
     });
   });
 
+  test("loads selected job runs with the stable id RPC payload", async () => {
+    const hook = renderCronHook();
+    const job = cronJob({ id: "job-runs" });
+
+    hook.actions.openJobModal("edit", job);
+
+    expect(sendCalls.at(-1)).toEqual({
+      method: "cron.runs",
+      params: { id: "job-runs", limit: 20, offset: 0, status: undefined },
+    });
+  });
+
   test("runs, removes, and toggles jobs with the expected cron RPCs and local state", async () => {
     const hook = renderCronHook();
     const job = cronJob({ id: "job-flow", enabled: true });
@@ -328,14 +338,14 @@ describe("useCronJobs", () => {
     await hook.actions.toggleJobEnabled(job);
     expect(sendCalls[0]).toEqual({
       method: "cron.update",
-      params: { jobId: "job-flow", patch: { enabled: false } },
+      params: { id: "job-flow", patch: { enabled: false } },
     });
     expect(hook.state.cronJobs.value[0].enabled).toBe(false);
 
     sendCalls.length = 0;
     await hook.actions.runJobNow(job);
     expect(sendCalls.map((call) => call.method)).toEqual(["cron.run", "cron.status", "cron.list"]);
-    expect(sendCalls[0].params).toEqual({ jobId: "job-flow", mode: "force" });
+    expect(sendCalls[0].params).toEqual({ id: "job-flow", mode: "force" });
     expect(hook.modal.isRunning.value).toBe(false);
 
     sendCalls.length = 0;
@@ -343,7 +353,7 @@ describe("useCronJobs", () => {
     await hook.actions.deleteJob();
     expect(sendCalls.at(-1)).toEqual({
       method: "cron.remove",
-      params: { jobId: "job-flow" },
+      params: { id: "job-flow" },
     });
     expect(hook.state.cronJobs.value).toEqual([]);
     expect(hook.modal.modalMode.value).toBeNull();

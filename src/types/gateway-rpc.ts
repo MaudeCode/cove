@@ -161,6 +161,8 @@ interface ConfigAgentSection {
   model?: ConfigModel;
 }
 
+type CronIdOrJobIdParams = { id: string; jobId?: string } | { id?: string; jobId: string };
+
 export interface GatewayRpcMap {
   "agent.identity.get": {
     params: { sessionKey?: string };
@@ -245,7 +247,7 @@ export interface GatewayRpcMap {
     result: ConfigSchemaResponse;
   };
   "cron.add": {
-    params: { job: CronJobUpsert };
+    params: CronJobUpsert;
     result: { ok?: boolean; jobId?: string };
   };
   "cron.list": {
@@ -263,11 +265,11 @@ export interface GatewayRpcMap {
     result: CronListResult;
   };
   "cron.remove": {
-    params: { jobId: string };
+    params: CronIdOrJobIdParams;
     result: { ok?: boolean };
   };
   "cron.run": {
-    params: { jobId: string; mode?: string };
+    params: CronIdOrJobIdParams & { mode?: string };
     result: { ran?: boolean; runId?: string };
   };
   "cron.runs": {
@@ -291,7 +293,7 @@ export interface GatewayRpcMap {
     result: CronStatusResult;
   };
   "cron.update": {
-    params: { jobId: string; patch: Partial<CronJobUpsert> };
+    params: CronIdOrJobIdParams & { patch: Partial<CronJobUpsert> };
     result: { ok?: boolean };
   };
   "device.pair.approve": {

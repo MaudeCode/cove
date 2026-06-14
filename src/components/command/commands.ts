@@ -253,7 +253,7 @@ const cronCommands: Command[] = [
         description: job.enabled ? t("common.enabled") : t("common.disabled"),
         action: async () => {
           try {
-            await send("cron.run", { jobId: job.id });
+            await send("cron.run", { id: job.id });
           } catch {
             // Failed to run job
           }
@@ -280,7 +280,7 @@ const cronCommands: Command[] = [
         isActive: job.enabled,
         action: async () => {
           try {
-            await send("cron.update", { jobId: job.id, patch: { enabled: !job.enabled } });
+            await send("cron.update", { id: job.id, patch: { enabled: !job.enabled } });
           } catch {
             // Failed to toggle job
           }

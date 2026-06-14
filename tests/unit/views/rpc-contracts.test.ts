@@ -67,6 +67,25 @@ describe("direct RPC contracts", () => {
     );
   });
 
+  test("command palette cron actions use stable id RPC payloads", () => {
+    const cronCalls = sendCalls("src/components/command/commands.ts").filter(
+      (call) => call.method === "cron.run" || call.method === "cron.update",
+    );
+
+    expect(cronCalls).toHaveLength(2);
+    expect(cronCalls).toEqual([
+      {
+        method: "cron.run",
+        payloadKeys: ["id"],
+      },
+      {
+        method: "cron.update",
+        payloadKeys: ["id", "patch"],
+      },
+    ]);
+    expect(cronCalls.some((call) => call.payloadKeys.includes("jobId"))).toBe(false);
+  });
+
   test("agent tool and skill saves route through the config.apply helper", () => {
     expect(readFileSync("src/views/agents/agents-tools-state.ts", "utf8")).toContain(
       "applyGatewayConfigWithSend",
