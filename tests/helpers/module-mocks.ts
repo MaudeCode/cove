@@ -314,14 +314,103 @@ function isQueuedGatewayResponses(entry: unknown): entry is QueuedGatewayRespons
 }
 
 interface QueryParamMockOptions {
+  initFromParam?: boolean;
   initialized?: Signal<boolean> | { value: boolean };
   param?: Signal<string | null> | { value: string | null };
   paramSet?: Signal<Set<unknown>> | { value: Set<unknown> };
+  syncUrl?: boolean;
 }
 
 export function createQueryParamMock(options: QueryParamMockOptions = {}) {
+  const params = new Map<string, Signal<string | null>>();
+  const paramSets = new Map<string, Signal<Set<unknown>>>();
+  const initializedByKey = new Map<string, Signal<boolean>>();
+  let popstateListenerActive = false;
+
+  const syncFromUrl = () => {
+    if (!options.syncUrl) return;
+    const searchParams = new URLSearchParams(window.location.search);
+    for (const [key, param] of params) {
+      param.value = searchParams.get(key);
+    }
+  };
+
+  const setupPopstateListener = () => {
+    if (!options.syncUrl || popstateListenerActive) return;
+    popstateListenerActive = true;
+    window.addEventListener("popstate", syncFromUrl);
+  };
+
+  const updateUrl = (key: string, value: string | null) => {
+    if (!options.syncUrl) return;
+    const url = new URL(window.location.href);
+    if (value === null || value === "") {
+      url.searchParams.delete(key);
+    } else {
+      url.searchParams.set(key, value);
+    }
+    window.history.replaceState({}, "", url.toString());
+  };
+
+  const getParam = (key: string): Signal<string | null> => {
+    if (options.param) return options.param as Signal<string | null>;
+    let param = params.get(key);
+    if (!param) {
+      const initialValue = options.syncUrl
+        ? new URLSearchParams(window.location.search).get(key)
+        : null;
+      param = signal<string | null>(initialValue);
+      params.set(key, param);
+    }
+    return param;
+  };
+
+  const getParamSet = (key: string): Signal<Set<unknown>> => {
+    if (options.paramSet) return options.paramSet as Signal<Set<unknown>>;
+    let paramSet = paramSets.get(key);
+    if (!paramSet) {
+      const rawValue = options.syncUrl
+        ? new URLSearchParams(window.location.search).get(key)
+        : null;
+      const initialValue = rawValue
+        ? new Set<unknown>(rawValue.split(",").filter((item) => item !== ""))
+        : new Set<unknown>();
+      paramSet = signal(initialValue);
+      paramSets.set(key, paramSet);
+    }
+    return paramSet;
+  };
+
+  const getInitialized = (key: string, ready = true): Signal<boolean> => {
+    if (options.initialized) return options.initialized as Signal<boolean>;
+    let initialized = initializedByKey.get(key);
+    if (!initialized) {
+      initialized = signal(ready);
+      initializedByKey.set(key, initialized);
+    } else {
+      initialized.value = ready;
+    }
+    return initialized;
+  };
+
   return {
-    pushQueryState: () => undefined,
+    queryParam: getParam,
+    queryParamSet: getParamSet,
+    queryParamSetInitialized: getInitialized,
+    pushQueryState: () => {
+      if (options.syncUrl) {
+        window.history.pushState({}, "", window.location.href);
+      }
+    },
+    reset: () => {
+      if (popstateListenerActive) {
+        window.removeEventListener("popstate", syncFromUrl);
+        popstateListenerActive = false;
+      }
+      params.clear();
+      paramSets.clear();
+      initializedByKey.clear();
+    },
     toggleSetValue: (target: { value: Set<unknown> }, value: unknown) => {
       const next = new Set(target.value);
       const wasPresent = next.has(value);
@@ -333,19 +422,49 @@ export function createQueryParamMock(options: QueryParamMockOptions = {}) {
       target.value = next;
       return !wasPresent;
     },
-    useInitFromParam: () => undefined,
-    useQueryParam: () => [
-      options.param ?? signal<string | null>(null),
-      () => undefined,
-      options.initialized ?? signal(true),
+    useInitFromParam: <T>(
+      param: { value: string | null },
+      target: { value: T },
+      decode: (value: string) => T,
+    ) => {
+      if (options.initFromParam && param.value != null) {
+        target.value = decode(param.value);
+      }
+    },
+    useQueryParam: (key = "default", hookOptions?: { ready?: boolean }) => {
+      setupPopstateListener();
+      return [
+        getParam(key),
+        (next: string | null) => {
+          getParam(key).value = next;
+          updateUrl(key, next);
+        },
+        getInitialized(key, hookOptions?.ready ?? true),
+      ];
+    },
+    useQueryParamSet: (key = "default", hookOptions?: { ready?: boolean }) => [
+      getParamSet(key),
+      (next: Set<unknown>) => {
+        getParamSet(key).value = new Set(next);
+        const values = Array.from(next).map(String);
+        updateUrl(key, values.length > 0 ? values.join(",") : null);
+      },
+      getInitialized(key, hookOptions?.ready ?? true),
     ],
-    useQueryParamSet: () => [
-      options.paramSet ?? signal(new Set<unknown>()),
-      () => undefined,
-      options.initialized ?? signal(true),
-    ],
-    useSyncFilterToParam: () => undefined,
-    useSyncToParam: () => undefined,
+    useSyncFilterToParam: <T extends string>(
+      source: { value: T },
+      setParam: (value: string | null) => void,
+      defaultValue: T,
+    ) => {
+      if (options.syncUrl) {
+        setParam(source.value === defaultValue ? null : source.value);
+      }
+    },
+    useSyncToParam: (source: { value: string }, setParam: (value: string | null) => void) => {
+      if (options.syncUrl) {
+        setParam(source.value || null);
+      }
+    },
   };
 }
 

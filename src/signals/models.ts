@@ -12,6 +12,8 @@ import { send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import type { ModelChoice } from "@/types/models";
 
+const STATUS_UNAVAILABLE = Symbol("status unavailable");
+
 // ============================================
 // State
 // ============================================
@@ -62,17 +64,23 @@ export async function loadModels(): Promise<void> {
     // Load models list and default model in parallel
     const [modelsResult, statusResult] = await Promise.all([
       send("models.list", { view: "configured" }),
-      send("status", {}).catch(() => null), // Don't fail if status unavailable
+      send("status", {}).catch(() => STATUS_UNAVAILABLE), // Don't fail if status unavailable
     ]);
 
     models.value = modelsResult.models ?? [];
     log.ui.debug("Loaded models:", models.value.length);
 
     // Extract default model from status
-    const defaultModelValue = statusResult?.sessions?.defaults?.model;
-    if (defaultModelValue) {
-      defaultModel.value = defaultModelValue;
-      log.ui.debug("Default model:", defaultModelValue);
+    if (statusResult !== STATUS_UNAVAILABLE) {
+      const status =
+        statusResult && typeof statusResult === "object"
+          ? (statusResult as { sessions?: { defaults?: { model?: unknown } } })
+          : null;
+      const defaultModelValue = status?.sessions?.defaults?.model;
+      defaultModel.value = typeof defaultModelValue === "string" ? defaultModelValue : null;
+      if (defaultModel.value) {
+        log.ui.debug("Default model:", defaultModel.value);
+      }
     }
   } catch (err) {
     modelsError.value = err instanceof Error ? err.message : String(err);

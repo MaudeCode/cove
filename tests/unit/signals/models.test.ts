@@ -87,6 +87,53 @@ describe("model signals", () => {
     ]);
   });
 
+  test("clears a stale default model when status later omits defaults", async () => {
+    gatewayResponses.set("models.list", {
+      models: [{ id: "anthropic/claude-opus-4-5", name: "Claude Opus", provider: "anthropic" }],
+    });
+    gatewayResponses.set("status", {
+      sessions: { defaults: { model: "anthropic/claude-opus-4-5" } },
+    });
+
+    await modelsSignal.loadModels();
+    expect(modelsSignal.defaultModel.value).toBe("anthropic/claude-opus-4-5");
+
+    gatewayResponses.set("status", { sessions: { defaults: {} } });
+
+    await modelsSignal.loadModels();
+    expect(modelsSignal.defaultModel.value).toBeNull();
+
+    gatewayResponses.set("status", null);
+    modelsSignal.defaultModel.value = "anthropic/claude-opus-4-5";
+
+    await modelsSignal.loadModels();
+    expect(modelsSignal.defaultModel.value).toBeNull();
+
+    gatewayResponses.set("status", new Error("status unavailable"));
+    modelsSignal.defaultModel.value = "anthropic/claude-opus-4-5";
+
+    await modelsSignal.loadModels();
+    expect(modelsSignal.defaultModel.value).toBe("anthropic/claude-opus-4-5");
+  });
+
+  test("leaves prior models intact when a refresh fails", async () => {
+    modelsSignal.models.value = [
+      { id: "anthropic/claude-opus-4-5", name: "Claude Opus", provider: "anthropic" },
+    ];
+    modelsSignal.defaultModel.value = "anthropic/claude-opus-4-5";
+    gatewayResponses.set("models.list", new Error("catalog unavailable"));
+    gatewayResponses.set("status", {
+      sessions: { defaults: { model: "anthropic/claude-sonnet-4-5" } },
+    });
+
+    await modelsSignal.loadModels();
+
+    expect(modelsSignal.models.value.map((model) => model.id)).toEqual([
+      "anthropic/claude-opus-4-5",
+    ]);
+    expect(modelsSignal.defaultModel.value).toBe("anthropic/claude-opus-4-5");
+  });
+
   test("uses catalog names and strips common provider prefixes for display fallback", () => {
     modelsSignal.models.value = [
       { id: "anthropic/claude-opus-4-5", name: "Claude Opus", provider: "anthropic" },

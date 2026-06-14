@@ -221,6 +221,7 @@ export function MockTextarea({
 }
 
 export function MockToggle({
+  "aria-label": ariaLabel,
   checked,
   children,
   disabled,
@@ -236,7 +237,7 @@ export function MockToggle({
   return (
     <button
       {...props}
-      aria-label={label}
+      aria-label={ariaLabel ?? label}
       aria-checked={checked}
       disabled={disabled}
       onClick={() => onChange(!checked)}

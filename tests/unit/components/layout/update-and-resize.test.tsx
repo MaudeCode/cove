@@ -69,7 +69,7 @@ describe("ResizeHandle and UpdateBanner", () => {
 
     renderComponent(<UpdateBanner />);
 
-    const releaseLink = screen.getByRole("link");
+    const releaseLink = screen.getByRole("link", { name: "update.viewRelease" });
     expect(releaseLink.getAttribute("href")).toBe(
       "https://github.com/openclaw/openclaw/releases/tag/v2026.3.2",
     );
@@ -92,9 +92,25 @@ describe("ResizeHandle and UpdateBanner", () => {
 
     renderComponent(<UpdateBanner />);
 
-    expect(screen.getByRole("link").getAttribute("href")).toBe(
+    expect(screen.getByRole("link", { name: "update.viewRelease" }).getAttribute("href")).toBe(
       "https://github.com/openclaw/openclaw/releases/tag/v2026.4.2",
     );
+  });
+
+  test("UpdateBanner stays hidden without an update or after a pre-dismissed update", () => {
+    renderComponent(<UpdateBanner />);
+    expect(screen.queryByRole("alert")).toBeNull();
+
+    updateSignals.updateAvailable.value = {
+      channel: "stable",
+      currentVersion: "2026.5.1",
+      latestVersion: "2026.5.2",
+    };
+    updateSignals.dismissedUpdateVersion.value = "2026.5.2";
+
+    renderComponent(<UpdateBanner />);
+
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 
   test("UpdateBanner dismisses after upward mobile swipe but snaps back for short swipes", async () => {
@@ -124,6 +140,40 @@ describe("ResizeHandle and UpdateBanner", () => {
 
       expect(updateSignals.dismissedUpdateVersion.value).toBe("2026.5.2");
       await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
+    } finally {
+      timers.uninstall();
+    }
+  });
+
+  test("UpdateBanner ignores downward swipes and touch cancellation resets the gesture", async () => {
+    const timers = installFakeTimers();
+    try {
+      updateSignals.updateAvailable.value = {
+        channel: "stable",
+        currentVersion: "2026.6.1",
+        latestVersion: "2026.6.2",
+      };
+
+      renderComponent(<UpdateBanner />);
+
+      const banner = screen.getByRole("alert");
+      banner.dispatchEvent(createTouchEvent("touchstart", 120));
+      banner.dispatchEvent(createTouchEvent("touchmove", 170));
+      banner.dispatchEvent(createTouchEvent("touchend", 170));
+      timers.advanceBy(150);
+
+      expect(updateSignals.dismissedUpdateVersion.value).toBeNull();
+      expect(screen.getByRole("alert")).toBeTruthy();
+      expect((banner as HTMLElement).style.transform).toBe("translateY(0px)");
+
+      banner.dispatchEvent(createTouchEvent("touchstart", 200));
+      banner.dispatchEvent(createTouchEvent("touchmove", 100));
+      banner.dispatchEvent(createTouchEvent("touchcancel", 100));
+      timers.advanceBy(150);
+
+      expect(updateSignals.dismissedUpdateVersion.value).toBeNull();
+      expect(screen.getByRole("alert")).toBeTruthy();
+      expect((banner as HTMLElement).style.transform).toBe("translateY(0px)");
     } finally {
       timers.uninstall();
     }

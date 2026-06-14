@@ -278,7 +278,7 @@ function SkillCard({ skill }: { skill: ClawHubSkill }) {
   );
 }
 
-function DetailModal() {
+function DetailModal({ onClose }: { onClose: () => void }) {
   const skill = detailModal.value;
   if (!skill) return null;
 
@@ -290,18 +290,14 @@ function DetailModal() {
       <Button
         variant="secondary"
         icon={<ExternalLink class="w-4 h-4" />}
-        onClick={() => window.open(`https://clawhub.ai/skills/${skill.slug}`, "_blank")}
+        onClick={() =>
+          window.open(`https://clawhub.ai/skills/${encodeURIComponent(skill.slug)}`, "_blank")
+        }
       >
         ClawHub
       </Button>
       <div class="flex gap-3">
-        <Button
-          variant="secondary"
-          onClick={() => {
-            detailModal.value = null;
-          }}
-          disabled={isInstalling.value}
-        >
+        <Button variant="secondary" onClick={onClose} disabled={isInstalling.value}>
           {t("actions.cancel")}
         </Button>
         <Button
@@ -317,15 +313,7 @@ function DetailModal() {
   );
 
   return (
-    <Modal
-      open={true}
-      onClose={() => {
-        detailModal.value = null;
-      }}
-      title={skill.displayName}
-      footer={footerContent}
-      size="lg"
-    >
+    <Modal open={true} onClose={onClose} title={skill.displayName} footer={footerContent} size="lg">
       <div class="space-y-5">
         {/* Summary */}
         {skill.summary && <p class="text-[var(--color-text-muted)]">{skill.summary}</p>}
@@ -424,6 +412,12 @@ export function ClawHubBrowser() {
   const [searchParam, setSearchParam] = useQueryParam("hub_q");
   const [sortParam, setSortParam] = useQueryParam("hub_sort");
   const [skillParam, setSkillParam] = useQueryParam("hub_skill");
+  const hasOpenedDetailModal = useRef(false);
+  const closeDetailModal = () => {
+    hasOpenedDetailModal.current = false;
+    detailModal.value = null;
+    setSkillParam(null);
+  };
 
   // Init from URL
   useInitFromParam(searchParam, searchQuery, (s) => s);
@@ -435,9 +429,17 @@ export function ClawHubBrowser() {
 
   // Sync skill param → modal
   useEffect(() => {
-    if (skillParam.value && skills.value.length > 0) {
+    if (!skillParam.value) {
+      if (detailModal.value && hasOpenedDetailModal.current) {
+        hasOpenedDetailModal.current = false;
+        detailModal.value = null;
+      }
+      return;
+    }
+
+    if (skills.value.length > 0) {
       const skill = skills.value.find((s) => s.slug === skillParam.value);
-      if (skill && !detailModal.value) {
+      if (skill && detailModal.value?.slug !== skill.slug) {
         detailModal.value = skill;
       }
     }
@@ -445,7 +447,13 @@ export function ClawHubBrowser() {
 
   // Sync modal → skill param
   useEffect(() => {
-    setSkillParam(detailModal.value?.slug ?? null);
+    if (detailModal.value) {
+      hasOpenedDetailModal.current = true;
+      setSkillParam(detailModal.value.slug);
+    } else if (hasOpenedDetailModal.current) {
+      hasOpenedDetailModal.current = false;
+      setSkillParam(null);
+    }
   }, [detailModal.value]);
 
   // Initial load (trending only - skills loaded by debounce effect)
@@ -562,7 +570,7 @@ export function ClawHubBrowser() {
         </div>
       )}
 
-      <DetailModal />
+      <DetailModal onClose={closeDetailModal} />
     </div>
   );
 }

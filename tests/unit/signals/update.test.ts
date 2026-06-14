@@ -67,6 +67,33 @@ describe("update signals", () => {
     expect(update.isUpdateDismissed()).toBe(false);
   });
 
+  test("normalizes malformed update payloads to no update", async () => {
+    const update = await importUpdate();
+
+    update.initUpdateSubscription();
+    gateway.subscriptions[0]({
+      event: "update.available",
+      payload: {
+        updateAvailable: {
+          currentVersion: "2026.3.1",
+          latestVersion: "2026.3.2",
+          channel: "stable",
+        },
+      },
+    });
+
+    expect(update.updateAvailable.value?.latestVersion).toBe("2026.3.2");
+
+    gateway.subscriptions[0]({ event: "update.available", payload: {} });
+    expect(update.updateAvailable.value).toBeNull();
+
+    gateway.subscriptions[0]({
+      event: "update.available",
+      payload: { updateAvailable: { latestVersion: "2026.3.3" } },
+    });
+    expect(update.updateAvailable.value).toBeNull();
+  });
+
   test("persists dismissed update versions and reloads dismissal state", async () => {
     let update = await importUpdate();
     update.updateAvailable.value = {

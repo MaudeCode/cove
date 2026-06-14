@@ -23,6 +23,17 @@ export interface UpdateAvailable {
   channel: string;
 }
 
+function isUpdateAvailable(value: unknown): value is UpdateAvailable {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Partial<Record<keyof UpdateAvailable, unknown>>;
+  return (
+    typeof candidate.currentVersion === "string" &&
+    typeof candidate.latestVersion === "string" &&
+    typeof candidate.channel === "string"
+  );
+}
+
 // ============================================
 // State
 // ============================================
@@ -47,8 +58,10 @@ export function initUpdateSubscription(): void {
 
   subscribe((event) => {
     if (event.event === "update.available" && event.payload) {
-      const payload = event.payload as { updateAvailable: UpdateAvailable | null };
-      updateAvailable.value = payload.updateAvailable;
+      const payload = event.payload as { updateAvailable?: unknown };
+      updateAvailable.value = isUpdateAvailable(payload.updateAvailable)
+        ? payload.updateAvailable
+        : null;
     }
   });
 }
