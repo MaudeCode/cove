@@ -6,6 +6,7 @@ type GatewayEventHandler = (event: { event: string; payload?: unknown }) => void
 type NamedGatewayHandler = (payload: unknown) => void;
 
 interface GatewayAliasMockState {
+  capabilities: Signal<string[]>;
   connectedAt: Signal<number | null>;
   connect: (params: unknown) => Promise<unknown>;
   connectionState: Signal<string>;
@@ -28,6 +29,7 @@ interface GatewayAliasMockState {
 }
 
 const state: GatewayAliasMockState = {
+  capabilities: signal<string[]>([]),
   connectedAt: signal<number | null>(1_000),
   connect: async () => undefined,
   connectionState: signal("connected"),
@@ -95,6 +97,17 @@ export function installGatewayAliasMock(): GatewayAliasMockState {
         },
         tickIntervalMs: state.tickIntervalMs,
       }),
+      isGatewayMethodAdvertised: (method: string) =>
+        state.capabilities.value.length > 0 ? state.capabilities.value.includes(method) : undefined,
+      isUnknownGatewayMethodError: (err: unknown, method: string) => {
+        if (!(err instanceof Error)) return false;
+        const code = (err as { code?: string }).code;
+        const message = err.message.toLowerCase();
+        return (
+          code === "METHOD_NOT_FOUND" ||
+          (message.includes("unknown method") && message.includes(method.toLowerCase()))
+        );
+      },
     }));
   }
 
@@ -102,6 +115,7 @@ export function installGatewayAliasMock(): GatewayAliasMockState {
 }
 
 export function resetGatewayAliasMock(): GatewayAliasMockState {
+  state.capabilities.value = [];
   state.connectedAt.value = 1_000;
   state.connect = async () => undefined;
   state.connectionState.value = "connected";

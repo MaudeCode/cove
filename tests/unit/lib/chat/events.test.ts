@@ -19,10 +19,19 @@ const namedHandlers = new Map<string, NamedHandler>();
 const gatewayHandlers: GatewayEventHandler[] = [];
 const isConnected = signal(true);
 const mainSessionKey = signal<string | null>("main");
+const capabilities = signal(["sessions.messages.subscribe", "sessions.messages.unsubscribe"]);
 const sessions = signal([]);
+const activeSessionKey = signal<string | null>(null);
+const effectiveSessionKey = signal<string | null>(null);
+const gatewayCalls: Array<{ method: string; params: unknown }> = [];
 const gatewayHarness = ((
   globalThis as { __coveGatewayHarness?: GatewayHarness }
 ).__coveGatewayHarness ??= {});
+
+const sendMock = async (method: string, params?: unknown) => {
+  gatewayCalls.push({ method, params });
+  return gatewayHarness.send?.(method, params) ?? { messages: [] };
+};
 
 const constants = await import("../../../../src/lib/constants");
 const debouncedSignal = await import("../../../../src/lib/debounced-signal");
@@ -35,17 +44,15 @@ const utils = await import("../../../../src/lib/utils");
 
 mock.module("@/lib/gateway", () => ({
   ...createGatewayMock({
+    capabilities,
     isConnected,
     mainSessionKey,
-    send: async (method: string, params?: unknown) =>
-      gatewayHarness.send?.(method, params) ?? { messages: [] },
+    send: sendMock,
   }),
   on: (event: string, handler: NamedHandler) => {
     namedHandlers.set(event, handler);
     return () => namedHandlers.delete(event);
   },
-  send: async (method: string, params?: unknown) =>
-    gatewayHarness.send?.(method, params) ?? { messages: [] },
   subscribe: (handler: GatewayEventHandler) => {
     gatewayHandlers.push(handler);
     return () => {
@@ -81,11 +88,17 @@ mock.module("@/lib/session-utils", () => sessionUtils);
 mock.module("@/types/chat", () => typesChat);
 mock.module("@/signals/sessions", () => ({
   ...createSessionSignalsMock({ isForActiveSession: () => activeSessionMatches, sessions }),
+  activeSessionKey,
+  effectiveSessionKey,
   isForActiveSession: () => activeSessionMatches,
 }));
 
 const chat = await import("../../../../src/signals/chat");
 mock.module("@/signals/chat", () => chat);
+const modelSignals = await import("../../../../src/signals/models");
+mock.module("@/signals/models", () => modelSignals);
+const { consumeResetRun, registerResetRun } =
+  await import("../../../../src/lib/chat/reset-reconciliation");
 const { subscribeToChatEvents, unsubscribeFromChatEvents } =
   await import("../../../../src/lib/chat/events");
 
@@ -112,6 +125,12 @@ function emitGatewayEvent(event: string, payload: unknown, seq?: number): void {
   }
 }
 
+async function flushGatewayTasks(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
 describe("chat event handling", () => {
   let timers: FakeTimers;
   let restoreStorage: (() => void) | undefined;
@@ -120,6 +139,12 @@ describe("chat event handling", () => {
     restoreStorage = installStorageMocks();
     timers = installFakeTimers(1_700_000_000_000);
     activeSessionMatches = true;
+    isConnected.value = true;
+    activeSessionKey.value = null;
+    effectiveSessionKey.value = null;
+    capabilities.value = ["sessions.messages.subscribe", "sessions.messages.unsubscribe"];
+    gatewayCalls.length = 0;
+    gatewayHarness.send = undefined;
     namedHandlers.clear();
     gatewayHandlers.length = 0;
     unsubscribeFromChatEvents();
@@ -135,6 +160,7 @@ describe("chat event handling", () => {
 
   afterEach(() => {
     unsubscribeFromChatEvents();
+    consumeResetRun("reset-run");
     timers.uninstall();
     restoreStorage?.();
   });
@@ -152,6 +178,300 @@ describe("chat event handling", () => {
       content: "hello",
       status: "streaming",
     });
+  });
+
+  test("subscribes to the selected active-session message stream", async () => {
+    unsubscribeFromChatEvents();
+    effectiveSessionKey.value = "agent:main:main";
+
+    subscribeToChatEvents();
+    await Promise.resolve();
+
+    expect(gatewayCalls).toContainEqual({
+      method: "sessions.messages.subscribe",
+      params: { key: "agent:main:main" },
+    });
+  });
+
+  test("switches selected-session message streams when the active session changes", async () => {
+    unsubscribeFromChatEvents();
+    effectiveSessionKey.value = "agent:main:first";
+    subscribeToChatEvents();
+    await Promise.resolve();
+    gatewayCalls.length = 0;
+
+    effectiveSessionKey.value = "agent:main:second";
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.messages.unsubscribe",
+        params: { key: "agent:main:first" },
+      },
+      {
+        method: "sessions.messages.subscribe",
+        params: { key: "agent:main:second" },
+      },
+    ]);
+  });
+
+  test("subscribes to the next selected-session stream when previous unsubscribe fails", async () => {
+    unsubscribeFromChatEvents();
+    effectiveSessionKey.value = "agent:main:first";
+    subscribeToChatEvents();
+    await Promise.resolve();
+    gatewayCalls.length = 0;
+
+    gatewayHarness.send = async (method: string, params?: unknown) => {
+      if (method === "sessions.messages.unsubscribe") {
+        throw new Error("unsubscribe timed out");
+      }
+      if (method === "sessions.messages.subscribe") {
+        return { key: (params as { key: string }).key };
+      }
+      return { messages: [] };
+    };
+
+    effectiveSessionKey.value = "agent:main:second";
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.messages.unsubscribe",
+        params: { key: "agent:main:first" },
+      },
+      {
+        method: "sessions.messages.subscribe",
+        params: { key: "agent:main:second" },
+      },
+    ]);
+  });
+
+  test("uses returned selected-session subscription keys for switch and cleanup unsubscribe", async () => {
+    unsubscribeFromChatEvents();
+    gatewayHarness.send = async (method: string, params?: unknown) => {
+      if (method === "sessions.messages.subscribe") {
+        return { key: `canonical:${(params as { key: string }).key}` };
+      }
+      return { messages: [] };
+    };
+
+    effectiveSessionKey.value = "agent:main:first";
+    subscribeToChatEvents();
+    await flushGatewayTasks();
+    gatewayCalls.length = 0;
+
+    effectiveSessionKey.value = "agent:main:second";
+    await flushGatewayTasks();
+
+    expect(gatewayCalls[0]).toEqual({
+      method: "sessions.messages.unsubscribe",
+      params: { key: "canonical:agent:main:first" },
+    });
+
+    gatewayCalls.length = 0;
+    unsubscribeFromChatEvents();
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.messages.unsubscribe",
+        params: { key: "canonical:agent:main:second" },
+      },
+    ]);
+  });
+
+  test("does not let a stale reconnect subscribe cleanup unsubscribe the current stream", async () => {
+    unsubscribeFromChatEvents();
+    effectiveSessionKey.value = "agent:main:main";
+
+    let subscribeCount = 0;
+    let resolveFirstSubscribe: ((value: unknown) => void) | undefined;
+    let resolveSecondSubscribe: ((value: unknown) => void) | undefined;
+    gatewayHarness.send = (method: string) => {
+      if (method !== "sessions.messages.subscribe") {
+        return { messages: [] };
+      }
+      subscribeCount += 1;
+      return new Promise((resolve) => {
+        if (subscribeCount === 1) {
+          resolveFirstSubscribe = resolve;
+        } else {
+          resolveSecondSubscribe = resolve;
+        }
+      });
+    };
+
+    subscribeToChatEvents();
+    await Promise.resolve();
+
+    isConnected.value = false;
+    await Promise.resolve();
+    isConnected.value = true;
+    await Promise.resolve();
+
+    resolveSecondSubscribe?.({ key: "agent:main:main" });
+    await Promise.resolve();
+    gatewayCalls.length = 0;
+
+    resolveFirstSubscribe?.({ key: "agent:main:main" });
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([]);
+  });
+
+  test("unsubscribes the selected-session message stream on cleanup", async () => {
+    unsubscribeFromChatEvents();
+    effectiveSessionKey.value = "agent:main:main";
+    subscribeToChatEvents();
+    await Promise.resolve();
+    gatewayCalls.length = 0;
+
+    unsubscribeFromChatEvents();
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.messages.unsubscribe",
+        params: { key: "agent:main:main" },
+      },
+    ]);
+  });
+
+  test("continues chat event setup when selected-session message subscription is unavailable", async () => {
+    unsubscribeFromChatEvents();
+    effectiveSessionKey.value = "agent:main:main";
+    capabilities.value = ["chat.history"];
+
+    subscribeToChatEvents();
+    await Promise.resolve();
+
+    expect(namedHandlers.has("chat")).toBe(true);
+    expect(namedHandlers.has("agent")).toBe(true);
+    expect(gatewayHandlers).toHaveLength(1);
+    expect(gatewayCalls).not.toContainEqual({
+      method: "sessions.messages.subscribe",
+      params: { key: "agent:main:main" },
+    });
+  });
+
+  test("reloads active-session history when a subscribed session message arrives", async () => {
+    effectiveSessionKey.value = "agent:main:main";
+    capabilities.value = [
+      "chat.startup",
+      "sessions.messages.subscribe",
+      "sessions.messages.unsubscribe",
+    ];
+    gatewayCalls.length = 0;
+
+    emitGatewayEvent("session.message", { sessionKey: "agent:main:main" }, 7);
+    timers.advanceBy(100);
+    await Promise.resolve();
+
+    expect(gatewayCalls).toContainEqual({
+      method: "chat.startup",
+      params: { sessionKey: "agent:main:main", limit: 200 },
+    });
+  });
+
+  test("ignores inactive-session message events without loading history", async () => {
+    effectiveSessionKey.value = "agent:main:main";
+    activeSessionMatches = false;
+    capabilities.value = [
+      "chat.startup",
+      "sessions.messages.subscribe",
+      "sessions.messages.unsubscribe",
+    ];
+    gatewayCalls.length = 0;
+
+    emitGatewayEvent("session.message", { sessionKey: "agent:main:other" }, 7);
+    timers.advanceBy(1_000);
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([]);
+  });
+
+  test("coalesces active-session message bursts into one history refresh", async () => {
+    effectiveSessionKey.value = "agent:main:main";
+    capabilities.value = [
+      "chat.startup",
+      "sessions.messages.subscribe",
+      "sessions.messages.unsubscribe",
+    ];
+    gatewayCalls.length = 0;
+
+    emitGatewayEvent("session.message", { sessionKey: "agent:main:main" }, 7);
+    emitGatewayEvent("session.message", { sessionKey: "agent:main:main" }, 8);
+    emitGatewayEvent("session.message", { sessionKey: "agent:main:main" }, 9);
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([]);
+
+    timers.advanceBy(100);
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.startup",
+        params: { sessionKey: "agent:main:main", limit: 200 },
+      },
+    ]);
+  });
+
+  test("defers active-session message refreshes while the session has a pending run", async () => {
+    effectiveSessionKey.value = "agent:main:main";
+    capabilities.value = [
+      "chat.startup",
+      "sessions.messages.subscribe",
+      "sessions.messages.unsubscribe",
+    ];
+    chat.startRun("run-active", "agent:main:main");
+    gatewayCalls.length = 0;
+
+    emitGatewayEvent("session.message", { sessionKey: "agent:main:main" }, 7);
+    timers.advanceBy(999);
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([]);
+
+    chat.completeRun("run-active");
+    timers.advanceBy(1);
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.startup",
+        params: { sessionKey: "agent:main:main", limit: 200 },
+      },
+    ]);
+  });
+
+  test("defers active-session message refreshes when the payload reports an active run", async () => {
+    effectiveSessionKey.value = "agent:main:main";
+    capabilities.value = [
+      "chat.startup",
+      "sessions.messages.subscribe",
+      "sessions.messages.unsubscribe",
+    ];
+    gatewayCalls.length = 0;
+
+    emitGatewayEvent("session.message", { sessionKey: "agent:main:main", hasActiveRun: true }, 7);
+    timers.advanceBy(999);
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([]);
+
+    timers.advanceBy(1);
+    await Promise.resolve();
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.startup",
+        params: { sessionKey: "agent:main:main", limit: 200 },
+      },
+    ]);
   });
 
   test("ignores stale chat delta fallback after assistant delta resumes", () => {
@@ -222,6 +542,96 @@ describe("chat event handling", () => {
 
     expect(chat.messages.value).toEqual([]);
     expect(chat.activeRuns.value.get("heartbeat")).toMatchObject({ status: "complete" });
+  });
+
+  test("does not append a late reset final after authoritative history reloads", () => {
+    registerResetRun("reset-run");
+    chat.messages.value = [
+      {
+        id: "hist-reset",
+        role: "assistant",
+        content: "New session started.",
+        timestamp: 1000,
+        isStreaming: false,
+      },
+    ];
+
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1100 },
+    });
+
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        id: "hist-reset",
+        role: "assistant",
+        content: "New session started.",
+      }),
+    ]);
+  });
+
+  test("cleans up reset markers after lifecycle-only completion and drops a later final", () => {
+    registerResetRun("reset-run");
+
+    emitAgent({
+      runId: "reset-run",
+      stream: "lifecycle",
+      data: { phase: "start" },
+    });
+    emitAgent({
+      runId: "reset-run",
+      stream: "lifecycle",
+      data: { phase: "end" },
+    });
+
+    expect(consumeResetRun("reset-run")).toBe(false);
+    expect(chat.activeRuns.value.get("reset-run")).toMatchObject({ status: "complete" });
+
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1100 },
+    });
+
+    expect(chat.messages.value).toEqual([]);
+  });
+
+  test("clears reset and delta fallback state when a reset final is deferred", () => {
+    registerResetRun("reset-run");
+
+    emitChat({ runId: "reset-run", state: "delta", deltaText: "New session started." });
+    expect(chat.activeRuns.value.get("reset-run")).toMatchObject({
+      content: "New session started.",
+      status: "streaming",
+    });
+
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1100 },
+    });
+    emitChat({ runId: "reset-run", state: "delta", deltaText: "duplicate" });
+
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.activeRuns.value.get("reset-run")).toMatchObject({
+      content: "New session started.",
+      status: "complete",
+    });
+  });
+
+  test("clears reset markers on unsubscribe and drops a late reset final after resubscribe", () => {
+    registerResetRun("reset-run");
+
+    unsubscribeFromChatEvents();
+    subscribeToChatEvents();
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1100 },
+    });
+
+    expect(chat.messages.value).toEqual([]);
   });
 
   test("prevents compaction ghost runs and records completed compaction state", () => {

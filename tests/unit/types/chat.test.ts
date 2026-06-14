@@ -103,6 +103,81 @@ describe("chat message normalization", () => {
     });
   });
 
+  test("strips assistant envelope metadata without stripping visible message ids", () => {
+    const raw: RawMessage = {
+      role: "assistant",
+      content:
+        "```metadata\nsender: assistant\nmessage_id: msg_assistant\n```\n\nmessage_id: msg_line\nVisible response",
+      timestamp: 20,
+    };
+
+    expect(normalizeMessage(raw, "msg-2")).toMatchObject({
+      id: "msg-2",
+      role: "assistant",
+      content: "message_id: msg_line\nVisible response",
+      timestamp: 20,
+    });
+  });
+
+  test("preserves assistant bracketed message id lines as visible content", () => {
+    const raw: RawMessage = {
+      role: "assistant",
+      content: "[message_id: visible-assistant-id]\nVisible response",
+      timestamp: 25,
+    };
+
+    expect(normalizeMessage(raw, "msg-assistant-visible")).toMatchObject({
+      id: "msg-assistant-visible",
+      role: "assistant",
+      content: "[message_id: visible-assistant-id]\nVisible response",
+      timestamp: 25,
+    });
+  });
+
+  test("strips system envelope metadata without changing the role", () => {
+    const raw: RawMessage = {
+      role: "system",
+      content:
+        'Conversation info (untrusted metadata):\n```json\n{"sender":"system","message_id":"msg_system"}\n```\n\nSystem note',
+      timestamp: 30,
+    };
+
+    expect(normalizeMessage(raw, "msg-3")).toMatchObject({
+      id: "msg-3",
+      role: "system",
+      content: "System note",
+      timestamp: 30,
+    });
+  });
+
+  test("preserves system standalone message id lines as visible content", () => {
+    const raw: RawMessage = {
+      role: "system",
+      content: "message_id: visible-system-id\nSystem note",
+      timestamp: 35,
+    };
+
+    expect(normalizeMessage(raw, "msg-system-visible")).toMatchObject({
+      id: "msg-system-visible",
+      role: "system",
+      content: "message_id: visible-system-id\nSystem note",
+      timestamp: 35,
+    });
+  });
+
+  test("does not strip tool result payloads passed through normalization", () => {
+    const raw: RawMessage = {
+      role: "toolResult",
+      toolCallId: "tool-1",
+      content: "message_id: file-key\npayload",
+    };
+
+    expect(normalizeMessage(raw, "tool-msg")).toMatchObject({
+      role: "assistant",
+      content: "message_id: file-key\npayload",
+    });
+  });
+
   test("carries structured OpenClaw compaction and truncation metadata", () => {
     const raw: RawMessage = {
       role: "user",

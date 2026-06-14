@@ -8,7 +8,7 @@ type SendCall = {
 };
 
 describe("direct RPC contracts", () => {
-  test("ChannelsView logs out with channel and accountId", () => {
+  test("ChannelsView logs out channel accounts through channels.logout", () => {
     const calls = sendCalls("src/views/ChannelsView.tsx");
 
     expect(calls).toContainEqual({
@@ -16,9 +16,10 @@ describe("direct RPC contracts", () => {
       payloadKeys: ["probe", "timeoutMs"],
     });
     expect(calls).toContainEqual({
-      method: "common.logout",
+      method: "channels.logout",
       payloadKeys: ["accountId", "channel"],
     });
+    expect(calls.some((call) => call.method === "common.logout")).toBe(false);
   });
 
   test("DevicesView uses exact pair and token RPC payloads", () => {
@@ -65,6 +66,25 @@ describe("direct RPC contracts", () => {
         },
       ]),
     );
+  });
+
+  test("command palette cron actions use stable id RPC payloads", () => {
+    const cronCalls = sendCalls("src/components/command/commands.ts").filter(
+      (call) => call.method === "cron.run" || call.method === "cron.update",
+    );
+
+    expect(cronCalls).toHaveLength(2);
+    expect(cronCalls).toEqual([
+      {
+        method: "cron.run",
+        payloadKeys: ["id"],
+      },
+      {
+        method: "cron.update",
+        payloadKeys: ["id", "patch"],
+      },
+    ]);
+    expect(cronCalls.some((call) => call.payloadKeys.includes("jobId"))).toBe(false);
   });
 
   test("agent tool and skill saves route through the config.apply helper", () => {

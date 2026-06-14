@@ -61,7 +61,9 @@ describe("ChatInput", () => {
     renderComponent(
       <ChatInput
         sessionKey="session-a"
-        onSend={(message, attachments) => sends.push([message, attachments])}
+        onSend={(message, attachments) => {
+          sends.push([message, attachments]);
+        }}
       />,
     );
 
@@ -90,7 +92,11 @@ describe("ChatInput", () => {
 
     try {
       renderComponent(
-        <ChatInput onSend={(message, attachments) => sends.push([message, attachments])} />,
+        <ChatInput
+          onSend={(message, attachments) => {
+            sends.push([message, attachments]);
+          }}
+        />,
       );
 
       const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
@@ -123,10 +129,16 @@ describe("ChatInput", () => {
     }
   });
 
-  test("does not send on Shift+Enter and sends on Ctrl+Enter", () => {
+  test("does not send on Shift+Enter and sends on Ctrl+Enter or Cmd+Enter", () => {
     const sends: string[] = [];
 
-    renderComponent(<ChatInput onSend={(message) => sends.push(message)} />);
+    renderComponent(
+      <ChatInput
+        onSend={(message) => {
+          sends.push(message);
+        }}
+      />,
+    );
 
     const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
     fireEvent.input(textbox, { target: { value: "multi line" } });
@@ -135,13 +147,190 @@ describe("ChatInput", () => {
 
     fireEvent.keyDown(textbox, { key: "Enter", ctrlKey: true });
     expect(sends).toEqual(["multi line"]);
+
+    fireEvent.input(textbox, { target: { value: "command send" } });
+    fireEvent.keyDown(textbox, { key: "Enter", metaKey: true });
+    expect(sends).toEqual(["multi line", "command send"]);
+  });
+
+  test("ignores Enter while IME composition is active", () => {
+    const sends: string[] = [];
+
+    renderComponent(
+      <ChatInput
+        onSend={(message) => {
+          sends.push(message);
+        }}
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
+    fireEvent.input(textbox, { target: { value: "composing" } });
+
+    fireEvent.keyDown(textbox, { key: "Enter", isComposing: true });
+    fireEvent.keyDown(textbox, { key: "Enter", keyCode: 229 });
+
+    expect(sends).toEqual([]);
+
+    fireEvent.keyDown(textbox, { key: "Enter" });
+    expect(sends).toEqual(["composing"]);
+  });
+
+  test("blocks duplicate sends while the first send is in flight", async () => {
+    let resolveSend: (() => void) | undefined;
+    const sends: string[] = [];
+
+    renderComponent(
+      <ChatInput
+        onSend={(message) => {
+          sends.push(message);
+          return new Promise<void>((resolve) => {
+            resolveSend = resolve;
+          });
+        }}
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
+    const sendButton = screen.getByRole("button", { name: "actions.send" });
+
+    fireEvent.input(textbox, { target: { value: "one send" } });
+    fireEvent.keyDown(textbox, { key: "Enter" });
+    fireEvent.click(sendButton);
+    fireEvent.keyDown(textbox, { key: "Enter", ctrlKey: true });
+
+    expect(sends).toEqual(["one send"]);
+    expect(textbox.value).toBe("one send");
+    expect(sendButton).toHaveProperty("disabled", true);
+
+    resolveSend?.();
+    await waitFor(() => expect(textbox.value).toBe(""));
+  });
+
+  test("keeps a newer draft typed before an in-flight send resolves", async () => {
+    let resolveSend: (() => void) | undefined;
+    const sends: string[] = [];
+    chat.chatDrafts.value = new Map([["session-next", ""]]);
+
+    renderComponent(
+      <ChatInput
+        sessionKey="session-next"
+        onSend={(message) => {
+          sends.push(message);
+          return new Promise<void>((resolve) => {
+            resolveSend = resolve;
+          });
+        }}
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+    fireEvent.input(textbox, { target: { value: "first send" } });
+    fireEvent.keyDown(textbox, { key: "Enter" });
+    fireEvent.input(textbox, { target: { value: "next draft" } });
+
+    resolveSend?.();
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "actions.send" })).toHaveProperty(
+        "disabled",
+        false,
+      ),
+    );
+    expect(sends).toEqual(["first send"]);
+    expect(textbox.value).toBe("next draft");
+    expect(chat.chatDrafts.value.get("session-next")).toBe("next draft");
+  });
+
+  test("keeps a newer in-flight draft that only differs by whitespace", async () => {
+    let resolveSend: (() => void) | undefined;
+    chat.chatDrafts.value = new Map([["session-whitespace", ""]]);
+
+    renderComponent(
+      <ChatInput
+        sessionKey="session-whitespace"
+        onSend={() =>
+          new Promise<void>((resolve) => {
+            resolveSend = resolve;
+          })
+        }
+      />,
+    );
+
+    const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
+
+    fireEvent.input(textbox, { target: { value: "hello" } });
+    fireEvent.keyDown(textbox, { key: "Enter" });
+    fireEvent.input(textbox, { target: { value: " hello " } });
+
+    resolveSend?.();
+
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: "actions.send" })).toHaveProperty(
+        "disabled",
+        false,
+      ),
+    );
+    expect(textbox.value).toBe(" hello ");
+    expect(chat.chatDrafts.value.get("session-whitespace")).toBe(" hello ");
+  });
+
+  test("keeps draft and attachment previews when send throws synchronously", async () => {
+    const originalFileReader = globalThis.FileReader;
+    let sendAttempts = 0;
+    globalThis.FileReader = class MockFileReader {
+      onerror: (() => void) | null = null;
+      onload: (() => void) | null = null;
+      result: string | ArrayBuffer | null = null;
+
+      readAsDataURL(readFile: File): void {
+        this.result = `data:${readFile.type};base64,aGVsbG8=`;
+        queueMicrotask(() => this.onload?.());
+      }
+    } as unknown as typeof FileReader;
+
+    try {
+      chat.chatDrafts.value = new Map([["session-error", ""]]);
+      renderComponent(
+        <ChatInput
+          sessionKey="session-error"
+          onSend={() => {
+            sendAttempts += 1;
+            throw new Error("send failed");
+          }}
+        />,
+      );
+
+      const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
+      const container = document.querySelector('[data-tour="chat-input"]') as HTMLDivElement;
+      const attachment = new File(["hello"], "notes.txt", { type: "text/plain" });
+
+      fireEvent.input(textbox, { target: { value: "keep this" } });
+      fireEvent.drop(container, { dataTransfer: { files: [attachment] } });
+      await waitFor(() => expect(screen.getByText("TXT")).toBeTruthy());
+
+      fireEvent.click(screen.getByRole("button", { name: "actions.send" }));
+
+      expect(sendAttempts).toBe(1);
+      expect(textbox.value).toBe("keep this");
+      expect(chat.chatDrafts.value.get("session-error")).toBe("keep this");
+      expect(screen.getByText("TXT")).toBeTruthy();
+    } finally {
+      globalThis.FileReader = originalFileReader;
+    }
   });
 
   test("disables send when disabled but still labels streaming sends as queued", () => {
     const sends: string[] = [];
 
     const rendered = renderComponent(
-      <ChatInput disabled onSend={(message) => sends.push(message)} />,
+      <ChatInput
+        disabled
+        onSend={(message) => {
+          sends.push(message);
+        }}
+      />,
     );
 
     const textbox = screen.getByRole("textbox") as HTMLTextAreaElement;
@@ -150,7 +339,14 @@ describe("ChatInput", () => {
     expect(sends).toEqual([]);
     expect(screen.getByRole("button", { name: "actions.send" })).toHaveProperty("disabled", true);
 
-    rendered.rerender(<ChatInput isStreaming onSend={(message) => sends.push(message)} />);
+    rendered.rerender(
+      <ChatInput
+        isStreaming
+        onSend={(message) => {
+          sends.push(message);
+        }}
+      />,
+    );
     fireEvent.input(screen.getByRole("textbox"), { target: { value: "queued" } });
     expect(screen.getByRole("button", { name: "actions.queue" })).toBeTruthy();
   });

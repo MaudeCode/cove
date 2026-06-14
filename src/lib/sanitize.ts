@@ -186,5 +186,15 @@ function enforceSanitizeFallback(html: string, config: FallbackConfig): string {
 function isAllowedUriAttribute(name: string, value: string, allowedUriRegexp?: RegExp): boolean {
   if (name !== "href" && name !== "src") return true;
   if (!allowedUriRegexp) return true;
-  return allowedUriRegexp.test(value.replace(/[\u0000-\u001F\u007F\s]+/g, ""));
+  return allowedUriRegexp.test(stripUnsafeUriChars(value));
+}
+
+function stripUnsafeUriChars(value: string): string {
+  let stripped = "";
+  for (const char of value) {
+    const code = char.charCodeAt(0);
+    if (code <= 31 || code === 127 || /\s/.test(char)) continue;
+    stripped += char;
+  }
+  return stripped;
 }

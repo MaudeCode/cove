@@ -29,10 +29,12 @@ const calls = {
   loadAssistantIdentity: 0,
   loadModels: 0,
   loadSessions: 0,
+  order: [] as string[],
   probeGateway: [] as Array<{ signal?: AbortSignal; url: string }>,
   saveAuth: [] as unknown[],
   setActiveSession: [] as string[],
   setPendingTour: [] as boolean[],
+  startCanvasNodeConnectionIfEnabled: 0,
   startUsagePolling: 0,
 };
 const appMode = signal<"single" | "multi">("single");
@@ -75,7 +77,8 @@ mock.module("@/lib/gateway", () => ({
   }),
 }));
 mock.module("@/lib/connected-app", () => ({
-  initConnectedApp: async () => {
+  initPostConnectApp: async () => {
+    calls.order.push("initPostConnectApp");
     calls.loadSessions++;
     await loadSessionsImpl();
     calls.initSessionEventSubscription++;
@@ -87,6 +90,10 @@ mock.module("@/lib/connected-app", () => ({
     calls.initExecApproval++;
     calls.initUpdateSubscription++;
   },
+  startCanvasNodeConnectionIfEnabled: () => {
+    calls.startCanvasNodeConnectionIfEnabled++;
+    calls.order.push("startCanvasNodeConnectionIfEnabled");
+  },
 }));
 mock.module("@/lib/storage", () => ({
   ...storage,
@@ -95,6 +102,7 @@ mock.module("@/lib/storage", () => ({
   },
   saveAuth: (params: unknown) => {
     calls.saveAuth.push(params);
+    calls.order.push("saveAuth");
   },
   setPendingTour: (show: boolean) => {
     calls.setPendingTour.push(show);
@@ -183,6 +191,7 @@ describe("WelcomeWizard", () => {
       },
     ]);
     expect(calls.saveAuth).toHaveLength(0);
+    expect(calls.startCanvasNodeConnectionIfEnabled).toBe(0);
     expect(calls.completeOnboarding).toBe(0);
     expect(calls.loadSessions).toBe(1);
     expect(screen.queryByText("onboarding.success")).toBeNull();
@@ -199,7 +208,13 @@ describe("WelcomeWizard", () => {
     expect(calls.initExecApproval).toBe(1);
     expect(calls.initUpdateSubscription).toBe(1);
     expect(calls.saveAuth).toHaveLength(1);
+    expect(calls.startCanvasNodeConnectionIfEnabled).toBe(1);
     expect(calls.completeOnboarding).toBe(1);
+    expect(calls.order).toEqual([
+      "initPostConnectApp",
+      "saveAuth",
+      "startCanvasNodeConnectionIfEnabled",
+    ]);
 
     fireEvent.click(screen.getByRole("button", { name: "actions.continue" }));
     expect(calls.setPendingTour).toEqual([true]);

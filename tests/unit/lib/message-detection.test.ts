@@ -66,6 +66,32 @@ describe("message detection", () => {
   test("strips standalone message id lines", () => {
     expect(stripEnvelopeMetadata("[message_id: a]\nhello\n  [message_id: b]  ")).toBe("hello");
   });
+
+  test("strips fenced sender metadata envelopes", () => {
+    expect(
+      stripEnvelopeMetadata("```metadata\nsender: assistant\nmessage_id: msg_123\n```\n\nhello"),
+    ).toBe("hello");
+  });
+
+  test("strips bare standalone message id lines", () => {
+    expect(stripEnvelopeMetadata("message_id: msg_123\nhello\n  message-id: msg_456  ")).toBe(
+      "hello",
+    );
+  });
+
+  test("preserves ordinary fenced content and inline message id text", () => {
+    const content =
+      '```json\n{"message_id":"visible-data","sender":"fixture"}\n```\n\nUse message_id: visible-data here.';
+
+    expect(stripEnvelopeMetadata(content)).toBe(content);
+  });
+
+  test("preserves visible yaml fences even when they mention sender metadata fields", () => {
+    const content =
+      "```yaml\nsender: assistant\nmessage_id: visible-id\nsummary: Visible response data\n```\n\nKeep this visible.";
+
+    expect(stripEnvelopeMetadata(content)).toBe(content);
+  });
 });
 
 describe("message grouping", () => {

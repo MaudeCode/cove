@@ -477,6 +477,9 @@ export interface RequestOptions {
 export class GatewayRpcError extends Error {
   code?: string;
   declare details?: unknown;
+  scope?: string;
+  remediation?: string;
+  declare diagnostics?: unknown;
   retryable?: boolean;
   retryAfterMs?: number;
 
@@ -488,6 +491,24 @@ export class GatewayRpcError extends Error {
       configurable: true,
       enumerable: false,
       value: error.details,
+      writable: true,
+    });
+    Object.defineProperty(this, "scope", {
+      configurable: true,
+      enumerable: false,
+      value: error.scope,
+      writable: true,
+    });
+    Object.defineProperty(this, "remediation", {
+      configurable: true,
+      enumerable: false,
+      value: error.remediation,
+      writable: true,
+    });
+    Object.defineProperty(this, "diagnostics", {
+      configurable: true,
+      enumerable: false,
+      value: error.diagnostics,
       writable: true,
     });
     this.retryable = error.retryable;
@@ -551,6 +572,21 @@ export function sendUnknown<T = unknown>(
   options?: RequestOptions,
 ): Promise<T> {
   return sendRaw(method, params, options) as Promise<T>;
+}
+
+export function isGatewayMethodAdvertised(method: string): boolean | undefined {
+  const methods = capabilities.value;
+  return methods.length > 0 ? methods.includes(method) : undefined;
+}
+
+export function isUnknownGatewayMethodError(err: unknown, method: string): boolean {
+  if (!(err instanceof GatewayRpcError)) return false;
+  const message = err.message.toLowerCase();
+  const normalizedMethod = method.toLowerCase();
+  return (
+    err.code === "METHOD_NOT_FOUND" ||
+    (message.includes("unknown method") && message.includes(normalizedMethod))
+  );
 }
 
 /**

@@ -104,7 +104,7 @@ async function handleLogout(): Promise<void> {
 
   isLoggingOut.value = true;
   try {
-    await send("common.logout", {
+    await send("channels.logout", {
       channel: logoutModal.value.channel,
       accountId: logoutModal.value.accountId,
     });
@@ -180,7 +180,6 @@ function AccountRow({
         </div>
       </div>
 
-      {/* Logout button */}
       <IconButton
         icon={<LogOut class="w-3.5 h-3.5" />}
         label={t("common.logout")}

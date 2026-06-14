@@ -67,21 +67,30 @@ export function isSystemEvent(message: Message): boolean {
 }
 
 /**
- * Strip envelope metadata that the gateway injects into user messages.
+ * Strip envelope metadata that the gateway injects into visible messages.
  * Handles both formats:
  *  - Legacy: `[WebChat 2026-02-12T23:11Z] actual message`
  *  - New:    `Conversation info (untrusted metadata):\n```json\n{...}\n```\n\nactual message`
+ *  - Fenced: ```metadata\nsender: assistant\nmessage_id: ...\n```\n\nactual message
  *
- * Also strips `[message_id: ...]` lines.
+ * Can also strip standalone `[message_id: ...]` and `message_id: ...` lines for
+ * inbound metadata cleanup. Assistant/system visible content should not enable that.
  */
-export function stripEnvelopeMetadata(text: string): string {
+export function stripEnvelopeMetadata(
+  text: string,
+  options: { stripStandaloneMessageIds?: boolean } = {},
+): string {
   let result = text;
+  const stripStandaloneMessageIds = options.stripStandaloneMessageIds ?? true;
 
   // New format: "Conversation info (untrusted metadata):" block followed by JSON fence
   result = result.replace(
     /^Conversation info \(untrusted metadata\):\s*```json[^\S\r\n]*\r?\n[\s\S]*?\r?\n```\s*/,
     "",
   );
+
+  // Fenced sender metadata block at the start of a message. Keep ordinary code fences intact.
+  result = stripLeadingMetadataFence(result);
 
   // Legacy format: [Channel YYYY-MM-DD...] prefix
   const legacyMatch = result.match(/^\[([^\]]+)\]\s*/);
@@ -94,15 +103,42 @@ export function stripEnvelopeMetadata(text: string): string {
     }
   }
 
-  // Strip [message_id: ...] lines
-  if (result.includes("[message_id:")) {
-    result = result
-      .split(/\r?\n/)
-      .filter((line) => !/^\s*\[message_id:\s*[^\]]+\]\s*$/i.test(line))
-      .join("\n");
+  // Strip standalone message id lines only for inbound/user metadata cleanup.
+  if (stripStandaloneMessageIds && /message[-_]id:/i.test(result)) {
+    result = stripStandaloneMessageIdLines(result);
   }
 
   return result.trim();
+}
+
+function stripLeadingMetadataFence(text: string): string {
+  const match = text.match(/^```([a-z0-9_-]+)?[^\S\r\n]*\r?\n([\s\S]*?)\r?\n```\s*/i);
+  if (!match) return text;
+
+  const language = match[1]?.toLowerCase() ?? "";
+  if (!["metadata", "meta"].includes(language)) return text;
+
+  const body = match[2] ?? "";
+  if (!/(^|\r?\n)\s*(sender|message[-_]id)\s*:/i.test(body)) return text;
+
+  return text.slice(match[0].length);
+}
+
+function stripStandaloneMessageIdLines(text: string): string {
+  let inCodeFence = false;
+
+  return text
+    .split(/\r?\n/)
+    .filter((line) => {
+      if (/^\s*```/.test(line)) {
+        inCodeFence = !inCodeFence;
+        return true;
+      }
+
+      if (inCodeFence) return true;
+      return !/^\s*\[?message[-_]id:\s*[^\]\r\n]+\]?\s*$/i.test(line);
+    })
+    .join("\n");
 }
 
 /** Compaction summary patterns */

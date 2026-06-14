@@ -109,6 +109,28 @@ export interface ChatHistoryResult {
   thinkingLevel?: string;
 }
 
+/** Chat startup response includes chat history plus optional startup metadata. */
+export interface ChatStartupResult extends ChatHistoryResult {
+  defaults?: unknown;
+  sessionInfo?: {
+    sessionId?: string;
+    thinkingLevel?: string;
+    thinkingDefault?: string;
+    hasActiveRun?: boolean;
+    [key: string]: unknown;
+  };
+  metadata?: ChatMetadataResult;
+  agentsList?: unknown;
+  inFlightRun?: unknown;
+}
+
+/** Chat metadata response from OpenClaw startup/metadata RPCs. */
+export interface ChatMetadataResult {
+  commands?: unknown[];
+  models?: unknown[];
+  [key: string]: unknown;
+}
+
 /** Chat send response (immediate ack) */
 export interface ChatSendResult {
   runId: string;
@@ -315,8 +337,12 @@ export function normalizeMessage(raw: RawMessage, id: string): Message {
   const openclawMeta = getOpenClawMetadata(raw);
   // Filter role - toolResult should not be passed here (they're merged into assistant messages)
   const role = raw.role === "toolResult" ? "assistant" : raw.role;
-  // Strip gateway envelope metadata from user messages
-  const baseContent = role === "user" ? stripEnvelopeMetadata(parsed.text) : parsed.text;
+  // Strip gateway envelope metadata from visible chat messages, but keep
+  // standalone message-id lines for assistant/system content and tool payloads.
+  const baseContent =
+    raw.role === "toolResult"
+      ? parsed.text
+      : stripEnvelopeMetadata(parsed.text, { stripStandaloneMessageIds: raw.role === "user" });
   const truncatedByContent = isHistoryTruncatedByContent(baseContent);
   const content = stripHistoryTruncationSuffix(baseContent);
   const msg: Message = {

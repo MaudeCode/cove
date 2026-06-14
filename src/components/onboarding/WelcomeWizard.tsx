@@ -10,7 +10,7 @@ import { useSignal, useComputed, useSignalEffect } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError, disconnect, probeGateway } from "@/lib/gateway";
-import { initConnectedApp } from "@/lib/connected-app";
+import { initPostConnectApp, startCanvasNodeConnectionIfEnabled } from "@/lib/connected-app";
 import { saveAuth, completeOnboarding, setPendingTour } from "@/lib/storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -157,7 +157,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
         autoReconnect: true,
       });
 
-      await initConnectedApp();
+      await initPostConnectApp({ startCanvasNode: false });
 
       // Save auth only after the connected app state is ready.
       saveAuth({
@@ -166,6 +166,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
         rememberMe: rememberMe.value,
         credential: credential.value,
       });
+      startCanvasNodeConnectionIfEnabled();
 
       // Mark onboarding complete only after the connected app state is ready.
       completeOnboarding();

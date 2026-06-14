@@ -260,6 +260,22 @@ describe("config signals", () => {
     expect(error.value).toBe("Missing base hash. Reload and try again.");
   });
 
+  test("omits baseHash instead of sending null for new config saves", async () => {
+    originalConfig.value = {};
+    draftConfig.value = { model: "new" };
+    baseHash.value = null;
+    configExists.value = false;
+
+    await expect(saveConfig()).resolves.toBe(true);
+
+    expect(gateway.calls[0]).toEqual([
+      "config.patch",
+      {
+        raw: JSON.stringify({ model: "new" }),
+      },
+    ]);
+  });
+
   test("sends nested patches without replacePaths for non-destructive edits", async () => {
     originalConfig.value = {
       model: "old",

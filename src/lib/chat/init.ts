@@ -7,6 +7,7 @@
 import { clearActiveRuns, clearMessages } from "@/signals/chat";
 import { loadHistory } from "./history";
 import { subscribeToChatEvents, unsubscribeFromChatEvents } from "./events";
+import { runChatCleanups } from "./cleanup";
 
 /**
  * Initialize chat for a session.
@@ -23,4 +24,5 @@ export function cleanupChat(): void {
   unsubscribeFromChatEvents();
   clearMessages();
   clearActiveRuns();
+  runChatCleanups();
 }

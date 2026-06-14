@@ -8,8 +8,11 @@ import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
-import { loadAgents } from "@/signals/agents";
-import { initConnectedApp } from "@/lib/connected-app";
+import { initPostConnectApp, startCanvasNodeConnectionIfEnabled } from "@/lib/connected-app";
+import {
+  classifyLoginFailure,
+  type ClassifiedLoginFailure,
+} from "@/lib/login-error-classification";
 import { getAuth, saveAuth, getSessionCredential } from "@/lib/storage";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -27,6 +30,12 @@ export function LoginView() {
   const connecting = useSignal(false);
   const rememberMe = useSignal(true);
   const validationError = useSignal<string | null>(null);
+  const loginFailure = useSignal<ClassifiedLoginFailure | null>(null);
+
+  const clearLoginFailure = () => {
+    loginFailure.value = null;
+    lastError.value = null;
+  };
 
   /**
    * Validate the gateway URL
@@ -58,6 +67,7 @@ export function LoginView() {
       return;
     }
     validationError.value = null;
+    clearLoginFailure();
 
     connecting.value = true;
     try {
@@ -68,20 +78,22 @@ export function LoginView() {
         autoReconnect: true,
       });
 
-      // Save auth settings and credential
+      await initPostConnectApp({ startCanvasNode: false });
+
+      // Save auth settings and credential only after the connected app state is ready.
       saveAuth({
         url: url.value,
         authMode: authMode.value,
         rememberMe: rememberMe.value,
         credential: token.value,
       });
-
-      // Load available agents
-      await loadAgents();
-
-      await initConnectedApp();
+      startCanvasNodeConnectionIfEnabled();
     } catch (err) {
-      log.auth.error("Connect failed:", err);
+      loginFailure.value = classifyLoginFailure(err, {
+        authMode: authMode.value,
+        credential: token.value,
+      });
+      log.auth.error("Connect failed:", loginFailure.value.message);
     } finally {
       connecting.value = false;
     }
@@ -112,6 +124,14 @@ export function LoginView() {
     { value: "token", label: t("common.token") },
     { value: "password", label: t("common.password") },
   ];
+  const displayedFailure =
+    loginFailure.value ??
+    (lastError.value
+      ? classifyLoginFailure(lastError.value, {
+          authMode: authMode.value,
+          credential: token.value,
+        })
+      : null);
 
   return (
     <div class="flex-1 overflow-y-auto p-4 sm:p-8">
@@ -143,6 +163,7 @@ export function LoginView() {
                 onInput={(e) => {
                   url.value = (e.target as HTMLInputElement).value;
                   validationError.value = null;
+                  clearLoginFailure();
                 }}
                 onKeyDown={handleKeyDown}
                 placeholder={t("auth.gatewayUrlPlaceholder")}
@@ -158,7 +179,10 @@ export function LoginView() {
             <FormField label="Auth Mode">
               <Dropdown
                 value={authMode.value}
-                onChange={(value) => (authMode.value = value as "token" | "password")}
+                onChange={(value) => {
+                  authMode.value = value as "token" | "password";
+                  clearLoginFailure();
+                }}
                 options={authModeOptions}
                 aria-label="Auth Mode"
                 class="w-full"
@@ -173,7 +197,10 @@ export function LoginView() {
               <PasswordInput
                 id="auth-credential"
                 value={token.value}
-                onInput={(e) => (token.value = (e.target as HTMLInputElement).value)}
+                onInput={(e) => {
+                  token.value = (e.target as HTMLInputElement).value;
+                  clearLoginFailure();
+                }}
                 onKeyDown={handleKeyDown}
                 placeholder={
                   authMode.value === "token"
@@ -204,8 +231,24 @@ export function LoginView() {
             </Button>
 
             {/* Error message */}
-            {lastError.value && (
-              <p class="text-sm text-[var(--color-error)] text-center">{lastError.value}</p>
+            {displayedFailure && (
+              <div
+                class="rounded-lg border border-[var(--color-error)]/30 bg-[var(--color-error)]/10 p-3 text-sm text-[var(--color-error)]"
+                role="alert"
+              >
+                <p class="font-medium">{displayedFailure.message}</p>
+                {displayedFailure.remediation && <p class="mt-1">{displayedFailure.remediation}</p>}
+                {displayedFailure.details && (
+                  <details class="mt-2 text-xs text-[var(--color-text-secondary)]">
+                    <summary class="cursor-pointer select-none font-medium text-[var(--color-error)]">
+                      Diagnostic details
+                    </summary>
+                    <pre class="mt-2 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-[var(--color-bg-secondary)] p-2 font-mono text-xs text-[var(--color-text-secondary)]">
+                      {displayedFailure.details}
+                    </pre>
+                  </details>
+                )}
+              </div>
             )}
           </div>
         </Card>

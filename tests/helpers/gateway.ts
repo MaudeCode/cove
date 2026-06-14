@@ -51,6 +51,7 @@ type GatewaySend = (method: string, params?: unknown) => Promise<unknown>;
 
 export const integrationGatewayMock = {
   isConnected: signal(false),
+  mainSessionKey: signal<string | null>("main"),
   send: async (method: string, _params?: unknown): Promise<unknown> => {
     throw new Error(`Unexpected gateway method: ${method}`);
   },

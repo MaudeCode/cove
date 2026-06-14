@@ -4,6 +4,7 @@
  * Sending messages, retrying, and queue processing.
  */
 
+import { effect } from "@preact/signals";
 import { send, isConnected } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import {
@@ -19,14 +20,23 @@ import {
   markMessageSent,
   isStreaming,
   clearMessages,
+  adoptRunId,
+  getStreamingRun,
 } from "@/signals/chat";
 import { sessions } from "@/signals/sessions";
 import { autoRenameSession } from "./auto-rename";
-import { isUserCreatedChat } from "@/lib/session-utils";
+import { getAgentId, isUserCreatedChat } from "@/lib/session-utils";
 import { t } from "@/lib/i18n";
 import { loadHistory } from "./history";
-import type { Message, MessageImage } from "@/types/messages";
+import {
+  markResetHistoryFailed,
+  markResetHistorySucceeded,
+  registerResetRun,
+} from "./reset-reconciliation";
+import { attachmentsToImages, getResendAttachments } from "./attachments";
+import { registerChatCleanup } from "./cleanup";
 import type { AttachmentPayload } from "@/types/attachments";
+import type { Message } from "@/types/messages";
 
 /**
  * Session reset commands that clear the current session.
@@ -45,25 +55,22 @@ function isResetCommand(message: string): boolean {
 
 let idempotencyCounter = 0;
 
-/**
- * Convert attachment payloads to message images for local display.
- * Note: Only images are stored — OpenClaw drops non-image attachments.
- */
-function attachmentsToImages(attachments?: AttachmentPayload[]): MessageImage[] | undefined {
-  if (!attachments || attachments.length === 0) return undefined;
+type AbortParams = {
+  key: string;
+  runId?: string;
+  agentId?: string;
+};
 
-  const images: MessageImage[] = [];
-  for (const att of attachments) {
-    if (att.type === "image") {
-      images.push({
-        url: att.content, // content is already a data URL
-        alt: att.fileName,
-      });
-    }
-  }
+const pendingAbortParams = new Map<string, AbortParams>();
+let pendingAbortReplayPromise: Promise<boolean> | null = null;
 
-  return images.length > 0 ? images : undefined;
-}
+effect(() => {
+  if (!isConnected.value) return;
+  if (pendingAbortParams.size === 0) return;
+  void replayPendingAborts();
+});
+
+registerChatCleanup(clearPendingAborts);
 
 function generateIdempotencyKey(): string {
   return `cove_${Date.now()}_${++idempotencyCounter}`;
@@ -142,19 +149,35 @@ export async function sendMessage(
       throw new Error(errorMsg);
     }
 
+    adoptRunId(idempotencyKey, result.runId);
+
+    const isReset = isResetCommand(message);
+    const resetRunId = isReset ? result.runId : undefined;
+    if (isReset) {
+      registerResetRun(resetRunId);
+    }
+
     markMessageSent(messageId);
 
     // Handle session reset commands (/new, /reset)
     // Clear local messages and reload history (which will be empty for the new session)
-    if (isResetCommand(message)) {
+    if (isReset) {
       log.chat.info("Reset command detected, clearing messages for session:", sessionKey);
       // Small delay to let the gateway finish creating the new session
       setTimeout(() => {
         clearMessages();
         // Reload history to get any welcome message or confirm empty state
-        loadHistory(sessionKey).catch((err) => {
-          log.chat.warn("Failed to reload history after reset:", err);
-        });
+        loadHistory(sessionKey)
+          .then(() => {
+            markResetHistorySucceeded(resetRunId);
+          })
+          .catch((err) => {
+            const fallbackMessage = markResetHistoryFailed(resetRunId);
+            if (fallbackMessage) {
+              addMessage(fallbackMessage);
+            }
+            log.chat.warn("Failed to reload history after reset:", err);
+          });
       }, 100);
     }
 
@@ -204,7 +227,7 @@ async function resendMessage(message: Message): Promise<void> {
 
   const idempotencyKey = message.id.replace(/^user_/, "");
   await sendMessage(message.sessionKey, message.content, {
-    attachments: message.pendingAttachments,
+    attachments: getResendAttachments(message),
     messageId: idempotencyKey,
   });
 }
@@ -260,6 +283,9 @@ export async function retryMessage(messageId: string): Promise<void> {
  * Process the message queue (call after reconnecting).
  */
 export async function processMessageQueue(): Promise<void> {
+  const abortsReplayed = await replayPendingAborts();
+  if (!abortsReplayed) return;
+
   const queue = [...messageQueue.value];
   if (queue.length === 0) return;
 
@@ -278,5 +304,57 @@ export async function processMessageQueue(): Promise<void> {
  * Abort the current chat run.
  */
 export async function abortChat(sessionKey: string): Promise<void> {
-  await send("chat.abort", { sessionKey });
+  const params = buildAbortParams(sessionKey);
+
+  if (!isConnected.value) {
+    pendingAbortParams.set(sessionKey, params);
+    return;
+  }
+
+  try {
+    await send("sessions.abort", params);
+  } catch (err) {
+    pendingAbortParams.set(sessionKey, params);
+    throw err;
+  }
+}
+
+export function clearPendingAborts(): void {
+  pendingAbortParams.clear();
+}
+
+async function replayPendingAborts(): Promise<boolean> {
+  if (!isConnected.value || pendingAbortParams.size === 0) return true;
+  if (pendingAbortReplayPromise) return pendingAbortReplayPromise;
+
+  pendingAbortReplayPromise = (async () => {
+    for (const [sessionKey, params] of pendingAbortParams) {
+      try {
+        await send("sessions.abort", params);
+        pendingAbortParams.delete(sessionKey);
+      } catch (err) {
+        log.chat.warn("Failed to replay pending abort:", err);
+        return false;
+      }
+    }
+
+    return true;
+  })();
+
+  try {
+    return await pendingAbortReplayPromise;
+  } finally {
+    pendingAbortReplayPromise = null;
+  }
+}
+
+function buildAbortParams(sessionKey: string): AbortParams {
+  const run = getStreamingRun(sessionKey);
+  const agentId = getAgentId(sessionKey) ?? undefined;
+
+  return {
+    key: sessionKey,
+    ...(run?.runId ? { runId: run.runId } : {}),
+    ...(agentId ? { agentId } : {}),
+  };
 }

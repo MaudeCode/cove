@@ -5,7 +5,14 @@
  */
 
 import { batch } from "@preact/signals";
-import { on, subscribe } from "@/lib/gateway";
+import {
+  isConnected,
+  isGatewayMethodAdvertised,
+  isUnknownGatewayMethodError,
+  on,
+  send,
+  subscribe,
+} from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import { isChatEvent, isAgentEvent } from "@/lib/type-guards";
 import {
@@ -22,29 +29,43 @@ import {
   messages,
   addMessage,
 } from "@/signals/chat";
-import { isForActiveSession } from "@/signals/sessions";
+import { effectiveSessionKey, isForActiveSession } from "@/signals/sessions";
 import type { Message, ToolCall } from "@/types/messages";
-import type { ChatEvent, AgentEvent } from "@/types/chat";
+import type { ChatEvent, AgentEvent, ChatRun } from "@/types/chat";
 import { parseMessageContent, mergeToolCalls } from "@/types/chat";
 import { isHeartbeatResponse } from "@/lib/message-detection";
 import { processNextQueuedMessage } from "./send";
 import { loadHistory } from "./history";
+import { clearResetRuns, consumeResetRun, reconcileResetFinal } from "./reset-reconciliation";
 import { extractToolResultContent } from "@/lib/tool-utils";
 import { mergeAssistantStreamContent } from "./stream-events";
 
 let chatEventUnsubscribe: (() => void) | null = null;
 let agentEventUnsubscribe: (() => void) | null = null;
 let sideResultUnsubscribe: (() => void) | null = null;
+let activeSessionUnsubscribe: (() => void) | null = null;
+let connectionUnsubscribe: (() => void) | null = null;
+let selectedMessageSubscriptionKey: string | null = null;
+let selectedMessageSubscriptionRequestedKey: string | null = null;
+let selectedMessageSubscriptionPendingKey: string | null = null;
+let selectedMessageSubscriptionGeneration = 0;
+let selectedMessageSubscriptionUnsupported = false;
+let sessionMessageRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+let sessionMessageRefreshKey: string | null = null;
+let sessionMessageRefreshNeedsActiveRunDelay = false;
 
 /** Track runIds that belong to compaction — lifecycle handlers should ignore these */
 const compactionRunIds = new Set<string>();
 const chatDeltaFallbackRunIds = new Set<string>();
+const SESSION_MESSAGE_REFRESH_DEBOUNCE_MS = 100;
+const SESSION_MESSAGE_ACTIVE_RUN_REFRESH_DEFER_MS = 1_000;
 
 /**
  * Subscribe to chat events from the gateway.
  */
 export function subscribeToChatEvents(): () => void {
   if (chatEventUnsubscribe && agentEventUnsubscribe && sideResultUnsubscribe) {
+    initSelectedSessionMessageSubscription();
     return unsubscribeFromChatEvents;
   }
 
@@ -81,9 +102,16 @@ export function subscribeToChatEvents(): () => void {
   });
 
   sideResultUnsubscribe = subscribe((event) => {
-    if (event.event !== "chat.side_result") return;
-    handleSideResultEvent(event.payload, event.seq);
+    if (event.event === "chat.side_result") {
+      handleSideResultEvent(event.payload, event.seq);
+      return;
+    }
+    if (event.event === "session.message") {
+      handleSessionMessageEvent(event.payload);
+    }
   });
+
+  initSelectedSessionMessageSubscription();
 
   return unsubscribeFromChatEvents;
 }
@@ -104,8 +132,280 @@ export function unsubscribeFromChatEvents(): void {
     sideResultUnsubscribe();
     sideResultUnsubscribe = null;
   }
+  cleanupSelectedSessionMessageSubscription();
+  clearPendingSessionMessageRefresh();
   compactionRunIds.clear();
   chatDeltaFallbackRunIds.clear();
+  clearResetRuns();
+}
+
+function initSelectedSessionMessageSubscription(): void {
+  if (activeSessionUnsubscribe && connectionUnsubscribe) {
+    syncSelectedSessionMessageSubscription();
+    return;
+  }
+
+  activeSessionUnsubscribe = effectiveSessionKey.subscribe(() => {
+    syncSelectedSessionMessageSubscription();
+  });
+  connectionUnsubscribe = isConnected.subscribe((connected) => {
+    if (!connected) {
+      selectedMessageSubscriptionGeneration++;
+      selectedMessageSubscriptionKey = null;
+      selectedMessageSubscriptionRequestedKey = null;
+      selectedMessageSubscriptionPendingKey = null;
+      return;
+    }
+    selectedMessageSubscriptionUnsupported = false;
+    syncSelectedSessionMessageSubscription({ force: true });
+  });
+
+  syncSelectedSessionMessageSubscription();
+}
+
+function cleanupSelectedSessionMessageSubscription(): void {
+  activeSessionUnsubscribe?.();
+  activeSessionUnsubscribe = null;
+  connectionUnsubscribe?.();
+  connectionUnsubscribe = null;
+  selectedMessageSubscriptionGeneration++;
+
+  const key = selectedMessageSubscriptionKey;
+  selectedMessageSubscriptionKey = null;
+  selectedMessageSubscriptionRequestedKey = null;
+  selectedMessageSubscriptionPendingKey = null;
+
+  if (key && isConnected.value && !selectedMessageSubscriptionUnsupported) {
+    send("sessions.messages.unsubscribe", { key }).catch((err) => {
+      if (!isSelectedMessageSubscriptionUnavailable(err, "sessions.messages.unsubscribe")) {
+        log.chat.warn("Failed to unsubscribe from selected-session messages:", err);
+      }
+    });
+  }
+}
+
+function syncSelectedSessionMessageSubscription(opts: { force?: boolean } = {}): void {
+  const nextKey = normalizeSubscriptionKey(effectiveSessionKey.value);
+
+  if (!isConnected.value || selectedMessageSubscriptionUnsupported) {
+    return;
+  }
+
+  if (isGatewayMethodAdvertised("sessions.messages.subscribe") === false) {
+    selectedMessageSubscriptionUnsupported = true;
+    return;
+  }
+
+  if (!nextKey) {
+    if (selectedMessageSubscriptionKey) {
+      void unsubscribeSelectedSessionMessageBestEffort(selectedMessageSubscriptionKey);
+    }
+    selectedMessageSubscriptionGeneration++;
+    selectedMessageSubscriptionKey = null;
+    selectedMessageSubscriptionRequestedKey = null;
+    selectedMessageSubscriptionPendingKey = null;
+    return;
+  }
+
+  if (
+    !opts.force &&
+    selectedMessageSubscriptionRequestedKey === nextKey &&
+    selectedMessageSubscriptionKey
+  ) {
+    return;
+  }
+
+  if (!opts.force && selectedMessageSubscriptionPendingKey === nextKey) {
+    return;
+  }
+
+  const generation = ++selectedMessageSubscriptionGeneration;
+  const previousKey = selectedMessageSubscriptionKey;
+  const previousRequestedKey = selectedMessageSubscriptionRequestedKey;
+  const selectedKeyChanged = previousRequestedKey !== null && previousRequestedKey !== nextKey;
+  const shouldUnsubscribePrevious = Boolean(previousKey && (selectedKeyChanged || opts.force));
+  const shouldSubscribe =
+    opts.force ||
+    selectedKeyChanged ||
+    selectedMessageSubscriptionKey === null ||
+    selectedMessageSubscriptionRequestedKey === null;
+
+  selectedMessageSubscriptionPendingKey = shouldSubscribe ? nextKey : null;
+
+  void (async () => {
+    try {
+      if (shouldUnsubscribePrevious && previousKey) {
+        void unsubscribeSelectedSessionMessageBestEffort(previousKey);
+        if (isCurrentSelectedSessionMessageSync(generation, nextKey)) {
+          selectedMessageSubscriptionKey = null;
+          selectedMessageSubscriptionRequestedKey = null;
+        }
+      }
+
+      if (!shouldSubscribe || !isCurrentSelectedSessionMessageSync(generation, nextKey)) {
+        return;
+      }
+
+      const result = await send("sessions.messages.subscribe", { key: nextKey });
+      const subscribedKey = getSubscriptionResultKey(result) ?? nextKey;
+
+      if (!isCurrentSelectedSessionMessageSync(generation, nextKey)) {
+        if (!isCurrentSelectedSessionMessageSubscription(subscribedKey, nextKey)) {
+          await unsubscribeSelectedSessionMessageBestEffort(subscribedKey);
+        }
+        return;
+      }
+
+      selectedMessageSubscriptionKey = subscribedKey;
+      selectedMessageSubscriptionRequestedKey = nextKey;
+    } catch (err) {
+      if (isSelectedMessageSubscriptionUnavailable(err, "sessions.messages.subscribe")) {
+        selectedMessageSubscriptionUnsupported = true;
+        log.chat.warn("Selected-session message subscriptions are unavailable:", err);
+      } else if (isCurrentSelectedSessionMessageSync(generation, nextKey)) {
+        log.chat.warn("Failed to subscribe to selected-session messages:", err);
+      }
+    } finally {
+      if (isCurrentSelectedSessionMessageSync(generation, nextKey)) {
+        selectedMessageSubscriptionPendingKey = null;
+      }
+    }
+  })();
+}
+
+function isCurrentSelectedSessionMessageSync(generation: number, requestedKey: string): boolean {
+  return (
+    activeSessionUnsubscribe !== null &&
+    generation === selectedMessageSubscriptionGeneration &&
+    normalizeSubscriptionKey(effectiveSessionKey.value) === requestedKey
+  );
+}
+
+function isCurrentSelectedSessionMessageSubscription(
+  subscribedKey: string,
+  requestedKey: string,
+): boolean {
+  return (
+    activeSessionUnsubscribe !== null &&
+    selectedMessageSubscriptionKey === subscribedKey &&
+    normalizeSubscriptionKey(effectiveSessionKey.value) === requestedKey
+  );
+}
+
+async function unsubscribeSelectedSessionMessageBestEffort(key: string): Promise<void> {
+  if (!isConnected.value || selectedMessageSubscriptionUnsupported) return;
+  try {
+    await send("sessions.messages.unsubscribe", { key });
+  } catch (err) {
+    if (!isSelectedMessageSubscriptionUnavailable(err, "sessions.messages.unsubscribe")) {
+      log.chat.warn("Failed to unsubscribe from stale selected-session messages:", err);
+    }
+  }
+}
+
+function normalizeSubscriptionKey(key: string | null | undefined): string | null {
+  const normalized = key?.trim();
+  return normalized ? normalized : null;
+}
+
+function getSubscriptionResultKey(result: unknown): string | null {
+  if (!result || typeof result !== "object") return null;
+  const key = (result as { key?: unknown }).key;
+  return typeof key === "string" ? normalizeSubscriptionKey(key) : null;
+}
+
+function isSelectedMessageSubscriptionUnavailable(err: unknown, method: string): boolean {
+  if (isUnknownGatewayMethodError(err, method)) return true;
+  if (!(err instanceof Error)) return false;
+  const message = err.message.toLowerCase();
+  return message.includes("unknown method") && message.includes(method.toLowerCase());
+}
+
+function handleSessionMessageEvent(payload: unknown): void {
+  const event = parseSessionMessageEvent(payload);
+  const sessionKey = event.sessionKey;
+
+  if (!isForActiveSession(sessionKey)) {
+    return;
+  }
+
+  const keyToLoad = normalizeSubscriptionKey(effectiveSessionKey.value) ?? sessionKey;
+  if (!keyToLoad) return;
+
+  scheduleSessionMessageRefresh(keyToLoad, event.hasActiveRun);
+}
+
+function parseSessionMessageEvent(payload: unknown): {
+  hasActiveRun: boolean;
+  sessionKey?: string;
+} {
+  if (!payload || typeof payload !== "object") {
+    return { hasActiveRun: false };
+  }
+
+  const data = payload as { hasActiveRun?: unknown; sessionKey?: unknown };
+  return {
+    hasActiveRun: data.hasActiveRun === true,
+    sessionKey: typeof data.sessionKey === "string" ? data.sessionKey : undefined,
+  };
+}
+
+function scheduleSessionMessageRefresh(key: string, hasActiveRun: boolean): void {
+  sessionMessageRefreshKey = key;
+  sessionMessageRefreshNeedsActiveRunDelay =
+    sessionMessageRefreshNeedsActiveRunDelay || hasActiveRun || hasPendingRunForSession(key);
+
+  if (sessionMessageRefreshTimer !== null) {
+    clearTimeout(sessionMessageRefreshTimer);
+  }
+
+  const delay = sessionMessageRefreshNeedsActiveRunDelay
+    ? SESSION_MESSAGE_ACTIVE_RUN_REFRESH_DEFER_MS
+    : SESSION_MESSAGE_REFRESH_DEBOUNCE_MS;
+
+  sessionMessageRefreshTimer = setTimeout(() => {
+    void flushSessionMessageRefresh();
+  }, delay);
+}
+
+async function flushSessionMessageRefresh(): Promise<void> {
+  sessionMessageRefreshTimer = null;
+  const key = sessionMessageRefreshKey;
+  sessionMessageRefreshKey = null;
+  sessionMessageRefreshNeedsActiveRunDelay = false;
+
+  if (!key || !isForActiveSession(key)) {
+    return;
+  }
+
+  if (hasPendingRunForSession(key)) {
+    scheduleSessionMessageRefresh(key, true);
+    return;
+  }
+
+  try {
+    await loadHistory(key);
+  } catch (err) {
+    log.chat.warn("Failed to refresh history after session message event:", err);
+  }
+}
+
+function clearPendingSessionMessageRefresh(): void {
+  if (sessionMessageRefreshTimer !== null) {
+    clearTimeout(sessionMessageRefreshTimer);
+  }
+  sessionMessageRefreshTimer = null;
+  sessionMessageRefreshKey = null;
+  sessionMessageRefreshNeedsActiveRunDelay = false;
+}
+
+function hasPendingRunForSession(sessionKey: string): boolean {
+  for (const run of activeRuns.value.values()) {
+    if (run.sessionKey === sessionKey && (run.status === "pending" || run.status === "streaming")) {
+      return true;
+    }
+  }
+  return false;
 }
 
 /**
@@ -162,6 +462,15 @@ function handleLifecycleEnd(evt: AgentEvent): void {
 
   if (existingRun && (existingRun.status === "pending" || existingRun.status === "streaming")) {
     log.chat.debug("Completing run via lifecycle end:", runId, "phase:", evt.data?.phase);
+
+    if (consumeResetRun(runId)) {
+      chatDeltaFallbackRunIds.delete(runId);
+      completeRun(runId);
+      if (existingRun.sessionKey) {
+        setTimeout(() => processNextQueuedMessage(existingRun.sessionKey), 100);
+      }
+      return;
+    }
 
     const wasEmpty = !existingRun.content;
 
@@ -584,11 +893,38 @@ function handleFinalEvent(event: ChatEvent): void {
     }
   }
 
+  const finalMessage = buildFinalMessage(runId, existingRun, message);
+
+  const resetAction = reconcileResetFinal(runId, finalMessage);
+  if (resetAction === "drop" || resetAction === "defer") {
+    log.chat.debug("Reset final reconciled from history:", runId, "action:", resetAction);
+    completeRun(runId);
+    chatDeltaFallbackRunIds.delete(runId);
+    setTimeout(() => {
+      processNextQueuedMessage(sessionKey);
+    }, 100);
+    return;
+  }
+
+  completeRun(runId, finalMessage);
+  chatDeltaFallbackRunIds.delete(runId);
+
+  // Process next queued message after a short delay
+  setTimeout(() => {
+    processNextQueuedMessage(sessionKey);
+  }, 100);
+}
+
+function buildFinalMessage(
+  runId: string,
+  existingRun: ChatRun,
+  message: ChatEvent["message"],
+): Message {
   // The gateway final event only sends merged text (no tool_use blocks).
   // Tool call positions were set during streaming based on the streamed content.
   // We must keep the streamed content + positions together since they're consistent.
   // Only fall back to the final message text if we have no streamed content.
-  let finalContent = existingRun?.content ?? "";
+  let finalContent = existingRun.content;
 
   if (message?.content) {
     const parsed = parseMessageContent(message.content);
@@ -598,7 +934,7 @@ function handleFinalEvent(event: ChatEvent): void {
       parsedTextLen: parsed.text.length,
       parsedToolCallsCount: parsed.toolCalls.length,
       existingContentLen: finalContent.length,
-      existingToolCallsCount: existingRun?.toolCalls?.length,
+      existingToolCallsCount: existingRun.toolCalls.length,
     });
 
     // If the final message has tool_use blocks (history replay), use its text + positions
@@ -618,7 +954,7 @@ function handleFinalEvent(event: ChatEvent): void {
   });
 
   // Keep streaming tool calls with their original positions (consistent with finalContent)
-  const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
+  const finalToolCalls = existingRun.toolCalls.map((tc) => {
     const updated = { ...tc };
 
     if (updated.status === "running" || updated.status === "pending") {
@@ -630,19 +966,11 @@ function handleFinalEvent(event: ChatEvent): void {
     return updated;
   });
 
-  const finalMessage: Message = {
+  return {
     id: `assistant_${runId}`,
     role: "assistant",
     content: finalContent,
-    toolCalls: finalToolCalls?.length ? finalToolCalls : undefined,
+    toolCalls: finalToolCalls.length ? finalToolCalls : undefined,
     timestamp: message?.timestamp ?? Date.now(),
   };
-
-  completeRun(runId, finalMessage);
-  chatDeltaFallbackRunIds.delete(runId);
-
-  // Process next queued message after a short delay
-  setTimeout(() => {
-    processNextQueuedMessage(sessionKey);
-  }, 100);
 }

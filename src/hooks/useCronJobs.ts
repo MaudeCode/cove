@@ -161,7 +161,7 @@ async function fetchJobRuns(
   isLoadingRuns.value = true;
   try {
     const result = await send("cron.runs", {
-      jobId,
+      id: jobId,
       limit: options?.limit,
       offset: options?.offset,
       status: options?.status,
@@ -347,7 +347,7 @@ async function saveOrCreateJob(): Promise<void> {
         payload: buildPayload(),
         delivery: { mode: editDeliveryAnnounce.value ? "announce" : "none" },
       };
-      await send("cron.update", { jobId: selectedJob.value.id, patch });
+      await send("cron.update", { id: selectedJob.value.id, patch });
     } else {
       const job = {
         name: editName.value,
@@ -359,7 +359,7 @@ async function saveOrCreateJob(): Promise<void> {
         payload: buildPayload(),
         delivery: { mode: editDeliveryAnnounce.value ? "announce" : "none" },
       };
-      await send("cron.add", { job });
+      await send("cron.add", job);
     }
     await loadCronJobs();
     closeModal();
@@ -375,7 +375,7 @@ async function deleteJob(): Promise<void> {
   if (!job) return;
 
   try {
-    await send("cron.remove", { jobId: job.id });
+    await send("cron.remove", { id: job.id });
     cronJobs.value = cronJobs.value.filter((j) => j.id !== job.id);
     closeModal();
   } catch (err) {
@@ -386,7 +386,7 @@ async function deleteJob(): Promise<void> {
 async function runJobNow(job: CronJob): Promise<void> {
   isRunning.value = true;
   try {
-    await send("cron.run", { jobId: job.id, mode: "force" });
+    await send("cron.run", { id: job.id, mode: "force" });
     await loadCronJobs();
   } catch (err) {
     error.value = getErrorMessage(err);
@@ -397,7 +397,7 @@ async function runJobNow(job: CronJob): Promise<void> {
 
 async function toggleJobEnabled(job: CronJob): Promise<void> {
   try {
-    await send("cron.update", { jobId: job.id, patch: { enabled: !job.enabled } });
+    await send("cron.update", { id: job.id, patch: { enabled: !job.enabled } });
     cronJobs.value = cronJobs.value.map((j) =>
       j.id === job.id ? { ...j, enabled: !j.enabled } : j,
     );

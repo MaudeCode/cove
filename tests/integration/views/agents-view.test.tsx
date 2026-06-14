@@ -23,6 +23,7 @@ let agentsListResult: {
 
 mock.module("@/lib/gateway", () => ({
   isConnected: integrationGatewayMock.isConnected,
+  mainSessionKey: integrationGatewayMock.mainSessionKey,
   send: (method: string, params?: unknown) => integrationGatewayMock.send(method, params),
 }));
 
@@ -106,6 +107,7 @@ describe("AgentsView URL and selector state", () => {
     files.value = [];
     gatewayConfig.value = null;
     integrationGatewayMock.isConnected.value = false;
+    integrationGatewayMock.mainSessionKey.value = "main";
     isLoading.value = false;
     selectedAgentId.value = "main";
     skills.value = [];

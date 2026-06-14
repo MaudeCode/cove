@@ -40,11 +40,9 @@ const storage = await import("../../../src/lib/storage");
 
 const calls = {
   connect: [] as unknown[],
-  initConnectedApp: 0,
   initI18n: 0,
+  initPostConnectApp: 0,
   initTheme: 0,
-  loadAgents: 0,
-  startNodeConnection: 0,
 };
 
 mock.module("@/lib/theme", () => ({
@@ -93,15 +91,9 @@ mock.module("@/lib/gateway", () => ({
   }),
 }));
 
-mock.module("@/signals/agents", () => ({
-  loadAgents: async () => {
-    calls.loadAgents++;
-  },
-}));
-
 mock.module("@/lib/connected-app", () => ({
-  initConnectedApp: async () => {
-    calls.initConnectedApp++;
+  initPostConnectApp: async () => {
+    calls.initPostConnectApp++;
   },
 }));
 
@@ -112,11 +104,7 @@ mock.module("@/signals/settings", () => ({
   newChatSettings,
 }));
 
-mock.module("@/lib/node-connection", () => ({
-  startNodeConnection: () => {
-    calls.startNodeConnection++;
-  },
-}));
+mock.module("@/lib/node-connection", () => ({}));
 
 mock.module("@/components/layout/AppShell", () => ({
   AppShell: ({ children }: { children: ComponentChildren }) => (
@@ -248,6 +236,29 @@ describe("App route and shell gating", () => {
     expect(screen.getByTestId("app-shell")).toBeTruthy();
     expect(screen.getByTestId("login-view")).toBeTruthy();
     expect(screen.queryByTestId("welcome-wizard")).toBeNull();
+  });
+
+  test("auto-connect uses the shared post-connect bootstrap for saved credentials", async () => {
+    storageState.completedOnboarding = true;
+    storageState.auth = {
+      authMode: "token",
+      rememberMe: true,
+      url: "ws://gateway.example.test",
+    };
+    storageState.credential = "tok_saved";
+
+    await renderApp("auto-connect");
+
+    await waitFor(() =>
+      expect(calls.connect).toEqual([
+        {
+          autoReconnect: true,
+          token: "tok_saved",
+          url: "ws://gateway.example.test",
+        },
+      ]),
+    );
+    expect(calls.initPostConnectApp).toBe(1);
   });
 
   test("bypasses app shell and auth gating on the standalone canvas route", async () => {

@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { buildQueuedMessageAttachments } from "../../../../src/components/chat/queued-message-utils";
+import { buildQueuedMessageAttachments } from "../../../../src/lib/chat/attachments";
 import type { AttachmentPayload } from "../../../../src/types/attachments";
 import type { Message } from "../../../../src/types/messages";
 
@@ -42,6 +42,31 @@ describe("queued message utilities", () => {
         mimeType: "image/webp",
         fileName: "new.webp",
         content: "data:image/webp;base64,new",
+      },
+    ]);
+  });
+
+  test("skips omitted and empty image placeholders when rebuilding attachments", () => {
+    const fileAttachment: AttachmentPayload = {
+      type: "file",
+      mimeType: "text/plain",
+      fileName: "notes.txt",
+      content: "data:text/plain;base64,file",
+    };
+
+    expect(
+      buildQueuedMessageAttachments(queuedMessage([fileAttachment]), [
+        { url: "", alt: "omitted.png", omitted: true, bytes: 1024 },
+        { url: "   ", alt: "empty.png" },
+        { url: "data:image/png;base64,new", alt: "new.png" },
+      ]),
+    ).toEqual([
+      fileAttachment,
+      {
+        type: "image",
+        mimeType: "image/png",
+        fileName: "new.png",
+        content: "data:image/png;base64,new",
       },
     ]);
   });

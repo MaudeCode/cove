@@ -22,6 +22,9 @@ export interface GatewayResponse {
     code?: string;
     message: string;
     details?: unknown;
+    scope?: string;
+    remediation?: string;
+    diagnostics?: unknown;
     retryable?: boolean;
     retryAfterMs?: number;
   };

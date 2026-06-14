@@ -3,6 +3,8 @@ import { computed, signal, type ReadonlySignal, type Signal } from "@preact/sign
 type SignalValue<T> = Signal<T> | ReadonlySignal<T> | { readonly value: T };
 
 interface SessionSignalsMockOptions {
+  activeSessionKey?: SignalValue<string | null>;
+  effectiveSessionKey?: SignalValue<string | null>;
   isForActiveSession?: (sessionKey: string) => boolean;
   sessions?: Signal<unknown[]>;
   updateSession?: (sessionKey: string, updates: unknown) => void;
@@ -10,8 +12,10 @@ interface SessionSignalsMockOptions {
 
 export function createSessionSignalsMock(options: SessionSignalsMockOptions = {}) {
   return {
+    activeSessionKey: options.activeSessionKey ?? signal<string | null>(null),
     cleanupSessionEventSubscription: () => undefined,
     clearSessions: () => undefined,
+    effectiveSessionKey: options.effectiveSessionKey ?? computed(() => "main"),
     initSessionEventSubscription: () => undefined,
     isForActiveSession: options.isForActiveSession ?? (() => true),
     loadSessions: async () => undefined,
@@ -22,6 +26,7 @@ export function createSessionSignalsMock(options: SessionSignalsMockOptions = {}
 }
 
 export interface GatewayMockOptions {
+  capabilities?: SignalValue<string[]>;
   connectedAt?: SignalValue<number | null>;
   connectionState?: SignalValue<string>;
   connect?: (params: unknown) => unknown;
@@ -88,7 +93,7 @@ export function createGatewayMock(options: GatewayMockOptions = {}) {
   const gatewayUrl = options.gatewayUrl ?? signal<string | null>("wss://gateway.local");
   const connectionId = signal("conn_1");
   const mainSessionKey = options.mainSessionKey ?? signal<string | null>("main");
-  const capabilities = signal(["chat", "logs"]);
+  const capabilities = options.capabilities ?? signal(["chat", "logs"]);
   const tickIntervalMs = options.tickIntervalMs ?? signal<number | null>(1000);
   const presence = options.presence ?? signal([]);
   const reconnectAttempt = options.reconnectAttempt ?? signal(0);
@@ -132,6 +137,17 @@ export function createGatewayMock(options: GatewayMockOptions = {}) {
     gatewayUrl,
     gatewayVersion,
     isConnected,
+    isGatewayMethodAdvertised: (method: string) =>
+      capabilities.value.length > 0 ? capabilities.value.includes(method) : undefined,
+    isUnknownGatewayMethodError: (err: unknown, method: string) => {
+      if (!(err instanceof Error)) return false;
+      const code = (err as { code?: string }).code;
+      const message = err.message.toLowerCase();
+      return (
+        code === "METHOD_NOT_FOUND" ||
+        (message.includes("unknown method") && message.includes(method.toLowerCase()))
+      );
+    },
     lastError,
     mainSessionKey,
     on,

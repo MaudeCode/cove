@@ -54,22 +54,26 @@ export function normalizeGatewayConfig(config: GatewayConfig): GatewayConfig {
 export function buildConfigApplyParams(
   config: GatewayConfig,
   baseHash: string | null,
+  sessionKey?: string | null,
 ): {
   raw: string;
-  baseHash?: string | null;
+  baseHash?: string;
+  sessionKey?: string;
 } {
   return {
     raw: JSON.stringify(config),
-    baseHash,
+    ...(baseHash ? { baseHash } : {}),
+    ...(sessionKey ? { sessionKey } : {}),
   };
 }
 
 export async function applyGatewayConfigWithSend(
   config: GatewayConfig,
   baseHash: string | null,
+  sessionKey: string | null,
   sendConfig: ConfigApplySender,
 ): Promise<AppliedGatewayConfig> {
-  await sendConfig("config.apply", buildConfigApplyParams(config, baseHash));
+  await sendConfig("config.apply", buildConfigApplyParams(config, baseHash, sessionKey));
 
   const refreshed = await sendConfig("config.get", {});
   return {

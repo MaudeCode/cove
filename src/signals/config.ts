@@ -8,6 +8,7 @@ import { signal, computed } from "@preact/signals";
 import { send } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import type { JsonSchema, ConfigUiHints } from "@/types/config";
+import type { GatewayRpcMap } from "@/types/gateway-rpc";
 import { getConfigPatchReplacePaths } from "@/lib/config/patch-replace-paths";
 import { setValueAtPath } from "../lib/config/schema-utils";
 
@@ -160,11 +161,13 @@ export async function saveConfig(): Promise<boolean> {
       draft: draftConfig.value,
     });
 
-    const result = await send("config.patch", {
+    const patchParams = {
       raw: JSON.stringify(patch),
-      baseHash: baseHash.value,
+      ...(baseHash.value ? { baseHash: baseHash.value } : {}),
       ...(replacePaths.length > 0 ? { replacePaths } : {}),
-    });
+    } satisfies GatewayRpcMap["config.patch"]["params"];
+
+    const result = await send("config.patch", patchParams);
 
     if (result.ok) {
       // Update state with saved config

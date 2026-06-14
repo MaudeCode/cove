@@ -3,6 +3,7 @@ import { signal } from "@preact/signals";
 import { createSessionSignalsMock } from "../../helpers/module-mocks";
 import { installFakeTimers, type FakeTimers } from "../../helpers/timers";
 import { installStorageMocks } from "../../helpers/storage";
+import type { AttachmentPayload } from "../../../src/types/attachments";
 import type { Message } from "../../../src/types/messages";
 
 (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
@@ -35,6 +36,16 @@ function message(overrides: Partial<Message>): Message {
     timestamp: 1000,
     isStreaming: false,
     ...overrides,
+  };
+}
+
+function attachment(type: AttachmentPayload["type"], fileName: string): AttachmentPayload {
+  const mimeType = type === "image" ? "image/png" : "text/plain";
+  return {
+    type,
+    mimeType,
+    fileName,
+    content: `data:${mimeType};base64,${fileName}`,
   };
 }
 
@@ -71,6 +82,163 @@ describe("chat signals", () => {
     ]);
   });
 
+  test("reconcileMessagesFromHistory preserves unresolved same-session tail messages", () => {
+    chat.messages.value = [
+      message({
+        id: "user_duplicate",
+        content: "already stored",
+        status: "sent",
+        sessionKey: "session-1",
+        timestamp: 1_050,
+      }),
+      message({
+        id: "user_tail",
+        content: "still sending",
+        status: "sending",
+        sessionKey: "session-1",
+        timestamp: 2_000,
+      }),
+      message({
+        id: "user_other",
+        content: "other session",
+        status: "sending",
+        sessionKey: "other-session",
+        timestamp: 2_100,
+      }),
+      message({
+        id: "assistant_local-run",
+        role: "assistant",
+        content: "local final",
+        timestamp: 2_200,
+        toolCalls: [{ id: "tool-local", name: "read", status: "complete", result: "ok" }],
+      }),
+    ];
+    chat.startRun("streaming-run", "session-1");
+    chat.updateRunContent("streaming-run", "partial", [
+      { id: "tool-1", name: "read", status: "running" },
+    ]);
+
+    const reconciled = chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_user",
+          content: "already stored",
+          timestamp: 1_000,
+        }),
+        message({
+          id: "hist_assistant",
+          role: "assistant",
+          content: "loaded",
+          timestamp: 1_100,
+        }),
+      ],
+      1_500,
+    );
+
+    expect(reconciled.map((msg) => msg.id)).toEqual([
+      "hist_user",
+      "hist_assistant",
+      "user_tail",
+      "assistant_local-run",
+    ]);
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual([
+      "hist_user",
+      "hist_assistant",
+      "user_tail",
+      "assistant_local-run",
+    ]);
+    expect(chat.messages.value.at(-1)?.toolCalls).toEqual([
+      expect.objectContaining({ id: "tool-local", result: "ok" }),
+    ]);
+    expect(chat.activeRuns.value.get("streaming-run")).toMatchObject({
+      content: "partial",
+      status: "streaming",
+      toolCalls: [expect.objectContaining({ id: "tool-1" })],
+    });
+  });
+
+  test("reconcileMessagesFromHistory preserves repeated unresolved prompts", () => {
+    chat.messages.value = [
+      message({
+        id: "user_repeat",
+        content: "OK",
+        status: "sending",
+        sessionKey: "session-1",
+        timestamp: 2_000,
+      }),
+    ];
+
+    chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_repeat",
+          content: "OK",
+          timestamp: 1_950,
+        }),
+      ],
+      2_500,
+    );
+
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual(["hist_repeat", "user_repeat"]);
+  });
+
+  test("reconcileMessagesFromHistory drops stale completed messages after a reset", () => {
+    chat.messages.value = [
+      message({
+        id: "user_old",
+        content: "stale sent prompt",
+        status: "sent",
+        sessionKey: "session-1",
+        timestamp: 1_000,
+      }),
+      message({
+        id: "assistant_old",
+        role: "assistant",
+        content: "stale final reply",
+        sessionKey: "session-1",
+        timestamp: 1_100,
+      }),
+      message({
+        id: "side_old",
+        role: "assistant",
+        content: "stale side reply",
+        sessionKey: "session-1",
+        timestamp: 1_200,
+      }),
+      message({
+        id: "user_pending",
+        content: "pending prompt",
+        status: "sending",
+        sessionKey: "session-1",
+        timestamp: 1_300,
+      }),
+      message({
+        id: "user_new",
+        content: "new prompt",
+        status: "sent",
+        sessionKey: "session-1",
+        timestamp: 2_100,
+      }),
+      message({
+        id: "assistant_new",
+        role: "assistant",
+        content: "new final reply",
+        sessionKey: "session-1",
+        timestamp: 2_200,
+      }),
+    ];
+
+    chat.reconcileMessagesFromHistory("session-1", [], 2_000);
+
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual([
+      "user_pending",
+      "user_new",
+      "assistant_new",
+    ]);
+  });
+
   test("completeRun only adds final messages for the active session and cleans up later", () => {
     chat.startRun("run-1", "session-1");
     chat.completeRun("run-1", message({ id: "assistant-1", role: "assistant", content: "done" }));
@@ -88,6 +256,30 @@ describe("chat signals", () => {
     chat.startRun("run-2", "other-session");
     chat.completeRun("run-2", message({ id: "assistant-2", role: "assistant", content: "hidden" }));
     expect(chat.messages.value.map((msg) => msg.id)).toEqual(["assistant-1"]);
+  });
+
+  test("adoptRunId rekeys optimistic runs and preserves gateway stream state", () => {
+    chat.startRun("optimistic", "session-1");
+    chat.startRun("gateway-run", "session-1");
+    chat.updateRunContent("gateway-run", "streamed", [
+      {
+        id: "tool-1",
+        name: "read",
+        status: "running",
+        startedAt: 1000,
+      },
+    ]);
+
+    chat.adoptRunId("optimistic", "gateway-run");
+
+    expect(chat.activeRuns.value.has("optimistic")).toBe(false);
+    expect(chat.activeRuns.value.get("gateway-run")).toMatchObject({
+      content: "streamed",
+      runId: "gateway-run",
+      sessionKey: "session-1",
+      status: "streaming",
+      toolCalls: [expect.objectContaining({ id: "tool-1" })],
+    });
   });
 
   test("error and abort cleanup timers use their configured delays", () => {
@@ -129,13 +321,30 @@ describe("chat signals", () => {
   });
 
   test("queue and draft helpers edit, remove, set, and clear state", () => {
-    chat.queueMessage(message({ id: "queued", content: "old", status: "queued" }));
+    const fileAttachment = attachment("file", "notes.txt");
+    chat.queueMessage(
+      message({
+        id: "queued",
+        content: "old",
+        pendingAttachments: [attachment("image", "old.png"), fileAttachment],
+        status: "queued",
+      }),
+    );
     expect(chat.hasQueuedMessages.value).toBe(true);
 
     chat.updateQueuedMessage("queued", "new", [{ url: "data:image/png;base64,a", alt: "a.png" }]);
     expect(chat.messageQueue.value[0]).toMatchObject({
       content: "new",
       images: [{ url: "data:image/png;base64,a", alt: "a.png" }],
+      pendingAttachments: [
+        fileAttachment,
+        {
+          content: "data:image/png;base64,a",
+          fileName: "a.png",
+          mimeType: "image/png",
+          type: "image",
+        },
+      ],
     });
 
     chat.updateQueuedMessage("queued", "content only");
