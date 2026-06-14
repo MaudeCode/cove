@@ -30,8 +30,9 @@ import {
   markResetHistorySucceeded,
   registerResetRun,
 } from "./reset-reconciliation";
-import type { Message, MessageImage } from "@/types/messages";
+import { attachmentsToImages, getResendAttachments } from "./attachments";
 import type { AttachmentPayload } from "@/types/attachments";
+import type { Message } from "@/types/messages";
 
 /**
  * Session reset commands that clear the current session.
@@ -49,26 +50,6 @@ function isResetCommand(message: string): boolean {
 }
 
 let idempotencyCounter = 0;
-
-/**
- * Convert attachment payloads to message images for local display.
- * Note: Only images are stored — OpenClaw drops non-image attachments.
- */
-function attachmentsToImages(attachments?: AttachmentPayload[]): MessageImage[] | undefined {
-  if (!attachments || attachments.length === 0) return undefined;
-
-  const images: MessageImage[] = [];
-  for (const att of attachments) {
-    if (att.type === "image") {
-      images.push({
-        url: att.content, // content is already a data URL
-        alt: att.fileName,
-      });
-    }
-  }
-
-  return images.length > 0 ? images : undefined;
-}
 
 function generateIdempotencyKey(): string {
   return `cove_${Date.now()}_${++idempotencyCounter}`;
@@ -223,7 +204,7 @@ async function resendMessage(message: Message): Promise<void> {
 
   const idempotencyKey = message.id.replace(/^user_/, "");
   await sendMessage(message.sessionKey, message.content, {
-    attachments: message.pendingAttachments,
+    attachments: getResendAttachments(message),
     messageId: idempotencyKey,
   });
 }

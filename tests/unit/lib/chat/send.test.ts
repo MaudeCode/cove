@@ -39,6 +39,10 @@ const constants = await import("../../../../src/lib/constants");
 const debouncedSignal = await import("../../../../src/lib/debounced-signal");
 const messageDetection = await import("../../../../src/lib/message-detection");
 const storage = await import("../../../../src/lib/storage");
+const streaming = await import("../../../../src/lib/streaming");
+const toolUtils = await import("../../../../src/lib/tool-utils");
+const typeGuards = await import("../../../../src/lib/type-guards");
+const utils = await import("../../../../src/lib/utils");
 
 mock.module("@/lib/gateway", () =>
   createGatewayMock({
@@ -65,6 +69,12 @@ mock.module("@/lib/constants", () => constants);
 mock.module("@/lib/debounced-signal", () => debouncedSignal);
 mock.module("@/lib/message-detection", () => messageDetection);
 mock.module("@/lib/storage", () => storage);
+mock.module("@/lib/streaming", () => streaming);
+mock.module("@/lib/tool-utils", () => toolUtils);
+mock.module("@/lib/type-guards", () => typeGuards);
+mock.module("@/lib/utils", () => utils);
+const typesChat = await import("../../../../src/types/chat");
+mock.module("@/types/chat", () => typesChat);
 mock.module("@/signals/sessions", () => createSessionSignalsMock({ sessions }));
 mock.module("@/lib/session-utils", () => ({
   getErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
@@ -190,10 +200,77 @@ describe("chat send queue", () => {
     });
   });
 
+  test("resends image-only queued messages as attachment payloads", async () => {
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_image-only-key",
+        images: [{ url: "data:image/png;base64,image-only", alt: "image-only.png" }],
+        pendingAttachments: undefined,
+      }),
+    );
+
+    await processMessageQueue();
+
+    expect(gatewayCalls[0]).toMatchObject({
+      method: "chat.send",
+      params: expect.objectContaining({
+        attachments: [
+          {
+            content: "data:image/png;base64,image-only",
+            fileName: "image-only.png",
+            mimeType: "image/png",
+            type: "image",
+          },
+        ],
+        idempotencyKey: "image-only-key",
+        message: "hello",
+      }),
+    });
+  });
+
+  test("does not resend omitted or empty legacy image placeholders", async () => {
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_omitted-image-key",
+        images: [
+          { url: "", alt: "omitted.png", omitted: true, bytes: 1024 },
+          { url: "   ", alt: "empty.png" },
+        ],
+        pendingAttachments: undefined,
+      }),
+    );
+
+    await processMessageQueue();
+
+    expect(gatewayCalls[0].params).toMatchObject({
+      attachments: undefined,
+      idempotencyKey: "omitted-image-key",
+      message: "hello",
+    });
+  });
+
+  test("respects an explicit empty queued attachment payload", async () => {
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_removed-attachments-key",
+        images: [{ url: "data:image/png;base64,stale", alt: "stale.png" }],
+        pendingAttachments: [],
+      }),
+    );
+
+    await processMessageQueue();
+
+    expect(gatewayCalls[0].params).toMatchObject({
+      attachments: undefined,
+      idempotencyKey: "removed-attachments-key",
+    });
+  });
+
   test("queues new sends while streaming and processes only the matching session later", async () => {
     chat.startRun("run-active", "session-1");
+    const attachments = [attachment("image", "busy.png"), attachment("file", "busy.txt")];
 
-    const queuedKey = await sendMessage("session-1", "queued while streaming");
+    const queuedKey = await sendMessage("session-1", "queued while streaming", { attachments });
     chat.queueMessage(queuedMessage({ id: "user_other", sessionKey: "other", content: "other" }));
 
     expect(chat.messageQueue.value.map((msg) => msg.id)).toEqual([
@@ -208,16 +285,19 @@ describe("chat send queue", () => {
     expect(chat.messageQueue.value.map((msg) => msg.id)).toEqual(["user_other"]);
     expect(gatewayCalls).toHaveLength(1);
     expect(gatewayCalls[0].params).toMatchObject({
+      attachments,
       idempotencyKey: queuedKey,
       message: "queued while streaming",
     });
   });
 
   test("retry uses the original idempotency key and does not duplicate the user message", async () => {
+    const attachments = [attachment("image", "retry.png"), attachment("file", "retry.txt")];
     chat.messages.value = [
       queuedMessage({
         id: "user_original-key",
         content: "retry me",
+        pendingAttachments: attachments,
         sessionKey: "session-1",
         status: "failed",
       }),
@@ -228,6 +308,7 @@ describe("chat send queue", () => {
     expect(chat.messages.value).toHaveLength(1);
     expect(chat.messages.value[0]).toMatchObject({ id: "user_original-key", status: "sent" });
     expect(gatewayCalls[0].params).toMatchObject({
+      attachments,
       idempotencyKey: "original-key",
       message: "retry me",
     });

@@ -3,6 +3,7 @@ import { signal } from "@preact/signals";
 import { createSessionSignalsMock } from "../../helpers/module-mocks";
 import { installFakeTimers, type FakeTimers } from "../../helpers/timers";
 import { installStorageMocks } from "../../helpers/storage";
+import type { AttachmentPayload } from "../../../src/types/attachments";
 import type { Message } from "../../../src/types/messages";
 
 (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
@@ -35,6 +36,16 @@ function message(overrides: Partial<Message>): Message {
     timestamp: 1000,
     isStreaming: false,
     ...overrides,
+  };
+}
+
+function attachment(type: AttachmentPayload["type"], fileName: string): AttachmentPayload {
+  const mimeType = type === "image" ? "image/png" : "text/plain";
+  return {
+    type,
+    mimeType,
+    fileName,
+    content: `data:${mimeType};base64,${fileName}`,
   };
 }
 
@@ -129,13 +140,30 @@ describe("chat signals", () => {
   });
 
   test("queue and draft helpers edit, remove, set, and clear state", () => {
-    chat.queueMessage(message({ id: "queued", content: "old", status: "queued" }));
+    const fileAttachment = attachment("file", "notes.txt");
+    chat.queueMessage(
+      message({
+        id: "queued",
+        content: "old",
+        pendingAttachments: [attachment("image", "old.png"), fileAttachment],
+        status: "queued",
+      }),
+    );
     expect(chat.hasQueuedMessages.value).toBe(true);
 
     chat.updateQueuedMessage("queued", "new", [{ url: "data:image/png;base64,a", alt: "a.png" }]);
     expect(chat.messageQueue.value[0]).toMatchObject({
       content: "new",
       images: [{ url: "data:image/png;base64,a", alt: "a.png" }],
+      pendingAttachments: [
+        fileAttachment,
+        {
+          content: "data:image/png;base64,a",
+          fileName: "a.png",
+          mimeType: "image/png",
+          type: "image",
+        },
+      ],
     });
 
     chat.updateQueuedMessage("queued", "content only");

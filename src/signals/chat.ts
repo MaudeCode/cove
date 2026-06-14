@@ -20,6 +20,7 @@ import {
   RUN_ERROR_CLEANUP_DELAY_MS,
   RUN_ABORT_CLEANUP_DELAY_MS,
 } from "@/lib/constants";
+import { buildQueuedMessageAttachments } from "../lib/chat/attachments";
 import { createDebouncedSignal } from "@/lib/debounced-signal";
 import { isHeartbeatMessage } from "@/lib/message-detection";
 import { getMessagesCache, setMessagesCache } from "@/lib/storage";
@@ -459,18 +460,20 @@ export function updateQueuedMessage(
   newImages?: MessageImage[],
   newPendingAttachments?: AttachmentPayload[],
 ): void {
-  messageQueue.value = messageQueue.value.map((m) =>
-    m.id === messageId
-      ? {
-          ...m,
-          content: newContent,
-          ...(newImages !== undefined ? { images: newImages } : {}),
-          ...(newPendingAttachments !== undefined
-            ? { pendingAttachments: newPendingAttachments }
-            : {}),
-        }
-      : m,
-  );
+  messageQueue.value = messageQueue.value.map((m) => {
+    if (m.id !== messageId) return m;
+
+    const pendingAttachments =
+      newPendingAttachments ??
+      (newImages !== undefined ? buildQueuedMessageAttachments(m, newImages) : undefined);
+
+    return {
+      ...m,
+      content: newContent,
+      ...(newImages !== undefined ? { images: newImages } : {}),
+      ...(pendingAttachments !== undefined ? { pendingAttachments } : {}),
+    };
+  });
 }
 
 // ============================================
