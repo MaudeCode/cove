@@ -266,13 +266,13 @@ function validateForm(): boolean {
       }
     }
   } else if (editScheduleKind.value === "every") {
-    const ms = parseInt(editScheduleEveryMs.value, 10);
-    if (!ms || ms < 1000) {
+    const ms = parseNonNegativeInteger(editScheduleEveryMs.value);
+    if (ms === undefined || ms === null || ms < 1000) {
       errors.schedule = t("cron.validation.intervalMin");
     }
   } else if (editScheduleKind.value === "at") {
-    const ms = parseInt(editScheduleAtMs.value, 10);
-    if (!ms || ms < Date.now()) {
+    const ms = parseNonNegativeInteger(editScheduleAtMs.value);
+    if (ms === undefined || ms === null || ms < Date.now()) {
       errors.schedule = t("cron.validation.atFuture");
     }
   }
@@ -303,16 +303,20 @@ function buildSchedule(): CronSchedule {
         ...(typeof parsedStagger === "number" ? { staggerMs: parsedStagger } : {}),
       };
     }
-    case "every":
+    case "every": {
+      const everyMs = parseNonNegativeInteger(editScheduleEveryMs.value);
       return {
         kind: "every",
-        everyMs: parseInt(editScheduleEveryMs.value, 10) || 60000,
+        everyMs: typeof everyMs === "number" ? everyMs : 60000,
       };
-    case "at":
+    }
+    case "at": {
+      const atMs = parseNonNegativeInteger(editScheduleAtMs.value);
       return {
         kind: "at",
-        at: new Date(parseInt(editScheduleAtMs.value, 10) || Date.now()).toISOString(),
+        at: new Date(typeof atMs === "number" ? atMs : Date.now()).toISOString(),
       };
+    }
   }
 }
 
