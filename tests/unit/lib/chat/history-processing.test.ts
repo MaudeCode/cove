@@ -184,4 +184,38 @@ describe("normalizeHistoryMessages", () => {
       ],
     });
   });
+
+  test("normalizes sender metadata from assistant system and user history messages", () => {
+    const messages = normalizeHistoryMessages([
+      {
+        role: "assistant",
+        content:
+          "```metadata\nsender: assistant\nmessage_id: msg_assistant\n```\n\nAssistant response",
+        timestamp: 1000,
+      },
+      {
+        role: "system",
+        content:
+          'Conversation info (untrusted metadata):\n```json\n{"sender":"system"}\n```\n\nSystem note',
+        timestamp: 2000,
+      },
+      {
+        role: "user",
+        content: "message_id: msg_user\nUser prompt",
+        timestamp: 3000,
+      },
+      {
+        role: "toolResult",
+        toolCallId: "tool-1",
+        content: "message_id: result_id\nTool payload",
+        timestamp: 4000,
+      },
+    ]);
+
+    expect(messages).toEqual([
+      expect.objectContaining({ role: "assistant", content: "Assistant response" }),
+      expect.objectContaining({ role: "system", content: "System note" }),
+      expect.objectContaining({ role: "user", content: "User prompt" }),
+    ]);
+  });
 });
