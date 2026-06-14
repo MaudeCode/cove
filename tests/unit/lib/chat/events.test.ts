@@ -86,6 +86,8 @@ mock.module("@/signals/sessions", () => ({
 
 const chat = await import("../../../../src/signals/chat");
 mock.module("@/signals/chat", () => chat);
+const { consumeResetRun, registerResetRun } =
+  await import("../../../../src/lib/chat/reset-reconciliation");
 const { subscribeToChatEvents, unsubscribeFromChatEvents } =
   await import("../../../../src/lib/chat/events");
 
@@ -135,6 +137,7 @@ describe("chat event handling", () => {
 
   afterEach(() => {
     unsubscribeFromChatEvents();
+    consumeResetRun("reset-run");
     timers.uninstall();
     restoreStorage?.();
   });
@@ -222,6 +225,96 @@ describe("chat event handling", () => {
 
     expect(chat.messages.value).toEqual([]);
     expect(chat.activeRuns.value.get("heartbeat")).toMatchObject({ status: "complete" });
+  });
+
+  test("does not append a late reset final after authoritative history reloads", () => {
+    registerResetRun("reset-run");
+    chat.messages.value = [
+      {
+        id: "hist-reset",
+        role: "assistant",
+        content: "New session started.",
+        timestamp: 1000,
+        isStreaming: false,
+      },
+    ];
+
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1100 },
+    });
+
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        id: "hist-reset",
+        role: "assistant",
+        content: "New session started.",
+      }),
+    ]);
+  });
+
+  test("cleans up reset markers after lifecycle-only completion and drops a later final", () => {
+    registerResetRun("reset-run");
+
+    emitAgent({
+      runId: "reset-run",
+      stream: "lifecycle",
+      data: { phase: "start" },
+    });
+    emitAgent({
+      runId: "reset-run",
+      stream: "lifecycle",
+      data: { phase: "end" },
+    });
+
+    expect(consumeResetRun("reset-run")).toBe(false);
+    expect(chat.activeRuns.value.get("reset-run")).toMatchObject({ status: "complete" });
+
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1100 },
+    });
+
+    expect(chat.messages.value).toEqual([]);
+  });
+
+  test("clears reset and delta fallback state when a reset final is deferred", () => {
+    registerResetRun("reset-run");
+
+    emitChat({ runId: "reset-run", state: "delta", deltaText: "New session started." });
+    expect(chat.activeRuns.value.get("reset-run")).toMatchObject({
+      content: "New session started.",
+      status: "streaming",
+    });
+
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1100 },
+    });
+    emitChat({ runId: "reset-run", state: "delta", deltaText: "duplicate" });
+
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.activeRuns.value.get("reset-run")).toMatchObject({
+      content: "New session started.",
+      status: "complete",
+    });
+  });
+
+  test("clears reset markers on unsubscribe and drops a late reset final after resubscribe", () => {
+    registerResetRun("reset-run");
+
+    unsubscribeFromChatEvents();
+    subscribeToChatEvents();
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1100 },
+    });
+
+    expect(chat.messages.value).toEqual([]);
   });
 
   test("prevents compaction ghost runs and records completed compaction state", () => {

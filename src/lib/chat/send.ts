@@ -25,6 +25,11 @@ import { autoRenameSession } from "./auto-rename";
 import { isUserCreatedChat } from "@/lib/session-utils";
 import { t } from "@/lib/i18n";
 import { loadHistory } from "./history";
+import {
+  markResetHistoryFailed,
+  markResetHistorySucceeded,
+  registerResetRun,
+} from "./reset-reconciliation";
 import type { Message, MessageImage } from "@/types/messages";
 import type { AttachmentPayload } from "@/types/attachments";
 
@@ -142,19 +147,33 @@ export async function sendMessage(
       throw new Error(errorMsg);
     }
 
+    const isReset = isResetCommand(message);
+    const resetRunId = isReset ? result.runId : undefined;
+    if (isReset) {
+      registerResetRun(resetRunId);
+    }
+
     markMessageSent(messageId);
 
     // Handle session reset commands (/new, /reset)
     // Clear local messages and reload history (which will be empty for the new session)
-    if (isResetCommand(message)) {
+    if (isReset) {
       log.chat.info("Reset command detected, clearing messages for session:", sessionKey);
       // Small delay to let the gateway finish creating the new session
       setTimeout(() => {
         clearMessages();
         // Reload history to get any welcome message or confirm empty state
-        loadHistory(sessionKey).catch((err) => {
-          log.chat.warn("Failed to reload history after reset:", err);
-        });
+        loadHistory(sessionKey)
+          .then(() => {
+            markResetHistorySucceeded(resetRunId);
+          })
+          .catch((err) => {
+            const fallbackMessage = markResetHistoryFailed(resetRunId);
+            if (fallbackMessage) {
+              addMessage(fallbackMessage);
+            }
+            log.chat.warn("Failed to reload history after reset:", err);
+          });
       }, 100);
     }
 

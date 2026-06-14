@@ -24,11 +24,12 @@ import {
 } from "@/signals/chat";
 import { isForActiveSession } from "@/signals/sessions";
 import type { Message, ToolCall } from "@/types/messages";
-import type { ChatEvent, AgentEvent } from "@/types/chat";
+import type { ChatEvent, AgentEvent, ChatRun } from "@/types/chat";
 import { parseMessageContent, mergeToolCalls } from "@/types/chat";
 import { isHeartbeatResponse } from "@/lib/message-detection";
 import { processNextQueuedMessage } from "./send";
 import { loadHistory } from "./history";
+import { clearResetRuns, consumeResetRun, reconcileResetFinal } from "./reset-reconciliation";
 import { extractToolResultContent } from "@/lib/tool-utils";
 import { mergeAssistantStreamContent } from "./stream-events";
 
@@ -106,6 +107,7 @@ export function unsubscribeFromChatEvents(): void {
   }
   compactionRunIds.clear();
   chatDeltaFallbackRunIds.clear();
+  clearResetRuns();
 }
 
 /**
@@ -162,6 +164,15 @@ function handleLifecycleEnd(evt: AgentEvent): void {
 
   if (existingRun && (existingRun.status === "pending" || existingRun.status === "streaming")) {
     log.chat.debug("Completing run via lifecycle end:", runId, "phase:", evt.data?.phase);
+
+    if (consumeResetRun(runId)) {
+      chatDeltaFallbackRunIds.delete(runId);
+      completeRun(runId);
+      if (existingRun.sessionKey) {
+        setTimeout(() => processNextQueuedMessage(existingRun.sessionKey), 100);
+      }
+      return;
+    }
 
     const wasEmpty = !existingRun.content;
 
@@ -584,11 +595,38 @@ function handleFinalEvent(event: ChatEvent): void {
     }
   }
 
+  const finalMessage = buildFinalMessage(runId, existingRun, message);
+
+  const resetAction = reconcileResetFinal(runId, finalMessage);
+  if (resetAction === "drop" || resetAction === "defer") {
+    log.chat.debug("Reset final reconciled from history:", runId, "action:", resetAction);
+    completeRun(runId);
+    chatDeltaFallbackRunIds.delete(runId);
+    setTimeout(() => {
+      processNextQueuedMessage(sessionKey);
+    }, 100);
+    return;
+  }
+
+  completeRun(runId, finalMessage);
+  chatDeltaFallbackRunIds.delete(runId);
+
+  // Process next queued message after a short delay
+  setTimeout(() => {
+    processNextQueuedMessage(sessionKey);
+  }, 100);
+}
+
+function buildFinalMessage(
+  runId: string,
+  existingRun: ChatRun,
+  message: ChatEvent["message"],
+): Message {
   // The gateway final event only sends merged text (no tool_use blocks).
   // Tool call positions were set during streaming based on the streamed content.
   // We must keep the streamed content + positions together since they're consistent.
   // Only fall back to the final message text if we have no streamed content.
-  let finalContent = existingRun?.content ?? "";
+  let finalContent = existingRun.content;
 
   if (message?.content) {
     const parsed = parseMessageContent(message.content);
@@ -598,7 +636,7 @@ function handleFinalEvent(event: ChatEvent): void {
       parsedTextLen: parsed.text.length,
       parsedToolCallsCount: parsed.toolCalls.length,
       existingContentLen: finalContent.length,
-      existingToolCallsCount: existingRun?.toolCalls?.length,
+      existingToolCallsCount: existingRun.toolCalls.length,
     });
 
     // If the final message has tool_use blocks (history replay), use its text + positions
@@ -618,7 +656,7 @@ function handleFinalEvent(event: ChatEvent): void {
   });
 
   // Keep streaming tool calls with their original positions (consistent with finalContent)
-  const finalToolCalls = existingRun?.toolCalls?.map((tc) => {
+  const finalToolCalls = existingRun.toolCalls.map((tc) => {
     const updated = { ...tc };
 
     if (updated.status === "running" || updated.status === "pending") {
@@ -630,19 +668,11 @@ function handleFinalEvent(event: ChatEvent): void {
     return updated;
   });
 
-  const finalMessage: Message = {
+  return {
     id: `assistant_${runId}`,
     role: "assistant",
     content: finalContent,
-    toolCalls: finalToolCalls?.length ? finalToolCalls : undefined,
+    toolCalls: finalToolCalls.length ? finalToolCalls : undefined,
     timestamp: message?.timestamp ?? Date.now(),
   };
-
-  completeRun(runId, finalMessage);
-  chatDeltaFallbackRunIds.delete(runId);
-
-  // Process next queued message after a short delay
-  setTimeout(() => {
-    processNextQueuedMessage(sessionKey);
-  }, 100);
 }

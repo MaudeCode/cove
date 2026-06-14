@@ -6,10 +6,12 @@ import { installFakeTimers, type FakeTimers } from "../../../helpers/timers";
 import { installStorageMocks } from "../../../helpers/storage";
 import type { AttachmentPayload } from "../../../../src/types/attachments";
 import type { Message } from "../../../../src/types/messages";
+import type { ChatEvent } from "../../../../src/types/chat";
 
 (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
 
 type GatewayResponse = unknown | ((method: string, params: unknown) => unknown | Promise<unknown>);
+type NamedHandler = (payload: unknown) => void;
 
 const isConnected = signal(true);
 const mainSessionKey = signal<string | null>("main");
@@ -18,6 +20,9 @@ const gatewayResponses = new Map<string, GatewayResponse>();
 const gatewayCalls: Array<{ method: string; params: unknown }> = [];
 const autoRenameCalls: Array<{ message: string; sessionKey: string }> = [];
 const historyLoads: string[] = [];
+const namedHandlers = new Map<string, NamedHandler>();
+let historyLoadError: Error | null = null;
+let historyMessagesAfterLoad: Message[] = [];
 
 const gatewaySend = mock(async (method: string, params?: unknown) => {
   gatewayCalls.push({ method, params });
@@ -36,7 +41,15 @@ const messageDetection = await import("../../../../src/lib/message-detection");
 const storage = await import("../../../../src/lib/storage");
 
 mock.module("@/lib/gateway", () =>
-  createGatewayMock({ isConnected, mainSessionKey, send: gatewaySend }),
+  createGatewayMock({
+    isConnected,
+    mainSessionKey,
+    send: gatewaySend,
+    on: (event: unknown, handler: unknown) => {
+      namedHandlers.set(String(event), handler as NamedHandler);
+      return () => namedHandlers.delete(String(event));
+    },
+  }),
 );
 mock.module("@/lib/logger", () => ({
   log: {
@@ -66,6 +79,10 @@ mock.module("../../../../src/lib/chat/auto-rename", () => ({
 mock.module("../../../../src/lib/chat/history", () => ({
   loadHistory: async (sessionKey: string) => {
     historyLoads.push(sessionKey);
+    if (historyLoadError) {
+      throw historyLoadError;
+    }
+    chat.messages.value = historyMessagesAfterLoad;
   },
 }));
 
@@ -73,6 +90,16 @@ const chat = await import("../../../../src/signals/chat");
 mock.module("@/signals/chat", () => chat);
 const { processMessageQueue, processNextQueuedMessage, retryMessage, sendMessage } =
   await import("../../../../src/lib/chat/send");
+const { subscribeToChatEvents, unsubscribeFromChatEvents } =
+  await import("../../../../src/lib/chat/events");
+
+function emitChat(event: Partial<ChatEvent> & Pick<ChatEvent, "runId" | "state">): void {
+  namedHandlers.get("chat")?.({
+    sessionKey: "session-1",
+    seq: 1,
+    ...event,
+  });
+}
 
 function queuedMessage(overrides: Partial<Message>): Message {
   return {
@@ -109,6 +136,9 @@ describe("chat send queue", () => {
     gatewayCalls.length = 0;
     autoRenameCalls.length = 0;
     historyLoads.length = 0;
+    namedHandlers.clear();
+    historyLoadError = null;
+    historyMessagesAfterLoad = [];
     gatewayResponses.clear();
     gatewayResponses.set("chat.send", { runId: "run-1", status: "started" });
     chat.messages.value = [];
@@ -118,9 +148,12 @@ describe("chat send queue", () => {
     chat.dateRangeStart.value = null;
     chat.dateRangeEnd.value = null;
     chat.chatDrafts.value = new Map();
+    unsubscribeFromChatEvents();
+    subscribeToChatEvents();
   });
 
   afterEach(() => {
+    unsubscribeFromChatEvents();
     timers.uninstall();
     restoreStorage?.();
   });
@@ -227,6 +260,73 @@ describe("chat send queue", () => {
 
     expect(chat.messages.value).toEqual([]);
     expect(historyLoads).toEqual(["session-1"]);
+  });
+
+  test("/new reset drops final fallback when authoritative history reload succeeds", async () => {
+    gatewayResponses.set("chat.send", { runId: "reset-run", status: "started" });
+    historyMessagesAfterLoad = [
+      {
+        id: "hist-reset",
+        role: "assistant",
+        content: "New session started.",
+        timestamp: 1100,
+        isStreaming: false,
+      },
+    ];
+
+    await sendMessage("session-1", "/new");
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1200 },
+    });
+
+    timers.advanceBy(100);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(historyLoads).toEqual(["session-1"]);
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        id: "hist-reset",
+        content: "New session started.",
+      }),
+    ]);
+    expect(chat.activeRuns.value.has("reset-run")).toBe(false);
+  });
+
+  test("/new reset shows final fallback when authoritative history reload fails", async () => {
+    gatewayResponses.set("chat.send", { runId: "reset-run", status: "started" });
+    historyLoadError = new Error("history down");
+
+    await sendMessage("session-1", "/new");
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1200 },
+    });
+
+    timers.advanceBy(100);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(historyLoads).toEqual(["session-1"]);
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        id: "assistant_reset-run",
+        role: "assistant",
+        content: "New session started.",
+      }),
+    ]);
+    expect(chat.activeRuns.value.has("reset-run")).toBe(false);
+
+    emitChat({
+      runId: "reset-run",
+      state: "final",
+      message: { role: "assistant", content: "New session started.", timestamp: 1300 },
+    });
+
+    expect(chat.messages.value).toHaveLength(1);
   });
 
   test("first message in new user-created chat triggers auto-rename", async () => {
