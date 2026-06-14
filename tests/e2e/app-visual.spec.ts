@@ -9,6 +9,7 @@ type VisualScenario = {
   options?: MockGatewayOptions;
   prepare?: (page: Page, testInfo: TestInfo) => Promise<void>;
   assertions?: (page: Page) => Promise<void>;
+  healthLocators?: (page: Page) => Locator[];
 };
 
 type ErrorTracker = {
@@ -94,7 +95,12 @@ const noisyToolMessages: MockGatewayOptions["messages"] = [
     content: [
       {
         type: "text",
-        text: "build passed\nlint passed\nartifact: visual-smoke-shell-wrapper-output-that-wraps-cleanly.txt",
+        text:
+          "build passed\n" +
+          "lint passed\n" +
+          "artifact: visual-smoke-shell-wrapper-output-that-wraps-cleanly.txt\n" +
+          "url: https://gateway.example.test/artifacts/visual-smoke/release-check/report-with-a-very-long-readable-slug-that-should-wrap-cleanly\n" +
+          'json: {"status":"ok","artifact":"visual-smoke-shell-wrapper-output-that-wraps-cleanly.txt","summary":"private-free fixture output with long JSON fields"}',
       },
     ],
   },
@@ -110,6 +116,35 @@ const noisyToolMessages: MockGatewayOptions["messages"] = [
         text: "ENOENT: no such file or directory, open '/private/example/missing/file-with-an-extremely-long-name-that-should-not-overflow.json'",
       },
     ],
+  },
+];
+
+const activeStreamingEvents: MockGatewayOptions["eventsAfterHistory"] = [
+  {
+    type: "event",
+    event: "agent",
+    payload: {
+      runId: "visual-stream-run",
+      sessionKey: "agent:main:main",
+      stream: "lifecycle",
+      seq: 1,
+      ts: now - 2_000,
+      data: { phase: "start" },
+    },
+  },
+  {
+    type: "event",
+    event: "agent",
+    payload: {
+      runId: "visual-stream-run",
+      sessionKey: "agent:main:main",
+      stream: "assistant",
+      seq: 2,
+      ts: now - 1_000,
+      data: {
+        text: "Streaming visual response is still arriving with a long release-check summary that must wrap cleanly.",
+      },
+    },
   },
 ];
 
@@ -155,12 +190,47 @@ const scenarios: VisualScenario[] = [
     },
   },
   {
+    name: "history-loading-state",
+    options: { historyDelayMs: 10_000, sessions },
+    assertions: async (page) => {
+      await expect(page.getByRole("status", { name: "Loading..." })).toBeVisible();
+    },
+  },
+  {
     name: "active-transcript",
     options: { messages: activeTranscriptMessages, sessions },
     assertions: async (page) => {
       await expect(page.getByText("The plan is ready")).toBeVisible();
       await expect(page.getByAltText("Image").first()).toBeVisible();
     },
+    healthLocators: (page) => [page.getByAltText("Image").first()],
+  },
+  {
+    name: "active-streaming-run",
+    options: {
+      eventDelayMs: 75,
+      eventsAfterHistory: activeStreamingEvents,
+      messages: activeTranscriptMessages,
+      sessions,
+    },
+    assertions: async (page) => {
+      await expect(page.getByText("Streaming visual response is still arriving")).toBeVisible();
+      await expect(page.getByRole("button", { name: "Stop" })).toBeVisible();
+    },
+    healthLocators: (page) => [page.getByRole("button", { name: "Stop" })],
+  },
+  {
+    name: "search-overlay",
+    options: { messages: activeTranscriptMessages, sessions },
+    prepare: async (page) => {
+      await page.keyboard.press("Control+F");
+      await page.getByPlaceholder("Search in conversation...").fill("plan");
+    },
+    assertions: async (page) => {
+      await expect(page.getByPlaceholder("Search in conversation...")).toHaveValue("plan");
+      await expect(page.getByText(/\d+ matches?/u)).toBeVisible();
+    },
+    healthLocators: (page) => [page.getByPlaceholder("Search in conversation...")],
   },
   {
     name: "noisy-tool-and-failed-tool",
@@ -174,6 +244,10 @@ const scenarios: VisualScenario[] = [
       await expect(page.getByText("shell-wrapper:").first()).toBeVisible();
       await expect(page.getByText("ENOENT: no such file or directory").first()).toBeVisible();
     },
+    healthLocators: (page) => [
+      page.locator('[data-tool-name="exec"] button').first(),
+      page.locator('[data-tool-name="read"] button').first(),
+    ],
   },
   {
     name: "sidebar-session-list",
@@ -186,6 +260,7 @@ const scenarios: VisualScenario[] = [
     assertions: async (page) => {
       await expect(page.locator('[data-tour="app-sidebar"]')).toContainText("Release QA");
     },
+    healthLocators: (page) => [page.locator('[data-tour="app-sidebar"]')],
   },
   {
     name: "composer-with-attachment",
@@ -202,6 +277,7 @@ const scenarios: VisualScenario[] = [
     assertions: async (page) => {
       await expect(page.getByAltText("fixture-attachment.png")).toBeVisible();
     },
+    healthLocators: (page) => [page.getByAltText("fixture-attachment.png")],
   },
   {
     name: "image-detail-modal",
@@ -212,16 +288,31 @@ const scenarios: VisualScenario[] = [
     assertions: async (page) => {
       await expect(page.getByRole("dialog", { name: "Image Viewer" })).toBeVisible();
     },
+    healthLocators: (page) => [page.getByRole("dialog", { name: "Image Viewer" })],
+  },
+  {
+    name: "history-error-state",
+    options: {
+      rpcErrors: { "chat.history": "Fixture history temporarily unavailable" },
+      sessions,
+    },
+    assertions: async (page) => {
+      await expect(page.getByText("Fixture history temporarily unavailable")).toBeVisible();
+    },
+    healthLocators: (page) => [page.getByText("Fixture history temporarily unavailable")],
   },
 ];
 
 test.describe("Core chat visual smoke", () => {
+  // Run screenshot-heavy cases in order per project without fail-closing the suite.
+  test.describe.configure({ mode: "default" });
+
   for (const scenario of scenarios) {
     test(`${scenario.name} screenshot artifact`, async ({ page }, testInfo) => {
       const errors = await connectWithScenario(page, scenario.options);
       await scenario.prepare?.(page, testInfo);
       await scenario.assertions?.(page);
-      await assertVisualHealth(page);
+      await assertVisualHealth(page, scenario.healthLocators?.(page) ?? []);
       await attachScreenshot(page, testInfo, scenario.name);
       errors.assertNoErrors();
     });
@@ -263,7 +354,7 @@ async function connectWithScenario(
   return { assertNoErrors };
 }
 
-async function assertVisualHealth(page: Page): Promise<void> {
+async function assertVisualHealth(page: Page, extraLocators: Locator[] = []): Promise<void> {
   await expectPrimaryViewNotBlank(page);
   await expectNoHorizontalOverflow(page);
   await expectNoNestedOverflow(page);
@@ -272,7 +363,8 @@ async function assertVisualHealth(page: Page): Promise<void> {
     page.locator('[data-tour="chat-view"]'),
     page.locator('[data-tour="message-list"]'),
     page.locator('[data-tour="chat-input"]'),
-    page.getByRole("button", { name: "Send" }),
+    page.getByRole("button", { name: /Send|Stop|Queue/u }),
+    ...extraLocators,
   ]);
   const visibleDialogs = page.locator('[role="dialog"]:visible');
   if ((await visibleDialogs.count()) > 0) {
@@ -299,26 +391,60 @@ async function expectNoNestedOverflow(page: Page): Promise<void> {
   const offenders = await page.getByRole("main").evaluate((main) => {
     const skippedOverflow = new Set(["auto", "scroll", "hidden", "clip"]);
     const tolerance = 16;
-    return Array.from(main.querySelectorAll<HTMLElement>("*"))
-      .filter((element) => {
+
+    const isVisible = (element: HTMLElement) => {
+      const style = window.getComputedStyle(element);
+      const rect = element.getBoundingClientRect();
+      return (
+        !element.classList.contains("sr-only") &&
+        style.display !== "none" &&
+        style.visibility !== "hidden" &&
+        rect.width > 0 &&
+        rect.height > 0
+      );
+    };
+    const hasOverflow = (element: HTMLElement) =>
+      element.scrollWidth - element.clientWidth > tolerance;
+    const isIntentionalContentOverflow = (element: HTMLElement) => {
+      const style = window.getComputedStyle(element);
+      if (element.classList.contains("truncate")) return true;
+      if (element.tagName === "TEXTAREA") return true;
+      if (element.matches("pre, code") || element.closest("pre, code")) {
+        return style.overflowX === "auto" || style.overflowX === "scroll";
+      }
+      return element.getAttribute("data-tour") === "message-list";
+    };
+    const toSummary = (element: HTMLElement) => ({
+      tag: element.tagName.toLowerCase(),
+      className: element.className,
+      overflow: element.scrollWidth - element.clientWidth,
+      text: (element.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 80),
+    });
+
+    const generalOffenders = Array.from(main.querySelectorAll<HTMLElement>("*")).filter(
+      (element) => {
         const style = window.getComputedStyle(element);
-        if (style.display === "none" || style.visibility === "hidden") return false;
+        if (!isVisible(element)) return false;
         if (skippedOverflow.has(style.overflowX)) return false;
-        return element.scrollWidth - element.clientWidth > tolerance;
-      })
-      .slice(0, 5)
-      .map((element) => ({
-        tag: element.tagName.toLowerCase(),
-        className: element.className,
-        overflow: element.scrollWidth - element.clientWidth,
-        text: (element.textContent ?? "").replace(/\s+/g, " ").trim().slice(0, 80),
-      }));
+        return hasOverflow(element);
+      },
+    );
+    const contentOffenders = Array.from(
+      main.querySelectorAll<HTMLElement>(
+        '[data-tour="message-list"] *, [data-tour="chat-input"] *',
+      ),
+    ).filter(
+      (element) =>
+        isVisible(element) && hasOverflow(element) && !isIntentionalContentOverflow(element),
+    );
+
+    return [...new Set([...generalOffenders, ...contentOffenders])].slice(0, 5).map(toSummary);
   });
   expect(offenders).toEqual([]);
 }
 
 async function expectNoRawProtocolLeak(page: Page): Promise<void> {
-  const visibleText = await page.getByRole("main").evaluate((element) => element.textContent ?? "");
+  const visibleText = await page.evaluate(() => document.body.innerText);
   expect(visibleText).not.toMatch(
     /connect\.challenge|hello-ok|"type":"(?:event|res)"|minProtocol|maxProtocol/u,
   );
@@ -338,7 +464,30 @@ async function expectControlsInViewport(page: Page, locators: Locator[]): Promis
     expect(box.y).toBeGreaterThanOrEqual(-tolerance);
     expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + tolerance);
     expect(box.y + box.height).toBeLessThanOrEqual(viewport.height + tolerance);
+    await expectLocatorNotOccluded(locator.first(), box);
   }
+}
+
+async function expectLocatorNotOccluded(
+  locator: Locator,
+  box: NonNullable<Awaited<ReturnType<Locator["boundingBox"]>>>,
+): Promise<void> {
+  const visible = await locator.evaluate((element, rect) => {
+    const points = [
+      [rect.x + rect.width / 2, rect.y + rect.height / 2],
+      [rect.x + Math.min(8, rect.width / 2), rect.y + Math.min(8, rect.height / 2)],
+      [
+        rect.x + rect.width - Math.min(8, rect.width / 2),
+        rect.y + rect.height - Math.min(8, rect.height / 2),
+      ],
+    ];
+    return points.some(([x, y]) =>
+      document
+        .elementsFromPoint(x, y)
+        .some((candidate) => candidate === element || element.contains(candidate)),
+    );
+  }, box);
+  expect(visible).toBe(true);
 }
 
 async function attachScreenshot(

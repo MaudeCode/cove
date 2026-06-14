@@ -1,10 +1,15 @@
 import type { Page } from "@playwright/test";
 import type { RawMessage } from "@/types/chat";
+import type { GatewayEvent } from "@/types/gateway";
 import type { Session } from "@/types/sessions";
 
 export interface MockGatewayOptions {
+  eventDelayMs?: number;
+  eventsAfterHistory?: GatewayEvent[];
+  historyDelayMs?: number;
   messages?: RawMessage[];
   messagesBySession?: Record<string, RawMessage[]>;
+  rpcErrors?: Record<string, string>;
   sessions?: Session[];
 }
 
@@ -133,6 +138,7 @@ export async function installMockGateway(
       },
     };
     const methods = [...Object.keys(results), "chat.history"];
+    let emittedHistoryEvents = false;
 
     function helloOk() {
       return {
@@ -224,15 +230,7 @@ export async function installMockGateway(
         if (request.method === "connect") {
           const validationError = validateConnectParams(request.params);
           if (validationError) {
-            this.receive({
-              type: "res",
-              id: request.id,
-              ok: false,
-              error: {
-                code: "INVALID_CONNECT",
-                message: validationError,
-              },
-            });
+            this.receiveError(request.id, validationError, "INVALID_CONNECT");
             return;
           }
 
@@ -248,15 +246,7 @@ export async function installMockGateway(
         if (request.method === "chat.history") {
           const params = request.params as { sessionKey?: unknown } | undefined;
           if (typeof params?.sessionKey !== "string") {
-            this.receive({
-              type: "res",
-              id: request.id,
-              ok: false,
-              error: {
-                code: "INVALID_PARAMS",
-                message: "chat.history requires sessionKey",
-              },
-            });
+            this.receiveError(request.id, "chat.history requires sessionKey", "INVALID_PARAMS");
             return;
           }
 
@@ -265,25 +255,43 @@ export async function installMockGateway(
           const messages =
             mockOptions.messagesBySession?.[sessionKey] ??
             (isDefaultSession ? (mockOptions.messages ?? []) : []);
-          this.receive({
-            type: "res",
-            id: request.id,
-            ok: true,
-            payload: { sessionKey, messages },
-          });
+          const respond = () => {
+            const historyError = mockOptions.rpcErrors?.["chat.history"];
+            if (historyError) {
+              this.receiveError(request.id, historyError);
+              return;
+            }
+
+            this.receive({
+              type: "res",
+              id: request.id,
+              ok: true,
+              payload: { sessionKey, messages },
+            });
+            if (!emittedHistoryEvents && mockOptions.eventsAfterHistory?.length) {
+              emittedHistoryEvents = true;
+              for (const event of mockOptions.eventsAfterHistory) {
+                window.setTimeout(() => this.receive(event), mockOptions.eventDelayMs ?? 25);
+              }
+            }
+          };
+
+          if (mockOptions.historyDelayMs) {
+            window.setTimeout(respond, mockOptions.historyDelayMs);
+          } else {
+            respond();
+          }
+          return;
+        }
+
+        const rpcError = mockOptions.rpcErrors?.[request.method];
+        if (rpcError) {
+          this.receiveError(request.id, rpcError);
           return;
         }
 
         if (!(request.method in results)) {
-          this.receive({
-            type: "res",
-            id: request.id,
-            ok: false,
-            error: {
-              code: "METHOD_NOT_FOUND",
-              message: `No mock result for ${request.method}`,
-            },
-          });
+          this.receiveError(request.id, `No mock result for ${request.method}`, "METHOD_NOT_FOUND");
           return;
         }
 
@@ -301,6 +309,15 @@ export async function installMockGateway(
         });
         this.onmessage?.(event);
         this.dispatchEvent(event);
+      }
+
+      private receiveError(id: string, message: string, code = "MOCK_ERROR"): void {
+        this.receive({
+          type: "res",
+          id,
+          ok: false,
+          error: { code, message },
+        });
       }
     }
 
