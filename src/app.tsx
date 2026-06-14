@@ -18,8 +18,7 @@ import {
   consumePendingTour,
 } from "@/lib/storage";
 import { isConnected, connect, connectionState } from "@/lib/gateway";
-import { loadAgents } from "@/signals/agents";
-import { initConnectedApp } from "@/lib/connected-app";
+import { initPostConnectApp } from "@/lib/connected-app";
 
 import { AppShell } from "@/components/layout/AppShell";
 import { currentPath } from "@/components/layout/Sidebar";
@@ -47,8 +46,7 @@ import { CanvasView } from "@/views/CanvasView";
 import { WelcomeWizard } from "@/components/onboarding/WelcomeWizard";
 import { SpotlightTour } from "@/components/tour/SpotlightTour";
 import { getTourSteps } from "@/lib/tour-steps";
-import { appMode, canvasNodeEnabled } from "@/signals/settings";
-import { startNodeConnection } from "@/lib/node-connection";
+import { appMode } from "@/signals/settings";
 import { CommandPalette, useCommandPaletteShortcut } from "@/components/command";
 
 // Lazy-loaded CanvasPanel to avoid loading node-connection.ts on /canvas route
@@ -262,15 +260,7 @@ async function tryAutoConnect() {
       autoReconnect: true,
     });
 
-    // Load available agents
-    await loadAgents();
-
-    await initConnectedApp();
-
-    // Start node connection for canvas support (if enabled)
-    if (canvasNodeEnabled.value) {
-      startNodeConnection();
-    }
+    await initPostConnectApp();
   } catch {
     // Clear invalid session credential
     setSessionCredential("");

@@ -5,11 +5,19 @@ import { createUpdateSignalsMock } from "../../helpers/module-mocks";
 const calls: string[] = [];
 const sessions = signal([]);
 const activeSessionKey = signal<string | null>(null);
+const appMode = signal("single");
+const canvasNodeEnabled = signal(false);
 const updateSignals = createUpdateSignalsMock({
   initUpdateSubscription: () => {
     calls.push("initUpdateSubscription");
   },
 });
+
+mock.module("@/signals/agents", () => ({
+  loadAgents: async () => {
+    calls.push("loadAgents");
+  },
+}));
 
 mock.module("@/lib/chat/init", () => ({
   cleanupChat: () => undefined,
@@ -80,11 +88,25 @@ mock.module("@/signals/usage", () => ({
   },
 }));
 
-const { initConnectedApp } = await import("../../../src/lib/connected-app");
+mock.module("@/signals/settings", () => ({
+  appMode,
+  canvasNodeEnabled,
+}));
+
+mock.module("@/lib/node-connection", () => ({
+  startNodeConnection: () => {
+    calls.push("startNodeConnection");
+  },
+  stopNodeConnection: () => undefined,
+}));
+
+const { initConnectedApp, initPostConnectApp } = await import("../../../src/lib/connected-app");
 
 beforeEach(() => {
   calls.length = 0;
   activeSessionKey.value = null;
+  appMode.value = "single";
+  canvasNodeEnabled.value = false;
   sessions.value = [];
   updateSignals.reset();
 });
@@ -94,6 +116,45 @@ describe("connected app initialization", () => {
     await initConnectedApp();
 
     expect(calls).toEqual([
+      "loadSessions",
+      "initSessionEventSubscription",
+      "loadAssistantIdentity",
+      "setActiveSession:main",
+      "initChat:main",
+      "startUsagePolling",
+      "loadModels",
+      "initExecApproval",
+      "initUpdateSubscription",
+    ]);
+  });
+
+  test("runs the full shared post-connect bootstrap used by every login path", async () => {
+    canvasNodeEnabled.value = true;
+
+    await initPostConnectApp();
+
+    expect(calls).toEqual([
+      "loadAgents",
+      "loadSessions",
+      "initSessionEventSubscription",
+      "loadAssistantIdentity",
+      "setActiveSession:main",
+      "initChat:main",
+      "startUsagePolling",
+      "loadModels",
+      "initExecApproval",
+      "initUpdateSubscription",
+      "startNodeConnection",
+    ]);
+  });
+
+  test("can defer canvas node startup until fresh credentials are persisted", async () => {
+    canvasNodeEnabled.value = true;
+
+    await initPostConnectApp({ startCanvasNode: false });
+
+    expect(calls).toEqual([
+      "loadAgents",
       "loadSessions",
       "initSessionEventSubscription",
       "loadAssistantIdentity",

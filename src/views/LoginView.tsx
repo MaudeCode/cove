@@ -8,8 +8,7 @@ import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
-import { loadAgents } from "@/signals/agents";
-import { initConnectedApp } from "@/lib/connected-app";
+import { initPostConnectApp, startCanvasNodeConnectionIfEnabled } from "@/lib/connected-app";
 import { getAuth, saveAuth, getSessionCredential } from "@/lib/storage";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -68,18 +67,16 @@ export function LoginView() {
         autoReconnect: true,
       });
 
-      // Save auth settings and credential
+      await initPostConnectApp({ startCanvasNode: false });
+
+      // Save auth settings and credential only after the connected app state is ready.
       saveAuth({
         url: url.value,
         authMode: authMode.value,
         rememberMe: rememberMe.value,
         credential: token.value,
       });
-
-      // Load available agents
-      await loadAgents();
-
-      await initConnectedApp();
+      startCanvasNodeConnectionIfEnabled();
     } catch (err) {
       log.auth.error("Connect failed:", err);
     } finally {
