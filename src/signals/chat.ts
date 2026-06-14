@@ -278,8 +278,14 @@ export function setMessages(newMessages: Message[]): void {
 export function reconcileMessagesFromHistory(
   sessionKey: string,
   historyMessages: Message[],
+  historyRequestedAt: number,
 ): Message[] {
-  const optimisticTail = getOptimisticTailMessages(sessionKey, messages.value, historyMessages);
+  const optimisticTail = getOptimisticTailMessages(
+    sessionKey,
+    messages.value,
+    historyMessages,
+    historyRequestedAt,
+  );
   const reconciled = [...historyMessages, ...optimisticTail];
   setMessages(reconciled);
   return reconciled;
@@ -305,12 +311,14 @@ function getOptimisticTailMessages(
   sessionKey: string,
   currentMessages: Message[],
   historyMessages: Message[],
+  historyRequestedAt: number,
 ): Message[] {
   const lastHistoryTimestamp = Math.max(0, ...historyMessages.map((msg) => msg.timestamp));
 
   return currentMessages.filter((message) => {
     if (message.sessionKey && message.sessionKey !== sessionKey) return false;
     if (isUnresolvedLocalMessage(message)) return true;
+    if (message.timestamp < historyRequestedAt) return false;
     if (isNewerLocalTailMessage(message, lastHistoryTimestamp)) return true;
     if (isBoundaryLocalTailMessage(message, lastHistoryTimestamp)) {
       return !isRepresentedInHistory(message, historyMessages);

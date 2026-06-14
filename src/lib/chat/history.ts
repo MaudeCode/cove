@@ -55,6 +55,7 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
   historyError.value = null;
 
   try {
+    const historyRequestedAt = Date.now();
     const result = await loadStartupHistory(sessionKey, limit);
     const normalized = normalizeHistoryMessages(result.messages);
 
@@ -63,7 +64,7 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
       return;
     }
 
-    const reconciled = reconcileMessagesFromHistory(sessionKey, normalized);
+    const reconciled = reconcileMessagesFromHistory(sessionKey, normalized, historyRequestedAt);
     saveCachedMessages(sessionKey, reconciled);
 
     const sessionInfo = getStartupSessionInfo(result);

@@ -118,19 +118,23 @@ describe("chat signals", () => {
       { id: "tool-1", name: "read", status: "running" },
     ]);
 
-    const reconciled = chat.reconcileMessagesFromHistory("session-1", [
-      message({
-        id: "hist_user",
-        content: "already stored",
-        timestamp: 1_000,
-      }),
-      message({
-        id: "hist_assistant",
-        role: "assistant",
-        content: "loaded",
-        timestamp: 1_100,
-      }),
-    ]);
+    const reconciled = chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_user",
+          content: "already stored",
+          timestamp: 1_000,
+        }),
+        message({
+          id: "hist_assistant",
+          role: "assistant",
+          content: "loaded",
+          timestamp: 1_100,
+        }),
+      ],
+      1_500,
+    );
 
     expect(reconciled.map((msg) => msg.id)).toEqual([
       "hist_user",
@@ -165,15 +169,74 @@ describe("chat signals", () => {
       }),
     ];
 
-    chat.reconcileMessagesFromHistory("session-1", [
-      message({
-        id: "hist_repeat",
-        content: "OK",
-        timestamp: 1_950,
-      }),
-    ]);
+    chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_repeat",
+          content: "OK",
+          timestamp: 1_950,
+        }),
+      ],
+      2_500,
+    );
 
     expect(chat.messages.value.map((msg) => msg.id)).toEqual(["hist_repeat", "user_repeat"]);
+  });
+
+  test("reconcileMessagesFromHistory drops stale completed messages after a reset", () => {
+    chat.messages.value = [
+      message({
+        id: "user_old",
+        content: "stale sent prompt",
+        status: "sent",
+        sessionKey: "session-1",
+        timestamp: 1_000,
+      }),
+      message({
+        id: "assistant_old",
+        role: "assistant",
+        content: "stale final reply",
+        sessionKey: "session-1",
+        timestamp: 1_100,
+      }),
+      message({
+        id: "side_old",
+        role: "assistant",
+        content: "stale side reply",
+        sessionKey: "session-1",
+        timestamp: 1_200,
+      }),
+      message({
+        id: "user_pending",
+        content: "pending prompt",
+        status: "sending",
+        sessionKey: "session-1",
+        timestamp: 1_300,
+      }),
+      message({
+        id: "user_new",
+        content: "new prompt",
+        status: "sent",
+        sessionKey: "session-1",
+        timestamp: 2_100,
+      }),
+      message({
+        id: "assistant_new",
+        role: "assistant",
+        content: "new final reply",
+        sessionKey: "session-1",
+        timestamp: 2_200,
+      }),
+    ];
+
+    chat.reconcileMessagesFromHistory("session-1", [], 2_000);
+
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual([
+      "user_pending",
+      "user_new",
+      "assistant_new",
+    ]);
   });
 
   test("completeRun only adds final messages for the active session and cleans up later", () => {
