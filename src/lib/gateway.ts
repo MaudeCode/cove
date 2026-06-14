@@ -477,6 +477,9 @@ export interface RequestOptions {
 export class GatewayRpcError extends Error {
   code?: string;
   declare details?: unknown;
+  scope?: string;
+  remediation?: string;
+  declare diagnostics?: unknown;
   retryable?: boolean;
   retryAfterMs?: number;
 
@@ -488,6 +491,24 @@ export class GatewayRpcError extends Error {
       configurable: true,
       enumerable: false,
       value: error.details,
+      writable: true,
+    });
+    Object.defineProperty(this, "scope", {
+      configurable: true,
+      enumerable: false,
+      value: error.scope,
+      writable: true,
+    });
+    Object.defineProperty(this, "remediation", {
+      configurable: true,
+      enumerable: false,
+      value: error.remediation,
+      writable: true,
+    });
+    Object.defineProperty(this, "diagnostics", {
+      configurable: true,
+      enumerable: false,
+      value: error.diagnostics,
       writable: true,
     });
     this.retryable = error.retryable;

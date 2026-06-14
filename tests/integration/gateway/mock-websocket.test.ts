@@ -295,6 +295,9 @@ describe("gateway mock websocket harness", () => {
           code: "RATE_LIMITED",
           message: "Slow down",
           details: { limit: 10, windowMs: 1000 },
+          scope: "session",
+          remediation: "Wait before retrying the request.",
+          diagnostics: { requestId: "gw_req_123", remaining: 0 },
           retryable: true,
           retryAfterMs: 2500,
         }),
@@ -308,10 +311,16 @@ describe("gateway mock websocket harness", () => {
         message: "Slow down",
         code: "RATE_LIMITED",
         details: { limit: 10, windowMs: 1000 },
+        scope: "session",
+        remediation: "Wait before retrying the request.",
+        diagnostics: { requestId: "gw_req_123", remaining: 0 },
         retryable: true,
         retryAfterMs: 2500,
       });
       expect(Object.keys(error as object)).not.toContain("details");
+      expect(Object.keys(error as object)).not.toContain("scope");
+      expect(Object.keys(error as object)).not.toContain("remediation");
+      expect(Object.keys(error as object)).not.toContain("diagnostics");
     } finally {
       sockets.uninstall();
     }
