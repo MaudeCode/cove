@@ -10,7 +10,7 @@ import { useComputed } from "@preact/signals";
 import { route } from "preact-router";
 import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
 import { useQueryParam, useInitFromParam, useSyncToParam } from "@/hooks/useQueryParam";
-import { sendMessage, abortChat, processMessageQueue } from "@/lib/chat/send";
+import { sendMessage, abortChat, processMessageQueue, steerQueuedMessage } from "@/lib/chat/send";
 import { loadHistory } from "@/lib/chat/history";
 import { clearExpandedToolCalls } from "@/components/chat/ToolCall";
 import {
@@ -25,6 +25,7 @@ import {
   messageQueue,
   getCachedSessionKey,
   getStreamingStateForSession,
+  getStreamingRun,
 } from "@/signals/chat";
 import {
   activeSessionKey,
@@ -34,10 +35,11 @@ import {
   updateSession,
 } from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
-import { isSingleChatMode } from "@/signals/settings";
+import { chatSteeringSettings, isSingleChatMode } from "@/signals/settings";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ConnectionBanner } from "@/components/chat/ConnectionBanner";
+import type { Message } from "@/types/messages";
 
 interface ChatViewProps {
   /** Route path (from preact-router) */
@@ -166,6 +168,17 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
   };
 
+  const handleSteerQueued = (messageId: string) => {
+    steerQueuedMessage(messageId).catch(() => {
+      // Error is handled by steerQueuedMessage (marks message as failed)
+    });
+  };
+
+  const canSteerQueued = (message: Message) => {
+    if (!message.sessionKey || !isConnected.value) return false;
+    return getStreamingRun(message.sessionKey) !== null;
+  };
+
   // Get streaming state for current session only (useComputed ensures reactivity)
   const sessionStreamingState = useComputed(() =>
     getStreamingStateForSession(effectiveSessionKey.value),
@@ -192,9 +205,12 @@ export function ChatView({ sessionKey }: ChatViewProps) {
 
       <ChatInput
         onSend={handleSend}
+        onSteerQueued={handleSteerQueued}
+        canSteerQueued={canSteerQueued}
         onAbort={handleAbort}
         disabled={false} // Allow typing even when disconnected (will queue)
         isStreaming={sessionStreamingState.value.isStreaming}
+        steerByDefault={chatSteeringSettings.value.steerByDefault}
         sessionKey={effectiveSessionKey.value}
         currentModel={activeSession.value?.model}
         onModelChange={(modelId) => {

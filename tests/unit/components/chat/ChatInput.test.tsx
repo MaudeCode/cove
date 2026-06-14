@@ -321,7 +321,7 @@ describe("ChatInput", () => {
     }
   });
 
-  test("disables send when disabled but still labels streaming sends as queued", () => {
+  test("disables send and labels active-run sends by the selected default mode", () => {
     const sends: string[] = [];
 
     const rendered = renderComponent(
@@ -349,5 +349,18 @@ describe("ChatInput", () => {
     );
     fireEvent.input(screen.getByRole("textbox"), { target: { value: "queued" } });
     expect(screen.getByRole("button", { name: "actions.queue" })).toBeTruthy();
+
+    rendered.rerender(
+      <ChatInput
+        isStreaming
+        steerByDefault
+        onSend={(message) => {
+          sends.push(message);
+        }}
+      />,
+    );
+    fireEvent.input(screen.getByRole("textbox"), { target: { value: "steered" } });
+    expect(screen.getByRole("button", { name: "actions.steer" })).toBeTruthy();
+    expect(screen.getByText("chat.steerByDefaultActive")).toBeTruthy();
   });
 });

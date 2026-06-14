@@ -13,6 +13,8 @@ import {
   type FontFamily,
   type CodeFontFamily,
   type NewChatSettings,
+  type ChatSteeringSettings,
+  type ChatSteeringMode,
   type AppMode,
   getTimeFormat,
   setTimeFormat,
@@ -24,6 +26,8 @@ import {
   setCodeFontFamily,
   getNewChatSettings,
   setNewChatSettings,
+  getChatSteeringSettings,
+  setChatSteeringSettings,
   getAppMode,
   setAppMode,
   getCanvasNodeEnabled,
@@ -37,6 +41,8 @@ export type {
   FontFamily,
   CodeFontFamily,
   NewChatSettings,
+  ChatSteeringSettings,
+  ChatSteeringMode,
   AppMode,
 } from "@/lib/storage";
 
@@ -58,6 +64,9 @@ export const codeFontFamily = signal<CodeFontFamily>(getCodeFontFamily());
 
 /** New chat creation settings */
 export const newChatSettings = signal<NewChatSettings>(getNewChatSettings());
+
+/** Active-run steering behavior for chat sends */
+export const chatSteeringSettings = signal<ChatSteeringSettings>(getChatSteeringSettings());
 
 /** App interface mode (single-chat vs multi-chat) */
 export const appMode = signal<AppMode>(getAppMode());
@@ -102,6 +111,7 @@ effect(() => setFontSize(fontSize.value));
 effect(() => setFontFamily(fontFamily.value));
 effect(() => setCodeFontFamily(codeFontFamily.value));
 effect(() => setNewChatSettings(newChatSettings.value));
+effect(() => setChatSteeringSettings(chatSteeringSettings.value));
 effect(() => setAppMode(appMode.value));
 effect(() => setCanvasNodeEnabled(canvasNodeEnabled.value));
 
@@ -185,6 +195,11 @@ export const TIME_FORMAT_OPTIONS: { value: TimeFormat; labelKey: string }[] = [
   { value: "local", labelKey: "settings.preferences.timeAbsolute" },
 ];
 
+export const CHAT_STEERING_MODE_OPTIONS: { value: ChatSteeringMode; labelKey: string }[] = [
+  { value: "soft", labelKey: "settings.chat.steeringModeSoft" },
+  { value: "hard", labelKey: "settings.chat.steeringModeHard" },
+];
+
 // ============================================
 // Reset
 // ============================================
@@ -197,6 +212,10 @@ export function resetToDefaults(): void {
   newChatSettings.value = {
     useDefaults: true,
     defaultAgentId: "main",
+  };
+  chatSteeringSettings.value = {
+    steerByDefault: false,
+    steeringMode: "soft",
   };
   appMode.value = "single";
 }

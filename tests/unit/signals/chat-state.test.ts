@@ -368,4 +368,36 @@ describe("chat signals", () => {
     chat.clearDraft("session-1");
     expect(chat.getDraft("session-1")).toBe("");
   });
+
+  test("pending steered queue items survive history reconciliation and clear when their run ends", () => {
+    chat.queueMessage(
+      message({
+        id: "steer-1",
+        content: "tighten the plan",
+        pendingRunId: "run-active",
+        queueKind: "steered",
+        sessionKey: "session-1",
+        status: "sent",
+      }),
+    );
+
+    chat.reconcileMessagesFromHistory(
+      "session-1",
+      [message({ id: "hist-1", role: "assistant", content: "still working", timestamp: 900 })],
+      1_000,
+    );
+
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        id: "steer-1",
+        pendingRunId: "run-active",
+        queueKind: "steered",
+      }),
+    ]);
+
+    chat.startRun("run-active", "session-1");
+    chat.completeRun("run-active", message({ id: "assistant-final", role: "assistant" }));
+
+    expect(chat.messageQueue.value).toEqual([]);
+  });
 });

@@ -163,9 +163,20 @@ describe("view-state system contracts", () => {
     expect(settings.canvasNodeEnabled.value).toBe(false);
     expect(nodeCalls.stop).toBe(1);
 
+    expect(settings.chatSteeringSettings.value.steerByDefault).toBe(false);
+    expect(settings.chatSteeringSettings.value.steeringMode).toBe("soft");
+    settings.chatSteeringSettings.value = { steerByDefault: true, steeringMode: "hard" };
+    await flushSignals();
+    expect(JSON.parse(localStorage.getItem("cove:chat-steering-settings") ?? "null")).toEqual({
+      steerByDefault: true,
+      steeringMode: "hard",
+    });
+
     settings.resetToDefaults();
     expect(String(settings.fontSize.value)).toBe("md");
     expect(settings.appMode.value).toBe("single");
+    expect(settings.chatSteeringSettings.value.steerByDefault).toBe(false);
+    expect(settings.chatSteeringSettings.value.steeringMode).toBe("soft");
   });
 
   test("settings apply every font option and ignore unchanged canvas storage events", async () => {

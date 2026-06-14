@@ -56,7 +56,11 @@ function setRaw<T>(key: string, value: T): void {
  * Remove a value from storage
  */
 function remove(key: string): void {
-  localStorage.removeItem(PREFIX + key);
+  try {
+    localStorage.removeItem(PREFIX + key);
+  } catch {
+    // Storage unavailable - silently fail
+  }
 }
 
 // ============================================
@@ -297,6 +301,18 @@ export function setMessagesCache(sessionKey: string, messages: Message[]): void 
   setRaw("messages-cache", messages);
 }
 
+export function getMessageQueue(): Message[] {
+  return getRaw<Message[]>("message-queue") ?? [];
+}
+
+export function setMessageQueue(queue: Message[]): void {
+  if (queue.length === 0) {
+    remove("message-queue");
+    return;
+  }
+  setRaw("message-queue", queue);
+}
+
 export function getSessionsCache(): Session[] | null {
   return getRaw<Session[]>("sessions-cache");
 }
@@ -359,6 +375,15 @@ export interface NewChatSettings {
   defaultAgentId: string;
 }
 
+export interface ChatSteeringSettings {
+  /** Send new active-run messages as steering input instead of queuing. */
+  steerByDefault: boolean;
+  /** Transport used when steering an active run. */
+  steeringMode: ChatSteeringMode;
+}
+
+export type ChatSteeringMode = "soft" | "hard";
+
 const DEFAULT_NEW_CHAT_SETTINGS: NewChatSettings = {
   useDefaults: true,
   defaultAgentId: "main",
@@ -370,6 +395,26 @@ export function getNewChatSettings(): NewChatSettings {
 
 export function setNewChatSettings(settings: NewChatSettings): void {
   setRaw("new-chat-settings", settings);
+}
+
+// ============================================
+// Chat Steering Settings
+// ============================================
+
+const DEFAULT_CHAT_STEERING_SETTINGS: ChatSteeringSettings = {
+  steerByDefault: false,
+  steeringMode: "soft",
+};
+
+export function getChatSteeringSettings(): ChatSteeringSettings {
+  return {
+    ...DEFAULT_CHAT_STEERING_SETTINGS,
+    ...getRaw<Partial<ChatSteeringSettings>>("chat-steering-settings"),
+  };
+}
+
+export function setChatSteeringSettings(settings: ChatSteeringSettings): void {
+  setRaw("chat-steering-settings", settings);
 }
 
 // ============================================

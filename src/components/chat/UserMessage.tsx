@@ -5,7 +5,7 @@
  */
 
 import { useSignal } from "@preact/signals";
-import { Clock, AlertCircle, RefreshCw } from "lucide-preact";
+import { Clock, AlertCircle, RefreshCw, CornerUpRight } from "lucide-preact";
 import type { Message } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
 import { MessageImages } from "./MessageImages";
@@ -27,6 +27,7 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
   const isQueued = message.status === "queued";
   const isSending = message.status === "sending";
   const isFailed = message.status === "failed";
+  const isSteered = message.steered === true;
   const isPending = isQueued || isSending;
 
   const handleRetry = () => {
@@ -71,6 +72,11 @@ export function UserMessage({ message, userName = "You", userAvatar }: UserMessa
             <span class="flex items-center gap-1 text-[var(--color-error)]">
               <AlertCircle class="w-3 h-3" aria-hidden="true" />
               {t("connection.messageFailedStatus")}
+            </span>
+          ) : isSteered ? (
+            <span class="flex items-center gap-1 text-[var(--color-accent)]">
+              <CornerUpRight class="w-3 h-3" aria-hidden="true" />
+              {t("chat.steeredStatus")}
             </span>
           ) : (
             formatTimestamp(message.timestamp)

@@ -5,6 +5,7 @@ import type {
   ChatMetadataResult,
   ChatSendResult,
   ChatStartupResult,
+  SessionSendResult,
 } from "@/types/chat";
 import type { ChannelsStatusResponse } from "@/types/channels";
 import type { ConfigGetResponse, ConfigSaveResponse, ConfigSchemaResponse } from "@/types/config";
@@ -82,6 +83,16 @@ type TalkSpeakParams = {
 };
 
 type AgentScopedParams = { agentId?: string };
+
+type SessionsSendParams = {
+  key: string;
+  agentId?: string;
+  message: string;
+  thinking?: string;
+  attachments?: AttachmentPayload[];
+  timeoutMs?: number;
+  idempotencyKey?: string;
+};
 
 type PluginApprovalSeverity = "info" | "warning" | "critical";
 
@@ -559,6 +570,10 @@ export interface GatewayRpcMap {
   "sessions.abort": {
     params: { key?: string; runId?: string; agentId?: string };
     result: { ok?: boolean };
+  };
+  "sessions.steer": {
+    params: SessionsSendParams;
+    result: SessionSendResult;
   };
   "sessions.patch": {
     params: SessionsPatchParams;

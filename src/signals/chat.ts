@@ -11,7 +11,7 @@
  *   {isStreaming.value && <StreamingMessage />}
  */
 
-import { signal, computed } from "@preact/signals";
+import { signal, computed, effect } from "@preact/signals";
 import type { AttachmentPayload } from "@/types/attachments";
 import type { Message, MessageImage, MessageStatus, ToolCall } from "@/types/messages";
 import type { ChatRun } from "@/types/chat";
@@ -23,7 +23,12 @@ import {
 import { buildQueuedMessageAttachments } from "../lib/chat/attachments";
 import { createDebouncedSignal } from "@/lib/debounced-signal";
 import { isHeartbeatMessage } from "@/lib/message-detection";
-import { getMessagesCache, setMessagesCache } from "@/lib/storage";
+import {
+  getMessageQueue,
+  getMessagesCache,
+  setMessageQueue,
+  setMessagesCache,
+} from "@/lib/storage";
 import { isForActiveSession } from "@/signals/sessions";
 
 // ============================================
@@ -164,10 +169,14 @@ export const searchMatchCount = computed(() => {
 // ============================================
 
 /** Messages waiting to be sent (queued while disconnected) */
-export const messageQueue = signal<Message[]>([]);
+export const messageQueue = signal<Message[]>(getMessageQueue());
 
 /** Whether we have queued messages */
 export const hasQueuedMessages = computed(() => messageQueue.value.length > 0);
+
+effect(() => {
+  setMessageQueue(messageQueue.value);
+});
 
 // ============================================
 // Streaming State
@@ -334,7 +343,9 @@ function isUnresolvedLocalMessage(message: Message): boolean {
 }
 
 function isNewerLocalTailMessage(message: Message, lastHistoryTimestamp: number): boolean {
-  if (message.status === "sent" && message.timestamp > lastHistoryTimestamp) return true;
+  if (message.status === "sent" && message.timestamp > lastHistoryTimestamp) {
+    return true;
+  }
   if (
     (message.id.startsWith("assistant_") || message.id.startsWith("side_")) &&
     message.timestamp > lastHistoryTimestamp
@@ -370,6 +381,13 @@ export function markMessageSending(messageId: string): void {
 /** Mark a message as sent */
 export function markMessageSent(messageId: string): void {
   setMessageStatus(messageId, "sent", undefined);
+}
+
+/** Mark a message as steered */
+export function markMessageSteered(messageId: string): void {
+  messages.value = messages.value.map((msg) =>
+    msg.id === messageId ? { ...msg, status: "sent", error: undefined, steered: true } : msg,
+  );
 }
 
 /** Mark a message as failed */
@@ -448,6 +466,7 @@ export function updateRunContent(
 /** Complete a chat run */
 export function completeRun(runId: string, message?: Message): void {
   const run = activeRuns.value.get(runId);
+  clearPendingSteerMessagesForRun(runId);
   // Update content from final message to avoid showing incomplete streamed content
   const finalContent = message?.content ?? run?.content ?? "";
   updateRun(runId, { status: "complete", message, content: finalContent });
@@ -530,12 +549,14 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
 
 /** Mark a run as errored */
 export function errorRun(runId: string, error: string): void {
+  clearPendingSteerMessagesForRun(runId);
   updateRun(runId, { status: "error", error });
   scheduleRunCleanup(runId, RUN_ERROR_CLEANUP_DELAY_MS);
 }
 
 /** Mark a run as aborted */
 export function abortRun(runId: string): void {
+  clearPendingSteerMessagesForRun(runId);
   updateRun(runId, { status: "aborted" });
   scheduleRunCleanup(runId, RUN_ABORT_CLEANUP_DELAY_MS);
 }
@@ -557,6 +578,21 @@ export function queueMessage(message: Message): void {
 /** Remove a message from the queue */
 export function dequeueMessage(messageId: string): void {
   messageQueue.value = messageQueue.value.filter((m) => m.id !== messageId);
+}
+
+/** Update queue metadata without changing content or attachments. */
+export function updateQueuedMessageState(messageId: string, updates: Partial<Message>): void {
+  messageQueue.value = messageQueue.value.map((m) =>
+    m.id === messageId ? { ...m, ...updates } : m,
+  );
+}
+
+/** Remove pending steering indicators once their active run finishes. */
+export function clearPendingSteerMessagesForRun(runId: string | undefined): void {
+  if (!runId) return;
+  messageQueue.value = messageQueue.value.filter(
+    (m) => !(m.queueKind === "steered" && m.pendingRunId === runId),
+  );
 }
 
 /** Update a queued message's content and/or images */

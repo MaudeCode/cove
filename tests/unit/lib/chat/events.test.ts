@@ -23,6 +23,7 @@ const capabilities = signal(["sessions.messages.subscribe", "sessions.messages.u
 const sessions = signal([]);
 const activeSessionKey = signal<string | null>(null);
 const effectiveSessionKey = signal<string | null>(null);
+const chatSteeringSettings = signal({ steerByDefault: false });
 const gatewayCalls: Array<{ method: string; params: unknown }> = [];
 const gatewayHarness = ((
   globalThis as { __coveGatewayHarness?: GatewayHarness }
@@ -92,6 +93,9 @@ mock.module("@/signals/sessions", () => ({
   effectiveSessionKey,
   isForActiveSession: () => activeSessionMatches,
 }));
+mock.module("@/signals/settings", () => ({
+  chatSteeringSettings,
+}));
 
 const chat = await import("../../../../src/signals/chat");
 mock.module("@/signals/chat", () => chat);
@@ -140,6 +144,7 @@ describe("chat event handling", () => {
     timers = installFakeTimers(1_700_000_000_000);
     activeSessionMatches = true;
     isConnected.value = true;
+    chatSteeringSettings.value = { steerByDefault: false };
     activeSessionKey.value = null;
     effectiveSessionKey.value = null;
     capabilities.value = ["sessions.messages.subscribe", "sessions.messages.unsubscribe"];

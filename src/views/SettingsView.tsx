@@ -26,6 +26,7 @@ import {
   codeFontFamily,
   timeFormat,
   newChatSettings,
+  chatSteeringSettings,
   appMode,
   isMultiChatMode,
   canvasNodeEnabled,
@@ -33,11 +34,13 @@ import {
   FONT_FAMILY_OPTIONS,
   CODE_FONT_FAMILY_OPTIONS,
   TIME_FORMAT_OPTIONS,
+  CHAT_STEERING_MODE_OPTIONS,
   resetToDefaults,
   type FontSize,
   type FontFamily,
   type CodeFontFamily,
   type TimeFormat,
+  type ChatSteeringMode,
 } from "@/signals/settings";
 import { agentOptions } from "@/signals/agents";
 import { APP_VERSION } from "@/lib/constants";
@@ -327,6 +330,43 @@ if (visible.length >= 2 && visible[0] <= visible[1]) {
               onChange={(checked) => {
                 appMode.value = checked ? "multi" : "single";
               }}
+            />
+          </SettingRow>
+
+          <SettingRow
+            labelKey="settings.chat.steerByDefault"
+            descriptionKey="settings.chat.steerByDefaultDescription"
+          >
+            <Toggle
+              aria-label={t("settings.chat.steerByDefault")}
+              checked={chatSteeringSettings.value.steerByDefault}
+              onChange={(checked) => {
+                chatSteeringSettings.value = {
+                  ...chatSteeringSettings.value,
+                  steerByDefault: checked,
+                };
+              }}
+            />
+          </SettingRow>
+
+          <SettingRow
+            labelKey="settings.chat.steeringMode"
+            descriptionKey="settings.chat.steeringModeDescription"
+          >
+            <Dropdown
+              value={chatSteeringSettings.value.steeringMode}
+              onChange={(value) => {
+                chatSteeringSettings.value = {
+                  ...chatSteeringSettings.value,
+                  steeringMode: value as ChatSteeringMode,
+                };
+              }}
+              options={CHAT_STEERING_MODE_OPTIONS.map((opt) => ({
+                value: opt.value,
+                label: t(opt.labelKey),
+              }))}
+              size="sm"
+              width="220px"
             />
           </SettingRow>
 

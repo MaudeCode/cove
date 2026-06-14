@@ -25,6 +25,7 @@ import {
   Image,
   MonitorPlay,
   Maximize2,
+  CornerUpRight,
 } from "lucide-preact";
 
 type IconProps = {
@@ -86,6 +87,10 @@ export function ExternalLinkIcon({ class: className }: IconProps) {
 
 export function SendIcon({ class: className }: IconProps) {
   return <Send class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+export function SteerIcon({ class: className }: IconProps) {
+  return <CornerUpRight class={className || "w-5 h-5"} aria-hidden="true" />;
 }
 
 export function StopIcon({ class: className }: IconProps) {
