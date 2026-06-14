@@ -78,6 +78,10 @@ mock.module("@/types/chat", () => typesChat);
 mock.module("@/signals/sessions", () => createSessionSignalsMock({ sessions }));
 mock.module("@/lib/session-utils", () => ({
   getErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
+  getAgentId: (sessionKey: string) => {
+    const parts = sessionKey.split(":");
+    return parts.length >= 2 && parts[0] === "agent" ? parts[1] : null;
+  },
   isUserCreatedChat: (sessionKey: string) => /^agent:[^:]+:chat:[^:]+$/.test(sessionKey),
 }));
 installI18nMock({ t: (key: string) => (key === "common.newChat" ? "New Chat" : key) });
@@ -98,8 +102,14 @@ mock.module("../../../../src/lib/chat/history", () => ({
 
 const chat = await import("../../../../src/signals/chat");
 mock.module("@/signals/chat", () => chat);
-const { processMessageQueue, processNextQueuedMessage, retryMessage, sendMessage } =
-  await import("../../../../src/lib/chat/send");
+const {
+  abortChat,
+  clearPendingAborts,
+  processMessageQueue,
+  processNextQueuedMessage,
+  retryMessage,
+  sendMessage,
+} = await import("../../../../src/lib/chat/send");
 const { subscribeToChatEvents, unsubscribeFromChatEvents } =
   await import("../../../../src/lib/chat/events");
 
@@ -158,6 +168,7 @@ describe("chat send queue", () => {
     chat.dateRangeStart.value = null;
     chat.dateRangeEnd.value = null;
     chat.chatDrafts.value = new Map();
+    clearPendingAborts();
     unsubscribeFromChatEvents();
     subscribeToChatEvents();
   });
@@ -348,6 +359,113 @@ describe("chat send queue", () => {
     ]);
   });
 
+  test("aborts the active run with session, run, and agent scope", async () => {
+    gatewayResponses.set("sessions.abort", { ok: true });
+    chat.startRun("gateway-run", "agent:main:chat:abc");
+
+    await abortChat("agent:main:chat:abc");
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.abort",
+        params: {
+          agentId: "main",
+          key: "agent:main:chat:abc",
+          runId: "gateway-run",
+        },
+      },
+    ]);
+  });
+
+  test("aborts a session without run scope when no run is active", async () => {
+    gatewayResponses.set("sessions.abort", { ok: true });
+
+    await abortChat("agent:maude-pm:main");
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.abort",
+        params: {
+          agentId: "maude-pm",
+          key: "agent:maude-pm:main",
+        },
+      },
+    ]);
+  });
+
+  test("replays pending aborts before queued messages after reconnect", async () => {
+    gatewayResponses.set("sessions.abort", { ok: true });
+    const sessionKey = "agent:main:chat:abc";
+    isConnected.value = false;
+    chat.startRun("pending-run", sessionKey);
+
+    await abortChat(sessionKey);
+
+    expect(gatewayCalls).toEqual([]);
+    chat.queueMessage(queuedMessage({ id: "user_after-abort", sessionKey, content: "later" }));
+
+    isConnected.value = true;
+    await processMessageQueue();
+
+    expect(gatewayCalls.map((call) => call.method)).toEqual(["sessions.abort", "chat.send"]);
+    expect(gatewayCalls[0].params).toEqual({
+      agentId: "main",
+      key: sessionKey,
+      runId: "pending-run",
+    });
+    expect(gatewayCalls[1].params).toMatchObject({
+      idempotencyKey: "after-abort",
+      message: "later",
+      sessionKey,
+    });
+  });
+
+  test("replays pending aborts on reconnect without queued messages", async () => {
+    gatewayResponses.set("sessions.abort", { ok: true });
+    const sessionKey = "agent:main:chat:abc";
+    isConnected.value = false;
+    chat.startRun("pending-run", sessionKey);
+
+    await abortChat(sessionKey);
+
+    expect(gatewayCalls).toEqual([]);
+
+    isConnected.value = true;
+    await flushPromises();
+
+    expect(chat.messageQueue.value).toEqual([]);
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.abort",
+        params: {
+          agentId: "main",
+          key: sessionKey,
+          runId: "pending-run",
+        },
+      },
+    ]);
+  });
+
+  test("keeps queued messages pending when abort replay fails", async () => {
+    gatewayResponses.set("sessions.abort", new Error("abort unavailable"));
+    const sessionKey = "agent:main:chat:abc";
+    isConnected.value = false;
+    chat.startRun("pending-run", sessionKey);
+
+    await abortChat(sessionKey);
+    chat.queueMessage(
+      queuedMessage({ id: "user_after-failed-abort", sessionKey, content: "later" }),
+    );
+
+    isConnected.value = true;
+    await processMessageQueue();
+
+    expect(gatewayCalls.map((call) => call.method)).toEqual(["sessions.abort"]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual([
+      "user_after-failed-abort",
+    ]);
+  });
+
   test("gateway errors mark messages and runs failed", async () => {
     gatewayResponses.set("chat.send", { status: "error", summary: "gateway refused" });
 
@@ -454,3 +572,8 @@ describe("chat send queue", () => {
     ]);
   });
 });
+
+async function flushPromises(): Promise<void> {
+  await Promise.resolve();
+  await Promise.resolve();
+}
