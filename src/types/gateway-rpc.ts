@@ -28,6 +28,100 @@ import type { UsageSummary } from "@/types/usage";
 import type { WorkspaceFileResult, WorkspaceFilesResult } from "@/types/workspace";
 
 export type EmptyParams = Record<string, never>;
+type OpaqueRecord = Record<string, unknown>;
+
+type AgentWaitResult = {
+  runId: string;
+  status: string;
+  startedAt?: number;
+  endedAt?: number;
+  error?: string;
+} & OpaqueRecord;
+
+type SessionsCompactResult = {
+  ok: boolean;
+  key: string;
+  compacted: boolean;
+  reason?: string;
+} & OpaqueRecord;
+
+type TalkSessionLaunchParams = {
+  sessionKey?: string;
+  provider?: string;
+  model?: string;
+  voice?: string;
+  vadThreshold?: number;
+  silenceDurationMs?: number;
+  prefixPaddingMs?: number;
+  reasoningEffort?: string;
+  mode?: string;
+  transport?: string;
+  brain?: string;
+};
+
+type TalkSpeakParams = {
+  text: string;
+  modelId?: string;
+  voiceId?: string;
+  outputFormat?: string;
+  speed?: number;
+  rateWpm?: number;
+  stability?: number;
+  similarity?: number;
+  style?: number;
+  speakerBoost?: boolean;
+  seed?: number;
+  normalize?: boolean;
+  language?: string;
+  latencyTier?: string;
+};
+
+type AgentScopedParams = { agentId?: string };
+
+type PluginApprovalSeverity = "info" | "warning" | "critical";
+
+type PluginApprovalRequestParams = {
+  pluginId?: string;
+  title: string;
+  description: string;
+  severity?: PluginApprovalSeverity;
+  toolName?: string;
+  toolCallId?: string;
+  allowedDecisions?: ExecApprovalDecision[];
+  agentId?: string;
+  sessionKey?: string;
+  turnSourceChannel?: string;
+  turnSourceTo?: string;
+  turnSourceAccountId?: string;
+  turnSourceThreadId?: string | number;
+  timeoutMs?: number;
+  twoPhase?: boolean;
+};
+
+type PendingPluginApproval = {
+  id: string;
+  request: OpaqueRecord;
+  createdAtMs: number;
+  expiresAtMs: number;
+};
+
+type WikiSearchParams = {
+  query: string;
+  maxResults?: number;
+  backend?: "shared" | "local";
+  corpus?: "wiki" | "memory" | "all";
+  mode?: "auto" | "find-person" | "route-question" | "source-evidence" | "raw-claim";
+  agentId?: string;
+};
+
+type WikiGetParams = {
+  lookup: string;
+  fromLine?: number;
+  lineCount?: number;
+  backend?: "shared" | "local";
+  corpus?: "wiki" | "memory" | "all";
+  agentId?: string;
+};
 
 export interface ConnectParams {
   minProtocol: number;
@@ -168,6 +262,10 @@ export interface GatewayRpcMap {
     params: { sessionKey?: string };
     result: { name?: string; avatar?: string | null; agentId?: string | null };
   };
+  "agent.wait": {
+    params: { runId: string; timeoutMs?: number };
+    result: AgentWaitResult;
+  };
   "agents.create": {
     params: { name: string; workspace: string; model?: string; emoji?: string; avatar?: string };
     result: { ok: boolean; agentId: string };
@@ -211,6 +309,13 @@ export interface GatewayRpcMap {
   "chat.history": {
     params: { sessionKey: string; limit?: number; maxChars?: number };
     result: ChatHistoryResult;
+  };
+  "chat.metadata": {
+    params: AgentScopedParams | undefined;
+    result: {
+      commands?: unknown[];
+      models?: unknown;
+    } & OpaqueRecord;
   };
   "chat.send": {
     params: ChatSendParams;
@@ -324,6 +429,22 @@ export interface GatewayRpcMap {
     params: { id: string; decision: ExecApprovalDecision };
     result: { ok?: boolean };
   };
+  "plugin.approval.list": {
+    params: EmptyParams | undefined;
+    result: PendingPluginApproval[];
+  };
+  "plugin.approval.request": {
+    params: PluginApprovalRequestParams;
+    result: OpaqueRecord;
+  };
+  "plugin.approval.waitDecision": {
+    params: { id: string };
+    result: OpaqueRecord;
+  };
+  "plugin.approval.resolve": {
+    params: { id: string; decision: ExecApprovalDecision };
+    result: { ok?: boolean } & OpaqueRecord;
+  };
   "gateway.restart": {
     params: EmptyParams;
     result: { ok?: boolean };
@@ -335,6 +456,30 @@ export interface GatewayRpcMap {
       provider?: string;
       embedding: { ok: boolean; error?: string };
     };
+  };
+  "doctor.memory.dreamDiary": {
+    params: AgentScopedParams | undefined;
+    result: OpaqueRecord;
+  };
+  "doctor.memory.backfillDreamDiary": {
+    params: AgentScopedParams | undefined;
+    result: OpaqueRecord;
+  };
+  "doctor.memory.resetDreamDiary": {
+    params: AgentScopedParams | undefined;
+    result: OpaqueRecord;
+  };
+  "doctor.memory.resetGroundedShortTerm": {
+    params: AgentScopedParams | undefined;
+    result: OpaqueRecord;
+  };
+  "doctor.memory.repairDreamingArtifacts": {
+    params: AgentScopedParams | undefined;
+    result: OpaqueRecord;
+  };
+  "doctor.memory.dedupeDreamDiary": {
+    params: AgentScopedParams | undefined;
+    result: OpaqueRecord;
   };
   health: {
     params: { probe?: boolean } | undefined;
@@ -428,6 +573,10 @@ export interface GatewayRpcMap {
     };
     result: unknown;
   };
+  "sessions.compact": {
+    params: { key: string; agentId?: string; maxLines?: number };
+    result: SessionsCompactResult;
+  };
   "sessions.compaction.list": {
     params: { key: string };
     result: { ok: true; key: string; checkpoints: unknown[] };
@@ -479,6 +628,123 @@ export interface GatewayRpcMap {
   "skills.update": {
     params: { skillKey: string; enabled: boolean };
     result: { ok?: boolean };
+  };
+  "talk.client.create": {
+    params: TalkSessionLaunchParams;
+    result: OpaqueRecord;
+  };
+  "talk.client.toolCall": {
+    params: {
+      sessionKey: string;
+      callId: string;
+      name: string;
+      args?: unknown;
+      relaySessionId?: string;
+    };
+    result: { runId: string; idempotencyKey: string };
+  };
+  "talk.client.steer": {
+    params: { sessionKey: string; text: string; mode?: string };
+    result: OpaqueRecord;
+  };
+  "talk.session.create": {
+    params: TalkSessionLaunchParams & {
+      spawnedBy?: string;
+      ttlMs?: number;
+    };
+    result: OpaqueRecord;
+  };
+  "talk.catalog": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "talk.config": {
+    params: { includeSecrets?: boolean } | undefined;
+    result: { config?: unknown } & OpaqueRecord;
+  };
+  "talk.speak": {
+    params: TalkSpeakParams;
+    result: OpaqueRecord;
+  };
+  "talk.mode": {
+    params: { enabled: boolean; phase?: string };
+    result: { enabled: boolean; phase: string | null; ts: number };
+  };
+  "wiki.status": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.importRuns": {
+    params: { limit?: number } | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.importInsights": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.palace": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.init": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.doctor": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.compile": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.ingest": {
+    params: { inputPath: string; title?: string };
+    result: OpaqueRecord;
+  };
+  "wiki.lint": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.bridge.import": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.unsafeLocal.import": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.search": {
+    params: WikiSearchParams;
+    result: OpaqueRecord;
+  };
+  "wiki.apply": {
+    params: OpaqueRecord;
+    result: OpaqueRecord;
+  };
+  "wiki.get": {
+    params: WikiGetParams;
+    result: OpaqueRecord;
+  };
+  "wiki.obsidian.status": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
+  };
+  "wiki.obsidian.search": {
+    params: { query: string };
+    result: OpaqueRecord;
+  };
+  "wiki.obsidian.open": {
+    params: { path: string };
+    result: OpaqueRecord;
+  };
+  "wiki.obsidian.command": {
+    params: { id: string };
+    result: OpaqueRecord;
+  };
+  "wiki.obsidian.daily": {
+    params: EmptyParams | undefined;
+    result: OpaqueRecord;
   };
   "tools.catalog": {
     params: {
