@@ -18,6 +18,8 @@ import {
   formatTokenCount,
   formatContextUsage,
   openSessionDetail,
+  handleSessionRowKeyDown,
+  stopInlineEditPropagation,
   startInlineEdit,
   saveInlineEdit,
   cancelInlineEdit,
@@ -134,12 +136,7 @@ function SessionRow({ session }: { session: Session }) {
     <tr
       class="group hover:bg-[var(--color-bg-hover)] cursor-pointer transition-colors"
       onClick={() => !isEditing && openSessionDetail(session)}
-      onKeyDown={(e) => {
-        if ((e.key === "Enter" || e.key === " ") && !isEditing) {
-          e.preventDefault();
-          openSessionDetail(session);
-        }
-      }}
+      onKeyDown={(e) => handleSessionRowKeyDown(session, isEditing, e)}
       tabIndex={isEditing ? -1 : 0}
     >
       <td class="py-3 px-4">
@@ -150,8 +147,8 @@ function SessionRow({ session }: { session: Session }) {
               <div
                 class="flex items-center gap-2"
                 role="group"
-                onClick={(e) => e.stopPropagation()}
-                onKeyDown={(e) => e.stopPropagation()}
+                onClick={stopInlineEditPropagation}
+                onKeyDown={stopInlineEditPropagation}
               >
                 <Input
                   type="text"
