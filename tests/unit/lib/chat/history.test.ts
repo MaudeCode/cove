@@ -29,7 +29,6 @@ const debouncedSignal = await import("../../../../src/lib/debounced-signal");
 const messageDetection = await import("../../../../src/lib/message-detection");
 const storage = await import("../../../../src/lib/storage");
 const toolUtils = await import("../../../../src/lib/tool-utils");
-const typesChat = await import("../../../../src/types/chat");
 
 mock.module("@/lib/gateway", () =>
   createGatewayMock({
@@ -53,6 +52,7 @@ mock.module("@/lib/debounced-signal", () => debouncedSignal);
 mock.module("@/lib/message-detection", () => messageDetection);
 mock.module("@/lib/storage", () => storage);
 mock.module("@/lib/tool-utils", () => toolUtils);
+const typesChat = await import("../../../../src/types/chat");
 mock.module("@/types/chat", () => typesChat);
 mock.module("@/signals/sessions", () => createSessionSignalsMock());
 

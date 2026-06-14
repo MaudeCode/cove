@@ -5,6 +5,7 @@ import { render as rawRender } from "@testing-library/preact";
 import type { ComponentChildren } from "preact";
 import { fireEvent, renderComponent, screen, setViewport } from "../../helpers/dom";
 import { installUiComponentAliases } from "../../helpers/module-aliases";
+import { createGatewayMock } from "../../helpers/module-mocks";
 
 const routeCalls: string[] = [];
 let routerUrl = "/";
@@ -40,11 +41,13 @@ mock.module("@/lib/logger", () => ({ log: { ui: { error: () => undefined } } }))
 mock.module("@/lib/constants", () => import("../../../src/lib/constants"));
 mock.module("@/lib/navigation", () => import("../../../src/lib/navigation"));
 mock.module("@/lib/gateway", () => ({
-  connectionState,
-  gatewayVersion,
-  isConnected,
-  mainSessionKey,
-  send: async () => undefined,
+  ...createGatewayMock({
+    connectionState,
+    gatewayVersion,
+    isConnected,
+    mainSessionKey,
+    send: async () => undefined,
+  }),
 }));
 mock.module("@/signals/ui", () => ({
   canvasPanelOpen,

@@ -4,6 +4,7 @@ import { signal } from "@preact/signals";
 import { route } from "preact-router";
 import type { ComponentChildren } from "preact";
 import { renderComponent, screen, waitFor } from "../../helpers/dom";
+import { createGatewayMock } from "../../helpers/module-mocks";
 
 type StoredAuth = {
   authMode: "password" | "token";
@@ -35,6 +36,8 @@ const storageState = {
   pendingTour: false,
 };
 
+const storage = await import("../../../src/lib/storage");
+
 const calls = {
   connect: [] as unknown[],
   initConnectedApp: 0,
@@ -58,6 +61,7 @@ mock.module("@/lib/i18n", () => ({
 }));
 
 mock.module("@/lib/storage", () => ({
+  ...storage,
   consumePendingTour: () => {
     const pending = storageState.pendingTour;
     storageState.pendingTour = false;
@@ -77,14 +81,16 @@ mock.module("@/lib/storage", () => ({
 }));
 
 mock.module("@/lib/gateway", () => ({
-  connect: async (params: unknown) => {
-    calls.connect.push(params);
-  },
-  connectionState,
-  gatewayVersion,
-  isConnected: gatewayConnected,
-  mainSessionKey,
-  send: async () => undefined,
+  ...createGatewayMock({
+    connect: async (params: unknown) => {
+      calls.connect.push(params);
+    },
+    connectionState,
+    gatewayVersion,
+    isConnected: gatewayConnected,
+    mainSessionKey,
+    send: async () => undefined,
+  }),
 }));
 
 mock.module("@/signals/agents", () => ({

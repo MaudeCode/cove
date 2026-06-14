@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
 import { fireEvent, renderComponent, screen, waitFor } from "../../../helpers/dom";
 import { installI18nMock } from "../../../helpers/i18n";
+import { createGatewayMock } from "../../../helpers/module-mocks";
 import type { ModelChoice } from "../../../../src/types/models";
 
 const models = signal<ModelChoice[]>([]);
 const defaultModel = signal<string | null>(null);
 const gatewayCalls: Array<{ method: string; params: unknown }> = [];
+const storage = await import("../../../../src/lib/storage");
 
 installI18nMock({ t: (key: string) => key });
 
@@ -19,11 +21,14 @@ mock.module("@/signals/models", () => ({
 }));
 
 mock.module("@/lib/gateway", () => ({
-  send: async (method: string, params?: unknown) => {
-    gatewayCalls.push({ method, params });
-    return { ok: true };
-  },
+  ...createGatewayMock({
+    send: async (method: string, params?: unknown) => {
+      gatewayCalls.push({ method, params });
+      return { ok: true };
+    },
+  }),
 }));
+mock.module("@/lib/storage", () => storage);
 
 mock.module("@/lib/logger", () => ({
   log: {

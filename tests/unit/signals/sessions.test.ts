@@ -1,45 +1,40 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-import { signal } from "@preact/signals";
-import { createGatewayMock } from "../../helpers/module-mocks";
+import { installGatewayAliasMock, resetGatewayAliasMock } from "../../helpers/gateway-alias";
 import { installFakeTimers } from "../../helpers/timers";
 import type { Session } from "../../../src/types/sessions";
 
-type NamedGatewayHandler = (payload: unknown) => void;
+(globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
 
+const gateway = installGatewayAliasMock();
 const gatewayCalls: Array<{ method: string; params: unknown }> = [];
-const gatewayHandlers = new Map<string, Set<NamedGatewayHandler>>();
-const isConnected = signal(true);
 let cachedSessions: Session[] | null = null;
 let sendResponder: (method: string, params?: unknown) => unknown = () => ({ ok: true });
 
-mock.module("@/lib/gateway", () =>
-  createGatewayMock({
-    isConnected,
-    on: (...args: unknown[]) => {
-      const [event, handler] = args as [string, NamedGatewayHandler];
-      const handlers = gatewayHandlers.get(event) ?? new Set<NamedGatewayHandler>();
-      handlers.add(handler);
-      gatewayHandlers.set(event, handlers);
-      return () => {
-        handlers.delete(handler);
-        if (handlers.size === 0) {
-          gatewayHandlers.delete(event);
-        }
-      };
-    },
-    send: async (method: string, params?: unknown) => {
-      gatewayCalls.push({ method, params });
-      return sendResponder(method, params);
-    },
-  }),
-);
+const constants = await import("../../../src/lib/constants");
+const storage = await import("../../../src/lib/storage");
 
 mock.module("@/lib/session-utils", () => ({
+  formatAgentName: (agentId: string) =>
+    agentId
+      .split("-")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" "),
+  formatTokens: (tokens: number | undefined) => (tokens == null ? null : tokens.toLocaleString()),
+  formatVersion: (version: string) => version,
+  getAgentId: (sessionKey: string) => sessionKey.split(":")[1] ?? null,
+  getErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
+  getSessionDisplayKind: (item: Session) => {
+    if (item.kind === "main" || item.kind === "channel") return item.kind;
+    if (item.key.includes(":cron:")) return "cron";
+    return "isolated";
+  },
   groupSessionsByTime: (sessions: Session[]) => ({ Today: sessions }),
   isChannelSession: (item: Session) => Boolean(item.channel) || item.kind === "channel",
   isCronSession: (item: Session) => item.key.includes(":cron:"),
   isMainSession: (key: string) => key === "agent:main:main",
   isSpawnSession: (item: Session) => item.key.includes(":spawn:"),
+  isUserCreatedChat: (sessionKey: string) => sessionKey.includes(":chat:"),
+  looksLikeUuid: (value: string) => /^[0-9a-f-]{36}$/i.test(value),
 }));
 
 mock.module("@/lib/debounced-signal", () => ({
@@ -47,10 +42,12 @@ mock.module("@/lib/debounced-signal", () => ({
 }));
 
 mock.module("@/lib/constants", () => ({
+  ...constants,
   SESSION_DELETE_ANIMATION_MS: 300,
 }));
 
 mock.module("@/lib/storage", () => ({
+  ...storage,
   getModelFavorites: () => new Set<string>(),
   getSessionsCache: () => cachedSessions,
   setModelFavorites: () => undefined,
@@ -80,23 +77,27 @@ function session(overrides: Partial<Session> = {}): Session {
 }
 
 function emitGatewayEvent(event: string, payload: unknown): void {
-  for (const handler of gatewayHandlers.get(event) ?? []) {
+  for (const handler of gateway.namedHandlers.get(event) ?? []) {
     handler(payload);
   }
 }
 
 function resetState(): void {
   sessionSignals.cleanupSessionEventSubscription();
+  const gatewayState = resetGatewayAliasMock();
   sessionSignals.sessions.value = [];
   sessionSignals.activeSessionKey.value = null;
   sessionSignals.sessionKindFilter.value = null;
   sessionSignals.sessionSearchQuery.value = "";
   sessionSignals.deletingSessionKey.value = null;
   gatewayCalls.length = 0;
-  gatewayHandlers.clear();
   cachedSessions = null;
-  isConnected.value = true;
+  gatewayState.isConnected.value = true;
   sendResponder = () => ({ ok: true });
+  gatewayState.send = async (method: string, params?: unknown) => {
+    gatewayCalls.push({ method, params });
+    return sendResponder(method, params);
+  };
 }
 
 describe("session signals", () => {
@@ -286,7 +287,7 @@ describe("session signals", () => {
 
   test("unsubscribes from session changes during cleanup", () => {
     sessionSignals.initSessionEventSubscription();
-    expect(gatewayHandlers.get("sessions.changed")?.size).toBe(1);
+    expect(gateway.namedHandlers.get("sessions.changed")?.size).toBe(1);
 
     sessionSignals.cleanupSessionEventSubscription();
 
@@ -294,6 +295,6 @@ describe("session signals", () => {
       { method: "sessions.subscribe", params: {} },
       { method: "sessions.unsubscribe", params: {} },
     ]);
-    expect(gatewayHandlers.has("sessions.changed")).toBe(false);
+    expect(gateway.namedHandlers.has("sessions.changed")).toBe(false);
   });
 });

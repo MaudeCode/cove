@@ -2,7 +2,10 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { renderComponent, setViewport } from "../../helpers/dom";
 
+const storage = await import("../../../src/lib/storage");
+
 mock.module("@/lib/storage", () => ({
+  ...storage,
   getSidebarWidth: () => 280,
   setSidebarWidth: () => undefined,
 }));

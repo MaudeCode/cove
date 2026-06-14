@@ -35,7 +35,7 @@
     "dev:prod": "node bin/cove.js",
     "build": "tsc -b && vite build",
     "test": "bun run test:all",
-    "test:unit": "bun test tests/unit",
+    "test:unit": "bun test --isolate tests/unit",
     "test:integration": "bun test tests/integration",
     "test:deployment": "COVE_RUN_DOCKER_SMOKE=1 bun test tests/integration/deployment",
     "test:package": "COVE_RUN_PACKAGE_INTEGRITY=1 bun test tests/integration/package",

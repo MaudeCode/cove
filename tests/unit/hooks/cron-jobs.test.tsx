@@ -1,9 +1,8 @@
 /** @jsxImportSource preact */
 import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
-import { signal } from "@preact/signals";
 import { renderComponent } from "../../helpers/dom";
+import { installGatewayAliasMock, resetGatewayAliasMock } from "../../helpers/gateway-alias";
 import { installI18nMock } from "../../helpers/i18n";
-import { createGatewayMock } from "../../helpers/module-mocks";
 import type { CronJob, CronStatusResult, UseCronJobsResult } from "../../../src/types/cron";
 
 type SendCall = {
@@ -13,8 +12,7 @@ type SendCall = {
 
 type SendResponse = unknown | ((method: string, params: unknown) => unknown | Promise<unknown>);
 
-const isConnected = signal(false);
-const mainSessionKey = signal<string | null>("main");
+installGatewayAliasMock();
 const sendCalls: SendCall[] = [];
 const sendResponses = new Map<string, SendResponse>();
 const originalDateNow = Date.now;
@@ -24,25 +22,12 @@ function setResponse(method: string, response: SendResponse): void {
   sendResponses.set(method, response);
 }
 
-mock.module("@/lib/gateway", () => ({
-  ...createGatewayMock({
-    isConnected,
-    mainSessionKey,
-    send: async (method: string, params?: unknown) => {
-      sendCalls.push({ method, params });
-      if (!sendResponses.has(method)) {
-        throw new Error(`Unexpected gateway method: ${method}`);
-      }
-      const response = sendResponses.get(method);
-      return typeof response === "function" ? response(method, params) : response;
-    },
-  }),
-}));
-
 installI18nMock({ t: (key: string) => key });
 
 mock.module("@/lib/utils", () => import("../../../src/lib/utils"));
-mock.module("@/lib/session-utils", () => import("../../../src/lib/session-utils"));
+mock.module("@/lib/session-utils", () => ({
+  getErrorMessage: (err: unknown) => (err instanceof Error ? err.message : String(err)),
+}));
 mock.module("@/lib/timezones", () => import("../../../src/lib/timezones"));
 mock.module("@/components/cron", () => import("../../../src/components/cron/cron-helpers"));
 
@@ -108,7 +93,17 @@ describe("useCronJobs", () => {
   });
 
   beforeEach(() => {
-    isConnected.value = false;
+    const gatewayState = resetGatewayAliasMock();
+    gatewayState.isConnected.value = false;
+    gatewayState.mainSessionKey.value = "main";
+    gatewayState.send = async (method: string, params?: unknown) => {
+      sendCalls.push({ method, params });
+      if (!sendResponses.has(method)) {
+        throw new Error(`Unexpected gateway method: ${method}`);
+      }
+      const response = sendResponses.get(method);
+      return typeof response === "function" ? response(method, params) : response;
+    };
     sendCalls.length = 0;
     sendResponses.clear();
     setResponse("cron.status", { enabled: true, jobs: 0 } satisfies CronStatusResult);

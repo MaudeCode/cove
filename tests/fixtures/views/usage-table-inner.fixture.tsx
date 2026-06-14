@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { ComponentChildren } from "preact";
 import { installUiComponentAliases } from "../../helpers/module-aliases";
-import { createQueryParamMock } from "../../helpers/module-mocks";
+import { createGatewayMock, createQueryParamMock } from "../../helpers/module-mocks";
 import { fireEvent, renderComponent, screen, within } from "../../helpers/dom";
 import type {
   SessionUsageEntry,
@@ -13,6 +13,7 @@ import type {
 await installUiComponentAliases();
 
 const gatewayCalls: { method: string; params: unknown }[] = [];
+const storage = await import("../../../src/lib/storage");
 
 mock.module("@/components/ui/ListCard", () => import("../../../src/components/ui/ListCard"));
 mock.module("@/components/ui/Modal", () => ({
@@ -86,19 +87,24 @@ mock.module("@/lib/i18n", () => ({
                     : key,
 }));
 mock.module("@/lib/gateway", () => ({
-  isConnected: { value: true },
-  send: async (method: string, params?: unknown) => {
-    gatewayCalls.push({ method, params });
-    if (method === "sessions.usage.timeseries") {
-      const key = (params as { key?: string } | undefined)?.key ?? "unknown";
-      return { sessionId: key, points: [{ timestamp: 1, cumulativeTokens: 1, cumulativeCost: 1 }] };
-    }
-    if (method === "sessions.usage.logs") {
-      const key = (params as { key?: string } | undefined)?.key ?? "unknown";
-      return { logs: [{ timestamp: 1, role: "user", content: key, tokens: 1 }] };
-    }
-    return null;
-  },
+  ...createGatewayMock({
+    isConnected: { value: true },
+    send: async (method: string, params?: unknown) => {
+      gatewayCalls.push({ method, params });
+      if (method === "sessions.usage.timeseries") {
+        const key = (params as { key?: string } | undefined)?.key ?? "unknown";
+        return {
+          sessionId: key,
+          points: [{ timestamp: 1, cumulativeTokens: 1, cumulativeCost: 1 }],
+        };
+      }
+      if (method === "sessions.usage.logs") {
+        const key = (params as { key?: string } | undefined)?.key ?? "unknown";
+        return { logs: [{ timestamp: 1, role: "user", content: key, tokens: 1 }] };
+      }
+      return null;
+    },
+  }),
 }));
 mock.module("@/lib/logger", () => ({
   log: {
@@ -108,6 +114,7 @@ mock.module("@/lib/logger", () => ({
   },
 }));
 mock.module("@/lib/storage", () => ({
+  ...storage,
   getSessionsUsageCache: () => null,
   setSessionsUsageCache: () => undefined,
 }));

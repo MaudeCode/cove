@@ -46,6 +46,8 @@ let probeGatewayImpl: (
 let connectImpl: () => Promise<void>;
 let loadSessionsImpl: () => Promise<void>;
 
+const storage = await import("../../../../src/lib/storage");
+
 installI18nMock({ t: (key: string) => key });
 mock.module("@/lib/logger", () => ({ log: { auth: { error: () => undefined } } }));
 mock.module("@/signals/settings", () => ({ appMode, canvasNodeEnabled }));
@@ -87,6 +89,7 @@ mock.module("@/lib/connected-app", () => ({
   },
 }));
 mock.module("@/lib/storage", () => ({
+  ...storage,
   completeOnboarding: () => {
     calls.completeOnboarding++;
   },

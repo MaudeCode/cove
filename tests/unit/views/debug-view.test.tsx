@@ -51,7 +51,7 @@ afterEach(() => {
   if (originalAppVersionDescriptor) {
     Object.defineProperty(globalThis, "__APP_VERSION__", originalAppVersionDescriptor);
   } else {
-    delete (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__;
+    (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
   }
 });
 

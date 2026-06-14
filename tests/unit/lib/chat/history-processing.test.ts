@@ -5,11 +5,11 @@ import { describe, expect, mock, test } from "bun:test";
 const constants = await import("../../../../src/lib/constants");
 const messageDetection = await import("../../../../src/lib/message-detection");
 const toolUtils = await import("../../../../src/lib/tool-utils");
-const typesChat = await import("../../../../src/types/chat");
 
 mock.module("@/lib/constants", () => constants);
 mock.module("@/lib/message-detection", () => messageDetection);
 mock.module("@/lib/tool-utils", () => toolUtils);
+const typesChat = await import("../../../../src/types/chat");
 mock.module("@/types/chat", () => typesChat);
 
 const { normalizeHistoryMessages } = await import("../../../../src/lib/chat/history-processing");

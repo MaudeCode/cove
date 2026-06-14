@@ -27,6 +27,7 @@ export async function installMockGateway(
 
     type ConnectParams = {
       auth?: { password?: string; token?: string };
+      caps?: string[];
       client?: { id?: string; mode?: string };
       maxProtocol?: number;
       minProtocol?: number;
@@ -342,8 +343,12 @@ export async function installMockGateway(
           return `connect scopes must include ${scope}`;
         }
       }
-      if (!connect.auth?.token && !connect.auth?.password) {
-        return "connect auth must include token or password";
+      if (!connect.caps?.includes("tool-events")) {
+        return "connect caps must include tool-events";
+      }
+      const authModes = [connect.auth?.token, connect.auth?.password].filter(Boolean);
+      if (authModes.length !== 1) {
+        return "connect auth must include exactly one of token or password";
       }
 
       return null;

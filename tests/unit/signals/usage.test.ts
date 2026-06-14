@@ -9,6 +9,8 @@ const gatewayResponses: unknown[] = [];
 let importCounter = 0;
 let restoreStorage: (() => void) | undefined;
 let timers: FakeTimers;
+type UsageModule = typeof import("../../../src/signals/usage");
+const importedUsageModules: UsageModule[] = [];
 
 const storage = await import("../../../src/lib/storage");
 
@@ -38,6 +40,10 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  for (const usage of importedUsageModules) {
+    usage.stopUsagePolling();
+  }
+  importedUsageModules.length = 0;
   timers.uninstall();
   restoreStorage?.();
 });
@@ -197,7 +203,9 @@ describe("usage signals", () => {
 
 async function importUsage() {
   // @ts-ignore Query suffix gives each test fresh module state.
-  return import(`../../../src/signals/usage.ts?unit=${importCounter++}`);
+  const usage = await import(`../../../src/signals/usage.ts?unit=${importCounter++}`);
+  importedUsageModules.push(usage);
+  return usage;
 }
 
 async function flushPromises(): Promise<void> {
