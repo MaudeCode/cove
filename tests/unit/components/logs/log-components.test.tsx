@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { ComponentChildren } from "preact";
 import { fireEvent, renderComponent, screen } from "../../../helpers/dom";
+import { installI18nMock } from "../../../helpers/i18n";
 import { formatRawLog, type ParsedLogLine } from "../../../../src/components/logs/log-parser";
 import {
   formatLogTimestamp,
@@ -9,7 +10,7 @@ import {
   levelIcons,
 } from "../../../../src/components/logs/constants";
 
-mock.module("@/lib/i18n", () => ({
+installI18nMock({
   t: (key: string, params?: Record<string, unknown>) =>
     key === "logs.expandLine"
       ? `Expand log details for line ${String(params?.id ?? "")}`
@@ -34,7 +35,7 @@ mock.module("@/lib/i18n", () => ({
                         : key === "common.error"
                           ? "Error"
                           : key,
-}));
+});
 mock.module("@/components/logs", () => ({
   formatLogTimestamp,
   formatRawLog,

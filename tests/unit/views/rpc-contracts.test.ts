@@ -52,6 +52,21 @@ describe("direct RPC contracts", () => {
     );
   });
 
+  test("WorkspaceEditorView uses exact file get and set RPC payloads", () => {
+    expect(sendCalls("src/views/WorkspaceEditorView.tsx")).toEqual(
+      expect.arrayContaining([
+        {
+          method: "agents.files.get",
+          payloadKeys: ["agentId", "name"],
+        },
+        {
+          method: "agents.files.set",
+          payloadKeys: ["agentId", "content", "name"],
+        },
+      ]),
+    );
+  });
+
   test("agent tool and skill saves route through the config.apply helper", () => {
     expect(readFileSync("src/views/agents/agents-tools-state.ts", "utf8")).toContain(
       "applyGatewayConfigWithSend",

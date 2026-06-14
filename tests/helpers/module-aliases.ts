@@ -1,4 +1,5 @@
 import { mock } from "bun:test";
+import { computed, signal } from "@preact/signals";
 
 const installedAliases = new Set<string>();
 
@@ -27,16 +28,37 @@ async function mockAliasIfMissing(specifier: string, factory: () => unknown): Pr
 }
 
 export async function installUiComponentAliases(): Promise<void> {
-  mockAliasOnce("@/components/ui/Input", () => import("../../src/components/ui/Input"));
-  mockAliasOnce("@/components/ui/Toggle", () => import("../../src/components/ui/Toggle"));
-  mockAliasOnce("@/components/ui/Dropdown", () => import("../../src/components/ui/Dropdown"));
-  mockAliasOnce("@/components/ui/Textarea", () => import("../../src/components/ui/Textarea"));
-  mockAliasOnce("@/components/ui/Button", () => import("../../src/components/ui/Button"));
-  mockAliasOnce("@/components/ui/IconButton", () => import("../../src/components/ui/IconButton"));
-  mockAliasOnce("@/components/ui/Card", () => import("../../src/components/ui/Card"));
-  mockAliasOnce("@/components/ui/Spinner", () => import("../../src/components/ui/Spinner"));
-  mockAliasOnce("@/components/ui/icons", () => import("../../src/components/ui/icons"));
-  mockAliasOnce("@/components/ui/CoveLogo", () => import("../../src/components/ui/CoveLogo"));
+  await mockAliasIfMissing("@/components/ui/Input", () => import("../../src/components/ui/Input"));
+  await mockAliasIfMissing(
+    "@/components/ui/Toggle",
+    () => import("../../src/components/ui/Toggle"),
+  );
+  await mockAliasIfMissing(
+    "@/components/ui/Dropdown",
+    () => import("../../src/components/ui/Dropdown"),
+  );
+  await mockAliasIfMissing(
+    "@/components/ui/Textarea",
+    () => import("../../src/components/ui/Textarea"),
+  );
+  await mockAliasIfMissing(
+    "@/components/ui/Button",
+    () => import("../../src/components/ui/Button"),
+  );
+  await mockAliasIfMissing(
+    "@/components/ui/IconButton",
+    () => import("../../src/components/ui/IconButton"),
+  );
+  await mockAliasIfMissing("@/components/ui/Card", () => import("../../src/components/ui/Card"));
+  await mockAliasIfMissing(
+    "@/components/ui/Spinner",
+    () => import("../../src/components/ui/Spinner"),
+  );
+  await mockAliasIfMissing("@/components/ui/icons", () => import("../../src/components/ui/icons"));
+  await mockAliasIfMissing(
+    "@/components/ui/CoveLogo",
+    () => import("../../src/components/ui/CoveLogo"),
+  );
 }
 
 export async function installChatSignalAliases(): Promise<void> {
@@ -51,9 +73,62 @@ export async function installChatSignalAliases(): Promise<void> {
     () => import("../../src/lib/message-detection"),
   );
   await mockAliasIfMissing("@/lib/storage", () => import("../../src/lib/storage"));
-  await mockAliasIfMissing("@/signals/sessions", () => ({
-    isForActiveSession: () => true,
-  }));
+  await mockAliasIfMissing("@/signals/sessions", () => createChatSessionsAlias());
+}
+
+function createChatSessionsAlias() {
+  const sessions = signal<Array<{ key: string; updatedAtMs?: number }>>([]);
+  const activeSessionKey = signal<string | null>(null);
+  const sessionKindFilter = signal<string | null>(null);
+  const sessionSearchQuery = signal("");
+  const showCronSessions = signal(false);
+  const deletingSessionKey = signal<string | null>(null);
+  const effectiveSessionKey = computed(() => activeSessionKey.value);
+  const activeSession = computed(
+    () => sessions.value.find((session) => session.key === activeSessionKey.value) ?? null,
+  );
+
+  return {
+    activeSession,
+    activeSessionKey,
+    cleanupSessionEventSubscription: () => undefined,
+    clearSessions: () => {
+      sessions.value = [];
+      activeSessionKey.value = null;
+    },
+    deletingSessionKey,
+    effectiveSessionKey,
+    initSessionEventSubscription: () => undefined,
+    isForActiveSession: (sessionKey: string | null | undefined) =>
+      !sessionKey || !activeSessionKey.value || sessionKey === activeSessionKey.value,
+    loadSessions: async () => undefined,
+    removeSessionAnimated: async (sessionKey: string) => {
+      sessions.value = sessions.value.filter((session) => session.key !== sessionKey);
+    },
+    sessionKindFilter,
+    sessions,
+    sessionsByRecent: computed(() => [...sessions.value]),
+    sessionsGrouped: computed(() => ({})),
+    sessionSearchQuery,
+    setActiveSession: (sessionKey: string | null) => {
+      activeSessionKey.value = sessionKey;
+    },
+    setSessionKindFilter: (kind: string | null) => {
+      sessionKindFilter.value = kind;
+    },
+    setSessionSearchQuery: (query: string) => {
+      sessionSearchQuery.value = query;
+    },
+    showCronSessions,
+    toggleCronSessions: () => {
+      showCronSessions.value = !showCronSessions.value;
+    },
+    updateSession: (sessionKey: string, updates: Record<string, unknown>) => {
+      sessions.value = sessions.value.map((session) =>
+        session.key === sessionKey ? { ...session, ...updates } : session,
+      );
+    },
+  };
 }
 
 export async function installConfigComponentAliases(): Promise<void> {

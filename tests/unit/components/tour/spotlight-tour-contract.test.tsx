@@ -2,9 +2,10 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act } from "@testing-library/preact";
 import { renderComponent, screen, setElementRect, setViewport } from "../../../helpers/dom";
+import { installI18nMock } from "../../../helpers/i18n";
 import { installFakeTimers, type FakeTimers } from "../../../helpers/timers";
 
-mock.module("@/lib/i18n", () => ({ t: (key: string) => key }));
+installI18nMock({ t: (key: string) => key });
 
 mock.module("@/components/ui/Button", () => ({
   Button: ({ children, onClick }: { children: preact.ComponentChildren; onClick: () => void }) => (

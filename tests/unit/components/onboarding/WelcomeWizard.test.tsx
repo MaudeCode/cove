@@ -2,7 +2,15 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
 import { fireEvent, renderComponent, screen, waitFor } from "../../../helpers/dom";
+import { installI18nMock } from "../../../helpers/i18n";
+import { createGatewayMock } from "../../../helpers/module-mocks";
 import { installFakeTimers, type FakeTimers } from "../../../helpers/timers";
+import { MockButton, MockDropdown, MockInput, installUiMocks } from "../../../helpers/ui-mocks";
+
+const authMethodOptions = [
+  { label: "common.token", value: "token" },
+  { label: "common.password", value: "password" },
+];
 
 type Deferred<T> = {
   promise: Promise<T>;
@@ -38,7 +46,7 @@ let probeGatewayImpl: (
 let connectImpl: () => Promise<void>;
 let loadSessionsImpl: () => Promise<void>;
 
-mock.module("@/lib/i18n", () => ({ t: (key: string) => key }));
+installI18nMock({ t: (key: string) => key });
 mock.module("@/lib/logger", () => ({ log: { auth: { error: () => undefined } } }));
 mock.module("@/signals/settings", () => ({ appMode, canvasNodeEnabled }));
 mock.module("@/lib/node-connection", () => ({
@@ -48,18 +56,21 @@ mock.module("@/lib/node-connection", () => ({
   stopNodeConnection: () => undefined,
 }));
 mock.module("@/lib/gateway", () => ({
-  connect: (params: unknown) => {
-    calls.connect.push(params);
-    return connectImpl();
-  },
-  disconnect: () => {
-    calls.disconnect++;
-  },
-  lastError,
-  probeGateway: (url: string, signal?: AbortSignal) => {
-    calls.probeGateway.push({ signal, url });
-    return probeGatewayImpl(url, signal);
-  },
+  ...createGatewayMock({
+    connect: (params: unknown) => {
+      calls.connect.push(params);
+      return connectImpl();
+    },
+    disconnect: () => {
+      calls.disconnect++;
+    },
+    lastError,
+    mainSessionKey: signal("agent:main:main"),
+    probeGateway: (url: string, signal?: AbortSignal) => {
+      calls.probeGateway.push({ signal, url });
+      return probeGatewayImpl(url, signal);
+    },
+  }),
 }));
 mock.module("@/lib/connected-app", () => ({
   initConnectedApp: async () => {
@@ -272,93 +283,39 @@ afterEach(() => {
 });
 
 function mockUi(): void {
-  mock.module("@/components/ui/Button", () => ({
-    Button: ({
-      children,
-      disabled,
-      onClick,
-    }: {
-      children: preact.ComponentChildren;
-      disabled?: boolean;
-      onClick: () => void;
-    }) => (
-      <button type="button" disabled={disabled} onClick={onClick}>
-        {children}
-      </button>
-    ),
-  }));
-  mock.module("@/components/ui/Input", () => ({
-    Input: (props: preact.JSX.HTMLAttributes<HTMLInputElement>) => <input {...props} />,
-  }));
-  mock.module("@/components/ui/PasswordInput", () => ({
-    PasswordInput: (props: preact.JSX.HTMLAttributes<HTMLInputElement>) => <input {...props} />,
-  }));
-  mock.module("@/components/ui/Dropdown", () => ({
-    Dropdown: ({ onChange, value }: { onChange: (value: string) => void; value: string }) => (
-      <select
-        aria-label="onboarding.authMethod"
-        value={value}
-        onChange={(e) => onChange((e.target as HTMLSelectElement).value)}
-      >
-        <option value="token">common.token</option>
-        <option value="password">common.password</option>
-      </select>
-    ),
-  }));
-  mock.module("@/components/ui/Toggle", () => ({
-    Toggle: ({
-      checked,
-      label,
-      onChange,
-    }: {
-      checked: boolean;
-      label?: string;
-      onChange: (checked: boolean) => void;
-    }) => (
-      <button type="button" role="switch" aria-checked={checked} onClick={() => onChange(!checked)}>
-        {label}
-      </button>
-    ),
-  }));
-  mock.module("@/components/ui/Card", () => ({
-    Card: ({ children }: { children: preact.ComponentChildren }) => <section>{children}</section>,
-  }));
-  mock.module("@/components/ui/FormField", () => ({
-    FormField: ({
-      children,
-      htmlFor,
-      label,
-    }: {
-      children: preact.ComponentChildren;
-      htmlFor?: string;
-      label: string;
-    }) => (
-      <label htmlFor={htmlFor}>
-        {label}
-        {children}
-      </label>
-    ),
-  }));
-  mock.module("@/components/ui/CoveLogo", () => ({ CoveLogo: () => <div /> }));
-  mock.module("@/components/ui/Spinner", () => ({ Spinner: () => <span>spinner</span> }));
-  mock.module("@/components/ui/LinkButton", () => ({
-    LinkButton: ({
-      children,
-      disabled,
-      onClick,
-    }: {
-      children: preact.ComponentChildren;
-      disabled?: boolean;
-      onClick: () => void;
-    }) => (
-      <button type="button" disabled={disabled} onClick={onClick}>
-        {children}
-      </button>
-    ),
-  }));
-  mock.module("@/components/ui/HintBox", () => ({ HintBox: () => <div /> }));
-  mock.module("@/components/ui/StatusIcon", () => ({ StatusIcon: () => <span /> }));
-  mock.module("@/components/ui/Tooltip", () => ({
-    Tooltip: ({ children }: { children: preact.ComponentChildren }) => <span>{children}</span>,
-  }));
+  installUiMocks({
+    "@/components/ui/CoveLogo": () => ({ CoveLogo: () => <div /> }),
+    "@/components/ui/Dropdown": () => ({
+      Dropdown: (props: Parameters<typeof MockDropdown>[0]) => (
+        <MockDropdown {...props} options={props.options ?? authMethodOptions} />
+      ),
+    }),
+    "@/components/ui/FormField": () => ({
+      FormField: ({
+        children,
+        htmlFor,
+        label,
+      }: {
+        children: preact.ComponentChildren;
+        htmlFor?: string;
+        label: string;
+      }) => (
+        <label htmlFor={htmlFor}>
+          {label}
+          {children}
+        </label>
+      ),
+    }),
+    "@/components/ui/HintBox": () => ({ HintBox: () => <div /> }),
+    "@/components/ui/LinkButton": () => ({
+      LinkButton: MockButton,
+    }),
+    "@/components/ui/PasswordInput": () => ({
+      PasswordInput: MockInput,
+    }),
+    "@/components/ui/StatusIcon": () => ({ StatusIcon: () => <span /> }),
+    "@/components/ui/Tooltip": () => ({
+      Tooltip: ({ children }: { children: preact.ComponentChildren }) => <span>{children}</span>,
+    }),
+  });
 }

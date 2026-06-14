@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
-import { createQueryParamMock } from "../../helpers/module-mocks";
+import { installI18nMock } from "../../helpers/i18n";
+import { createGatewayMock, createQueryParamMock } from "../../helpers/module-mocks";
 import {
   formatRawLog,
   parseLogLine,
@@ -24,17 +25,18 @@ let importCounter = 0;
 type LogsStateModule = typeof import("../../../src/views/logs/useLogsViewState");
 
 mock.module("@/lib/gateway", () => ({
-  isConnected,
-  send: async (method: string, params?: unknown) => {
-    sendCalls.push({ method, params });
-    const response = gatewayResponses.shift();
-    if (response instanceof Error) throw response;
-    return response;
-  },
+  ...createGatewayMock({
+    isConnected,
+    mainSessionKey: signal("agent:main:main"),
+    send: async (method: string, params?: unknown) => {
+      sendCalls.push({ method, params });
+      const response = gatewayResponses.shift();
+      if (response instanceof Error) throw response;
+      return response;
+    },
+  }),
 }));
-mock.module("@/lib/i18n", () => ({
-  t: (key: string) => key,
-}));
+installI18nMock({ t: (key: string) => key });
 mock.module("@/components/logs", () => ({
   formatLogTimestamp,
   formatRawLog,

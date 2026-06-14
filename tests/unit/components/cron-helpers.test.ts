@@ -3,7 +3,7 @@ import { installI18nMock } from "../../helpers/i18n";
 import type { CronJob } from "../../../src/types/cron";
 
 installI18nMock({
-  formatTimestamp: (timestamp: number, options?: { relative?: boolean }) =>
+  formatTimestamp: (timestamp: Date | number, options?: { relative?: boolean }) =>
     options?.relative ? `relative:${timestamp}` : `time:${timestamp}`,
   t: (key: string) => key,
 });

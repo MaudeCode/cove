@@ -1,5 +1,6 @@
 /** @jsxImportSource preact */
 import { describe, expect, mock, test } from "bun:test";
+import { act } from "@testing-library/preact";
 import { useState } from "preact/hooks";
 import {
   fireEvent,
@@ -12,13 +13,12 @@ import { installI18nMock } from "../../../helpers/i18n";
 
 installI18nMock({ t: (key: string) => key });
 mock.module("@/hooks/useFocusTrap", () => import("../../../../src/hooks/useFocusTrap"));
-mock.module("@/components/ui/icons", () => import("../../../../src/components/ui/icons"));
-mock.module("@/components/ui/IconButton", () => import("../../../../src/components/ui/IconButton"));
 
 const { Modal } = await import("../../../../src/components/ui/Modal");
 
 describe("Modal", () => {
   test("renders in a portal, locks body scroll, and restores both scroll and focus after Escape", async () => {
+    const timers = installFakeTimers();
     const closeCalls: string[] = [];
 
     function Harness() {
@@ -43,28 +43,36 @@ describe("Modal", () => {
       );
     }
 
-    renderComponent(<Harness />);
+    try {
+      renderComponent(<Harness />);
 
-    const trigger = screen.getByRole("button", { name: "Open" });
-    trigger.focus();
-    fireEvent.click(trigger);
+      const trigger = screen.getByRole("button", { name: "Open" });
+      trigger.focus();
+      fireEvent.click(trigger);
 
-    const dialog = await screen.findByRole("dialog", { name: "Settings" });
-    expect(dialog.parentElement).toBe(document.body);
-    expect(document.body.style.overflow).toBe("hidden");
-    await waitFor(() => expect(dialog.contains(document.activeElement)).toBe(true));
+      const dialog = screen.getByRole("dialog", { name: "Settings" });
+      expect(dialog.parentElement).toBe(document.body);
+      expect(document.body.style.overflow).toBe("hidden");
+      timers.advanceBy(20);
+      expect(dialog.contains(document.activeElement)).toBe(true);
 
-    fireEvent.keyDown(document, { key: "Escape" });
-    expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy();
+      fireEvent.keyDown(document, { key: "Escape" });
+      expect(screen.getByRole("dialog", { name: "Settings" })).toBeTruthy();
 
-    await new Promise((resolve) => setTimeout(resolve, 260));
+      await act(() => {
+        timers.advanceBy(260);
+      });
+      await act(() => {
+        timers.advanceBy(20);
+      });
 
-    await waitFor(() => {
       expect(screen.queryByRole("dialog", { name: "Settings" })).toBeNull();
       expect(closeCalls).toEqual(["close"]);
       expect(document.body.style.overflow).toBe("");
       expect(document.activeElement).toBe(trigger);
-    });
+    } finally {
+      timers.uninstall();
+    }
   });
 
   test("respects backdrop and Escape close options", () => {

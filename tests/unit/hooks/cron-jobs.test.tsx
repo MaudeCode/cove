@@ -3,6 +3,7 @@ import { afterAll, afterEach, beforeEach, describe, expect, mock, test } from "b
 import { signal } from "@preact/signals";
 import { renderComponent } from "../../helpers/dom";
 import { installI18nMock } from "../../helpers/i18n";
+import { createGatewayMock } from "../../helpers/module-mocks";
 import type { CronJob, CronStatusResult, UseCronJobsResult } from "../../../src/types/cron";
 
 type SendCall = {
@@ -24,16 +25,18 @@ function setResponse(method: string, response: SendResponse): void {
 }
 
 mock.module("@/lib/gateway", () => ({
-  isConnected,
-  mainSessionKey,
-  send: async (method: string, params?: unknown) => {
-    sendCalls.push({ method, params });
-    if (!sendResponses.has(method)) {
-      throw new Error(`Unexpected gateway method: ${method}`);
-    }
-    const response = sendResponses.get(method);
-    return typeof response === "function" ? response(method, params) : response;
-  },
+  ...createGatewayMock({
+    isConnected,
+    mainSessionKey,
+    send: async (method: string, params?: unknown) => {
+      sendCalls.push({ method, params });
+      if (!sendResponses.has(method)) {
+        throw new Error(`Unexpected gateway method: ${method}`);
+      }
+      const response = sendResponses.get(method);
+      return typeof response === "function" ? response(method, params) : response;
+    },
+  }),
 }));
 
 installI18nMock({ t: (key: string) => key });

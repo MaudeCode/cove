@@ -3,14 +3,15 @@ import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { act } from "@testing-library/preact";
 import type { ComponentChildren } from "preact";
 import { fireEvent, renderComponent, screen, waitFor } from "../../../helpers/dom";
+import { installI18nMock } from "../../../helpers/i18n";
 import { installFakeTimers } from "../../../helpers/timers";
 
 const loggedErrors: unknown[][] = [];
 
-mock.module("@/lib/i18n", () => ({
+installI18nMock({
   t: (key: string, values?: Record<string, unknown>) =>
     values ? `${key} ${JSON.stringify(values)}` : key,
-}));
+});
 
 mock.module("@/lib/logger", () => ({
   log: {

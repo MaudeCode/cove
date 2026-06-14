@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, mock, setSystemTime, test } from "bun:test";
 import { signal } from "@preact/signals";
-import { createQueryParamMock } from "../../helpers/module-mocks";
+import { installI18nMock } from "../../helpers/i18n";
+import { createGatewayMock, createQueryParamMock } from "../../helpers/module-mocks";
 import { installStorageMocks } from "../../helpers/storage";
 import type {
   CostUsageSummary,
@@ -25,20 +26,23 @@ const fixedNow = new Date("2026-06-13T12:00:00.000Z");
 const storage = await import("../../../src/lib/storage");
 
 mock.module("@/lib/gateway", () => ({
-  isConnected,
-  send: async (method: string, params?: unknown) => {
-    sendCalls.push({ method, params });
-    const response = gatewayResponses.shift();
-    if (response instanceof Error) throw response;
-    return response;
-  },
+  ...createGatewayMock({
+    isConnected,
+    mainSessionKey: signal("agent:main:main"),
+    send: async (method: string, params?: unknown) => {
+      sendCalls.push({ method, params });
+      const response = gatewayResponses.shift();
+      if (response instanceof Error) throw response;
+      return response;
+    },
+  }),
 }));
 mock.module("@/lib/storage", () => storage);
-mock.module("@/lib/i18n", () => ({
+installI18nMock({
   formatTimestamp: (value: Date | number) =>
     `time:${value instanceof Date ? value.getTime() : value}`,
   t: (key: string) => key,
-}));
+});
 mock.module("@/lib/logger", () => ({
   log: {
     usage: {

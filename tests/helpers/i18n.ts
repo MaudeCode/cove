@@ -9,7 +9,9 @@ export function installI18nMock(
   overrides: {
     formatBytes?: (bytes: number) => string;
     formatDuration?: (ms: number | undefined) => string;
-    formatTimestamp?: (timestamp: number) => string;
+    formatTimestampCompact?: (timestamp: Date | number) => string;
+    formatTokens?: (tokens: number) => string;
+    formatTimestamp?: (timestamp: Date | number) => string;
     t?: Translate;
   } = {},
 ): void {
@@ -17,7 +19,11 @@ export function installI18nMock(
     formatBytes: overrides.formatBytes ?? ((bytes: number) => `${bytes} B`),
     formatDuration:
       overrides.formatDuration ?? ((ms: number | undefined) => (ms == null ? "—" : `${ms}ms`)),
-    formatTimestamp: overrides.formatTimestamp ?? ((timestamp: number) => `time:${timestamp}`),
+    formatTimestamp:
+      overrides.formatTimestamp ?? ((timestamp: Date | number) => `time:${timestamp}`),
+    formatTimestampCompact:
+      overrides.formatTimestampCompact ?? ((timestamp: Date | number) => `short:${timestamp}`),
+    formatTokens: overrides.formatTokens ?? ((tokens: number) => String(tokens)),
     t: overrides.t ?? defaultTranslate,
   }));
 }

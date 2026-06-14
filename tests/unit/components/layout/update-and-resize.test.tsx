@@ -1,12 +1,11 @@
 /** @jsxImportSource preact */
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { fireEvent, renderComponent, screen, waitFor } from "../../../helpers/dom";
+import { installI18nMock } from "../../../helpers/i18n";
 import { createUpdateSignalsMock } from "../../../helpers/module-mocks";
 import { installFakeTimers } from "../../../helpers/timers";
 
-mock.module("@/lib/i18n", () => ({
-  t: (key: string) => key,
-}));
+installI18nMock({ t: (key: string) => key });
 
 const updateSignals = createUpdateSignalsMock();
 mock.module("@/signals/update", () => updateSignals);
