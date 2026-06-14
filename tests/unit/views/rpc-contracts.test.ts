@@ -8,7 +8,7 @@ type SendCall = {
 };
 
 describe("direct RPC contracts", () => {
-  test("ChannelsView logs out with channel and accountId", () => {
+  test("ChannelsView logs out channel accounts through channels.logout", () => {
     const calls = sendCalls("src/views/ChannelsView.tsx");
 
     expect(calls).toContainEqual({
@@ -16,9 +16,10 @@ describe("direct RPC contracts", () => {
       payloadKeys: ["probe", "timeoutMs"],
     });
     expect(calls).toContainEqual({
-      method: "common.logout",
+      method: "channels.logout",
       payloadKeys: ["accountId", "channel"],
     });
+    expect(calls.some((call) => call.method === "common.logout")).toBe(false);
   });
 
   test("DevicesView uses exact pair and token RPC payloads", () => {

@@ -234,18 +234,18 @@ describe("operational views", () => {
     expect(toastMessages).toContainEqual(["error", 'status.copyFailed:{"label":"common.token"}']);
   });
 
-  test("ChannelsView probes status, computes stats, routes config, and logs out an account", async () => {
+  test("ChannelsView probes status, computes stats, routes config, and logs out a WhatsApp account", async () => {
     gatewayHarness.queueResponse(
       "channels.status",
       channelsResponse(),
       channelsResponse(),
       channelsResponse(),
     );
-    gatewayHarness.queueResponse("common.logout", {});
+    gatewayHarness.queueResponse("channels.logout", {});
     const { ChannelsView } = await importView("ChannelsView");
 
     renderComponent(<ChannelsView />);
-    await waitFor(() => expect(screen.getByText("Slack")).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("WhatsApp")).toBeTruthy());
 
     expect(sendCalls[0]).toEqual({
       method: "channels.status",
@@ -254,21 +254,24 @@ describe("operational views", () => {
     expect(screen.getByText("common.total:2")).toBeTruthy();
     expect(screen.getByText("channels.stats.active:1")).toBeTruthy();
     expect(screen.getByText("channels.stats.errors:1")).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "common.logout" })).toHaveLength(3);
 
     fireEvent.click(screen.getAllByRole("button", { name: "channels.configure" })[0]);
-    expect(routeCalls).toEqual(["/config#channels.slack"]);
+    expect(routeCalls).toEqual(["/config#channels.whatsapp"]);
 
-    fireEvent.click(screen.getAllByRole("button", { name: "common.logout" })[0]);
+    fireEvent.click(screen.getAllByRole("button", { name: "common.logout" })[1]);
     expect(screen.getByRole("dialog", { name: "channels.logoutTitle" })).toBeTruthy();
     fireEvent.click(screen.getAllByRole("button", { name: "common.logout" }).at(-1)!);
 
     await waitFor(() =>
-      expect(sendCalls.some((call) => call.method === "common.logout")).toBe(true),
+      expect(sendCalls.some((call) => call.method === "channels.logout")).toBe(true),
     );
     expect(sendCalls).toContainEqual({
-      method: "common.logout",
-      params: { accountId: "slack-main", channel: "slack" },
+      method: "channels.logout",
+      params: { accountId: "whatsapp-alt", channel: "whatsapp" },
     });
+    expect(sendCalls.filter((call) => call.method === "channels.logout")).toHaveLength(1);
+    expect(sendCalls.some((call) => call.method === "common.logout")).toBe(false);
 
     fireEvent.click(screen.getByRole("button", { name: "channels.probe" }));
     await waitFor(() =>
@@ -388,20 +391,33 @@ function deviceFixture(overrides: Partial<PairedDevice> = {}): PairedDevice {
 function channelsResponse(): ChannelsStatusResponse {
   return {
     ts: 1,
-    channelOrder: ["slack", "discord"],
-    channelLabels: { discord: "Discord", slack: "Slack" },
+    channelOrder: ["whatsapp", "discord"],
+    channelLabels: { discord: "Discord", whatsapp: "WhatsApp" },
     channelDetailLabels: {},
     channelSystemImages: {},
     channelMeta: [],
     channels: {},
     channelAccounts: {
-      discord: [{ accountId: "discord-main", lastError: "token expired" }],
-      slack: [
+      discord: [
         {
-          accountId: "slack-main",
+          accountId: "discord-main",
+          connected: true,
+          lastError: "token expired",
+          name: "Support",
+        },
+      ],
+      whatsapp: [
+        {
+          accountId: "whatsapp-main",
           connected: true,
           lastInboundAt: Date.now(),
           name: "Ops",
+        },
+        {
+          accountId: "whatsapp-alt",
+          connected: true,
+          lastInboundAt: Date.now(),
+          name: "Alerts",
         },
       ],
     },

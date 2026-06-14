@@ -200,6 +200,10 @@ export interface GatewayRpcMap {
     params: { probe?: boolean; timeoutMs?: number } | undefined;
     result: ChannelsStatusResponse;
   };
+  "channels.logout": {
+    params: { channel: string; accountId?: string };
+    result: { channel: string; accountId: string; cleared: boolean; [key: string]: unknown };
+  };
   "chat.abort": {
     params: { sessionKey: string };
     result: { ok?: boolean };
@@ -211,10 +215,6 @@ export interface GatewayRpcMap {
   "chat.send": {
     params: ChatSendParams;
     result: ChatSendResult;
-  };
-  "common.logout": {
-    params: { channel: string; accountId: string };
-    result: { ok?: boolean };
   };
   connect: {
     params: ConnectParams;
