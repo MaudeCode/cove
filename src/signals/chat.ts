@@ -274,6 +274,17 @@ export function setMessages(newMessages: Message[]): void {
   compactionInsertIndex.value = -1;
 }
 
+/** Apply authoritative history while preserving unresolved local tail messages for the session. */
+export function reconcileMessagesFromHistory(
+  sessionKey: string,
+  historyMessages: Message[],
+): Message[] {
+  const optimisticTail = getOptimisticTailMessages(sessionKey, messages.value, historyMessages);
+  const reconciled = [...historyMessages, ...optimisticTail];
+  setMessages(reconciled);
+  return reconciled;
+}
+
 /** Add a message to the list (deduplicates by ID) */
 export function addMessage(message: Message): void {
   // Check for existing message with same ID
@@ -286,6 +297,61 @@ export function addMessage(message: Message): void {
     return;
   }
   messages.value = [...messages.value, message];
+}
+
+const HISTORY_MATCH_WINDOW_MS = 120_000;
+
+function getOptimisticTailMessages(
+  sessionKey: string,
+  currentMessages: Message[],
+  historyMessages: Message[],
+): Message[] {
+  const lastHistoryTimestamp = Math.max(0, ...historyMessages.map((msg) => msg.timestamp));
+
+  return currentMessages.filter((message) => {
+    if (message.sessionKey && message.sessionKey !== sessionKey) return false;
+    if (isUnresolvedLocalMessage(message)) return true;
+    if (isNewerLocalTailMessage(message, lastHistoryTimestamp)) return true;
+    if (isBoundaryLocalTailMessage(message, lastHistoryTimestamp)) {
+      return !isRepresentedInHistory(message, historyMessages);
+    }
+    return false;
+  });
+}
+
+function isUnresolvedLocalMessage(message: Message): boolean {
+  if (message.status === "sending" || message.status === "failed") return true;
+  if (message.isStreaming) return true;
+  return false;
+}
+
+function isNewerLocalTailMessage(message: Message, lastHistoryTimestamp: number): boolean {
+  if (message.status === "sent" && message.timestamp > lastHistoryTimestamp) return true;
+  if (
+    (message.id.startsWith("assistant_") || message.id.startsWith("side_")) &&
+    message.timestamp > lastHistoryTimestamp
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function isBoundaryLocalTailMessage(message: Message, lastHistoryTimestamp: number): boolean {
+  if (message.timestamp !== lastHistoryTimestamp) return false;
+  return (
+    message.status === "sent" ||
+    message.id.startsWith("assistant_") ||
+    message.id.startsWith("side_")
+  );
+}
+
+function isRepresentedInHistory(message: Message, historyMessages: Message[]): boolean {
+  return historyMessages.some(
+    (historyMessage) =>
+      historyMessage.role === message.role &&
+      historyMessage.content === message.content &&
+      Math.abs(historyMessage.timestamp - message.timestamp) <= HISTORY_MATCH_WINDOW_MS,
+  );
 }
 
 /** Mark a message as sending */

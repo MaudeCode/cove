@@ -82,6 +82,100 @@ describe("chat signals", () => {
     ]);
   });
 
+  test("reconcileMessagesFromHistory preserves unresolved same-session tail messages", () => {
+    chat.messages.value = [
+      message({
+        id: "user_duplicate",
+        content: "already stored",
+        status: "sent",
+        sessionKey: "session-1",
+        timestamp: 1_050,
+      }),
+      message({
+        id: "user_tail",
+        content: "still sending",
+        status: "sending",
+        sessionKey: "session-1",
+        timestamp: 2_000,
+      }),
+      message({
+        id: "user_other",
+        content: "other session",
+        status: "sending",
+        sessionKey: "other-session",
+        timestamp: 2_100,
+      }),
+      message({
+        id: "assistant_local-run",
+        role: "assistant",
+        content: "local final",
+        timestamp: 2_200,
+        toolCalls: [{ id: "tool-local", name: "read", status: "complete", result: "ok" }],
+      }),
+    ];
+    chat.startRun("streaming-run", "session-1");
+    chat.updateRunContent("streaming-run", "partial", [
+      { id: "tool-1", name: "read", status: "running" },
+    ]);
+
+    const reconciled = chat.reconcileMessagesFromHistory("session-1", [
+      message({
+        id: "hist_user",
+        content: "already stored",
+        timestamp: 1_000,
+      }),
+      message({
+        id: "hist_assistant",
+        role: "assistant",
+        content: "loaded",
+        timestamp: 1_100,
+      }),
+    ]);
+
+    expect(reconciled.map((msg) => msg.id)).toEqual([
+      "hist_user",
+      "hist_assistant",
+      "user_tail",
+      "assistant_local-run",
+    ]);
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual([
+      "hist_user",
+      "hist_assistant",
+      "user_tail",
+      "assistant_local-run",
+    ]);
+    expect(chat.messages.value.at(-1)?.toolCalls).toEqual([
+      expect.objectContaining({ id: "tool-local", result: "ok" }),
+    ]);
+    expect(chat.activeRuns.value.get("streaming-run")).toMatchObject({
+      content: "partial",
+      status: "streaming",
+      toolCalls: [expect.objectContaining({ id: "tool-1" })],
+    });
+  });
+
+  test("reconcileMessagesFromHistory preserves repeated unresolved prompts", () => {
+    chat.messages.value = [
+      message({
+        id: "user_repeat",
+        content: "OK",
+        status: "sending",
+        sessionKey: "session-1",
+        timestamp: 2_000,
+      }),
+    ];
+
+    chat.reconcileMessagesFromHistory("session-1", [
+      message({
+        id: "hist_repeat",
+        content: "OK",
+        timestamp: 1_950,
+      }),
+    ]);
+
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual(["hist_repeat", "user_repeat"]);
+  });
+
   test("completeRun only adds final messages for the active session and cleans up later", () => {
     chat.startRun("run-1", "session-1");
     chat.completeRun("run-1", message({ id: "assistant-1", role: "assistant", content: "done" }));

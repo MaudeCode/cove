@@ -11,13 +11,15 @@ import {
   isLoadingHistory,
   historyError,
   thinkingLevel,
-  setMessages,
+  reconcileMessagesFromHistory,
   saveCachedMessages,
 } from "@/signals/chat";
+import { isForActiveSession } from "@/signals/sessions";
 import { normalizeHistoryMessages } from "./history-processing";
 
 /** Track in-flight history loads to prevent concurrent loads for the same session */
 const pendingLoads = new Map<string, Promise<void>>();
+let latestLoadToken = 0;
 
 /**
  * Load chat history for a session.
@@ -46,6 +48,7 @@ export async function loadHistory(
 
 /** Internal history load implementation */
 async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
+  const loadToken = ++latestLoadToken;
   isLoadingHistory.value = true;
   historyError.value = null;
 
@@ -53,16 +56,25 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
     const result = await send("chat.history", { sessionKey, limit });
     const normalized = normalizeHistoryMessages(result.messages);
 
-    setMessages(normalized);
-    saveCachedMessages(sessionKey, normalized);
+    if (!isForActiveSession(sessionKey)) {
+      log.chat.debug("Ignoring stale history response for inactive session:", sessionKey);
+      return;
+    }
+
+    const reconciled = reconcileMessagesFromHistory(sessionKey, normalized);
+    saveCachedMessages(sessionKey, reconciled);
 
     if (result.thinkingLevel) {
       thinkingLevel.value = result.thinkingLevel;
     }
   } catch (err) {
-    historyError.value = err instanceof Error ? err.message : String(err);
+    if (loadToken === latestLoadToken) {
+      historyError.value = err instanceof Error ? err.message : String(err);
+    }
     throw err;
   } finally {
-    isLoadingHistory.value = false;
+    if (loadToken === latestLoadToken) {
+      isLoadingHistory.value = false;
+    }
   }
 }
