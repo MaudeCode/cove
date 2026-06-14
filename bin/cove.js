@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 import { exec } from "node:child_process";
 
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
-const distDir = resolve(__dirname, "..", "dist");
+const distDir = resolve(process.env.COVE_DIST_DIR || resolve(__dirname, "..", "dist"));
 
 // Get version from package.json
 const packageJson = JSON.parse(
