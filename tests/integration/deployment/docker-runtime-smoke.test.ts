@@ -63,7 +63,10 @@ describe("Docker nginx runtime smoke", () => {
       }
       const asset = await fetch(`${baseUrl}${assetPath}`);
       expect(asset.status).toBe(200);
-      expect(asset.headers.get("cache-control")).toBe("public, immutable");
+      const assetCacheControl = asset.headers.get("cache-control") ?? "";
+      expect(assetCacheControl).toContain("max-age=31536000");
+      expect(assetCacheControl).toContain("public");
+      expect(assetCacheControl).toContain("immutable");
       expect(asset.headers.get("x-content-type-options")).toBe("nosniff");
       expect(asset.headers.get("expires")).toBeTruthy();
 
