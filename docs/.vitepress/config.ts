@@ -12,7 +12,7 @@ export default defineConfig({
   },
   
   head: [
-    ['link', { rel: 'icon', type: 'image/png', href: '/favicon-32.png' }],
+    ['link', { rel: 'icon', type: 'image/png', href: '/cove/favicon-32.png' }],
   ],
 
   themeConfig: {

@@ -38,6 +38,7 @@
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
     "test:deployment": "COVE_RUN_DOCKER_SMOKE=1 bun test tests/integration/deployment",
+    "test:package": "COVE_RUN_PACKAGE_INTEGRITY=1 bun test tests/integration/package",
     "test:e2e": "playwright test",
     "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:coverage": "bun test --coverage tests/unit tests/integration",

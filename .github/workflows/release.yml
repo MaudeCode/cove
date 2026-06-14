@@ -80,6 +80,7 @@ jobs:
         run: |
           bun install --frozen-lockfile
           bun run build
+          bun run test:package
 
       - name: Pack npm tarball
         run: npm pack

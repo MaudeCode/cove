@@ -14,7 +14,7 @@ const appVersion = pkg.version || '0.0.0'
  * to inject vendor-specific domains (e.g., Cloudflare Access/Insights) at build time.
  * The repo stays clean; each deployment customizes their own build.
  */
-function cspExtensionPlugin(env: Record<string, string>): Plugin {
+export function cspExtensionPlugin(env: Record<string, string>): Plugin {
   const extraDefaultSrc = env.VITE_CSP_EXTRA_DEFAULT_SRC || ''
   const extraScriptSrc = env.VITE_CSP_EXTRA_SCRIPT_SRC || ''
 
@@ -32,13 +32,20 @@ function cspExtensionPlugin(env: Record<string, string>): Plugin {
           /default-src\s+'self'/,
           `default-src 'self' ${extraDefaultSrc}`
         )
+        if (modified === html) {
+          throw new Error('VITE_CSP_EXTRA_DEFAULT_SRC is set, but default-src directive was not found')
+        }
       }
 
       if (extraScriptSrc) {
+        const beforeScriptSrc = modified
         modified = modified.replace(
           /script-src\s+'self'\s+'unsafe-inline'/,
           `script-src 'self' 'unsafe-inline' ${extraScriptSrc}`
         )
+        if (modified === beforeScriptSrc) {
+          throw new Error('VITE_CSP_EXTRA_SCRIPT_SRC is set, but script-src directive was not found')
+        }
       }
 
       return modified
