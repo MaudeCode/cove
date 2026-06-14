@@ -50,6 +50,8 @@ export function cleanupDom(): void {
 }
 
 export function resetDomState(): void {
+  document.body.removeAttribute("class");
+  document.body.removeAttribute("style");
   document.body.replaceChildren();
   document.head.replaceChildren();
   localStorage.clear();

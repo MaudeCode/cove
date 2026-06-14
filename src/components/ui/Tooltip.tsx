@@ -7,7 +7,7 @@
  * Requires TooltipProvider at app root.
  */
 
-import { createContext } from "preact";
+import { cloneElement, createContext, isValidElement } from "preact";
 import {
   useState,
   useRef,
@@ -38,6 +38,7 @@ export interface TooltipProps {
 
 interface TooltipState {
   ownerId: symbol;
+  tooltipId: string;
   content: ComponentChildren;
   placement: TooltipPlacement;
   triggerRect: DOMRect | null;
@@ -51,6 +52,7 @@ interface TooltipContextValue {
 }
 
 const TooltipContext = createContext<TooltipContextValue | null>(null);
+let tooltipInstanceCount = 0;
 
 /**
  * TooltipProvider - renders tooltip portal at root level
@@ -169,12 +171,13 @@ function TooltipPortal({ state }: { state: TooltipState | null }) {
 
   if (!state?.triggerRect) return null;
 
-  const { content, isVisible } = state;
+  const { content, isVisible, tooltipId } = state;
   const isPositioned = position !== null;
 
   return (
     <div
       ref={tooltipRef}
+      id={tooltipId}
       role="tooltip"
       class={`
         fixed z-[9999] pointer-events-none
@@ -330,6 +333,12 @@ export function Tooltip({
   const timeoutRef = useRef<number | null>(null);
   const triggerRef = useRef<HTMLDivElement>(null);
   const ownerIdRef = useRef<symbol>(Symbol("tooltip-owner"));
+  const tooltipIdRef = useRef<string>("");
+
+  if (!tooltipIdRef.current) {
+    tooltipInstanceCount += 1;
+    tooltipIdRef.current = `tooltip-${tooltipInstanceCount}`;
+  }
 
   // Disable tooltips on touch devices
   const isDisabled = disabled || isTouchDevice();
@@ -340,7 +349,13 @@ export function Tooltip({
     timeoutRef.current = window.setTimeout(() => {
       if (triggerRef.current) {
         const rect = triggerRef.current.getBoundingClientRect();
-        context.show({ ownerId: ownerIdRef.current, content, placement, triggerRect: rect });
+        context.show({
+          ownerId: ownerIdRef.current,
+          tooltipId: tooltipIdRef.current,
+          content,
+          placement,
+          triggerRect: rect,
+        });
       }
     }, delay);
   }, [context, content, placement, delay, isDisabled]);
@@ -370,6 +385,16 @@ export function Tooltip({
     return <div class={`inline-flex ${className || ""}`}>{children}</div>;
   }
 
+  const describedChildren =
+    !isDisabled && isValidElement(children)
+      ? cloneElement(children, {
+          "aria-describedby": joinDescribedBy(
+            getAriaDescribedBy(children.props),
+            tooltipIdRef.current,
+          ),
+        })
+      : children;
+
   return (
     <div
       ref={triggerRef}
@@ -378,8 +403,21 @@ export function Tooltip({
       onMouseLeave={hideTooltip}
       onFocus={showTooltip}
       onBlur={hideTooltip}
+      onFocusIn={showTooltip}
+      onFocusOut={hideTooltip}
     >
-      {children}
+      {describedChildren}
     </div>
   );
+}
+
+function joinDescribedBy(existing: unknown, tooltipId: string): string {
+  const existingText = typeof existing === "string" ? existing.trim() : "";
+  if (!existingText) return tooltipId;
+  if (existingText.split(/\s+/).includes(tooltipId)) return existingText;
+  return `${existingText} ${tooltipId}`;
+}
+
+function getAriaDescribedBy(props: unknown): unknown {
+  return (props as { "aria-describedby"?: unknown })["aria-describedby"];
 }
