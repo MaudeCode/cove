@@ -1,7 +1,7 @@
-name: Docs
+name: Deploy Docs
 
 on:
-  pull_request:
+  push:
     branches: [main]
     paths:
       - 'docs/**'
@@ -9,13 +9,14 @@ on:
       - 'bun.lock'
       - '.github/workflows/docs.yml'
       - '.github/workflows/docs-deploy.yml'
+  workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: docs-pr-${{ github.event.pull_request.number }}
-  cancel-in-progress: true
+  group: pages
+  cancel-in-progress: false
 
 jobs:
   build:
@@ -35,3 +36,22 @@ jobs:
 
       - name: Build docs
         run: bun run docs:build
+
+      - uses: actions/configure-pages@v4
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist
+
+  deploy:
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    needs: build
+    runs-on: blacksmith-4vcpu-ubuntu-2404
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

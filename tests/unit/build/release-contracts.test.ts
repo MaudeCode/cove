@@ -14,6 +14,7 @@ const packageJson = JSON.parse(await readText("package.json")) as {
 const indexHtml = await readText("index.html");
 const docsConfig = await readText("docs/.vitepress/config.ts");
 const docsWorkflow = await readText(".github/workflows/docs.yml");
+const docsDeployWorkflow = await readText(".github/workflows/docs-deploy.yml");
 const releaseWorkflow = await readText(".github/workflows/release.yml");
 const manifest = JSON.parse(await readText("public/manifest.json")) as {
   icons?: Array<{ src?: string }>;
@@ -23,29 +24,58 @@ const manifest = JSON.parse(await readText("public/manifest.json")) as {
 };
 
 describe("release and documentation build contracts", () => {
-  test("docs workflow rebuilds docs for relevant changes with frozen installs", () => {
+  test("docs PR workflow rebuilds docs without deploy-only jobs", () => {
     expect(docsWorkflow).toContain("pull_request:");
+    expect(docsWorkflow).not.toContain("push:");
+    expect(docsWorkflow).not.toContain("workflow_dispatch:");
     expect(docsWorkflow).toContain("paths:");
     for (const path of [
       "'docs/**'",
       "'package.json'",
       "'bun.lock'",
       "'.github/workflows/docs.yml'",
+      "'.github/workflows/docs-deploy.yml'",
     ]) {
       expect(docsWorkflow).toContain(path);
     }
 
+    expect(docsWorkflow).toContain("permissions:");
+    expect(docsWorkflow).toContain("contents: read");
+    expect(docsWorkflow).not.toContain("pages: write");
+    expect(docsWorkflow).not.toContain("id-token: write");
     expect(docsWorkflow).toContain("run: bun install --frozen-lockfile");
     expect(docsWorkflow).toContain("bun-version: 1.3.14");
-    expect(docsWorkflow).toContain("docs-pr-{0}");
-    expect(docsWorkflow).toContain("github.event_name == 'pull_request'");
+    expect(docsWorkflow).toContain("docs-pr-${{ github.event.pull_request.number }}");
     expect(docsWorkflow).toContain("run: bun run docs:build");
-    expect(docsWorkflow).toContain(
-      "if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'",
-    );
-    expect(docsWorkflow).toContain("path: docs/.vitepress/dist");
+    expect(docsWorkflow).not.toContain("actions/deploy-pages");
     expect(docsConfig).toContain("base: '/cove/'");
     expect(docsConfig).toContain("href: '/cove/favicon-32.png'");
+  });
+
+  test("docs deploy workflow only deploys on main pushes and manual runs", () => {
+    expect(docsDeployWorkflow).toContain("push:");
+    expect(docsDeployWorkflow).toContain("workflow_dispatch:");
+    expect(docsDeployWorkflow).not.toContain("pull_request:");
+    expect(docsDeployWorkflow).toContain("branches: [main]");
+    for (const path of [
+      "'docs/**'",
+      "'package.json'",
+      "'bun.lock'",
+      "'.github/workflows/docs.yml'",
+      "'.github/workflows/docs-deploy.yml'",
+    ]) {
+      expect(docsDeployWorkflow).toContain(path);
+    }
+
+    expect(docsDeployWorkflow).toContain("run: bun install --frozen-lockfile");
+    expect(docsDeployWorkflow).toContain("bun-version: 1.3.14");
+    expect(docsDeployWorkflow).toContain("run: bun run docs:build");
+    expect(docsDeployWorkflow).toContain("actions/configure-pages");
+    expect(docsDeployWorkflow).toContain("actions/upload-pages-artifact");
+    expect(docsDeployWorkflow).toContain("path: docs/.vitepress/dist");
+    expect(docsDeployWorkflow).toContain("pages: write");
+    expect(docsDeployWorkflow).toContain("id-token: write");
+    expect(docsDeployWorkflow).toContain("actions/deploy-pages");
   });
 
   test("release workflow gates npm packaging with package integrity tests", () => {
