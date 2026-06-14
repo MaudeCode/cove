@@ -17,13 +17,13 @@ import { useAttachments } from "@/hooks/useAttachments";
 import { ModelPicker } from "./ModelPicker";
 import { QueuedMessages } from "./QueuedMessages";
 import { AttachmentPreview } from "./AttachmentPreview";
-import type { AttachmentPayload } from "@/types/attachments";
+import type { Attachment, AttachmentPayload } from "@/types/attachments";
 
 /** Max height for textarea before it becomes scrollable (accounts for bottom action bar) */
 const TEXTAREA_MAX_HEIGHT = 160;
 
 interface ChatInputProps {
-  onSend: (message: string, attachments?: AttachmentPayload[]) => void;
+  onSend: (message: string, attachments?: AttachmentPayload[]) => void | Promise<void>;
   onAbort?: () => void;
   disabled?: boolean;
   isStreaming?: boolean;
@@ -31,6 +31,10 @@ interface ChatInputProps {
   sessionKey?: string;
   currentModel?: string;
   onModelChange?: (modelId: string) => void;
+}
+
+function getAttachmentSignature(attachments: Attachment[]): string {
+  return attachments.map((attachment) => attachment.id).join("\0");
 }
 
 export function ChatInput({
@@ -46,9 +50,12 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const currentSessionKeyRef = useRef<string | undefined>(sessionKey);
+  const currentAttachmentSignatureRef = useRef("");
   // Initialize from draft if session key provided
   const value = useSignal(sessionKey ? getDraft(sessionKey) : "");
   const isDragging = useSignal(false);
+  const isSubmitting = useSignal(false);
 
   const {
     attachments,
@@ -61,6 +68,9 @@ export function ChatInput({
     error: attachmentError,
     clearError,
   } = useAttachments();
+
+  currentSessionKeyRef.current = sessionKey;
+  currentAttachmentSignatureRef.current = getAttachmentSignature(attachments);
 
   /**
    * Auto-resize textarea based on content
@@ -94,39 +104,78 @@ export function ChatInput({
    * Send message with attachments
    */
   const handleSend = useCallback(() => {
-    const message = value.value.trim();
+    const submittedValue = value.value;
+    const message = submittedValue.trim();
     const payloads = getPayloads();
+    const submittedSessionKey = sessionKey;
+    const submittedAttachmentSignature = getAttachmentSignature(attachments);
 
     // Need either message or attachments
-    if ((!message && payloads.length === 0) || disabled) return;
+    if ((!message && payloads.length === 0) || disabled || isSubmitting.value) return;
 
-    onSend(message, payloads.length > 0 ? payloads : undefined);
-    value.value = "";
-    // Clear the persisted draft
-    if (sessionKey) {
-      clearDraft(sessionKey);
-    }
-    clearAttachments();
+    const clearSentInput = () => {
+      if (submittedSessionKey && getDraft(submittedSessionKey) === submittedValue) {
+        clearDraft(submittedSessionKey);
+      }
 
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
+      const composerStillMatches =
+        currentSessionKeyRef.current === submittedSessionKey &&
+        value.value === submittedValue &&
+        currentAttachmentSignatureRef.current === submittedAttachmentSignature;
+      if (!composerStillMatches) return;
+
+      value.value = "";
+      clearAttachments();
+
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+      }
+    };
+
+    isSubmitting.value = true;
+
+    try {
+      const result = onSend(message, payloads.length > 0 ? payloads : undefined);
+      if (result && typeof result.then === "function") {
+        void result
+          .then(() => {
+            clearSentInput();
+          })
+          .catch(() => {
+            // Keep the composer intact; the caller owns surfacing send failure state.
+          })
+          .finally(() => {
+            isSubmitting.value = false;
+          });
+        return;
+      }
+
+      clearSentInput();
+    } catch {
+      // Keep the composer intact; the caller owns surfacing send failure state.
     }
-  }, [onSend, disabled, getPayloads, clearAttachments, sessionKey]);
+
+    isSubmitting.value = false;
+  }, [onSend, disabled, getPayloads, clearAttachments, sessionKey, attachments]);
 
   /**
    * Handle keyboard shortcuts
    */
   const handleKeyDown = useCallback(
     (e: KeyboardEvent) => {
+      if (e.key === "Enter" && (e.isComposing || e.keyCode === 229)) {
+        return;
+      }
+
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
-        handleSend();
+        void handleSend();
         return;
       }
 
       if (e.key === "Enter" && !e.shiftKey) {
         e.preventDefault();
-        handleSend();
+        void handleSend();
       }
     },
     [handleSend],
@@ -222,7 +271,7 @@ export function ChatInput({
 
   const hasText = hasContent(value.value);
   const hasAttachments = attachments.length > 0;
-  const canSend = (hasText || hasAttachments) && !disabled;
+  const canSend = (hasText || hasAttachments) && !disabled && !isSubmitting.value;
 
   return (
     <div class="pb-3 pt-2">
@@ -360,7 +409,7 @@ export function ChatInput({
               {/* Send button */}
               <button
                 type="button"
-                onClick={handleSend}
+                onClick={() => void handleSend()}
                 disabled={!canSend}
                 aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
                 class={`p-2 sm:px-3 sm:py-1.5 rounded-lg flex items-center justify-center gap-1.5
