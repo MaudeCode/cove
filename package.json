@@ -37,6 +37,7 @@
     "test": "bun run test:all",
     "test:unit": "bun test tests/unit",
     "test:integration": "bun test tests/integration",
+    "test:deployment": "COVE_RUN_DOCKER_SMOKE=1 bun test tests/integration/deployment",
     "test:e2e": "playwright test",
     "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:coverage": "bun test --coverage tests/unit tests/integration",
