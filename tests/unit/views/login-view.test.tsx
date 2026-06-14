@@ -35,6 +35,10 @@ mock.module("@/lib/gateway", () => ({
     lastError,
   }),
 }));
+mock.module(
+  "@/lib/login-error-classification",
+  () => import("../../../src/lib/login-error-classification"),
+);
 mock.module("@/lib/connected-app", () => ({
   initConnectedApp: async () => {
     calls.initConnectedApp++;
@@ -143,6 +147,173 @@ describe("LoginView", () => {
       "saveAuth",
       "startCanvasNodeConnectionIfEnabled",
     ]);
+  });
+
+  test("surfaces expired token guidance without echoing the token", async () => {
+    connectImpl = async () => {
+      throw Object.assign(new Error("Token tok_live_secret expired"), {
+        code: "AUTH_TOKEN_EXPIRED",
+      });
+    };
+
+    renderComponent(<LoginView />);
+
+    fireEvent.input(screen.getByLabelText("common.gatewayUrl"), {
+      target: { value: "ws://gateway.example.test" },
+    });
+    fireEvent.input(screen.getByLabelText("common.token"), {
+      target: { value: "tok_live_secret" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "actions.connect" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "The saved token has expired. Generate a new operator token in OpenClaw and try again.",
+        ),
+      ).toBeTruthy();
+    });
+    expect(document.body.textContent).not.toContain("tok_live_secret");
+    expect(calls.saveAuth).toEqual([]);
+  });
+
+  test("surfaces wrong-password guidance for password login failures", async () => {
+    connectImpl = async () => {
+      throw Object.assign(new Error("Invalid password"), {
+        code: "AUTH_FAILED",
+      });
+    };
+
+    renderComponent(<LoginView />);
+
+    fireEvent.input(screen.getByLabelText("common.gatewayUrl"), {
+      target: { value: "ws://gateway.example.test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Auth Mode" }));
+    fireEvent.click(screen.getAllByRole("option")[1]);
+    fireEvent.input(screen.getByLabelText("common.password"), {
+      target: { value: "password-secret" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "actions.connect" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "The gateway rejected the password. Re-enter the gateway password and try again.",
+        ),
+      ).toBeTruthy();
+    });
+    expect(document.body.textContent).not.toContain("password-secret");
+    expect(calls.saveAuth).toEqual([]);
+  });
+
+  test("surfaces gateway-unavailable guidance for network failures", async () => {
+    connectImpl = async () => {
+      throw new Error("WebSocket error - check console for details");
+    };
+
+    renderComponent(<LoginView />);
+
+    fireEvent.input(screen.getByLabelText("common.gatewayUrl"), {
+      target: { value: "ws://gateway.example.test" },
+    });
+    fireEvent.input(screen.getByLabelText("common.token"), { target: { value: "tok_network" } });
+    fireEvent.click(screen.getByRole("button", { name: "actions.connect" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Cove could not reach the gateway. Check that OpenClaw is running and that the WebSocket URL is reachable.",
+        ),
+      ).toBeTruthy();
+    });
+  });
+
+  test("surfaces structured gateway remediation with collapsed redacted diagnostics", async () => {
+    connectImpl = async () => {
+      throw Object.assign(new Error("Operator auth is disabled for token tok_structured_secret"), {
+        code: "AUTH_CONFIG_DISABLED",
+        details: {
+          configPath: "/tmp/openclaw.json",
+          password: "password-secret",
+          token: "tok_structured_secret",
+        },
+        remediation: "Enable operator auth in the gateway config.",
+      });
+    };
+
+    renderComponent(<LoginView />);
+
+    fireEvent.input(screen.getByLabelText("common.gatewayUrl"), {
+      target: { value: "ws://gateway.example.test" },
+    });
+    fireEvent.input(screen.getByLabelText("common.token"), {
+      target: { value: "tok_structured_secret" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "actions.connect" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Enable operator auth in the gateway config.")).toBeTruthy();
+    });
+    expect(screen.getByText("Diagnostic details")).toBeTruthy();
+    const diagnostics = screen.getByText("Diagnostic details").closest("details");
+    expect(diagnostics).toBeTruthy();
+    expect(diagnostics?.hasAttribute("open")).toBe(false);
+    expect(screen.getByText(/configPath/)).toBeTruthy();
+    expect(document.body.textContent).toContain('"password": "[redacted]"');
+    expect(document.body.textContent).toContain('"token": "[redacted]"');
+    expect(document.body.textContent).not.toContain("tok_structured_secret");
+    expect(document.body.textContent).not.toContain("password-secret");
+  });
+
+  test("clears classified gateway failures when the credential changes", async () => {
+    connectImpl = async () => {
+      lastError.value = "Token tok_stale_secret expired";
+      throw Object.assign(new Error("Token tok_stale_secret expired"), {
+        code: "AUTH_TOKEN_EXPIRED",
+      });
+    };
+
+    renderComponent(<LoginView />);
+
+    fireEvent.input(screen.getByLabelText("common.gatewayUrl"), {
+      target: { value: "ws://gateway.example.test" },
+    });
+    fireEvent.input(screen.getByLabelText("common.token"), {
+      target: { value: "tok_stale_secret" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "actions.connect" }));
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "The saved token has expired. Generate a new operator token in OpenClaw and try again.",
+        ),
+      ).toBeTruthy();
+    });
+
+    fireEvent.input(screen.getByLabelText("common.token"), {
+      target: { value: "tok_new_secret" },
+    });
+
+    expect(
+      screen.queryByText(
+        "The saved token has expired. Generate a new operator token in OpenClaw and try again.",
+      ),
+    ).toBeNull();
+    expect(document.body.textContent).not.toContain("tok_stale_secret");
+  });
+
+  test("renders classified fallback errors from gateway lastError", () => {
+    lastError.value = "Connection closed";
+
+    renderComponent(<LoginView />);
+
+    expect(
+      screen.getByText(
+        "Cove could not reach the gateway. Check that OpenClaw is running and that the WebSocket URL is reachable.",
+      ),
+    ).toBeTruthy();
   });
 });
 
