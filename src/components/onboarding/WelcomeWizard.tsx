@@ -10,12 +10,7 @@ import { useSignal, useComputed, useSignalEffect } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError, disconnect, probeGateway } from "@/lib/gateway";
-import { initChat } from "@/lib/chat/init";
-import { setActiveSession, loadSessions, initSessionEventSubscription } from "@/signals/sessions";
-import { loadAssistantIdentity } from "@/signals/identity";
-import { startUsagePolling } from "@/signals/usage";
-import { loadModels } from "@/signals/models";
-import { initExecApproval } from "@/signals/exec";
+import { initConnectedApp } from "@/lib/connected-app";
 import { saveAuth, completeOnboarding, setPendingTour } from "@/lib/storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -162,25 +157,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
         autoReconnect: true,
       });
 
-      // Load sessions list for sidebar
-      await loadSessions();
-      initSessionEventSubscription();
-
-      // Load assistant identity
-      await loadAssistantIdentity();
-
-      // Initialize chat with main session
-      setActiveSession("main");
-      await initChat("main");
-
-      // Start polling for usage data
-      startUsagePolling();
-
-      // Load available models
-      loadModels();
-
-      // Initialize approval listener
-      initExecApproval();
+      await initConnectedApp();
 
       // Save auth only after the connected app state is ready.
       saveAuth({

@@ -2,7 +2,6 @@
 import { afterEach, beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
 import { fireEvent, renderComponent, screen, waitFor } from "../../../helpers/dom";
-import { createSessionSignalsMock } from "../../../helpers/module-mocks";
 import { installFakeTimers, type FakeTimers } from "../../../helpers/timers";
 
 type Deferred<T> = {
@@ -18,6 +17,7 @@ const calls = {
   initChat: [] as string[],
   initExecApproval: 0,
   initSessionEventSubscription: 0,
+  initUpdateSubscription: 0,
   loadAssistantIdentity: 0,
   loadModels: 0,
   loadSessions: 0,
@@ -61,42 +61,18 @@ mock.module("@/lib/gateway", () => ({
     return probeGatewayImpl(url, signal);
   },
 }));
-mock.module("@/lib/chat/init", () => ({
-  initChat: async (session: string) => {
-    calls.initChat.push(session);
-  },
-}));
-mock.module("@/signals/sessions", () => ({
-  ...createSessionSignalsMock(),
-  initSessionEventSubscription: () => {
-    calls.initSessionEventSubscription++;
-  },
-  loadSessions: () => {
+mock.module("@/lib/connected-app", () => ({
+  initConnectedApp: async () => {
     calls.loadSessions++;
-    return loadSessionsImpl();
-  },
-  setActiveSession: (session: string) => {
-    calls.setActiveSession.push(session);
-  },
-}));
-mock.module("@/signals/identity", () => ({
-  loadAssistantIdentity: async () => {
+    await loadSessionsImpl();
+    calls.initSessionEventSubscription++;
     calls.loadAssistantIdentity++;
-  },
-}));
-mock.module("@/signals/usage", () => ({
-  startUsagePolling: () => {
+    calls.setActiveSession.push("main");
+    calls.initChat.push("main");
     calls.startUsagePolling++;
-  },
-}));
-mock.module("@/signals/models", () => ({
-  loadModels: () => {
     calls.loadModels++;
-  },
-}));
-mock.module("@/signals/exec", () => ({
-  initExecApproval: () => {
     calls.initExecApproval++;
+    calls.initUpdateSubscription++;
   },
 }));
 mock.module("@/lib/storage", () => ({
@@ -207,6 +183,7 @@ describe("WelcomeWizard", () => {
     expect(calls.startUsagePolling).toBe(1);
     expect(calls.loadModels).toBe(1);
     expect(calls.initExecApproval).toBe(1);
+    expect(calls.initUpdateSubscription).toBe(1);
     expect(calls.saveAuth).toHaveLength(1);
     expect(calls.completeOnboarding).toBe(1);
 

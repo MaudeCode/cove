@@ -8,13 +8,8 @@ import { useSignal } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError } from "@/lib/gateway";
-import { initChat } from "@/lib/chat/init";
-import { setActiveSession, loadSessions, initSessionEventSubscription } from "@/signals/sessions";
 import { loadAgents } from "@/signals/agents";
-import { loadAssistantIdentity } from "@/signals/identity";
-import { startUsagePolling } from "@/signals/usage";
-import { loadModels } from "@/signals/models";
-import { initExecApproval } from "@/signals/exec";
+import { initConnectedApp } from "@/lib/connected-app";
 import { getAuth, saveAuth, getSessionCredential } from "@/lib/storage";
 import { Input } from "@/components/ui/Input";
 import { PasswordInput } from "@/components/ui/PasswordInput";
@@ -81,28 +76,10 @@ export function LoginView() {
         credential: token.value,
       });
 
-      // Load sessions list for sidebar
-      await loadSessions();
-      initSessionEventSubscription();
-
       // Load available agents
       await loadAgents();
 
-      // Load assistant identity
-      await loadAssistantIdentity();
-
-      // Initialize chat with main session
-      setActiveSession("main");
-      await initChat("main");
-
-      // Start polling for usage data
-      startUsagePolling();
-
-      // Load available models
-      loadModels();
-
-      // Initialize approval listener
-      initExecApproval();
+      await initConnectedApp();
     } catch (err) {
       log.auth.error("Connect failed:", err);
     } finally {
