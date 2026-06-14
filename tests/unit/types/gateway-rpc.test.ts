@@ -5,6 +5,7 @@ import type { GatewayRpcMap } from "../../../src/types/gateway-rpc";
 
 const expectedMau28GatewayRpcMethods = [
   "agent.wait",
+  "chat.startup",
   "chat.metadata",
   "sessions.compact",
   "talk.client.create",

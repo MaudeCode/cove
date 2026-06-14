@@ -53,6 +53,7 @@ mock.module("@/types/chat", () => typesChat);
 mock.module("@/signals/sessions", () => createSessionSignalsMock({ sessions }));
 
 const chat = await import("../../../../src/signals/chat");
+const modelSignals = await import("../../../../src/signals/models");
 
 mock.module("@/signals/chat", () => ({
   ...chat,
@@ -65,6 +66,7 @@ mock.module("@/signals/chat", () => ({
     chat.clearMessages();
   },
 }));
+mock.module("@/signals/models", () => modelSignals);
 
 mock.module("../../../../src/lib/chat/events", () => ({
   subscribeToChatEvents: () => undefined,

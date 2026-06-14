@@ -1,6 +1,11 @@
 import type { AttachmentPayload } from "@/types/attachments";
 import type { AgentsListResponse } from "@/types/agents";
-import type { ChatHistoryResult, ChatSendResult } from "@/types/chat";
+import type {
+  ChatHistoryResult,
+  ChatMetadataResult,
+  ChatSendResult,
+  ChatStartupResult,
+} from "@/types/chat";
 import type { ChannelsStatusResponse } from "@/types/channels";
 import type { ConfigGetResponse, ConfigSaveResponse, ConfigSchemaResponse } from "@/types/config";
 import type {
@@ -310,12 +315,13 @@ export interface GatewayRpcMap {
     params: { sessionKey: string; limit?: number; maxChars?: number };
     result: ChatHistoryResult;
   };
+  "chat.startup": {
+    params: { sessionKey: string; agentId?: string; limit?: number; maxChars?: number };
+    result: ChatStartupResult;
+  };
   "chat.metadata": {
     params: AgentScopedParams | undefined;
-    result: {
-      commands?: unknown[];
-      models?: unknown;
-    } & OpaqueRecord;
+    result: ChatMetadataResult;
   };
   "chat.send": {
     params: ChatSendParams;

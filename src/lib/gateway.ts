@@ -574,6 +574,21 @@ export function sendUnknown<T = unknown>(
   return sendRaw(method, params, options) as Promise<T>;
 }
 
+export function isGatewayMethodAdvertised(method: string): boolean | undefined {
+  const methods = capabilities.value;
+  return methods.length > 0 ? methods.includes(method) : undefined;
+}
+
+export function isUnknownGatewayMethodError(err: unknown, method: string): boolean {
+  if (!(err instanceof GatewayRpcError)) return false;
+  const message = err.message.toLowerCase();
+  const normalizedMethod = method.toLowerCase();
+  return (
+    err.code === "METHOD_NOT_FOUND" ||
+    (message.includes("unknown method") && message.includes(normalizedMethod))
+  );
+}
+
 /**
  * Handle incoming messages
  */

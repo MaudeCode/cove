@@ -8,9 +8,10 @@
  */
 
 import { signal, computed } from "@preact/signals";
-import { send } from "@/lib/gateway";
+import { isGatewayMethodAdvertised, isUnknownGatewayMethodError, send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
-import type { ModelChoice } from "@/types/models";
+import type { ChatMetadataResult } from "@/types/chat";
+import type { ModelChoice, ModelsListResult } from "@/types/models";
 
 const STATUS_UNAVAILABLE = Symbol("status unavailable");
 
@@ -63,7 +64,7 @@ export async function loadModels(): Promise<void> {
   try {
     // Load models list and default model in parallel
     const [modelsResult, statusResult] = await Promise.all([
-      send("models.list", { view: "configured" }),
+      loadModelCatalog(),
       send("status", {}).catch(() => STATUS_UNAVAILABLE), // Don't fail if status unavailable
     ]);
 
@@ -88,6 +89,42 @@ export async function loadModels(): Promise<void> {
   } finally {
     isLoadingModels.value = false;
   }
+}
+
+export function applyChatMetadata(metadata: ChatMetadataResult | undefined): boolean {
+  if (!metadata || !Array.isArray(metadata.models)) return false;
+  models.value = metadata.models.filter(isModelChoice);
+  return true;
+}
+
+async function loadModelCatalog(): Promise<ModelsListResult> {
+  if (isGatewayMethodAdvertised("chat.metadata") === false) {
+    return send("models.list", { view: "configured" });
+  }
+
+  try {
+    const metadata = await send("chat.metadata", undefined);
+    return { models: normalizeMetadataModels(metadata) };
+  } catch (err) {
+    if (isUnknownGatewayMethodError(err, "chat.metadata")) {
+      return send("models.list", { view: "configured" });
+    }
+    throw err;
+  }
+}
+
+function normalizeMetadataModels(metadata: ChatMetadataResult): ModelChoice[] {
+  return Array.isArray(metadata.models) ? metadata.models.filter(isModelChoice) : [];
+}
+
+function isModelChoice(value: unknown): value is ModelChoice {
+  if (!value || typeof value !== "object") return false;
+  const record = value as Record<string, unknown>;
+  return (
+    typeof record.id === "string" &&
+    typeof record.name === "string" &&
+    typeof record.provider === "string"
+  );
 }
 
 /**

@@ -109,6 +109,28 @@ export interface ChatHistoryResult {
   thinkingLevel?: string;
 }
 
+/** Chat startup response includes chat history plus optional startup metadata. */
+export interface ChatStartupResult extends ChatHistoryResult {
+  defaults?: unknown;
+  sessionInfo?: {
+    sessionId?: string;
+    thinkingLevel?: string;
+    thinkingDefault?: string;
+    hasActiveRun?: boolean;
+    [key: string]: unknown;
+  };
+  metadata?: ChatMetadataResult;
+  agentsList?: unknown;
+  inFlightRun?: unknown;
+}
+
+/** Chat metadata response from OpenClaw startup/metadata RPCs. */
+export interface ChatMetadataResult {
+  commands?: unknown[];
+  models?: unknown[];
+  [key: string]: unknown;
+}
+
 /** Chat send response (immediate ack) */
 export interface ChatSendResult {
   runId: string;

@@ -5,6 +5,16 @@ const gatewayCalls: Array<{ method: string; params: unknown }> = [];
 const gatewayResponses = new Map<string, unknown>();
 const gateway = installGatewayAliasMock();
 
+class RpcError extends Error {
+  code: string;
+
+  constructor(code: string, message: string) {
+    super(message);
+    this.name = "GatewayRpcError";
+    this.code = code;
+  }
+}
+
 gateway.send = async (method: string, params?: unknown) => {
   gatewayCalls.push({ method, params });
   const response = gatewayResponses.get(method);
@@ -42,6 +52,30 @@ beforeEach(() => {
 
 describe("model signals", () => {
   test("loads configured models and tolerates status failures", async () => {
+    gateway.capabilities.value = ["chat.metadata"];
+    gatewayResponses.set("chat.metadata", {
+      models: [
+        { id: "anthropic/claude-opus-4-5", name: "Claude Opus", provider: "anthropic" },
+        { id: "openai/gpt-5.4", name: "GPT 5.4", provider: "openai" },
+      ],
+    });
+    gatewayResponses.set("status", new Error("status unavailable"));
+
+    await modelsSignal.loadModels();
+
+    expect(gatewayCalls).toEqual([
+      { method: "chat.metadata", params: undefined },
+      { method: "status", params: {} },
+    ]);
+    expect(modelsSignal.models.value.map((model) => model.id)).toEqual([
+      "anthropic/claude-opus-4-5",
+      "openai/gpt-5.4",
+    ]);
+    expect(modelsSignal.defaultModel.value).toBeNull();
+  });
+
+  test("falls back to configured models list when chat.metadata is not advertised", async () => {
+    gateway.capabilities.value = ["models.list", "status"];
     gatewayResponses.set("models.list", {
       models: [
         { id: "anthropic/claude-opus-4-5", name: "Claude Opus", provider: "anthropic" },
@@ -63,7 +97,64 @@ describe("model signals", () => {
     expect(modelsSignal.defaultModel.value).toBeNull();
   });
 
+  test("falls back to configured models list when chat.metadata is unknown", async () => {
+    gateway.capabilities.value = [];
+    gatewayResponses.set(
+      "chat.metadata",
+      new RpcError("INVALID_REQUEST", "unknown method: chat.metadata"),
+    );
+    gatewayResponses.set("models.list", {
+      models: [{ id: "openai/gpt-5.4", name: "GPT 5.4", provider: "openai" }],
+    });
+    gatewayResponses.set("status", {
+      sessions: { defaults: { model: "openai/gpt-5.4" } },
+    });
+
+    await modelsSignal.loadModels();
+
+    expect(gatewayCalls).toEqual([
+      { method: "chat.metadata", params: undefined },
+      { method: "status", params: {} },
+      { method: "models.list", params: { view: "configured" } },
+    ]);
+    expect(modelsSignal.models.value.map((model) => model.id)).toEqual(["openai/gpt-5.4"]);
+    expect(modelsSignal.defaultModel.value).toBe("openai/gpt-5.4");
+  });
+
+  test("does not fall back for non-method chat.metadata not found failures", async () => {
+    gateway.capabilities.value = [];
+    gatewayResponses.set("chat.metadata", new RpcError("NOT_FOUND", "model catalog missing"));
+    gatewayResponses.set("status", {
+      sessions: { defaults: { model: "openai/gpt-5.4" } },
+    });
+
+    await modelsSignal.loadModels();
+
+    expect(gatewayCalls).toEqual([
+      { method: "chat.metadata", params: undefined },
+      { method: "status", params: {} },
+    ]);
+    expect(modelsSignal.models.value).toEqual([]);
+    expect(modelsSignal.defaultModel.value).toBeNull();
+  });
+
+  test("applies chat metadata model catalogs and filters malformed entries", () => {
+    const applied = modelsSignal.applyChatMetadata({
+      models: [
+        { id: "openai/gpt-5.4", name: "GPT 5.4", provider: "openai" },
+        { id: "missing-provider", name: "Broken" },
+        "invalid",
+      ],
+    });
+
+    expect(applied).toBe(true);
+    expect(modelsSignal.models.value).toEqual([
+      { id: "openai/gpt-5.4", name: "GPT 5.4", provider: "openai" },
+    ]);
+  });
+
   test("does not fall back to unscoped model catalogs when configured view is empty", async () => {
+    gateway.capabilities.value = ["models.list", "status"];
     gatewayResponses.set("models.list", { models: [] });
     gatewayResponses.set("status", {
       sessions: { defaults: { model: "anthropic/claude-sonnet-4-5" } },
@@ -80,6 +171,7 @@ describe("model signals", () => {
   });
 
   test("extracts the default model and groups models by provider", async () => {
+    gateway.capabilities.value = ["models.list", "status"];
     gatewayResponses.set("models.list", {
       models: [
         { id: "anthropic/claude-opus-4-5", name: "Claude Opus", provider: "anthropic" },
@@ -104,6 +196,7 @@ describe("model signals", () => {
   });
 
   test("clears a stale default model when status later omits defaults", async () => {
+    gateway.capabilities.value = ["models.list", "status"];
     gatewayResponses.set("models.list", {
       models: [{ id: "anthropic/claude-opus-4-5", name: "Claude Opus", provider: "anthropic" }],
     });
@@ -133,6 +226,7 @@ describe("model signals", () => {
   });
 
   test("leaves prior models intact when a refresh fails", async () => {
+    gateway.capabilities.value = ["models.list", "status"];
     modelsSignal.models.value = [
       { id: "anthropic/claude-opus-4-5", name: "Claude Opus", provider: "anthropic" },
     ];

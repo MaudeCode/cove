@@ -86,6 +86,8 @@ mock.module("@/signals/sessions", () => ({
 
 const chat = await import("../../../../src/signals/chat");
 mock.module("@/signals/chat", () => chat);
+const modelSignals = await import("../../../../src/signals/models");
+mock.module("@/signals/models", () => modelSignals);
 const { consumeResetRun, registerResetRun } =
   await import("../../../../src/lib/chat/reset-reconciliation");
 const { subscribeToChatEvents, unsubscribeFromChatEvents } =

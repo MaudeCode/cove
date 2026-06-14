@@ -4,7 +4,7 @@
  * Loading and processing chat history from the gateway.
  */
 
-import { send } from "@/lib/gateway";
+import { isGatewayMethodAdvertised, isUnknownGatewayMethodError, send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import { DEFAULT_HISTORY_LIMIT } from "@/lib/constants";
 import {
@@ -14,8 +14,10 @@ import {
   reconcileMessagesFromHistory,
   saveCachedMessages,
 } from "@/signals/chat";
+import { applyChatMetadata } from "@/signals/models";
 import { isForActiveSession } from "@/signals/sessions";
 import { normalizeHistoryMessages } from "./history-processing";
+import type { ChatHistoryResult, ChatStartupResult } from "@/types/chat";
 
 /** Track in-flight history loads to prevent concurrent loads for the same session */
 const pendingLoads = new Map<string, Promise<void>>();
@@ -53,7 +55,7 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
   historyError.value = null;
 
   try {
-    const result = await send("chat.history", { sessionKey, limit });
+    const result = await loadStartupHistory(sessionKey, limit);
     const normalized = normalizeHistoryMessages(result.messages);
 
     if (!isForActiveSession(sessionKey)) {
@@ -64,9 +66,12 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
     const reconciled = reconcileMessagesFromHistory(sessionKey, normalized);
     saveCachedMessages(sessionKey, reconciled);
 
-    if (result.thinkingLevel) {
-      thinkingLevel.value = result.thinkingLevel;
+    const sessionInfo = getStartupSessionInfo(result);
+    const nextThinkingLevel = sessionInfo?.thinkingLevel ?? result.thinkingLevel;
+    if (nextThinkingLevel) {
+      thinkingLevel.value = nextThinkingLevel;
     }
+    applyStartupMetadata(result);
   } catch (err) {
     if (loadToken === latestLoadToken) {
       historyError.value = err instanceof Error ? err.message : String(err);
@@ -76,5 +81,33 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
     if (loadToken === latestLoadToken) {
       isLoadingHistory.value = false;
     }
+  }
+}
+
+function getStartupSessionInfo(result: ChatHistoryResult | ChatStartupResult) {
+  return "sessionInfo" in result ? result.sessionInfo : undefined;
+}
+
+function applyStartupMetadata(result: ChatHistoryResult | ChatStartupResult): void {
+  if ("metadata" in result) {
+    applyChatMetadata(result.metadata);
+  }
+}
+
+async function loadStartupHistory(
+  sessionKey: string,
+  limit: number,
+): Promise<ChatHistoryResult | ChatStartupResult> {
+  if (isGatewayMethodAdvertised("chat.startup") === false) {
+    return send("chat.history", { sessionKey, limit });
+  }
+
+  try {
+    return await send("chat.startup", { sessionKey, limit });
+  } catch (err) {
+    if (isUnknownGatewayMethodError(err, "chat.startup")) {
+      return send("chat.history", { sessionKey, limit });
+    }
+    throw err;
   }
 }
