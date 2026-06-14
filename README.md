@@ -151,6 +151,11 @@ bun run dev
 # Run all checks (lint, format, typecheck, unused exports)
 bun run check
 
+# Produce desktop/mobile core chat visual smoke screenshots
+bun run test:e2e:visual
+# Screenshots are written under test-results/**/visual-screenshots.
+# CI uploads them in the playwright-artifacts artifact.
+
 # Build for production
 bun run build
 ```

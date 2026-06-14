@@ -145,7 +145,7 @@ export function Sidebar() {
   };
 
   return (
-    <div class="h-full flex flex-col">
+    <div class="h-full flex flex-col" data-tour="app-sidebar">
       {/* Multi-chat mode: New Chat button + Sessions list */}
       {isMultiChatMode.value ? (
         <>

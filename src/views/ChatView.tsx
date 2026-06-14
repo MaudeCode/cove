@@ -172,7 +172,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
   );
 
   return (
-    <div class="flex-1 flex flex-col overflow-hidden relative">
+    <div class="flex-1 flex flex-col overflow-hidden relative" data-tour="chat-view">
       {/* Connection status banner */}
       <ConnectionBanner />
 

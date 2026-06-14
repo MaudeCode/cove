@@ -1,7 +1,18 @@
 import type { Page } from "@playwright/test";
+import type { RawMessage } from "@/types/chat";
+import type { Session } from "@/types/sessions";
 
-export async function installMockGateway(page: Page): Promise<void> {
-  await page.addInitScript(() => {
+export interface MockGatewayOptions {
+  messages?: RawMessage[];
+  messagesBySession?: Record<string, RawMessage[]>;
+  sessions?: Session[];
+}
+
+export async function installMockGateway(
+  page: Page,
+  options: MockGatewayOptions = {},
+): Promise<void> {
+  await page.addInitScript((mockOptions: MockGatewayOptions) => {
     type GatewayRequest = {
       id: string;
       method: string;
@@ -21,16 +32,17 @@ export async function installMockGateway(page: Page): Promise<void> {
     const requests: GatewayRequest[] = [];
     const now = Date.now();
 
-    const session = {
+    const session: Session = {
       key: "agent:main:main",
       label: "Main",
       displayName: "Main",
-      kind: "direct",
+      kind: "main",
       model: "test/model",
       updatedAt: now,
       totalTokens: 0,
       contextTokens: 200_000,
     };
+    const sessions = mockOptions.sessions?.length ? mockOptions.sessions : [session];
 
     const results: Record<string, unknown> = {
       "agent.identity.get": {
@@ -51,10 +63,6 @@ export async function installMockGateway(page: Page): Promise<void> {
             },
           },
         ],
-      },
-      "chat.history": {
-        sessionKey: "agent:main:main",
-        messages: [],
       },
       "device.pair.list": {
         pending: [],
@@ -92,8 +100,12 @@ export async function installMockGateway(page: Page): Promise<void> {
         agents: [],
         sessions: {
           path: "/tmp/cove-e2e-sessions",
-          count: 1,
-          recent: [{ key: "agent:main:main", updatedAt: now, age: 0 }],
+          count: sessions.length,
+          recent: sessions.map((item) => ({
+            key: item.key,
+            updatedAt: item.updatedAt ?? now,
+            age: 0,
+          })),
           defaults: { model: "test/model" },
         },
         channels: {},
@@ -104,8 +116,8 @@ export async function installMockGateway(page: Page): Promise<void> {
         models: [],
       },
       "sessions.list": {
-        count: 1,
-        sessions: [session],
+        count: sessions.length,
+        sessions,
       },
       "sessions.subscribe": {
         ok: true,
@@ -120,6 +132,7 @@ export async function installMockGateway(page: Page): Promise<void> {
         providers: [],
       },
     };
+    const methods = [...Object.keys(results), "chat.history"];
 
     function helloOk() {
       return {
@@ -130,7 +143,7 @@ export async function installMockGateway(page: Page): Promise<void> {
           connId: "e2e-connection",
         },
         features: {
-          methods: Object.keys(results),
+          methods,
           events: [],
         },
         snapshot: {
@@ -232,6 +245,35 @@ export async function installMockGateway(page: Page): Promise<void> {
           return;
         }
 
+        if (request.method === "chat.history") {
+          const params = request.params as { sessionKey?: unknown } | undefined;
+          if (typeof params?.sessionKey !== "string") {
+            this.receive({
+              type: "res",
+              id: request.id,
+              ok: false,
+              error: {
+                code: "INVALID_PARAMS",
+                message: "chat.history requires sessionKey",
+              },
+            });
+            return;
+          }
+
+          const sessionKey = params.sessionKey;
+          const isDefaultSession = sessionKey === "main" || sessionKey === "agent:main:main";
+          const messages =
+            mockOptions.messagesBySession?.[sessionKey] ??
+            (isDefaultSession ? (mockOptions.messages ?? []) : []);
+          this.receive({
+            type: "res",
+            id: request.id,
+            ok: true,
+            payload: { sessionKey, messages },
+          });
+          return;
+        }
+
         if (!(request.method in results)) {
           this.receive({
             type: "res",
@@ -295,7 +337,7 @@ export async function installMockGateway(page: Page): Promise<void> {
       value: requests,
     });
     window.WebSocket = MockGatewayWebSocket as unknown as typeof WebSocket;
-  });
+  }, options);
 }
 
 export async function mockGatewayMethods(page: Page): Promise<string[]> {

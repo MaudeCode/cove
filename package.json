@@ -40,6 +40,7 @@
     "test:deployment": "COVE_RUN_DOCKER_SMOKE=1 bun test tests/integration/deployment",
     "test:package": "COVE_RUN_PACKAGE_INTEGRITY=1 bun test tests/integration/package",
     "test:e2e": "playwright test",
+    "test:e2e:visual": "playwright test tests/e2e/app-visual.spec.ts",
     "test:all": "bun run test:unit && bun run test:integration && bun run test:e2e",
     "test:coverage": "COVE_DIRECT_FIXTURE_COVERAGE=1 bun test --coverage tests/unit tests/integration && bun run test:coverage:fixtures",
     "test:coverage:fixtures": "bun test --coverage ./tests/fixtures/app/app-shell-routing-inner.fixture.tsx ./tests/fixtures/layout/sidebar-nav-topbar-inner.fixture.tsx && bun test --coverage ./tests/fixtures/views/usage-table-inner.fixture.tsx",
