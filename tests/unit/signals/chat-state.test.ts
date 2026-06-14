@@ -101,6 +101,30 @@ describe("chat signals", () => {
     expect(chat.messages.value.map((msg) => msg.id)).toEqual(["assistant-1"]);
   });
 
+  test("adoptRunId rekeys optimistic runs and preserves gateway stream state", () => {
+    chat.startRun("optimistic", "session-1");
+    chat.startRun("gateway-run", "session-1");
+    chat.updateRunContent("gateway-run", "streamed", [
+      {
+        id: "tool-1",
+        name: "read",
+        status: "running",
+        startedAt: 1000,
+      },
+    ]);
+
+    chat.adoptRunId("optimistic", "gateway-run");
+
+    expect(chat.activeRuns.value.has("optimistic")).toBe(false);
+    expect(chat.activeRuns.value.get("gateway-run")).toMatchObject({
+      content: "streamed",
+      runId: "gateway-run",
+      sessionKey: "session-1",
+      status: "streaming",
+      toolCalls: [expect.objectContaining({ id: "tool-1" })],
+    });
+  });
+
   test("error and abort cleanup timers use their configured delays", () => {
     chat.startRun("error-run", "session-1");
     chat.errorRun("error-run", "failed");

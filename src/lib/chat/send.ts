@@ -19,6 +19,7 @@ import {
   markMessageSent,
   isStreaming,
   clearMessages,
+  adoptRunId,
 } from "@/signals/chat";
 import { sessions } from "@/signals/sessions";
 import { autoRenameSession } from "./auto-rename";
@@ -127,6 +128,8 @@ export async function sendMessage(
       markMessageFailed(messageId, errorMsg);
       throw new Error(errorMsg);
     }
+
+    adoptRunId(idempotencyKey, result.runId);
 
     const isReset = isResetCommand(message);
     const resetRunId = isReset ? result.runId : undefined;

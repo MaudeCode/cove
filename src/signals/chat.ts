@@ -321,6 +321,38 @@ export function startRun(runId: string, sessionKey: string): void {
   activeRuns.value = newRuns;
 }
 
+/** Adopt the gateway ACK runId for an optimistic local run. */
+export function adoptRunId(optimisticRunId: string, gatewayRunId: string): void {
+  if (optimisticRunId === gatewayRunId) return;
+
+  const optimisticRun = activeRuns.value.get(optimisticRunId);
+  if (!optimisticRun) return;
+
+  const gatewayRun = activeRuns.value.get(gatewayRunId);
+  const newRuns = new Map(activeRuns.value);
+  newRuns.delete(optimisticRunId);
+
+  if (gatewayRun) {
+    newRuns.set(gatewayRunId, {
+      ...optimisticRun,
+      ...gatewayRun,
+      runId: gatewayRunId,
+      sessionKey: gatewayRun.sessionKey || optimisticRun.sessionKey,
+      startedAt: Math.min(optimisticRun.startedAt, gatewayRun.startedAt),
+      content: gatewayRun.content || optimisticRun.content,
+      toolCalls: gatewayRun.toolCalls.length ? gatewayRun.toolCalls : optimisticRun.toolCalls,
+      lastBlockStart: gatewayRun.lastBlockStart ?? optimisticRun.lastBlockStart,
+    });
+  } else {
+    newRuns.set(gatewayRunId, {
+      ...optimisticRun,
+      runId: gatewayRunId,
+    });
+  }
+
+  activeRuns.value = newRuns;
+}
+
 /** Update a chat run with streaming content and tool calls */
 export function updateRunContent(
   runId: string,

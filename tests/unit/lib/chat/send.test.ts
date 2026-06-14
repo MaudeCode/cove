@@ -314,6 +314,40 @@ describe("chat send queue", () => {
     });
   });
 
+  test("adopts the gateway ack run id for the optimistic active run", async () => {
+    gatewayResponses.set("chat.send", { runId: "gateway-run", status: "started" });
+
+    const optimisticRunId = await sendMessage("session-1", "hello");
+
+    expect(chat.activeRuns.value.has(optimisticRunId)).toBe(false);
+    expect(chat.activeRuns.value.get("gateway-run")).toMatchObject({
+      runId: "gateway-run",
+      sessionKey: "session-1",
+      status: "pending",
+    });
+
+    emitChat({
+      runId: "gateway-run",
+      state: "delta",
+      deltaText: "Hello",
+    });
+    emitChat({
+      runId: "gateway-run",
+      state: "final",
+      message: { role: "assistant", content: "Hello", timestamp: 1200 },
+    });
+
+    expect([...chat.activeRuns.value.keys()]).toEqual(["gateway-run"]);
+    expect(chat.activeRuns.value.get("gateway-run")).toMatchObject({
+      content: "Hello",
+      status: "complete",
+    });
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual([
+      `user_${optimisticRunId}`,
+      "assistant_gateway-run",
+    ]);
+  });
+
   test("gateway errors mark messages and runs failed", async () => {
     gatewayResponses.set("chat.send", { status: "error", summary: "gateway refused" });
 
