@@ -2,6 +2,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import type { ComponentChildren } from "preact";
 import { installUiComponentAliases } from "../../helpers/module-aliases";
+import { createQueryParamMock } from "../../helpers/module-mocks";
 import { fireEvent, renderComponent, screen, within } from "../../helpers/dom";
 import type {
   SessionUsageEntry,
@@ -118,11 +119,7 @@ mock.module("@/components/ui/Toast", () => ({
     error: () => undefined,
   },
 }));
-mock.module("@/hooks/useQueryParam", () => ({
-  useInitFromParam: () => undefined,
-  useQueryParam: () => [{ value: null }, () => undefined, { value: true }],
-  useSyncFilterToParam: () => undefined,
-}));
+mock.module("@/hooks/useQueryParam", () => createQueryParamMock());
 
 const usageState = await import("../../../src/views/usage/useUsageViewState");
 const { UsageSessionTable } = await import("../../../src/views/usage/UsageSessionTable");

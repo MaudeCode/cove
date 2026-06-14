@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, mock, setSystemTime, test } from "bun:test";
 import { signal } from "@preact/signals";
+import { createQueryParamMock } from "../../helpers/module-mocks";
 import { installStorageMocks } from "../../helpers/storage";
 import type {
   CostUsageSummary,
@@ -53,11 +54,7 @@ mock.module("@/components/ui/Toast", () => ({
     error: () => undefined,
   },
 }));
-mock.module("@/hooks/useQueryParam", () => ({
-  useInitFromParam: () => undefined,
-  useQueryParam: () => [{ value: null }, () => undefined, { value: true }],
-  useSyncFilterToParam: () => undefined,
-}));
+mock.module("@/hooks/useQueryParam", () => createQueryParamMock());
 
 beforeEach(() => {
   setSystemTime(fixedNow);

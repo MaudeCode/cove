@@ -29,9 +29,7 @@ export function LogLine({ line, expanded, onToggle }: LogLineProps) {
         onClick={onToggle}
         disabled={!hasFields}
         aria-expanded={hasFields ? expanded : undefined}
-        aria-label={
-          hasFields ? t("logs.expandLine", { message: line.message.slice(0, 50) }) : undefined
-        }
+        aria-label={hasFields ? t("logs.expandLine", { id: line.id }) : undefined}
         class="w-full text-left py-2 px-3 hover:bg-[var(--color-bg-hover)] flex items-start gap-2 font-mono text-xs disabled:cursor-default"
       >
         {hasFields ? (

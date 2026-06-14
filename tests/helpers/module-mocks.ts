@@ -45,6 +45,42 @@ export function createGatewayMock(options: GatewayMockOptions = {}) {
   };
 }
 
+interface QueryParamMockOptions {
+  initialized?: Signal<boolean> | { value: boolean };
+  param?: Signal<string | null> | { value: string | null };
+  paramSet?: Signal<Set<unknown>> | { value: Set<unknown> };
+}
+
+export function createQueryParamMock(options: QueryParamMockOptions = {}) {
+  return {
+    pushQueryState: () => undefined,
+    toggleSetValue: (target: { value: Set<unknown> }, value: unknown) => {
+      const next = new Set(target.value);
+      const wasPresent = next.has(value);
+      if (wasPresent) {
+        next.delete(value);
+      } else {
+        next.add(value);
+      }
+      target.value = next;
+      return !wasPresent;
+    },
+    useInitFromParam: () => undefined,
+    useQueryParam: () => [
+      options.param ?? signal<string | null>(null),
+      () => undefined,
+      options.initialized ?? signal(true),
+    ],
+    useQueryParamSet: () => [
+      options.paramSet ?? signal(new Set<unknown>()),
+      () => undefined,
+      options.initialized ?? signal(true),
+    ],
+    useSyncFilterToParam: () => undefined,
+    useSyncToParam: () => undefined,
+  };
+}
+
 interface UpdateSignalsMockOptions {
   initUpdateSubscription?: () => void;
 }

@@ -40,6 +40,28 @@ describe("log parser", () => {
     });
   });
 
+  test("uses JSON timestamp variants and synthesizes readable messages from fields", () => {
+    const parsed = parseLogLine(
+      JSON.stringify({
+        timestamp: "2026-06-13T12:00:02Z",
+        lvl: "info",
+        route: "/health",
+        status: 200,
+      }),
+    );
+
+    expect(parsed).toMatchObject({
+      fields: {
+        route: "/health",
+        status: "200",
+      },
+      level: "info",
+      timestamp: "2026-06-13T12:00:02Z",
+    });
+    expect(parsed.message).toContain("route=/health");
+    expect(parsed.message).toContain("status=200");
+  });
+
   test("falls back from empty msg to non-empty message fields", () => {
     expect(parseLogLine('{"level":"info","msg":"","message":"fallback text"}').message).toBe(
       "fallback text",
@@ -51,8 +73,8 @@ describe("log parser", () => {
       JSON.stringify({
         "0": '{"subsystem":"agent/embedded"}',
         "1": { run: { id: "run_1" }, count: 2 },
-        "10": "ignored earlier",
-        "2": "final message",
+        "10": "final message",
+        "2": "earlier message",
         _meta: { logLevelName: "ERROR" },
         ts: "2026-06-13T12:00:01Z",
       }),
@@ -60,7 +82,7 @@ describe("log parser", () => {
 
     expect(parsed.level).toBe("error");
     expect(parsed.timestamp).toBe("2026-06-13T12:00:01Z");
-    expect(parsed.message).toBe("ignored earlier");
+    expect(parsed.message).toBe("final message");
     expect(parsed.fields).toEqual({
       count: "2",
       "run.id": "run_1",
@@ -82,10 +104,26 @@ describe("log parser", () => {
     expect(parseLogLine("2026-06-13T12:00:00Z ERR tunnel failed")).toMatchObject({
       level: "error",
       message: "tunnel failed",
+      timestamp: "2026-06-13T12:00:00Z",
+    });
+    expect(parseLogLine("2026-06-13T12:00:00Z INF tunnel ready")).toMatchObject({
+      level: "info",
+      message: "tunnel ready",
+      timestamp: "2026-06-13T12:00:00Z",
     });
     expect(parseLogLine("DEBUG trace enabled")).toMatchObject({
       level: "debug",
       message: "trace enabled",
+    });
+    expect(parseLogLine("2026-06-13T12:00:00Z WRN tunnel degraded")).toMatchObject({
+      level: "warn",
+      message: "tunnel degraded",
+      timestamp: "2026-06-13T12:00:00Z",
+    });
+    expect(parseLogLine("2026-06-13T12:00:00Z DBG tunnel trace")).toMatchObject({
+      level: "debug",
+      message: "tunnel trace",
+      timestamp: "2026-06-13T12:00:00Z",
     });
   });
 
@@ -102,6 +140,15 @@ describe("log parser", () => {
     expect(hostile.message).toContain("msg=");
     expect(hostile.level).toBe("error");
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
+  });
+
+  test("keeps plain fallback text without inventing timestamp, level, or fields", () => {
+    expect(parseLogLine("gateway ready")).toMatchObject({
+      fields: undefined,
+      level: undefined,
+      message: "gateway ready",
+      timestamp: undefined,
+    });
   });
 
   test("formats raw JSON only when parsing succeeds", () => {

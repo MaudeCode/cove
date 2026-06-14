@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { signal } from "@preact/signals";
 import { installI18nMock } from "../../helpers/i18n";
-import { createGatewayMock } from "../../helpers/module-mocks";
+import { createGatewayMock, createQueryParamMock } from "../../helpers/module-mocks";
 import type { Session } from "../../../src/types/sessions";
 
 type SendCall = {
@@ -34,12 +34,7 @@ mock.module("@/lib/session-utils", () => ({
     return "isolated";
   },
 }));
-mock.module("@/hooks/useQueryParam", () => ({
-  useInitFromParam: () => undefined,
-  useQueryParam: () => [signal<string | null>(null), () => undefined],
-  useSyncFilterToParam: () => undefined,
-  useSyncToParam: () => undefined,
-}));
+mock.module("@/hooks/useQueryParam", () => createQueryParamMock());
 
 const sessionsAdminState = await import("../../../src/views/sessions-admin/useSessionsAdminState");
 const {
