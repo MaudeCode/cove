@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { computed, signal } from "@preact/signals";
+import { createUpdateSignalsMock } from "../../helpers/module-mocks";
 
 const calls: string[] = [];
 const sessions = signal([]);
 const activeSessionKey = signal<string | null>(null);
+const updateSignals = createUpdateSignalsMock({
+  initUpdateSubscription: () => {
+    calls.push("initUpdateSubscription");
+  },
+});
 
 mock.module("@/lib/chat/init", () => ({
   cleanupChat: () => undefined,
@@ -66,11 +72,7 @@ mock.module("@/signals/sessions", () => ({
   updateSession: () => undefined,
 }));
 
-mock.module("@/signals/update", () => ({
-  initUpdateSubscription: () => {
-    calls.push("initUpdateSubscription");
-  },
-}));
+mock.module("@/signals/update", () => updateSignals);
 
 mock.module("@/signals/usage", () => ({
   startUsagePolling: () => {
@@ -84,6 +86,7 @@ beforeEach(() => {
   calls.length = 0;
   activeSessionKey.value = null;
   sessions.value = [];
+  updateSignals.reset();
 });
 
 describe("connected app initialization", () => {

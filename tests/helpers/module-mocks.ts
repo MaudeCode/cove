@@ -44,3 +44,33 @@ export function createGatewayMock(options: GatewayMockOptions = {}) {
     subscribe: () => () => undefined,
   };
 }
+
+interface UpdateSignalsMockOptions {
+  initUpdateSubscription?: () => void;
+}
+
+export function createUpdateSignalsMock(options: UpdateSignalsMockOptions = {}) {
+  const updateAvailable = signal<{
+    channel: string;
+    currentVersion: string;
+    latestVersion: string;
+  } | null>(null);
+  const dismissedUpdateVersion = signal<string | null>(null);
+
+  return {
+    dismissUpdate: () => {
+      const update = updateAvailable.value;
+      if (!update) return;
+      dismissedUpdateVersion.value = update.latestVersion;
+      localStorage.setItem("cove:dismissed-update-version", update.latestVersion);
+    },
+    dismissedUpdateVersion,
+    initUpdateSubscription: options.initUpdateSubscription ?? (() => undefined),
+    isUpdateDismissed: () => dismissedUpdateVersion.value === updateAvailable.value?.latestVersion,
+    reset: () => {
+      updateAvailable.value = null;
+      dismissedUpdateVersion.value = null;
+    },
+    updateAvailable,
+  };
+}
