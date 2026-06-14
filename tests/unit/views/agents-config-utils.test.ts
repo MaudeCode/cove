@@ -26,14 +26,28 @@ describe("agent config helpers", () => {
     });
   });
 
-  test("buildConfigApplyParams serializes raw config with baseHash", () => {
-    expect(buildConfigApplyParams({ agents: { list: [{ id: "agent-1" }] } }, "hash-1")).toEqual({
+  test("buildConfigApplyParams serializes raw config with baseHash and session context", () => {
+    expect(
+      buildConfigApplyParams(
+        { agents: { list: [{ id: "agent-1" }] } },
+        "hash-1",
+        "agent:main:web:dm:test",
+      ),
+    ).toEqual({
       raw: JSON.stringify({ agents: { list: [{ id: "agent-1" }] } }),
       baseHash: "hash-1",
+      sessionKey: "agent:main:web:dm:test",
     });
   });
 
-  test("applyGatewayConfigWithSend sends raw config with the current baseHash", async () => {
+  test("buildConfigApplyParams omits null baseHash while preserving session context", () => {
+    expect(buildConfigApplyParams({ tools: { profile: "coding" } }, null, "main")).toEqual({
+      raw: JSON.stringify({ tools: { profile: "coding" } }),
+      sessionKey: "main",
+    });
+  });
+
+  test("applyGatewayConfigWithSend sends raw config with baseHash and session context", async () => {
     const sendCalls: Array<{ method: string; params: unknown }> = [];
     const send = (async (method: string, params: unknown) => {
       sendCalls.push({ method, params });
@@ -50,7 +64,12 @@ describe("agent config helpers", () => {
     }) as ConfigApplySender;
     const config: GatewayConfig = { agents: { list: [{ id: "agent-1" }] } };
 
-    const refreshed = await applyGatewayConfigWithSend(config, "hash-1", send);
+    const refreshed = await applyGatewayConfigWithSend(
+      config,
+      "hash-1",
+      "agent:main:web:dm:test",
+      send,
+    );
 
     expect(sendCalls).toEqual([
       {
@@ -58,6 +77,7 @@ describe("agent config helpers", () => {
         params: {
           raw: JSON.stringify(config),
           baseHash: "hash-1",
+          sessionKey: "agent:main:web:dm:test",
         },
       },
       {

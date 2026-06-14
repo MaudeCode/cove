@@ -131,6 +131,22 @@ export interface LogsTailResult {
 
 type ConfigModel = string | { primary?: string; fallbacks?: string[] };
 
+interface ConfigDeliveryContext {
+  channel?: string;
+  to?: string;
+  accountId?: string;
+  threadId?: string | number;
+}
+
+interface ConfigApplyLikeParams {
+  raw: string;
+  baseHash?: string;
+  sessionKey?: string;
+  deliveryContext?: ConfigDeliveryContext;
+  note?: string;
+  restartDelayMs?: number;
+}
+
 interface ConfigToolsSection {
   profile?: string;
   allow?: string[];
@@ -203,7 +219,7 @@ export interface GatewayRpcMap {
     result: HelloPayload;
   };
   "config.apply": {
-    params: { raw: string; baseHash?: string | null };
+    params: ConfigApplyLikeParams;
     result: ConfigSaveResponse;
   };
   "config.get": {
@@ -221,7 +237,7 @@ export interface GatewayRpcMap {
     };
   };
   "config.patch": {
-    params: { raw: string; baseHash?: string | null; replacePaths?: string[] };
+    params: ConfigApplyLikeParams & { replacePaths?: string[] };
     result: ConfigSaveResponse;
   };
   "config.schema": {

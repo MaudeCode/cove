@@ -1,5 +1,5 @@
 import { signal } from "@preact/signals";
-import { send } from "@/lib/gateway";
+import { mainSessionKey, send } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { t } from "@/lib/i18n";
@@ -118,7 +118,12 @@ export function toggleTool(toolId: string, enabled: boolean): void {
 }
 
 export async function applyGatewayConfig(config: GatewayConfig): Promise<GatewayConfig> {
-  const refreshed = await applyGatewayConfigWithSend(config, gatewayConfigHash.value, send);
+  const refreshed = await applyGatewayConfigWithSend(
+    config,
+    gatewayConfigHash.value,
+    mainSessionKey.value,
+    send,
+  );
   gatewayConfig.value = refreshed.config;
   gatewayConfigHash.value = refreshed.hash;
 

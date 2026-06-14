@@ -138,6 +138,7 @@ describe("agents config mutation state", () => {
     const agent = applied.agents?.list?.[0];
     expect(sendCalls.map((call) => call.method)).toEqual(["config.apply", "config.get"]);
     expect((sendCalls[0].params as { baseHash?: string }).baseHash).toBe("hash-before");
+    expect((sendCalls[0].params as { sessionKey?: string }).sessionKey).toBe("main");
     expect(agent).toEqual({
       id: "agent-1",
       model: { primary: "agent-model", fallbacks: ["fallback-model"] },
