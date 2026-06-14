@@ -3,6 +3,8 @@ import { computed, signal, type ReadonlySignal, type Signal } from "@preact/sign
 type SignalValue<T> = Signal<T> | ReadonlySignal<T> | { readonly value: T };
 
 interface SessionSignalsMockOptions {
+  activeSessionKey?: SignalValue<string | null>;
+  effectiveSessionKey?: SignalValue<string | null>;
   isForActiveSession?: (sessionKey: string) => boolean;
   sessions?: Signal<unknown[]>;
   updateSession?: (sessionKey: string, updates: unknown) => void;
@@ -10,8 +12,10 @@ interface SessionSignalsMockOptions {
 
 export function createSessionSignalsMock(options: SessionSignalsMockOptions = {}) {
   return {
+    activeSessionKey: options.activeSessionKey ?? signal<string | null>(null),
     cleanupSessionEventSubscription: () => undefined,
     clearSessions: () => undefined,
+    effectiveSessionKey: options.effectiveSessionKey ?? computed(() => "main"),
     initSessionEventSubscription: () => undefined,
     isForActiveSession: options.isForActiveSession ?? (() => true),
     loadSessions: async () => undefined,

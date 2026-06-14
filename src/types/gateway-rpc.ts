@@ -550,11 +550,11 @@ export interface GatewayRpcMap {
   };
   "sessions.messages.subscribe": {
     params: { key: string };
-    result: { ok?: boolean };
+    result: { ok?: boolean; subscribed?: boolean; key?: string };
   };
   "sessions.messages.unsubscribe": {
     params: { key: string };
-    result: { ok?: boolean };
+    result: { ok?: boolean; subscribed?: boolean; key?: string };
   };
   "sessions.abort": {
     params: { key?: string; runId?: string; agentId?: string };
