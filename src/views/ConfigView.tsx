@@ -28,6 +28,7 @@ import {
   searchQuery,
   isDirty,
   canSave,
+  validationErrors,
   loadConfig,
   resetDraft,
   saveConfig,
@@ -160,6 +161,7 @@ export function ConfigView(_props: RouteProps) {
   const schemaValue = schema.value;
   const configValue = draftConfig.value;
   const hintsValue = uiHints.value;
+  const hasResettableChanges = isDirty.value || Object.keys(validationErrors.value).length > 0;
 
   // Build nav tree
   const navTree = schemaValue ? buildNavTree(schemaValue, configValue, hintsValue) : [];
@@ -196,7 +198,7 @@ export function ConfigView(_props: RouteProps) {
         <MobileConfigHeader
           selectedPath={selectedPath}
           uiHints={uiHints}
-          isDirty={isDirty.value}
+          isDirty={hasResettableChanges}
           canSave={canSave.value}
           isSaving={isSaving.value}
           onSave={handleSave}
@@ -280,7 +282,7 @@ export function ConfigView(_props: RouteProps) {
             subtitle={t("config.description")}
             actions={
               <>
-                {isDirty.value && (
+                {hasResettableChanges && (
                   <span class="text-sm text-[var(--color-warning)]">
                     {t("config.unsavedChanges")}
                   </span>
@@ -290,7 +292,7 @@ export function ConfigView(_props: RouteProps) {
                   size="sm"
                   icon={RotateCcw}
                   onClick={handleReset}
-                  disabled={!isDirty.value}
+                  disabled={!hasResettableChanges}
                 >
                   {t("config.reset")}
                 </Button>

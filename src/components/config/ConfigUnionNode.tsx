@@ -58,9 +58,10 @@ export function UnionNode({
 
   if (literals.length === nonNull.length && literals.length > 0) {
     const options = nonNull.map((v, i) => ({
-      value: String(literals[i]),
+      value: String(i),
       label: v.title ?? humanize(String(literals[i])),
     }));
+    const selectedIndex = literals.findIndex((literal) => Object.is(literal, value));
 
     return (
       <SettingRow
@@ -69,9 +70,9 @@ export function UnionNode({
         inline={showLabel !== false}
       >
         <Dropdown
-          value={String(value ?? "")}
+          value={selectedIndex >= 0 ? String(selectedIndex) : ""}
           options={options}
-          onChange={(v) => updateField(path, v)}
+          onChange={(v) => updateField(path, literals[Number(v)])}
           size="sm"
           class="w-full sm:w-auto sm:inline-block"
         />

@@ -133,6 +133,7 @@ export function ToolCall({ toolCall }: ToolCallProps) {
     <div
       ref={containerRef}
       class="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-surface)] overflow-hidden"
+      data-tool-name={toolCall.name}
     >
       {/* Compact summary row */}
       <button

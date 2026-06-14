@@ -10,12 +10,7 @@ import { useSignal, useComputed, useSignalEffect } from "@preact/signals";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { connect, lastError, disconnect, probeGateway } from "@/lib/gateway";
-import { initChat } from "@/lib/chat/init";
-import { setActiveSession, loadSessions, initSessionEventSubscription } from "@/signals/sessions";
-import { loadAssistantIdentity } from "@/signals/identity";
-import { startUsagePolling } from "@/signals/usage";
-import { loadModels } from "@/signals/models";
-import { initExecApproval } from "@/signals/exec";
+import { initConnectedApp } from "@/lib/connected-app";
 import { saveAuth, completeOnboarding, setPendingTour } from "@/lib/storage";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
@@ -62,6 +57,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const rememberMe = useSignal(true);
   const connecting = useSignal(false);
   const connected = useSignal(false);
+  const connectError = useSignal<string | null>(null);
   const urlError = useSignal<string | null>(null);
   const probing = useSignal(false);
   const probeSuccess = useSignal(false);
@@ -151,6 +147,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const handleConnect = async () => {
     connecting.value = true;
     connected.value = false;
+    connectError.value = null;
 
     try {
       await connect({
@@ -160,7 +157,9 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
         autoReconnect: true,
       });
 
-      // Save auth settings and credential
+      await initConnectedApp();
+
+      // Save auth only after the connected app state is ready.
       saveAuth({
         url: url.value,
         authMode: authMode.value,
@@ -168,33 +167,15 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
         credential: credential.value,
       });
 
-      // Mark onboarding complete
+      // Mark onboarding complete only after the connected app state is ready.
       completeOnboarding();
-
-      // Load sessions list for sidebar
-      await loadSessions();
-      initSessionEventSubscription();
-
-      // Load assistant identity
-      await loadAssistantIdentity();
-
-      // Initialize chat with main session
-      setActiveSession("main");
-      await initChat("main");
-
-      // Start polling for usage data
-      startUsagePolling();
-
-      // Load available models
-      loadModels();
-
-      // Initialize approval listener
-      initExecApproval();
 
       connected.value = true;
     } catch (err) {
       log.auth.error("Connect failed:", err);
       connected.value = false;
+      connectError.value =
+        lastError.value ?? (err instanceof Error ? err.message : t("errors.unknown"));
     } finally {
       connecting.value = false;
     }
@@ -203,6 +184,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
   const handleRetry = () => {
     disconnect();
     connected.value = false;
+    connectError.value = null;
     step.value = "auth";
   };
 
@@ -310,7 +292,7 @@ export function WelcomeWizard({ onComplete, onSkip }: WelcomeWizardProps) {
           <ConnectStep
             connecting={connecting.value}
             connected={connected.value}
-            error={lastError.value}
+            error={connectError.value}
             showTour={showTour.value}
             onShowTourChange={(v) => (showTour.value = v)}
             selectedMode={selectedMode.value}

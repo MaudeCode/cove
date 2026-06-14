@@ -57,7 +57,18 @@ function getSessionLevel(
   canonicalKey: "thinkingLevel" | "verboseLevel" | "reasoningLevel",
   legacyKey: "thinking" | "verbose" | "reasoning",
 ): string {
+  if (canonicalKey in session) {
+    return session[canonicalKey] ?? "inherit";
+  }
   return session[canonicalKey] ?? session[legacyKey] ?? "inherit";
+}
+
+function applyLocalSessionUpdates(session: Session, updates: Partial<Session>): Session {
+  const next = { ...session, ...updates };
+  if ("thinkingLevel" in updates) next.thinking = undefined;
+  if ("verboseLevel" in updates) next.verbose = undefined;
+  if ("reasoningLevel" in updates) next.reasoning = undefined;
+  return next;
 }
 
 export function formatTokenCount(session: Session): string {
@@ -138,6 +149,30 @@ export function openSessionDetail(session: Session): void {
   editReasoning.value = getSessionLevel(session, "reasoningLevel", "reasoning");
 }
 
+interface KeyboardActivationEvent {
+  key: string;
+  preventDefault(): void;
+}
+
+interface PropagationEvent {
+  stopPropagation(): void;
+}
+
+export function handleSessionRowKeyDown(
+  session: Session,
+  isEditing: boolean,
+  e: KeyboardActivationEvent,
+): void {
+  if ((e.key === "Enter" || e.key === " ") && !isEditing) {
+    e.preventDefault();
+    openSessionDetail(session);
+  }
+}
+
+export function stopInlineEditPropagation(e: PropagationEvent): void {
+  e.stopPropagation();
+}
+
 export function closeSessionDetail(): void {
   selectedSession.value = null;
   isDeleting.value = false;
@@ -168,7 +203,7 @@ export async function saveSession(): Promise<void> {
     if (Object.keys(updates).length > 0) {
       await send("sessions.patch", { key: session.key, ...updates });
       adminSessions.value = adminSessions.value.map((s) =>
-        s.key === session.key ? { ...s, ...updates } : s,
+        s.key === session.key ? applyLocalSessionUpdates(s, updates) : s,
       );
     }
 

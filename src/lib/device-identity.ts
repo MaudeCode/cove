@@ -66,6 +66,15 @@ async function deriveDeviceId(publicKey: CryptoKey): Promise<string> {
     .join("");
 }
 
+async function verifyIdentityKeyPair(
+  privateKey: CryptoKey,
+  publicKey: CryptoKey,
+): Promise<boolean> {
+  const probe = new TextEncoder().encode("cove-device-identity-key-check");
+  const signature = await crypto.subtle.sign("Ed25519", privateKey, probe);
+  return crypto.subtle.verify("Ed25519", publicKey, signature, probe);
+}
+
 // Generate new Ed25519 key pair
 async function generateIdentity(): Promise<DeviceIdentity> {
   const keyPair = await crypto.subtle.generateKey("Ed25519", true, ["sign", "verify"]);
@@ -123,12 +132,22 @@ async function loadIdentity(): Promise<DeviceIdentity | null> {
       log.node.warn("Device ID mismatch, regenerating identity");
       return null;
     }
+    const publicKeyRaw = await crypto.subtle.exportKey("raw", publicKey);
+    const publicKeyBase64Url = base64UrlEncode(publicKeyRaw);
+    if (publicKeyBase64Url !== stored.publicKeyBase64Url) {
+      log.node.warn("Public key mismatch, regenerating identity");
+      return null;
+    }
+    if (!(await verifyIdentityKeyPair(privateKey, publicKey))) {
+      log.node.warn("Device key pair mismatch, regenerating identity");
+      return null;
+    }
 
     log.node.debug("Loaded device identity:", stored.deviceId.slice(0, 16) + "...");
 
     return {
       deviceId: stored.deviceId,
-      publicKeyBase64Url: stored.publicKeyBase64Url,
+      publicKeyBase64Url,
       privateKey,
       publicKey,
     };
@@ -156,6 +175,10 @@ export async function getDeviceIdentity(): Promise<DeviceIdentity> {
   return cachedIdentity;
 }
 
+export function clearDeviceIdentityCache(): void {
+  cachedIdentity = null;
+}
+
 // Build the auth payload string that gets signed
 export function buildDeviceAuthPayload(params: {
   deviceId: string;
@@ -167,7 +190,8 @@ export function buildDeviceAuthPayload(params: {
   token?: string | null;
   nonce?: string | null;
 }): string {
-  const version = params.nonce ? "v2" : "v1";
+  const hasNonce = typeof params.nonce === "string" && params.nonce.trim().length > 0;
+  const version = hasNonce ? "v2" : "v1";
   const scopes = params.scopes.join(",");
   const token = params.token ?? "";
   const base = [
@@ -180,7 +204,7 @@ export function buildDeviceAuthPayload(params: {
     String(params.signedAtMs),
     token,
   ];
-  if (version === "v2") {
+  if (hasNonce) {
     base.push(params.nonce ?? "");
   }
   return base.join("|");
@@ -231,7 +255,9 @@ export async function buildDeviceConnectParams(params: {
     publicKey: identity.publicKeyBase64Url,
     signature,
     signedAt,
-    ...(params.nonce ? { nonce: params.nonce } : {}),
+    ...(typeof params.nonce === "string" && params.nonce.trim().length > 0
+      ? { nonce: params.nonce }
+      : {}),
   };
 }
 

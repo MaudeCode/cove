@@ -4,7 +4,7 @@
  * High-level chat setup and teardown.
  */
 
-import { clearMessages } from "@/signals/chat";
+import { clearActiveRuns, clearMessages } from "@/signals/chat";
 import { loadHistory } from "./history";
 import { subscribeToChatEvents, unsubscribeFromChatEvents } from "./events";
 
@@ -22,4 +22,5 @@ export async function initChat(sessionKey: string): Promise<void> {
 export function cleanupChat(): void {
   unsubscribeFromChatEvents();
   clearMessages();
+  clearActiveRuns();
 }

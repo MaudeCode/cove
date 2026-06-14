@@ -55,6 +55,11 @@ export function UpdateBanner() {
     }
   };
 
+  const handleTouchCancel = () => {
+    isSwiping.current = false;
+    swipeOffset.value = 0;
+  };
+
   const translateY = isDismissing.value ? -100 : -swipeOffset.value;
 
   return (
@@ -74,6 +79,7 @@ export function UpdateBanner() {
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchCancel}
       >
         {/* Left: Icon + text */}
         <div class="flex items-center gap-3 min-w-0">
@@ -92,6 +98,7 @@ export function UpdateBanner() {
             href={getReleaseUrl(update.latestVersion)}
             target="_blank"
             rel="noopener noreferrer"
+            aria-label={t("update.viewRelease")}
             class="inline-flex items-center justify-center gap-1 text-[var(--color-accent)] hover:underline whitespace-nowrap min-w-11 min-h-11 sm:min-w-0 sm:min-h-0 sm:px-2 text-sm"
           >
             <span class="hidden sm:inline">{t("update.viewRelease")}</span>

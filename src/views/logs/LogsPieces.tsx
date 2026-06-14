@@ -56,7 +56,7 @@ export function LevelFilter({ level, count, selected, onClick }: LevelFilterProp
     <button
       type="button"
       onClick={onClick}
-      aria-label={t("logs.filterByLevel", { level: t(levelLabels[level]) })}
+      aria-label={`${t("logs.filterByLevel", { level: t(levelLabels[level]) })} (${count})`}
       aria-pressed={selected}
       class={`px-3 py-1 text-sm rounded-full transition-colors ${selected ? styles.active : styles.inactive}`}
     >
@@ -149,7 +149,7 @@ export function MobileLogCard({ line, onSelect }: MobileLogCardProps) {
       type="button"
       class="w-full flex items-start gap-3 p-3 text-left bg-[var(--color-bg-secondary)] rounded-lg hover:bg-[var(--color-bg-hover)] transition-colors"
       onClick={() => onSelect(line.id)}
-      aria-label={t("logs.viewLogDetails")}
+      aria-label={t("logs.viewLogDetails", { id: line.id })}
     >
       <Icon size={16} class={`mt-0.5 flex-shrink-0 ${iconColor}`} />
       <div class="flex-1 min-w-0">

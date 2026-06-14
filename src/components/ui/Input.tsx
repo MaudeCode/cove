@@ -43,6 +43,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
     ref,
   ) => {
     const hasError = Boolean(error);
+    const errorId =
+      typeof error === "string" && error && props.id ? `${props.id}-error` : undefined;
 
     return (
       <div class={`${fullWidth ? "w-full" : ""}`}>
@@ -75,7 +77,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               ${className || ""}
             `}
             aria-invalid={hasError}
-            aria-describedby={hasError ? `${props.id}-error` : undefined}
+            aria-describedby={errorId}
             {...props}
           />
           {rightElement && (
@@ -85,7 +87,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
           )}
         </div>
         {typeof error === "string" && error && (
-          <p id={`${props.id}-error`} class="mt-1 text-xs text-[var(--color-error)]" role="alert">
+          <p id={errorId} class="mt-1 text-xs text-[var(--color-error)]" role="alert">
             {error}
           </p>
         )}

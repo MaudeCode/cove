@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { getConfigPatchReplacePaths } from "../../../src/lib/config/patch-replace-paths";
+import { getConfigPatchReplacePaths } from "../../../../src/lib/config/patch-replace-paths";
 
 describe("getConfigPatchReplacePaths", () => {
   test("does not require replacePaths for additive non-id array edits", () => {

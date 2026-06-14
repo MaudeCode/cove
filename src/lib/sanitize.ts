@@ -102,15 +102,35 @@ const SANITIZE_CONFIG: Config = {
   ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto|tel|data):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i,
 };
 
+const CODE_SANITIZE_CONFIG: Config = {
+  ALLOWED_TAGS: ["span", "code", "pre", "br"],
+  ALLOWED_ATTR: ["class"],
+  FORBID_TAGS: ["script", "style"],
+  FORBID_ATTR: ["onerror", "onload", "onclick"],
+  RETURN_TRUSTED_TYPE: false,
+};
+
+interface FallbackConfig {
+  allowedAttrs: Set<string>;
+  allowedTags: Set<string>;
+  allowedUriRegexp?: RegExp;
+  forbidAttrs: Set<string>;
+  forbidTags: Set<string>;
+}
+
+const HTML_FALLBACK_CONFIG = createFallbackConfig(SANITIZE_CONFIG);
+const CODE_FALLBACK_CONFIG = createFallbackConfig(CODE_SANITIZE_CONFIG);
+
 /**
  * Sanitize HTML content to prevent XSS attacks
  * Use this for all user-generated or external HTML content
  */
 export function sanitizeHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
+  const clean = DOMPurify.sanitize(dirty, {
     ...SANITIZE_CONFIG,
     RETURN_TRUSTED_TYPE: false,
   }) as string;
+  return enforceSanitizeFallback(clean, HTML_FALLBACK_CONFIG);
 }
 
 /**
@@ -118,11 +138,53 @@ export function sanitizeHtml(dirty: string): string {
  * More restrictive - only allows code-related elements
  */
 export function sanitizeCodeHtml(dirty: string): string {
-  return DOMPurify.sanitize(dirty, {
-    ALLOWED_TAGS: ["span", "code", "pre", "br"],
-    ALLOWED_ATTR: ["class"],
-    FORBID_TAGS: ["script", "style"],
-    FORBID_ATTR: ["onerror", "onload", "onclick"],
-    RETURN_TRUSTED_TYPE: false,
-  }) as string;
+  const clean = DOMPurify.sanitize(dirty, CODE_SANITIZE_CONFIG) as string;
+  return enforceSanitizeFallback(clean, CODE_FALLBACK_CONFIG);
+}
+
+function createFallbackConfig(config: Config): FallbackConfig {
+  return {
+    allowedAttrs: new Set(config.ALLOWED_ATTR as string[]),
+    allowedTags: new Set(config.ALLOWED_TAGS as string[]),
+    allowedUriRegexp: config.ALLOWED_URI_REGEXP,
+    forbidAttrs: new Set(config.FORBID_ATTR as string[]),
+    forbidTags: new Set(config.FORBID_TAGS as string[]),
+  };
+}
+
+function enforceSanitizeFallback(html: string, config: FallbackConfig): string {
+  const template = document.createElement("template");
+  template.innerHTML = html;
+
+  for (const element of Array.from(template.content.querySelectorAll("*"))) {
+    const tagName = element.tagName.toLowerCase();
+    if (config.forbidTags.has(tagName)) {
+      element.remove();
+      continue;
+    }
+    if (!config.allowedTags.has(tagName)) {
+      element.replaceWith(...Array.from(element.childNodes));
+      continue;
+    }
+
+    for (const attr of Array.from(element.attributes)) {
+      const attrName = attr.name.toLowerCase();
+      if (
+        config.forbidAttrs.has(attrName) ||
+        attrName.startsWith("on") ||
+        !config.allowedAttrs.has(attrName) ||
+        !isAllowedUriAttribute(attrName, attr.value, config.allowedUriRegexp)
+      ) {
+        element.removeAttribute(attr.name);
+      }
+    }
+  }
+
+  return template.innerHTML;
+}
+
+function isAllowedUriAttribute(name: string, value: string, allowedUriRegexp?: RegExp): boolean {
+  if (name !== "href" && name !== "src") return true;
+  if (!allowedUriRegexp) return true;
+  return allowedUriRegexp.test(value.replace(/[\u0000-\u001F\u007F\s]+/g, ""));
 }

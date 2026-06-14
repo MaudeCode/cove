@@ -33,7 +33,7 @@ const activeTheme = computed<Theme>(() => {
   const customs = customThemes.value;
 
   if (pref.selected === "system") {
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+    const prefersDark = systemPrefersDark();
     const themeId = prefersDark ? pref.darkTheme : pref.lightTheme;
     return getTheme(themeId, customs) ?? getTheme("dark", customs)!;
   }
@@ -50,6 +50,17 @@ function loadPreference(): ThemePreference {
     return { ...DEFAULT_THEME_PREFERENCE, ...stored };
   }
   return DEFAULT_THEME_PREFERENCE;
+}
+
+function getSystemPreferenceQuery(): MediaQueryList | null {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") {
+    return null;
+  }
+  return window.matchMedia("(prefers-color-scheme: dark)");
+}
+
+export function systemPrefersDark(): boolean {
+  return getSystemPreferenceQuery()?.matches ?? false;
 }
 
 /**
@@ -140,8 +151,8 @@ export function initTheme(): void {
   });
 
   // Listen for system preference changes
-  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-  mediaQuery.addEventListener("change", () => {
+  const mediaQuery = getSystemPreferenceQuery();
+  mediaQuery?.addEventListener?.("change", () => {
     if (themePreference.value.selected === "system") {
       // Force recompute
       themePreference.value = { ...themePreference.value };

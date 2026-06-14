@@ -14,7 +14,7 @@ import {
   TrendingUp,
   Users,
 } from "lucide-preact";
-import { formatTokenCount, formatCost, type SessionUsageEntry } from "@/types/server-stats";
+import { formatTokenCount, formatCost } from "@/types/server-stats";
 import {
   sessionsUsage,
   selectedSession,
@@ -23,6 +23,8 @@ import {
   sessionsSortDesc,
   sessionsPage,
   sessionsPageSize,
+  toggleSessionsSort,
+  toggleSelectedSession,
 } from "@/views/usage/useUsageViewState";
 
 export function UsageSessionTable() {
@@ -93,16 +95,6 @@ export function UsageSessionTable() {
     (sessionsPage.value + 1) * sessionsPageSize,
   );
 
-  const toggleSort = (col: "cost" | "tokens" | "recent") => {
-    if (sessionsSortBy.value === col) {
-      sessionsSortDesc.value = !sessionsSortDesc.value;
-    } else {
-      sessionsSortBy.value = col;
-      sessionsSortDesc.value = true;
-    }
-    sessionsPage.value = 0;
-  };
-
   const SortIcon = ({ col }: { col: "cost" | "tokens" | "recent" }) => {
     if (sessionsSortBy.value !== col) return null;
     return sessionsSortDesc.value ? (
@@ -110,10 +102,6 @@ export function UsageSessionTable() {
     ) : (
       <ChevronUp class="w-3 h-3 inline ml-1" />
     );
-  };
-
-  const handleSessionClick = (session: SessionUsageEntry) => {
-    selectedSession.value = selected?.key === session.key ? null : session;
   };
 
   const Pagination = () =>
@@ -186,7 +174,7 @@ export function UsageSessionTable() {
                   ]
                 : []),
             ]}
-            onClick={() => handleSessionClick(session)}
+            onClick={() => toggleSelectedSession(session)}
           />
         ))}
         <Pagination />
@@ -215,7 +203,7 @@ export function UsageSessionTable() {
                   <button
                     type="button"
                     class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
-                    onClick={() => toggleSort("tokens")}
+                    onClick={() => toggleSessionsSort("tokens")}
                   >
                     {t("common.tokens")}
                     <SortIcon col="tokens" />
@@ -225,7 +213,7 @@ export function UsageSessionTable() {
                   <button
                     type="button"
                     class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
-                    onClick={() => toggleSort("cost")}
+                    onClick={() => toggleSessionsSort("cost")}
                   >
                     {t("usage.sessions.cost")}
                     <SortIcon col="cost" />
@@ -235,7 +223,7 @@ export function UsageSessionTable() {
                   <button
                     type="button"
                     class="text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] cursor-pointer"
-                    onClick={() => toggleSort("recent")}
+                    onClick={() => toggleSessionsSort("recent")}
                   >
                     {t("common.lastActive")}
                     <SortIcon col="recent" />
@@ -254,11 +242,11 @@ export function UsageSessionTable() {
                         ? "bg-[var(--color-accent)]/10"
                         : "hover:bg-[var(--color-bg-hover)]"
                     }`}
-                    onClick={() => handleSessionClick(session)}
+                    onClick={() => toggleSelectedSession(session)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault();
-                        handleSessionClick(session);
+                        toggleSelectedSession(session);
                       }
                     }}
                     tabIndex={0}

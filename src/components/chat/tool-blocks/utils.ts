@@ -39,7 +39,7 @@ export function parseErrorResult(result: unknown): ErrorResultShape | null {
     return {
       status: "error",
       error: parsed.error,
-      tool: parsed.tool as string | undefined,
+      tool: typeof parsed.tool === "string" ? parsed.tool : undefined,
     };
   }
   return null;

@@ -3,48 +3,20 @@
  *
  * Dropdown to select the model for the current session.
  *
- * WORKAROUND: We filter to only show models from the current provider because
- * OpenClaw's models.list returns ALL known models, not just authenticated ones.
- * This prevents users from seeing (and failing to use) models they don't have
- * auth for. Proper fix belongs in OpenClaw's loadModelCatalog().
+ * Cove asks OpenClaw for the configured model catalog, so every model shown
+ * here should be backed by active gateway credentials.
  *
  * @see src/signals/models.ts for details
  */
 
 import { useState, useRef, useMemo } from "preact/hooks";
-import { models, modelsByProvider, getModelDisplayName, defaultModel } from "@/signals/models";
+import { models, getModelDisplayName, defaultModel } from "@/signals/models";
 import { send } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import { t } from "@/lib/i18n";
 import { useClickOutside } from "@/hooks/useClickOutside";
 import { ChevronDownIcon } from "@/components/ui/icons";
 import { getModelFavorites, setModelFavorites } from "@/lib/storage";
-
-/**
- * Extract provider from a model ID (e.g., "anthropic" from "anthropic/claude-opus-4-5")
- * Returns null if no slash separator found.
- */
-function getProviderFromModelId(modelId: string): string | null {
-  if (!modelId) return null;
-  const slashIndex = modelId.indexOf("/");
-  return slashIndex === -1 ? null : modelId.substring(0, slashIndex);
-}
-
-/**
- * Resolve the provider for a model ID.
- * First tries slash-separated format, then looks up in models list.
- */
-function resolveProvider(modelId: string | undefined): string | null {
-  if (!modelId) return null;
-
-  // Try slash-separated format first (e.g., "anthropic/claude-opus-4-5")
-  const fromId = getProviderFromModelId(modelId);
-  if (fromId) return fromId;
-
-  // Look up in models list
-  const found = models.value.find((m) => m.id === modelId);
-  return found?.provider ?? null;
-}
 
 interface ModelPickerProps {
   sessionKey: string;
@@ -68,14 +40,11 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
 
   // Determine effective model: session override > gateway default > first in list
   const effectiveModel = currentModel ?? defaultModel.value ?? models.value[0]?.id;
-  const currentProvider = resolveProvider(effectiveModel);
-
-  // Get models for this provider, dedupe, and sort
-  const providerModels = currentProvider ? (modelsByProvider.value.get(currentProvider) ?? []) : [];
+  const modelCatalog = models.value;
 
   const availableModels = useMemo(() => {
     // Dedupe by ID
-    const deduped = providerModels.filter(
+    const deduped = modelCatalog.filter(
       (model, index, self) => self.findIndex((m) => m.id === model.id) === index,
     );
 
@@ -89,9 +58,9 @@ export function ModelPicker({ sessionKey, currentModel, onModelChange }: ModelPi
       if (!aFav && bFav) return 1;
       return a.name.localeCompare(b.name);
     });
-  }, [providerModels, effectiveModel, favorites]);
+  }, [modelCatalog, effectiveModel, favorites]);
 
-  // Don't render if no models for this provider
+  // Don't render if the configured catalog has no selectable models
   if (availableModels.length === 0) {
     return null;
   }

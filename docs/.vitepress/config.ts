@@ -12,7 +12,7 @@ export default defineConfig({
   },
   
   head: [
-    ['link', { rel: 'icon', type: 'image/png', href: '/favicon-32.png' }],
+    ['link', { rel: 'icon', type: 'image/png', href: '/cove/favicon-32.png' }],
   ],
 
   themeConfig: {
@@ -32,6 +32,7 @@ export default defineConfig({
             { text: 'Introduction', link: '/guide/' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'Configuration', link: '/guide/configuration' },
+            { text: 'OpenClaw Compatibility', link: '/guide/openclaw-compatibility' },
             { text: 'Features', link: '/guide/features' },
             { text: 'Deployment', link: '/guide/deployment' },
           ],

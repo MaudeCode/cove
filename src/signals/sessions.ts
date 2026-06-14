@@ -226,7 +226,12 @@ function applySessionsChanged(payload: unknown): void {
   const reason = event.reason ?? "";
   if (["delete", "deleted", "session-delete"].includes(reason)) {
     removeSession(key);
-    setSessionsCache(sessions.value);
+    return;
+  }
+
+  const existingIndex = sessions.value.findIndex((session) => session.key === key);
+  if (existingIndex < 0 && !hasSessionUpdateFields(event)) {
+    scheduleSessionsReload();
     return;
   }
 
@@ -239,7 +244,6 @@ function applySessionsChanged(payload: unknown): void {
   delete (nextSession as { reason?: string }).reason;
   delete (nextSession as { ts?: number }).ts;
 
-  const existingIndex = sessions.value.findIndex((session) => session.key === key);
   if (existingIndex >= 0) {
     sessions.value = sessions.value.map((session, index) =>
       index === existingIndex ? { ...session, ...nextSession } : session,
@@ -248,6 +252,12 @@ function applySessionsChanged(payload: unknown): void {
     sessions.value = [nextSession, ...sessions.value];
   }
   setSessionsCache(sessions.value);
+}
+
+function hasSessionUpdateFields(event: SessionsChangedEvent): boolean {
+  return Object.keys(event).some(
+    (key) => !["key", "sessionKey", "reason", "ts", "updatedAt"].includes(key),
+  );
 }
 
 export function initSessionEventSubscription(): void {
@@ -312,6 +322,7 @@ export function clearSessions(): void {
   sessions.value = [];
   activeSessionKey.value = null;
   sessionsError.value = null;
+  setSessionsCache(sessions.value);
 }
 
 /**
@@ -319,6 +330,7 @@ export function clearSessions(): void {
  */
 export function updateSession(sessionKey: string, updates: Partial<Session>): void {
   sessions.value = sessions.value.map((s) => (s.key === sessionKey ? { ...s, ...updates } : s));
+  setSessionsCache(sessions.value);
 }
 
 /**
@@ -330,6 +342,7 @@ function removeSession(sessionKey: string): void {
     activeSessionKey.value = null;
   }
   deletingSessionKey.value = null;
+  setSessionsCache(sessions.value);
 }
 
 /**

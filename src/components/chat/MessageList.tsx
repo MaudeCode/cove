@@ -249,6 +249,7 @@ export function MessageList({
         class="flex-1 overflow-y-auto"
         role="list"
         aria-label="Messages"
+        data-tour="message-list"
       >
         {/* Centered container with max-width - flex column with min-height for empty state */}
         <div class="max-w-5xl mx-auto px-6 py-6 min-h-full flex flex-col">

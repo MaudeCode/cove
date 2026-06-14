@@ -55,9 +55,9 @@ export function SkillsTab() {
   // Count how many skills this agent can use
   const allowedCount = usingAllowlist ? allowlist.length : eligibleSkills.length;
 
-  function isSkillAllowed(skillName: string): boolean {
+  function isSkillAllowed(skillKey: string): boolean {
     if (!usingAllowlist) return true;
-    return allowSet.has(skillName);
+    return allowSet.has(skillKey);
   }
 
   if (skillsLoading.value && skills.value.length === 0) {
@@ -158,7 +158,7 @@ export function SkillsTab() {
       ) : (
         <Card padding="none">
           {filtered.map((skill) => {
-            const allowed = isSkillAllowed(skill.name);
+            const allowed = isSkillAllowed(skill.skillKey);
 
             return (
               <div
@@ -197,7 +197,7 @@ export function SkillsTab() {
                 </a>
 
                 {/* Toggle */}
-                <Toggle checked={allowed} onChange={() => toggleSkillInAllowlist(skill.name)} />
+                <Toggle checked={allowed} onChange={() => toggleSkillInAllowlist(skill.skillKey)} />
               </div>
             );
           })}

@@ -310,7 +310,7 @@ export function connect(config: ConnectConfig): Promise<HelloPayload> {
           // Handle connect.challenge event during authentication
           if (
             connectionState.value === "authenticating" &&
-            msg.type === "event" &&
+            (msg.type === "event" || msg.type === "evt") &&
             msg.event === "connect.challenge"
           ) {
             // Note: msg.payload contains { nonce, ts } for future HMAC auth
@@ -474,6 +474,27 @@ export interface RequestOptions {
   timeout?: number;
 }
 
+export class GatewayRpcError extends Error {
+  code?: string;
+  declare details?: unknown;
+  retryable?: boolean;
+  retryAfterMs?: number;
+
+  constructor(error: NonNullable<GatewayResponse["error"]>) {
+    super(error.message || "Request failed");
+    this.name = "GatewayRpcError";
+    this.code = error.code;
+    Object.defineProperty(this, "details", {
+      configurable: true,
+      enumerable: false,
+      value: error.details,
+      writable: true,
+    });
+    this.retryable = error.retryable;
+    this.retryAfterMs = error.retryAfterMs;
+  }
+}
+
 /**
  * Send a request to the gateway
  */
@@ -541,6 +562,7 @@ function handleMessage(msg: GatewayMessage): void {
       handleResponse(msg as GatewayResponse);
       break;
     case "event":
+    case "evt":
       handleEvent(msg as GatewayEvent);
       break;
     default:
@@ -564,7 +586,7 @@ function handleResponse(res: GatewayResponse): void {
   if (res.ok) {
     pending.resolve(res.payload);
   } else {
-    pending.reject(new Error(res.error?.message ?? "Request failed"));
+    pending.reject(res.error ? new GatewayRpcError(res.error) : new Error("Request failed"));
   }
 }
 

@@ -5,9 +5,11 @@
  * for full styling control (unlike native <select>).
  */
 
-import { useState, useRef, useCallback, useLayoutEffect } from "preact/hooks";
+import { useState, useRef, useCallback, useEffect, useLayoutEffect } from "preact/hooks";
 import { ChevronDown } from "lucide-preact";
 import { useClickOutside } from "@/hooks/useClickOutside";
+
+let dropdownInstanceCount = 0;
 
 type DropdownSize = "sm" | "md" | "lg";
 
@@ -77,6 +79,13 @@ export function Dropdown({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const sizerRef = useRef<HTMLDivElement>(null);
+  const listboxIdRef = useRef<string>("");
+  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  if (!listboxIdRef.current) {
+    dropdownInstanceCount += 1;
+    listboxIdRef.current = `dropdown-${dropdownInstanceCount}-listbox`;
+  }
 
   const styles = sizeStyles[size];
   const selectedOption = options.find((o) => o.value === value);
@@ -88,6 +97,12 @@ export function Dropdown({
       setMinWidth(sizerRef.current.offsetWidth);
     }
   }, [options, width]);
+
+  useEffect(() => {
+    if (isOpen && focusedIndex >= 0) {
+      optionRefs.current[focusedIndex]?.focus();
+    }
+  }, [isOpen, focusedIndex]);
 
   // Close dropdown
   const close = useCallback(() => {
@@ -179,6 +194,7 @@ export function Dropdown({
         aria-label={ariaLabel}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-controls={isOpen ? listboxIdRef.current : undefined}
         style={
           width
             ? { width }
@@ -207,8 +223,10 @@ export function Dropdown({
       {isOpen && triggerRef.current && (
         <div
           ref={menuRef}
+          id={listboxIdRef.current}
           role="listbox"
           aria-label={ariaLabel}
+          onKeyDown={handleKeyDown}
           style={{
             position: "fixed",
             top: `${triggerRef.current.getBoundingClientRect().bottom + 4}px`,
@@ -229,6 +247,10 @@ export function Dropdown({
         >
           {options.map((option, index) => (
             <button
+              ref={(element) => {
+                optionRefs.current[index] = element;
+              }}
+              id={`${listboxIdRef.current}-option-${index}`}
               key={option.value}
               type="button"
               role="option"

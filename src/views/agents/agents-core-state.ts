@@ -3,7 +3,6 @@ import { send } from "@/lib/gateway";
 import { getErrorMessage } from "@/lib/session-utils";
 import { toast } from "@/components/ui/Toast";
 import { t } from "@/lib/i18n";
-import { formatAgentName } from "@/types/agents";
 import type { WorkspaceFile } from "@/types/workspace";
 import type { Agent } from "@/types/agents";
 
@@ -41,7 +40,7 @@ export const deleteDeleting = signal<boolean>(false);
 export const uniqueAgents = computed(() => {
   const seen = new Set<string>();
   return agents.value.filter((agent) => {
-    const key = agent.workspace || formatAgentName(agent);
+    const key = agent.id;
     if (seen.has(key)) return false;
     seen.add(key);
     return true;

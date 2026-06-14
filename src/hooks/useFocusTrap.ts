@@ -38,6 +38,7 @@ export function useFocusTrap(
 ): void {
   const { enabled = true, autoFocus = true, returnFocusTo } = options;
   const previousActiveElement = useRef<HTMLElement | null>(null);
+  const autoFocusFrame = useRef<number | null>(null);
 
   useEffect(() => {
     if (!enabled || !containerRef.current) return;
@@ -52,8 +53,11 @@ export function useFocusTrap(
       const firstFocusable = focusableElements[0];
       if (firstFocusable) {
         // Small delay to ensure the element is rendered
-        requestAnimationFrame(() => {
-          firstFocusable.focus();
+        autoFocusFrame.current = requestAnimationFrame(() => {
+          autoFocusFrame.current = null;
+          if (containerRef.current?.isConnected && firstFocusable.isConnected) {
+            firstFocusable.focus();
+          }
         });
       }
     }
@@ -111,10 +115,14 @@ export function useFocusTrap(
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("focusin", handleFocusIn);
+      if (autoFocusFrame.current !== null) {
+        cancelAnimationFrame(autoFocusFrame.current);
+        autoFocusFrame.current = null;
+      }
 
       // Return focus to the specified element or the previously focused element
       const focusTarget = returnFocusTo?.current ?? previousActiveElement.current;
-      if (focusTarget && typeof focusTarget.focus === "function") {
+      if (focusTarget?.isConnected && typeof focusTarget.focus === "function") {
         focusTarget.focus();
       }
     };

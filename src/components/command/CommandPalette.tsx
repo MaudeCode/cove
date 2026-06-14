@@ -86,6 +86,38 @@ function scoreCommand(cmd: Command, query: string): number {
   return maxScore;
 }
 
+function getFilteredCommands(commands: Command[], recentIds: string[], query: string): Command[] {
+  if (query) {
+    return commands
+      .map((cmd) => ({ cmd, score: scoreCommand(cmd, query) }))
+      .filter(({ score }) => score > 0)
+      .sort((a, b) => b.score - a.score)
+      .map(({ cmd }) => cmd);
+  }
+
+  const recent = recentIds
+    .map((id) => commands.find((c) => c.id === id))
+    .filter((c): c is Command => c !== undefined);
+
+  const nonRecent = commands.filter((c) => !recentIds.includes(c.id));
+  return [...recent, ...nonRecent];
+}
+
+function getFilteredSubmenuItems(
+  submenu: { command: Command; items: SubMenuItem[] } | null,
+  query: string,
+): SubMenuItem[] {
+  if (!submenu) return [];
+  if (!query) return submenu.items;
+
+  const q = query.toLowerCase();
+  return submenu.items.filter(
+    (item) =>
+      item.label.toLowerCase().includes(q) ||
+      (item.description?.toLowerCase().includes(q) ?? false),
+  );
+}
+
 /**
  * Get CSS classes for a selectable item
  */
@@ -102,30 +134,23 @@ export function CommandPalette() {
   const [submenuLoading, setSubmenuLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const commandsRef = useRef<Command[]>([]);
+  const recentIdsRef = useRef<string[]>([]);
+  const queryRef = useRef("");
+  const selectedIndexRef = useRef(0);
+  const submenuRef = useRef<{ command: Command; items: SubMenuItem[] } | null>(null);
+  const submenuLoadIdRef = useRef(0);
 
   const isOpen = commandPaletteOpen.value;
 
   // Get filtered and sorted commands
   const commands = getAvailableCommands();
   const recentIds = getRecentCommandIds();
+  commandsRef.current = commands;
+  recentIdsRef.current = recentIds;
 
   const filteredCommands = useMemo(() => {
-    if (query) {
-      // Filter and sort by score
-      return commands
-        .map((cmd) => ({ cmd, score: scoreCommand(cmd, query) }))
-        .filter(({ score }) => score > 0)
-        .sort((a, b) => b.score - a.score)
-        .map(({ cmd }) => cmd);
-    } else {
-      // Show recent first, then by category
-      const recent = recentIds
-        .map((id) => commands.find((c) => c.id === id))
-        .filter((c): c is Command => c !== undefined);
-
-      const nonRecent = commands.filter((c) => !recentIds.includes(c.id));
-      return [...recent, ...nonRecent];
-    }
+    return getFilteredCommands(commands, recentIds, query);
   }, [commands, recentIds, query]);
 
   // Group commands by category for display
@@ -136,24 +161,15 @@ export function CommandPalette() {
 
   // Filter submenu items by query
   const filteredSubmenuItems = useMemo(() => {
-    if (!submenu) return [];
-    if (!query) return submenu.items;
-
-    const q = query.toLowerCase();
-    return submenu.items.filter(
-      (item) =>
-        item.label.toLowerCase().includes(q) ||
-        (item.description?.toLowerCase().includes(q) ?? false),
-    );
+    return getFilteredSubmenuItems(submenu, query);
   }, [submenu, query]);
-
-  // Current items for keyboard navigation
-  const currentItems = submenu ? filteredSubmenuItems : filteredCommands;
 
   // Selected item ID for aria-activedescendant
   const selectedItemId = useMemo(() => {
-    if (submenu && filteredSubmenuItems[selectedIndex]) {
-      return `cmd-sub-${filteredSubmenuItems[selectedIndex].id}`;
+    if (submenu) {
+      return filteredSubmenuItems[selectedIndex]
+        ? `cmd-sub-${filteredSubmenuItems[selectedIndex].id}`
+        : undefined;
     }
     if (filteredCommands[selectedIndex]) {
       return `cmd-${filteredCommands[selectedIndex].id}`;
@@ -161,17 +177,52 @@ export function CommandPalette() {
     return undefined;
   }, [submenu, filteredSubmenuItems, filteredCommands, selectedIndex]);
 
-  // Reset selection when query or submenu changes
+  function setSelectedIndexImmediate(next: number | ((currentIndex: number) => number)): void {
+    const value = typeof next === "function" ? next(selectedIndexRef.current) : next;
+    selectedIndexRef.current = value;
+    setSelectedIndex(value);
+  }
+
+  function setQueryImmediate(value: string): void {
+    queryRef.current = value;
+    setSelectedIndexImmediate(0);
+    setQuery(value);
+  }
+
+  function setSubmenuImmediate(value: { command: Command; items: SubMenuItem[] } | null): void {
+    submenuRef.current = value;
+    setSelectedIndexImmediate(0);
+    setSubmenu(value);
+  }
+
+  function closePalette(): void {
+    submenuLoadIdRef.current++;
+    commandPaletteOpen.value = false;
+  }
+
   useEffect(() => {
-    setSelectedIndex(0);
-  }, [query, submenu]);
+    queryRef.current = query;
+  }, [query]);
+
+  useEffect(() => {
+    selectedIndexRef.current = selectedIndex;
+  }, [selectedIndex]);
+
+  useEffect(() => {
+    submenuRef.current = submenu;
+  }, [submenu]);
 
   // Focus input when opened
   useEffect(() => {
     if (isOpen) {
+      submenuLoadIdRef.current++;
+      queryRef.current = "";
+      selectedIndexRef.current = 0;
+      submenuRef.current = null;
       setQuery("");
       setSelectedIndex(0);
       setSubmenu(null);
+      setSubmenuLoading(false);
       setTimeout(() => inputRef.current?.focus(), 0);
     }
   }, [isOpen]);
@@ -180,41 +231,58 @@ export function CommandPalette() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!commandPaletteOpen.value) return;
+      if (!inputRef.current?.isConnected) return;
 
       if (e.key === "Escape") {
         e.preventDefault();
         e.stopPropagation();
-        if (submenu) {
-          setSubmenu(null);
-          setQuery("");
-          setSelectedIndex(0);
+        if (submenuRef.current) {
+          submenuLoadIdRef.current++;
+          setSubmenuImmediate(null);
+          setQueryImmediate("");
         } else {
-          commandPaletteOpen.value = false;
+          closePalette();
         }
         return;
       }
 
+      const activeQuery = inputRef.current?.value ?? queryRef.current;
+      const activeSubmenu = submenuRef.current;
+      const activeSubmenuItems = getFilteredSubmenuItems(activeSubmenu, activeQuery);
+      const activeCommands = getFilteredCommands(
+        commandsRef.current,
+        recentIdsRef.current,
+        activeQuery,
+      );
+      const activeItems = activeSubmenu ? activeSubmenuItems : activeCommands;
+      const lastIndex = Math.max(activeItems.length - 1, 0);
+
       if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedIndex((i) => Math.min(i + 1, currentItems.length - 1));
+        setSelectedIndexImmediate((i) => Math.min(i + 1, lastIndex));
         return;
       }
 
       if (e.key === "ArrowUp") {
         e.preventDefault();
-        setSelectedIndex((i) => Math.max(i - 1, 0));
+        setSelectedIndexImmediate((i) => Math.max(i - 1, 0));
         return;
       }
 
       if (e.key === "Enter") {
         e.preventDefault();
-        if (submenu) {
-          const item = filteredSubmenuItems[selectedIndex];
+        const activeIndex = Math.min(Math.max(selectedIndexRef.current, 0), lastIndex);
+        if (activeIndex !== selectedIndexRef.current) {
+          setSelectedIndexImmediate(activeIndex);
+        }
+
+        if (activeSubmenu) {
+          const item = activeSubmenuItems[activeIndex];
           if (item) {
             executeSubmenuItem(item);
           }
         } else {
-          const cmd = filteredCommands[selectedIndex];
+          const cmd = activeCommands[activeIndex];
           if (cmd) {
             executeCommand(cmd);
           }
@@ -222,15 +290,15 @@ export function CommandPalette() {
         return;
       }
 
-      if (e.key === "Backspace" && query === "" && submenu) {
-        setSubmenu(null);
-        setSelectedIndex(0);
+      if (e.key === "Backspace" && activeQuery === "" && submenuRef.current) {
+        submenuLoadIdRef.current++;
+        setSubmenuImmediate(null);
       }
     };
 
     document.addEventListener("keydown", handleKeyDown, true);
     return () => document.removeEventListener("keydown", handleKeyDown, true);
-  }, [submenu, filteredSubmenuItems, filteredCommands, selectedIndex, query, currentItems.length]);
+  }, []);
 
   // Scroll selected item into view
   useEffect(() => {
@@ -245,26 +313,32 @@ export function CommandPalette() {
 
   const executeCommand = async (cmd: Command) => {
     if (cmd.hasSubmenu && cmd.getSubmenuItems) {
+      const loadId = submenuLoadIdRef.current + 1;
+      submenuLoadIdRef.current = loadId;
       setSubmenuLoading(true);
       try {
         const items = await cmd.getSubmenuItems();
-        setSubmenu({ command: cmd, items });
-        setSelectedIndex(0);
-        setQuery("");
+        if (submenuLoadIdRef.current !== loadId || !commandPaletteOpen.value) return;
+
+        setQueryImmediate("");
+        setSubmenuImmediate({ command: cmd, items });
       } finally {
-        setSubmenuLoading(false);
+        if (submenuLoadIdRef.current === loadId) {
+          setSubmenuLoading(false);
+        }
       }
     } else if (cmd.action) {
       addRecentCommand(cmd.id);
-      commandPaletteOpen.value = false;
+      closePalette();
       await cmd.action();
     }
   };
 
   const executeSubmenuItem = async (item: SubMenuItem) => {
-    commandPaletteOpen.value = false;
-    if (submenu) {
-      addRecentCommand(submenu.command.id);
+    const activeSubmenu = submenuRef.current;
+    closePalette();
+    if (activeSubmenu) {
+      addRecentCommand(activeSubmenu.command.id);
     }
     await item.action();
   };
@@ -273,7 +347,7 @@ export function CommandPalette() {
 
   const handleBackdropKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape") {
-      commandPaletteOpen.value = false;
+      closePalette();
     }
   };
 
@@ -281,7 +355,7 @@ export function CommandPalette() {
     <div
       class="fixed inset-0 z-50 flex items-start justify-center pt-[12vh] sm:pt-[15vh] animate-fade-in"
       onClick={() => {
-        commandPaletteOpen.value = false;
+        closePalette();
       }}
       onKeyDown={handleBackdropKeyDown}
       role="dialog"
@@ -310,7 +384,7 @@ export function CommandPalette() {
               ref={inputRef}
               type="text"
               value={query}
-              onInput={(e) => setQuery((e.target as HTMLInputElement).value)}
+              onInput={(e) => setQueryImmediate((e.target as HTMLInputElement).value)}
               placeholder={
                 submenu ? `${submenu.command.label}...` : t("commandPalette.placeholder")
               }

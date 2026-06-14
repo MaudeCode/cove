@@ -14,8 +14,7 @@ import {
   sessionLogs,
   isLoadingTimeseries,
   isLoadingLogs,
-  loadSessionTimeseries,
-  loadSessionLogs,
+  loadSessionDetailTab,
   type DetailTab,
 } from "@/views/usage/useUsageViewState";
 
@@ -25,11 +24,7 @@ export function UsageSessionDetailModal() {
 
   useEffect(() => {
     if (!session) return;
-    if (tab === "timeline" && !sessionTimeseries.value && !isLoadingTimeseries.value) {
-      void loadSessionTimeseries(session.key);
-    } else if (tab === "messages" && sessionLogs.value.length === 0 && !isLoadingLogs.value) {
-      void loadSessionLogs(session.key);
-    }
+    void loadSessionDetailTab(session.key, tab);
   }, [session, tab]);
 
   const tabs: { id: DetailTab; label: string }[] = [

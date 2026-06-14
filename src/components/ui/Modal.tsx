@@ -64,6 +64,8 @@ export function Modal({
   const [shouldRender, setShouldRender] = useState(open);
   const isClosingRef = useRef(false);
   const dragStartY = useRef<number | null>(null);
+  const focusFrameRef = useRef<number | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   // Animate close
   const animateClose = useCallback(() => {
@@ -91,6 +93,9 @@ export function Modal({
   // Handle open state changes
   useEffect(() => {
     if (open) {
+      if (!shouldRender) {
+        previousFocusRef.current = document.activeElement as HTMLElement;
+      }
       setShouldRender(true);
       isClosingRef.current = false;
     } else if (shouldRender && !isClosingRef.current) {
@@ -113,6 +118,34 @@ export function Modal({
         }
       });
     }
+  }, [open]);
+
+  // Move focus into the dialog without highlighting the close button.
+  useEffect(() => {
+    if (!open) return;
+
+    focusFrameRef.current = requestAnimationFrame(() => {
+      focusFrameRef.current = null;
+      if (modalRef.current?.isConnected && !modalRef.current.contains(document.activeElement)) {
+        modalRef.current.focus();
+      }
+    });
+
+    return () => {
+      if (focusFrameRef.current !== null) {
+        cancelAnimationFrame(focusFrameRef.current);
+        focusFrameRef.current = null;
+      }
+
+      const previousFocus = previousFocusRef.current;
+      if (previousFocus?.isConnected && typeof previousFocus.focus === "function") {
+        requestAnimationFrame(() => {
+          if (previousFocus.isConnected) {
+            previousFocus.focus();
+          }
+        });
+      }
+    };
   }, [open]);
 
   // Use focus trap hook - disable autoFocus to prevent close button highlight

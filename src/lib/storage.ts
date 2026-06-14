@@ -96,9 +96,9 @@ export function getAuth(): StoredAuth | null {
 
   // Migrate: if old stored auth has credential, clear it
   if (stored.credential) {
-    saveAuth({ ...stored, credential: undefined });
-    // Move credential to session storage for this session only
-    setSessionCredential(stored.credential);
+    const { credential, ...safeStored } = stored;
+    saveAuth({ ...safeStored, credential });
+    return safeStored;
   }
 
   return stored;

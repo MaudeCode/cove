@@ -14,7 +14,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint, Format, Typecheck
+    name: Quality
     runs-on: blacksmith-4vcpu-ubuntu-2404
     
     steps:
@@ -35,6 +35,9 @@ jobs:
       
       - name: Typecheck
         run: bun run typecheck
+
+      - name: Check i18n keys
+        run: bun run i18n:check
       
       - name: Check unused exports
         run: bun run knip

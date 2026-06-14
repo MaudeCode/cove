@@ -53,6 +53,17 @@ const TOOLTIP_PADDING = 16;
 const ARROW_SIZE = 8;
 const DEFAULT_SPOTLIGHT_PADDING = 8;
 
+function isEditableShortcutTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) return false;
+  const tagName = target.tagName.toLowerCase();
+  return (
+    tagName === "input" ||
+    tagName === "textarea" ||
+    target.isContentEditable ||
+    target.closest("[contenteditable='true']") !== null
+  );
+}
+
 export function SpotlightTour({
   steps,
   onComplete,
@@ -269,6 +280,7 @@ export function SpotlightTour({
       if (e.key === "Escape") {
         onComplete();
       } else if (e.key === "ArrowRight" || e.key === "Enter") {
+        if (isEditableShortcutTarget(e.target)) return;
         if (isLast) {
           onComplete();
         } else {

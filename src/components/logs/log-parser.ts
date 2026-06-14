@@ -167,9 +167,11 @@ export function parseLogLine(raw: string): ParsedLogLine {
 
       // Fallback to standard formats if no message found yet
       if (message === raw) {
-        if (parsed.msg || parsed.message) {
-          message = parsed.msg || parsed.message;
-        } else if (parsed.error && typeof parsed.error === "string") {
+        if (typeof parsed.msg === "string" && parsed.msg) {
+          message = parsed.msg;
+        } else if (typeof parsed.message === "string" && parsed.message) {
+          message = parsed.message;
+        } else if (typeof parsed.error === "string" && parsed.error) {
           message = parsed.error;
         }
       }
@@ -178,7 +180,13 @@ export function parseLogLine(raw: string): ParsedLogLine {
       if (message === raw && !hasNumericKeys) {
         const parts: string[] = [];
         for (const [key, value] of Object.entries(parsed)) {
-          if (SKIP_KEYS.includes(key)) continue;
+          if (
+            SKIP_KEYS.includes(key) &&
+            (key !== "msg" || typeof value === "string") &&
+            (key !== "message" || typeof value === "string")
+          ) {
+            continue;
+          }
           if (typeof value === "string") {
             parts.push(`${key}=${value}`);
           } else if (value !== null && value !== undefined) {

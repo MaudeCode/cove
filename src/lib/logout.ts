@@ -9,6 +9,7 @@ import { disconnect } from "@/lib/gateway";
 import { cleanupChat } from "@/lib/chat/init";
 import { clearSessions, cleanupSessionEventSubscription } from "@/signals/sessions";
 import { clearAuth } from "@/lib/storage";
+import { stopNodeConnection } from "@/lib/node-connection";
 
 /**
  * Clear saved credentials from storage
@@ -32,6 +33,7 @@ export function logout(clearCredentials = true): void {
 
   // Disconnect from gateway
   disconnect();
+  stopNodeConnection();
 
   // Clear saved credentials if requested
   if (clearCredentials) {

@@ -203,7 +203,7 @@ export interface GatewayRpcMap {
     result: HelloPayload;
   };
   "config.apply": {
-    params: { config: Record<string, unknown> };
+    params: { raw: string; baseHash?: string | null };
     result: ConfigSaveResponse;
   };
   "config.get": {
@@ -300,7 +300,7 @@ export interface GatewayRpcMap {
   };
   "device.token.rotate": {
     params: { deviceId: string; role: string };
-    result: { token: string };
+    result: { token?: string };
   };
   "exec.approval.resolve": {
     params: { id: string; decision: ExecApprovalDecision };
