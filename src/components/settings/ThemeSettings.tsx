@@ -9,7 +9,14 @@
 
 import { Monitor, Sun, Moon, Check } from "lucide-preact";
 import { t } from "@/lib/i18n";
-import { themePreference, setTheme, setLightTheme, setDarkTheme, getAllThemes } from "@/lib/theme";
+import {
+  themePreference,
+  setTheme,
+  setLightTheme,
+  setDarkTheme,
+  getAllThemes,
+  systemPrefersDark,
+} from "@/lib/theme";
 import { Toggle } from "@/components/ui/Toggle";
 import { Tooltip } from "@/components/ui/Tooltip";
 import type { Theme } from "@/types/theme";
@@ -103,8 +110,7 @@ export function ThemeSettings() {
       setTheme("system");
     } else {
       // Switch to the theme that matches current system preference
-      const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-      setTheme(prefersDark ? selectedDarkTheme : selectedLightTheme);
+      setTheme(systemPrefersDark() ? selectedDarkTheme : selectedLightTheme);
     }
   };
 

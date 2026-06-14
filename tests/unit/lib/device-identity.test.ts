@@ -14,6 +14,7 @@ const {
   clearDeviceIdentityCache,
   getDeviceDisplayName,
   getDeviceIdentity,
+  signPayload,
   setDeviceDisplayName,
 } = await import("../../../src/lib/device-identity");
 
@@ -188,6 +189,64 @@ describe("device identity", () => {
     expect(regenerated.deviceId).not.toBe(first.deviceId);
     expect(regenerated.deviceId).toBe(cryptoFixture.deviceIdForSeed(3));
     expect(cryptoFixture.calls.generatedSeeds).toEqual([3]);
+  });
+
+  test("regenerates identity when stored JSON is malformed", async () => {
+    localStorage.setItem("cove:device-identity", "{not-json");
+
+    const identity = await getDeviceIdentity();
+
+    expect(identity.deviceId).toBe(cryptoFixture.deviceIdForSeed(1));
+    expect(cryptoFixture.calls.generatedSeeds).toEqual([1]);
+    expect(JSON.parse(localStorage.getItem("cove:device-identity") ?? "{}").deviceId).toBe(
+      identity.deviceId,
+    );
+  });
+
+  test("regenerates identity when stored version is unsupported", async () => {
+    const first = await getDeviceIdentity();
+    const stored = JSON.parse(localStorage.getItem("cove:device-identity") ?? "{}");
+    localStorage.setItem("cove:device-identity", JSON.stringify({ ...stored, version: 2 }));
+
+    clearDeviceIdentityCache();
+    cryptoFixture.reset(2);
+    const regenerated = await getDeviceIdentity();
+
+    expect(regenerated.deviceId).not.toBe(first.deviceId);
+    expect(regenerated.deviceId).toBe(cryptoFixture.deviceIdForSeed(2));
+    expect(cryptoFixture.calls.generatedSeeds).toEqual([2]);
+  });
+
+  test("regenerates identity when stored key import fails", async () => {
+    const first = await getDeviceIdentity();
+    const stored = JSON.parse(localStorage.getItem("cove:device-identity") ?? "{}");
+    localStorage.setItem(
+      "cove:device-identity",
+      JSON.stringify({
+        ...stored,
+        publicKeyJwk: {
+          ...stored.publicKeyJwk,
+          x: "%",
+        },
+      }),
+    );
+
+    clearDeviceIdentityCache();
+    cryptoFixture.reset(2);
+    const regenerated = await getDeviceIdentity();
+
+    expect(regenerated.deviceId).not.toBe(first.deviceId);
+    expect(regenerated.deviceId).toBe(cryptoFixture.deviceIdForSeed(2));
+    expect(cryptoFixture.calls.generatedSeeds).toEqual([2]);
+  });
+
+  test("signPayload signs arbitrary payloads with the provided identity", async () => {
+    const identity = await getDeviceIdentity();
+
+    await expect(signPayload(identity, "direct-payload")).resolves.toBe(
+      cryptoFixture.signatureForPayload(1, "direct-payload"),
+    );
+    expect(cryptoFixture.calls.signPayloads).toContain("direct-payload");
   });
 
   test("uses custom display names and falls back to the stable device id", async () => {

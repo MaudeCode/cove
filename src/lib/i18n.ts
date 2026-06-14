@@ -89,8 +89,9 @@ export function t(key: string, params?: Record<string, string | number>): string
 
   // Interpolate params
   if (params) {
-    return value.replace(/\{(\w+)\}/g, (_, paramKey) => {
-      return params[paramKey]?.toString() ?? `{${paramKey}}`;
+    return value.replace(/\{\{(\w+)\}\}|\{(\w+)\}/g, (match, doubleParam, singleParam) => {
+      const paramKey = doubleParam ?? singleParam;
+      return params[paramKey]?.toString() ?? match;
     });
   }
 

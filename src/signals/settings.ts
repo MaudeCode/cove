@@ -75,6 +75,24 @@ export const isMultiChatMode = computed(() => appMode.value === "multi");
 /** Whether single-chat mode is active */
 export const isSingleChatMode = computed(() => appMode.value === "single");
 
+export const UI_FONT_FAMILIES: Record<FontFamily, string> = {
+  geist: '"Geist Sans", ui-sans-serif, system-ui, sans-serif',
+  inter: '"Inter", ui-sans-serif, system-ui, sans-serif',
+  system: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+  dyslexic: '"OpenDyslexic", ui-sans-serif, system-ui, sans-serif',
+  mono: '"JetBrains Mono", ui-monospace, monospace',
+};
+
+export const CODE_FONT_FAMILIES: Record<CodeFontFamily, string> = {
+  jetbrains:
+    '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  system:
+    'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  fira: '"Fira Code", "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+  source:
+    '"Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
+};
+
 // ============================================
 // Persistence Effects
 // ============================================
@@ -95,6 +113,7 @@ effect(() => setCanvasNodeEnabled(canvasNodeEnabled.value));
 if (typeof window !== "undefined") {
   window.addEventListener("storage", (e) => {
     if (e.key === "cove:canvas-node-enabled") {
+      if (e.newValue !== "true" && e.newValue !== "false") return;
       const newValue = e.newValue === "true";
       if (canvasNodeEnabled.value !== newValue) {
         canvasNodeEnabled.value = newValue;
@@ -121,31 +140,19 @@ effect(() => {
 /** Apply font family to document */
 effect(() => {
   void loadUiFontFamily(fontFamily.value);
-
-  const families: Record<FontFamily, string> = {
-    geist: '"Geist Sans", ui-sans-serif, system-ui, sans-serif',
-    inter: '"Inter", ui-sans-serif, system-ui, sans-serif',
-    system: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-    dyslexic: '"OpenDyslexic", ui-sans-serif, system-ui, sans-serif',
-    mono: '"JetBrains Mono", ui-monospace, monospace',
-  };
-  document.documentElement.style.setProperty("--font-family-override", families[fontFamily.value]);
+  document.documentElement.style.setProperty(
+    "--font-family-override",
+    UI_FONT_FAMILIES[fontFamily.value],
+  );
 });
 
 /** Apply code font family to document */
 effect(() => {
   void loadCodeFontFamily(codeFontFamily.value);
-
-  const families: Record<CodeFontFamily, string> = {
-    jetbrains:
-      '"JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-    system:
-      'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-    fira: '"Fira Code", "Fira Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-    source:
-      '"Source Code Pro", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
-  };
-  document.documentElement.style.setProperty("--font-mono", families[codeFontFamily.value]);
+  document.documentElement.style.setProperty(
+    "--font-mono",
+    CODE_FONT_FAMILIES[codeFontFamily.value],
+  );
 });
 
 // ============================================

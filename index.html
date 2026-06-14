@@ -49,7 +49,7 @@
           var appearance='dark';
           
           if(selected==='system'){
-            var prefersDark=window.matchMedia('(prefers-color-scheme:dark)').matches;
+            var prefersDark=typeof window.matchMedia==='function'&&window.matchMedia('(prefers-color-scheme:dark)').matches;
             var themeId=prefersDark?(pref.darkTheme||'dark'):(pref.lightTheme||'light');
             if(cached&&cached.id===themeId){
               colors=cached.colors;

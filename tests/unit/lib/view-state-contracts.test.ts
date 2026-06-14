@@ -168,6 +168,62 @@ describe("view-state system contracts", () => {
     expect(settings.appMode.value).toBe("single");
   });
 
+  test("settings apply every font option and ignore unchanged canvas storage events", async () => {
+    const settings = await import("../../../src/signals/settings");
+
+    for (const option of settings.FONT_FAMILY_OPTIONS) {
+      settings.fontFamily.value = option.value;
+      await flushSignals();
+
+      expect(fontCalls.ui).toContain(option.value);
+      expect(document.documentElement.style.getPropertyValue("--font-family-override")).toBe(
+        settings.UI_FONT_FAMILIES[option.value],
+      );
+    }
+
+    for (const option of settings.CODE_FONT_FAMILY_OPTIONS) {
+      settings.codeFontFamily.value = option.value;
+      await flushSignals();
+
+      expect(fontCalls.code).toContain(option.value);
+      expect(document.documentElement.style.getPropertyValue("--font-mono")).toBe(
+        settings.CODE_FONT_FAMILIES[option.value],
+      );
+    }
+
+    nodeCalls.start = 0;
+    nodeCalls.stop = 0;
+    settings.canvasNodeEnabled.value = false;
+
+    dispatchStorageEvent("cove:font-size", JSON.stringify("lg"));
+    dispatchStorageEvent("cove:canvas-node-enabled", "false");
+    dispatchStorageEvent("cove:canvas-node-enabled", null);
+
+    expect(settings.canvasNodeEnabled.value).toBe(false);
+    expect(nodeCalls.start).toBe(0);
+    expect(nodeCalls.stop).toBe(0);
+  });
+
+  test("settings cross-tab canvas sync only starts or stops when the value changes", async () => {
+    const settings = await import("../../../src/signals/settings");
+    nodeCalls.start = 0;
+    nodeCalls.stop = 0;
+    settings.canvasNodeEnabled.value = false;
+
+    dispatchStorageEvent("cove:canvas-node-enabled", "true");
+    dispatchStorageEvent("cove:canvas-node-enabled", "true");
+    dispatchStorageEvent("cove:canvas-node-enabled", "not-json");
+
+    expect(settings.canvasNodeEnabled.value).toBe(true);
+    expect(nodeCalls.start).toBe(1);
+    expect(nodeCalls.stop).toBe(0);
+
+    dispatchStorageEvent("cove:canvas-node-enabled", "false");
+
+    expect(settings.canvasNodeEnabled.value).toBe(false);
+    expect(nodeCalls.stop).toBe(1);
+  });
+
   test("i18n translates, interpolates, pluralizes, and formats values", async () => {
     const i18n = await import("../../../src/lib/i18n");
     const realNow = Date.now;
@@ -218,7 +274,7 @@ describe("view-state system contracts", () => {
   });
 });
 
-function dispatchStorageEvent(key: string, newValue: string): void {
+function dispatchStorageEvent(key: string, newValue: string | null): void {
   const event = new Event("storage");
   Object.defineProperty(event, "key", { value: key });
   Object.defineProperty(event, "newValue", { value: newValue });
