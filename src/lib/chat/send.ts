@@ -334,7 +334,13 @@ async function sendSoftSteerInput(
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
     log.chat.error("chat.send steer failed:", err);
-    updateQueuedMessageState(message.id, { status: "failed", error: errorMsg });
+    updateQueuedMessageState(message.id, {
+      status: "failed",
+      error: errorMsg,
+      pendingRunId: undefined,
+      queueKind: undefined,
+      steered: false,
+    });
     markMessageFailed(message.id, errorMsg);
     throw err;
   }

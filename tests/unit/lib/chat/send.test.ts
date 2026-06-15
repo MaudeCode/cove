@@ -372,6 +372,40 @@ describe("chat send queue", () => {
     });
   });
 
+  test("failed fresh soft steering becomes a retryable failed message", async () => {
+    gatewayResponses.set("chat.send", new Error("soft steer failed"));
+    chat.startRun("run-active", "session-1");
+
+    await expect(sendMessage("session-1", "/steer failing steer")).rejects.toThrow(
+      "soft steer failed",
+    );
+
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        content: "failing steer",
+        error: "soft steer failed",
+        pendingRunId: undefined,
+        queueKind: undefined,
+        status: "failed",
+        steered: false,
+      }),
+    ]);
+
+    emitChat({
+      runId: "run-active",
+      state: "final",
+      message: { role: "assistant", content: "Done", timestamp: 1200 },
+    });
+
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        content: "failing steer",
+        error: "soft steer failed",
+        status: "failed",
+      }),
+    ]);
+  });
+
   test("keeps active-run sends queued by default but steers when the setting is enabled", async () => {
     chat.startRun("run-active", "session-1");
 

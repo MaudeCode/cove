@@ -370,6 +370,7 @@ describe("chat signals", () => {
   });
 
   test("pending steered queue items survive history reconciliation and clear when their run ends", () => {
+    chat.startRun("run-active", "session-1");
     chat.queueMessage(
       message({
         id: "steer-1",
@@ -395,9 +396,45 @@ describe("chat signals", () => {
       }),
     ]);
 
-    chat.startRun("run-active", "session-1");
     chat.completeRun("run-active", message({ id: "assistant-final", role: "assistant" }));
 
     expect(chat.messageQueue.value).toEqual([]);
+  });
+
+  test("stale persisted steered queue items are pruned during history reconciliation", () => {
+    chat.queueMessage(
+      message({
+        id: "stale-steer",
+        content: "this run finished while closed",
+        pendingRunId: "run-gone",
+        queueKind: "steered",
+        sessionKey: "session-1",
+        status: "sent",
+      }),
+    );
+    chat.queueMessage(
+      message({
+        id: "other-session-steer",
+        content: "leave other sessions alone",
+        pendingRunId: "run-other",
+        queueKind: "steered",
+        sessionKey: "session-2",
+        status: "sent",
+      }),
+    );
+
+    chat.reconcileMessagesFromHistory(
+      "session-1",
+      [message({ id: "hist-1", role: "assistant", content: "done", timestamp: 900 })],
+      1_000,
+    );
+
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        id: "other-session-steer",
+        pendingRunId: "run-other",
+        queueKind: "steered",
+      }),
+    ]);
   });
 });

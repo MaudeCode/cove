@@ -297,6 +297,7 @@ export function reconcileMessagesFromHistory(
   );
   const reconciled = [...historyMessages, ...optimisticTail];
   setMessages(reconciled);
+  pruneStalePendingSteerMessages(sessionKey);
   return reconciled;
 }
 
@@ -593,6 +594,16 @@ export function clearPendingSteerMessagesForRun(runId: string | undefined): void
   messageQueue.value = messageQueue.value.filter(
     (m) => !(m.queueKind === "steered" && m.pendingRunId === runId),
   );
+}
+
+/** Drop persisted steering indicators whose run was already gone by history catch-up. */
+function pruneStalePendingSteerMessages(sessionKey: string): void {
+  const activeRunIds = new Set(activeRuns.value.keys());
+  messageQueue.value = messageQueue.value.filter((m) => {
+    if (m.sessionKey !== sessionKey) return true;
+    if (m.queueKind !== "steered" || !m.pendingRunId) return true;
+    return activeRunIds.has(m.pendingRunId);
+  });
 }
 
 /** Update a queued message's content and/or images */
