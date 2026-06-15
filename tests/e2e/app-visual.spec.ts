@@ -236,13 +236,15 @@ const scenarios: VisualScenario[] = [
     name: "noisy-tool-and-failed-tool",
     options: { messages: noisyToolMessages, sessions },
     prepare: async (page) => {
-      const group = page.getByRole("region", { name: /Read 1 file, ran a command/ });
-      await group.getByRole("button", { name: /Read 1 file, ran a command/ }).click();
+      const group = page.getByRole("region", { name: /Failed to read 1 file, ran a command/ });
+      await group.getByRole("button", { name: /Failed to read 1 file, ran a command/ }).click();
       await group.getByRole("button", { name: /Ran / }).click();
-      await group.getByRole("button", { name: /Read file-with-an-extremely-/ }).click();
+      await group.getByRole("button", { name: /Failed to read file-with-an-extremely-/ }).click();
     },
     assertions: async (page) => {
-      await expect(page.getByRole("region", { name: /Read 1 file, ran a command/ })).toBeVisible();
+      await expect(
+        page.getByRole("region", { name: /Failed to read 1 file, ran a command/ }),
+      ).toBeVisible();
       await expect(page.getByText("shell-wrapper:").first()).toBeVisible();
       await expect(page.getByText("ENOENT: no such file or directory").first()).toBeVisible();
       await page.evaluate(() => window.scrollTo(0, 0));
