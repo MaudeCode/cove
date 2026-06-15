@@ -12,7 +12,6 @@
       "react": ["./node_modules/preact/compat/"],
       "react-dom": ["./node_modules/preact/compat/"]
     },
-    "baseUrl": ".",
 
     /* Bundler mode */
     "moduleResolution": "bundler",

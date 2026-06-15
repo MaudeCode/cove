@@ -27,7 +27,6 @@
     
     "react-hooks/exhaustive-deps": "off",
     
-    "import/no-unresolved": "error",
     "import/no-duplicates": "error",
     "import/no-namespace": "error",
     "import/no-default-export": "warn",

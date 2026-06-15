@@ -226,6 +226,7 @@ export function Dropdown({
           id={listboxIdRef.current}
           role="listbox"
           aria-label={ariaLabel}
+          tabIndex={-1}
           onKeyDown={handleKeyDown}
           style={{
             position: "fixed",

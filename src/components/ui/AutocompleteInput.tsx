@@ -131,6 +131,7 @@ export function AutocompleteInput({
         onKeyDown={onKeyDown}
         autoComplete="off"
         role="combobox"
+        tabIndex={0}
         aria-autocomplete="list"
         aria-expanded={showSuggestions}
         aria-controls={listboxIdRef.current}
@@ -160,6 +161,7 @@ export function AutocompleteInput({
         <div
           id={listboxIdRef.current}
           role="listbox"
+          tabIndex={-1}
           class="absolute z-30 top-full mt-1 left-0 right-0 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg-primary)] shadow-lg overflow-y-auto max-h-56"
         >
           {visibleSuggestions.map((item, idx) => (

@@ -295,6 +295,7 @@ export function CanvasPanel() {
         `}
         role="toolbar"
         aria-label="Canvas panel controls"
+        tabIndex={-1}
         style={{ height: `${HEADER_HEIGHT}px` }}
         onMouseDown={handleDragStart}
         onTouchStart={handleDragStart}
@@ -398,6 +399,7 @@ export function CanvasPanel() {
             class="absolute right-0 w-2 cursor-e-resize touch-none"
             role="separator"
             aria-orientation="vertical"
+            tabIndex={-1}
             style={{ top: "60px", height: "calc(100% - 76px)" }}
             onMouseDown={(e) => handleResizeStart(e, "e")}
             onTouchStart={(e) => handleResizeStart(e, "e")}
@@ -406,6 +408,7 @@ export function CanvasPanel() {
             class="absolute left-0 w-2 cursor-w-resize touch-none"
             role="separator"
             aria-orientation="vertical"
+            tabIndex={-1}
             style={{ top: "60px", height: "calc(100% - 76px)" }}
             onMouseDown={(e) => handleResizeStart(e, "w")}
             onTouchStart={(e) => handleResizeStart(e, "w")}
@@ -414,6 +417,7 @@ export function CanvasPanel() {
             class="absolute bottom-0 h-2 cursor-s-resize touch-none"
             role="separator"
             aria-orientation="horizontal"
+            tabIndex={-1}
             style={{ left: "16px", width: "calc(100% - 32px)" }}
             onMouseDown={(e) => handleResizeStart(e, "s")}
             onTouchStart={(e) => handleResizeStart(e, "s")}
@@ -427,6 +431,7 @@ export function CanvasPanel() {
           class="absolute right-0 top-0 w-2 h-full cursor-e-resize"
           role="separator"
           aria-orientation="vertical"
+          tabIndex={-1}
           onMouseDown={handleDockedResizeStart}
         />
       )}
@@ -435,6 +440,7 @@ export function CanvasPanel() {
           class="absolute left-0 top-0 w-2 h-full cursor-w-resize"
           role="separator"
           aria-orientation="vertical"
+          tabIndex={-1}
           onMouseDown={handleDockedResizeStart}
         />
       )}
@@ -443,6 +449,7 @@ export function CanvasPanel() {
           class="absolute left-0 bottom-0 w-full h-2 cursor-s-resize"
           role="separator"
           aria-orientation="horizontal"
+          tabIndex={-1}
           onMouseDown={handleDockedResizeStart}
         />
       )}

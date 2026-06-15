@@ -1,5 +1,5 @@
 {
-  "$schema": "https://unpkg.com/knip@5/schema.json",
+  "$schema": "https://unpkg.com/knip@6/schema.json",
   "ignoreExportsUsedInFile": true,
   "ignore": ["docs/**"],
   "entry": [
@@ -13,8 +13,5 @@
     "tests/**/*.test.ts",
     "tests/**/*.test.tsx"
   ],
-  "ignoreDependencies": [
-    "@types/dompurify",
-    "conventional-changelog-cli"
-  ]
+  "ignoreDependencies": ["@types/dompurify"]
 }
