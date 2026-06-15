@@ -370,6 +370,42 @@ describe("AssistantMessage", () => {
     }
   });
 
+  test("does not relabel earlier completed tool groups as thinking while a later group runs", () => {
+    renderComponent(
+      <AssistantMessage
+        isStreaming
+        message={assistantMessage({
+          content: "Before middle after",
+          toolCalls: [
+            {
+              args: { path: "/repo/tests/unit/components/chat/AssistantMessage.test.tsx" },
+              id: "tool-1",
+              insertedAtContentLength: "Before".length,
+              name: "read",
+              status: "complete",
+            },
+            {
+              args: { commandPreview: "git status -sb" },
+              id: "tool-2",
+              insertedAtContentLength: "Before middle".length,
+              name: "exec",
+              status: "running",
+            },
+          ],
+        })}
+      />,
+    );
+
+    const completedGroup = screen.getByRole("button", { name: "Read AssistantMessage.test.tsx" });
+    expect(completedGroup.querySelector(".tool-call-running-text")).toBeNull();
+    expect(completedGroup.querySelector(".lucide-brain")).toBeNull();
+
+    const runningGroup = screen.getByRole("button", { name: "Running git status -sb" });
+    expect(runningGroup.querySelector(".tool-call-running-text")).toBeTruthy();
+    expect(runningGroup.querySelector(".lucide-square-terminal")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Thinking..." })).toBeNull();
+  });
+
   test("keeps the completed-tool linger timer through unrelated streaming rerenders", async () => {
     const timers = installFakeTimers();
 

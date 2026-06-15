@@ -184,6 +184,7 @@ export function AssistantMessage({
   // Build content blocks using cleaned text (MEDIA: lines removed)
   const blocks = buildContentBlocks(parsedMedia.text, message.toolCalls ?? []);
   const hasContent = blocks.length > 0 || allImages.length > 0 || !!message.thinking;
+  const streamingToolGroupKey = isStreaming ? getStreamingToolGroupKey(blocks) : null;
 
   // Debug: log every render to track reactivity issues
   log.chat.debug("AssistantMessage render", {
@@ -252,18 +253,23 @@ export function AssistantMessage({
             type: block.type,
             contentLen: block.type === "text" ? block.content.length : undefined,
           });
-          return block.type === "text" ? (
-            <div
-              key={`text-${idx}`}
-              class="prose prose-sm max-w-none text-[var(--color-text-primary)]"
-            >
-              <MessageContent content={block.content} isStreaming={false} />
-            </div>
-          ) : (
+          if (block.type === "text") {
+            return (
+              <div
+                key={`text-${idx}`}
+                class="prose prose-sm max-w-none text-[var(--color-text-primary)]"
+              >
+                <MessageContent content={block.content} isStreaming={false} />
+              </div>
+            );
+          }
+
+          const blockKey = getToolBlockKey(block);
+          return (
             <ToolCallGroup
-              key={getToolBlockKey(block)}
+              key={blockKey}
               toolCalls={block.toolCalls}
-              isStreaming={isStreaming}
+              isStreaming={blockKey === streamingToolGroupKey}
             />
           );
         })}
@@ -290,6 +296,22 @@ export function AssistantMessage({
 function getToolBlockKey(block: ToolGroupBlock): string {
   const firstToolCall = block.toolCalls[0];
   return `tool-block-${firstToolCall?.id ?? "empty"}`;
+}
+
+function getStreamingToolGroupKey(blocks: ContentBlock[]): string | null {
+  let lastToolGroup: ToolGroupBlock | null = null;
+  let activeToolGroup: ToolGroupBlock | null = null;
+
+  for (const block of blocks) {
+    if (block.type !== "tool-group") continue;
+    lastToolGroup = block;
+    if (block.toolCalls.some((toolCall) => isRunningToolCall(toolCall, true))) {
+      activeToolGroup = block;
+    }
+  }
+
+  const streamingGroup = activeToolGroup ?? lastToolGroup;
+  return streamingGroup ? getToolBlockKey(streamingGroup) : null;
 }
 
 function ToolCallGroup({
