@@ -910,6 +910,34 @@ describe("chat send queue", () => {
     expect(historyLoads).toEqual(["session-1"]);
   });
 
+  test("/new reset is not soft-steered when steer by default is enabled", async () => {
+    gatewayResponses.set("chat.send", { runId: "reset-run", status: "started" });
+    chatSteeringSettings.value = { steerByDefault: true, steeringMode: "soft" };
+    chat.startRun("run-active", "session-1");
+
+    await sendMessage("session-1", "/new");
+
+    expect(chat.messageQueue.value).toEqual([]);
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.send",
+        params: {
+          attachments: undefined,
+          idempotencyKey: expect.any(String),
+          message: "/new",
+          sessionKey: "session-1",
+          thinking: undefined,
+          timeoutMs: undefined,
+        },
+      },
+    ]);
+
+    timers.advanceBy(100);
+    await Promise.resolve();
+
+    expect(historyLoads).toEqual(["session-1"]);
+  });
+
   test("/new reset drops final fallback when authoritative history reload succeeds", async () => {
     gatewayResponses.set("chat.send", { runId: "reset-run", status: "started" });
     historyMessagesAfterLoad = [

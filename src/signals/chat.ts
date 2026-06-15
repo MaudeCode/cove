@@ -288,6 +288,10 @@ export function reconcileMessagesFromHistory(
   sessionKey: string,
   historyMessages: Message[],
   historyRequestedAt: number,
+  options?: {
+    preservePendingSteerRunIds?: Iterable<string>;
+    preserveSessionPendingSteers?: boolean;
+  },
 ): Message[] {
   const optimisticTail = getOptimisticTailMessages(
     sessionKey,
@@ -297,7 +301,7 @@ export function reconcileMessagesFromHistory(
   );
   const reconciled = [...historyMessages, ...optimisticTail];
   setMessages(reconciled);
-  pruneStalePendingSteerMessages(sessionKey);
+  pruneStalePendingSteerMessages(sessionKey, options);
   return reconciled;
 }
 
@@ -597,11 +601,20 @@ export function clearPendingSteerMessagesForRun(runId: string | undefined): void
 }
 
 /** Drop persisted steering indicators whose run was already gone by history catch-up. */
-function pruneStalePendingSteerMessages(sessionKey: string): void {
+function pruneStalePendingSteerMessages(
+  sessionKey: string,
+  options?: {
+    preservePendingSteerRunIds?: Iterable<string>;
+    preserveSessionPendingSteers?: boolean;
+  },
+): void {
   const activeRunIds = new Set(activeRuns.value.keys());
+  const preservedRunIds = new Set(options?.preservePendingSteerRunIds ?? []);
   messageQueue.value = messageQueue.value.filter((m) => {
     if (m.sessionKey !== sessionKey) return true;
     if (m.queueKind !== "steered" || !m.pendingRunId) return true;
+    if (options?.preserveSessionPendingSteers) return true;
+    if (preservedRunIds.has(m.pendingRunId)) return true;
     return activeRunIds.has(m.pendingRunId);
   });
 }

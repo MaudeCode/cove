@@ -111,6 +111,7 @@ export async function sendMessage(
   const idempotencyKey = options?.messageId ?? generateIdempotencyKey();
   const messageId = `user_${idempotencyKey}`;
   const isRetry = options?.messageId != null;
+  const isReset = isResetCommand(message);
   const softSteerCommand = parseCommandPayload(message, SOFT_STEER_COMMANDS);
   const redirectCommand = parseCommandPayload(message, REDIRECT_COMMANDS);
   const isExplicitSoftSteer = softSteerCommand !== null;
@@ -120,7 +121,10 @@ export async function sendMessage(
   const wantsActiveRunSteer =
     (isExplicitSoftSteer && canSteerActiveRun) ||
     (options?.steer === true && canSteerActiveRun) ||
-    (!isRetry && chatSteeringSettings.value.steerByDefault && activeSessionRun !== null);
+    (!isRetry &&
+      !isReset &&
+      chatSteeringSettings.value.steerByDefault &&
+      activeSessionRun !== null);
   const shouldHardSteer =
     isExplicitRedirect ||
     (wantsActiveRunSteer && chatSteeringSettings.value.steeringMode === "hard");
@@ -169,7 +173,7 @@ export async function sendMessage(
   }
 
   // Queue if currently streaming - don't add to chat yet
-  if (isStreaming.value && !isRetry && !shouldSteer) {
+  if (isStreaming.value && !isRetry && !shouldSteer && !isReset) {
     log.chat.info("Currently streaming, queuing message");
     userMessage.status = "queued";
     queueMessage(userMessage);
@@ -231,7 +235,6 @@ export async function sendMessage(
 
     adoptRunId(idempotencyKey, result.runId);
 
-    const isReset = isResetCommand(message);
     const resetRunId = isReset ? result.runId : undefined;
     if (isReset) {
       registerResetRun(resetRunId);
