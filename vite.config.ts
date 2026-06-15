@@ -53,6 +53,23 @@ export function cspExtensionPlugin(env: Record<string, string>): Plugin {
   }
 }
 
+function devCspPlugin(): Plugin {
+  const devConnectSrc =
+    "connect-src 'self' ws: wss: https: http://127.0.0.1:* http://localhost:*"
+
+  return {
+    name: 'cove-dev-csp',
+    apply: 'serve',
+    transformIndexHtml(html) {
+      const modified = html.replace(/connect-src\s+[^;]+;/, `${devConnectSrc};`)
+      if (modified === html) {
+        throw new Error('connect-src directive was not found')
+      }
+      return modified
+    },
+  }
+}
+
 /**
  * Debug logging plugin - accepts POSTs to /__cove_debug and writes to debug.log
  * This lets the AI read client-side logs without needing browser access.
@@ -103,7 +120,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
 
   return {
-    plugins: [preact(), tailwindcss(), cspExtensionPlugin(env), debugLogPlugin()],
+    plugins: [preact(), tailwindcss(), cspExtensionPlugin(env), devCspPlugin(), debugLogPlugin()],
     define: {
       __APP_VERSION__: JSON.stringify(appVersion),
     },
