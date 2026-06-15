@@ -2,7 +2,9 @@ import { describe, expect, mock, test } from "bun:test";
 import type { ContentBlock, RawMessage } from "../../../src/types/chat";
 
 const messageDetection = await import("../../../src/lib/message-detection");
+const toolUtils = await import("../../../src/lib/tool-utils");
 mock.module("@/lib/message-detection", () => messageDetection);
+mock.module("@/lib/tool-utils", () => toolUtils);
 
 const { mergeToolCalls, normalizeMessage, parseMessageContent } =
   await import("../../../src/types/chat");
@@ -55,7 +57,7 @@ describe("chat content parsing", () => {
       id: "tool-1",
       name: "read",
       args: { path: "README.md" },
-      result: [{ type: "text", text: "file body" }],
+      result: "file body",
       status: "complete",
       insertedAtContentLength: "First paragraph\nSecond paragraph".length,
     });

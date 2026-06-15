@@ -74,16 +74,16 @@ const noisyToolMessages: MockGatewayOptions["messages"] = [
         },
       },
       {
-        type: "text",
-        text: "The command finished and produced a bounded summary.",
-      },
-      {
         type: "toolCall",
         id: "tool-read-failed",
         name: "read",
         arguments: {
           path: "/private/example/missing/file-with-an-extremely-long-name-that-should-not-overflow.json",
         },
+      },
+      {
+        type: "text",
+        text: "The command finished and produced a bounded summary.",
       },
     ],
   },
@@ -236,18 +236,17 @@ const scenarios: VisualScenario[] = [
     name: "noisy-tool-and-failed-tool",
     options: { messages: noisyToolMessages, sessions },
     prepare: async (page) => {
-      const messageList = page.locator('[data-tour="message-list"]');
-      await messageList.locator('[data-tool-name="exec"] button').click();
-      await messageList.locator('[data-tool-name="read"] button').click();
+      const group = page.getByRole("region", { name: /Read 1 file, ran a command/ });
+      await group.getByRole("button", { name: /Read 1 file, ran a command/ }).click();
+      await group.getByRole("button", { name: /Ran / }).click();
+      await group.getByRole("button", { name: /Read file-with-an-extremely-/ }).click();
     },
     assertions: async (page) => {
+      await expect(page.getByRole("region", { name: /Read 1 file, ran a command/ })).toBeVisible();
       await expect(page.getByText("shell-wrapper:").first()).toBeVisible();
       await expect(page.getByText("ENOENT: no such file or directory").first()).toBeVisible();
+      await page.evaluate(() => window.scrollTo(0, 0));
     },
-    healthLocators: (page) => [
-      page.locator('[data-tool-name="exec"] button').first(),
-      page.locator('[data-tool-name="read"] button').first(),
-    ],
   },
   {
     name: "sidebar-session-list",

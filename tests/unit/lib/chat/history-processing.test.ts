@@ -55,6 +55,46 @@ describe("normalizeHistoryMessages", () => {
     ]);
   });
 
+  test("unwraps nested OpenClaw toolResult blocks before attaching results", () => {
+    const messages = normalizeHistoryMessages([
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "toolCall",
+            id: "tool-bash",
+            name: "Bash",
+            arguments: {
+              command: "/bin/zsh -lc \"sed -n '1,220p' /Users/maudebot/agents/maude/HEARTBEAT.md\"",
+              cwd: "/Users/maudebot/agents/maude",
+            },
+          },
+        ],
+        timestamp: 1000,
+      },
+      {
+        role: "toolResult",
+        toolCallId: "tool-bash",
+        content: [
+          {
+            type: "toolResult",
+            content: [{ type: "text", text: "heartbeat ok" }],
+          },
+        ] as never,
+        isError: false,
+        timestamp: 1001,
+      },
+    ]);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].toolCalls?.[0]).toMatchObject({
+      id: "tool-bash",
+      name: "Bash",
+      result: "heartbeat ok",
+      status: "complete",
+    });
+  });
+
   test("marks attached error tool results as errored", () => {
     const messages = normalizeHistoryMessages([
       {

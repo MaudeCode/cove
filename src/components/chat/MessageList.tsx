@@ -18,6 +18,7 @@ import { CoveLogo } from "@/components/ui/CoveLogo";
 import { t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { isAvatarUrl } from "@/lib/utils";
+import { CHAT_CONTENT_TOGGLE_EVENT, isNearScrollBottom } from "@/lib/chat-scroll";
 import {
   searchQuery,
   isSearchOpen,
@@ -107,7 +108,7 @@ export function MessageList({
     showScrollButton.value = distanceFromBottom > 100;
 
     // Track if user manually scrolled up
-    isAutoScrolling.current = distanceFromBottom < 50;
+    isAutoScrolling.current = isNearScrollBottom(containerRef.current);
   }, []);
 
   /**
@@ -151,6 +152,25 @@ export function MessageList({
    */
   useEffect(() => {
     scrollToBottom(false);
+  }, [scrollToBottom]);
+
+  /**
+   * Keep the bottom edge pinned when a collapsed inline block expands while
+   * the user is already reading at the bottom of the transcript.
+   */
+  useEffect(() => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const handleContentToggle = () => {
+      if (!isNearScrollBottom(container)) return;
+
+      isAutoScrolling.current = true;
+      scrollToBottom(false);
+    };
+
+    container.addEventListener(CHAT_CONTENT_TOGGLE_EVENT, handleContentToggle);
+    return () => container.removeEventListener(CHAT_CONTENT_TOGGLE_EVENT, handleContentToggle);
   }, [scrollToBottom]);
 
   /**

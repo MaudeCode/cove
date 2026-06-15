@@ -84,6 +84,10 @@ function getDisplayBlock(record: Record<string, unknown>): string | null {
     return null;
   }
 
+  if (record.type === "toolResult" || record.type === "tool_result") {
+    return getNestedToolResultDisplay(record);
+  }
+
   if (record.type === "image") {
     const bytes =
       typeof record.bytes === "number"
@@ -95,4 +99,19 @@ function getDisplayBlock(record: Record<string, unknown>): string | null {
   }
 
   return `[${record.type} block]`;
+}
+
+function getNestedToolResultDisplay(record: Record<string, unknown>): string | null {
+  if (typeof record.text === "string") {
+    return record.text;
+  }
+
+  for (const key of ["content", "result", "output", "data"]) {
+    const extracted = extractToolResultContent(record[key]);
+    if (typeof extracted === "string" && extracted.length > 0) {
+      return extracted;
+    }
+  }
+
+  return null;
 }

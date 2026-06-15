@@ -1,5 +1,6 @@
 import { t } from "@/lib/i18n";
-import { BouncingText } from "../ui/BouncingText";
+import { TextShimmer } from "../ui/TextShimmer";
+import { Brain } from "lucide-preact";
 
 export function ThinkingStatus() {
   const label = t("chat.thinking");
@@ -8,9 +9,10 @@ export function ThinkingStatus() {
     <span
       role="status"
       aria-label={label}
-      class="inline-flex min-w-0 max-w-full items-center text-[var(--color-text-muted)]"
+      class="inline-flex min-w-0 max-w-full items-center gap-2 text-[var(--color-text-muted)]"
     >
-      <BouncingText class="truncate" text={label} />
+      <Brain class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+      <TextShimmer class="truncate" text={label} />
     </span>
   );
 }

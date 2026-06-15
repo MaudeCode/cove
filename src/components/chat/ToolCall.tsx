@@ -21,6 +21,13 @@ import {
   resolvedApprovalIds,
   handleExecApprovalDecisionDirect,
 } from "@/signals/exec";
+import {
+  getToolInputBlockKind,
+  getToolLabel,
+  getToolPreview,
+  getToolResultPreview,
+  humanizeAction,
+} from "./tool-registry";
 
 /**
  * Module-level set to persist expanded state across re-renders.
@@ -123,11 +130,9 @@ export function ToolCall({ toolCall }: ToolCallProps) {
   const duration =
     toolCall.completedAt && toolCall.startedAt ? toolCall.completedAt - toolCall.startedAt : null;
 
-  // Check if result is an error (even if status says "complete")
-  const hasErrorResult =
-    toolCall.result !== undefined && parseErrorResult(toolCall.result) !== null;
-  const effectiveStatus = hasErrorResult ? "error" : toolCall.status;
+  const effectiveStatus = getEffectiveStatus(toolCall);
   const statusConfig = getStatusConfig(effectiveStatus, approvalPending);
+  const summary = getToolCallSummary(toolCall);
 
   return (
     <div
@@ -145,14 +150,38 @@ export function ToolCall({ toolCall }: ToolCallProps) {
         {/* Status icon */}
         <span class={`text-sm flex-shrink-0 ${statusConfig.color}`}>{statusConfig.icon}</span>
 
-        {/* Tool name */}
-        <code class="text-xs font-medium text-[var(--color-text-primary)] bg-[var(--color-bg-secondary)] px-1.5 py-0.5 rounded">
-          {toolCall.name}
-        </code>
+        <div class="min-w-0 flex-1">
+          <div class="flex min-w-0 items-center gap-2">
+            {/* Tool name */}
+            <span
+              class="text-xs font-medium text-[var(--color-text-primary)] bg-[var(--color-bg-secondary)] px-1.5 py-0.5 rounded flex-shrink-0"
+              title={toolCall.name}
+            >
+              {summary.label}
+            </span>
 
-        {/* Brief summary */}
-        <span class="text-xs text-[var(--color-text-muted)] truncate flex-1">
-          {getToolSummary(toolCall)}
+            {/* Brief summary */}
+            {summary.preview && (
+              <span
+                class="text-xs text-[var(--color-text-secondary)] truncate min-w-0"
+                title={summary.fullPreview ?? summary.preview}
+              >
+                {summary.preview}
+              </span>
+            )}
+          </div>
+          {summary.resultPreview && (
+            <div
+              class="mt-0.5 text-[11px] text-[var(--color-text-muted)] truncate"
+              title={summary.resultPreview}
+            >
+              {summary.resultPreview}
+            </div>
+          )}
+        </div>
+
+        <span class="text-[10px] text-[var(--color-text-muted)] bg-[var(--color-bg-secondary)] px-1.5 py-0.5 rounded flex-shrink-0">
+          {summary.statusLabel}
         </span>
 
         {/* Duration badge */}
@@ -172,43 +201,53 @@ export function ToolCall({ toolCall }: ToolCallProps) {
       {/* Expanded details */}
       {expanded.value && (
         <div class="px-3 py-2 border-t border-[var(--color-border)] bg-[var(--color-bg-secondary)] space-y-3">
-          {/* Arguments - special handling for specific tools */}
-          {toolCall.args && Object.keys(toolCall.args).length > 0 && (
-            <ToolSection label="Input" raw={toolCall.args}>
-              <InputBlock toolCall={toolCall} />
-            </ToolSection>
-          )}
-
-          {/* Approval UI */}
-          {approvalPending && (
-            <ExecApprovalButtons
-              approvalId={(toolCall.result as ApprovalPendingResult).details.approvalId}
-              expiresAtMs={(toolCall.result as ApprovalPendingResult).details.expiresAtMs}
-            />
-          )}
-
-          {/* Result (hide when approval pending - the command output isn't ready yet) */}
-          {toolCall.result !== undefined && !approvalPending && (
-            <ToolSection label="Output" raw={toolCall.result}>
-              <ResultBlock
-                result={toolCall.result}
-                error={toolCall.status === "error"}
-                toolName={toolCall.name}
-                filePath={
-                  (toolCall.args?.path as string | undefined) ??
-                  (toolCall.args?.file_path as string | undefined)
-                }
-              />
-            </ToolSection>
-          )}
-
-          {/* Error without result */}
-          {toolCall.status === "error" && !toolCall.result && (
-            <div class="text-xs text-[var(--color-error)]">Tool execution failed</div>
-          )}
+          <ToolCallDetails toolCall={toolCall} />
         </div>
       )}
     </div>
+  );
+}
+
+export function ToolCallDetails({ toolCall }: ToolCallProps) {
+  const approvalPending = isApprovalPending(toolCall.result);
+
+  return (
+    <>
+      {/* Arguments - special handling for specific tools */}
+      {toolCall.args && Object.keys(toolCall.args).length > 0 && (
+        <ToolSection label="Input" raw={toolCall.args}>
+          <InputBlock toolCall={toolCall} />
+        </ToolSection>
+      )}
+
+      {/* Approval UI */}
+      {approvalPending && (
+        <ExecApprovalButtons
+          approvalId={(toolCall.result as ApprovalPendingResult).details.approvalId}
+          expiresAtMs={(toolCall.result as ApprovalPendingResult).details.expiresAtMs}
+        />
+      )}
+
+      {/* Result (hide when approval pending - the command output isn't ready yet) */}
+      {toolCall.result !== undefined && !approvalPending && (
+        <ToolSection label="Output" raw={toolCall.result}>
+          <ResultBlock
+            result={toolCall.result}
+            error={toolCall.status === "error"}
+            toolName={toolCall.name}
+            filePath={
+              (toolCall.args?.path as string | undefined) ??
+              (toolCall.args?.file_path as string | undefined)
+            }
+          />
+        </ToolSection>
+      )}
+
+      {/* Error without result */}
+      {toolCall.status === "error" && !toolCall.result && (
+        <div class="text-xs text-[var(--color-error)]">Tool execution failed</div>
+      )}
+    </>
   );
 }
 
@@ -217,50 +256,38 @@ export function ToolCall({ toolCall }: ToolCallProps) {
 // ============================================
 
 function InputBlock({ toolCall }: { toolCall: ToolCallType }) {
-  const name = toolCall.name.toLowerCase();
   const args = toolCall.args as Record<string, unknown>;
 
-  if (name === "edit") {
-    return <EditDiffBlock args={args} />;
+  switch (getToolInputBlockKind(toolCall.name, args)) {
+    case "browser":
+      return <BrowserInputBlock args={args} />;
+    case "cron":
+      return <CronInputBlock args={args} />;
+    case "edit":
+      return <EditDiffBlock args={args} />;
+    case "exec":
+      return <ExecCommandBlock args={args} />;
+    case "gateway":
+      return <GatewayInputBlock args={args} />;
+    case "image":
+      return <ImageInputBlock args={args} />;
+    case "memory-get":
+      return <MemoryGetInputBlock args={args} />;
+    case "message":
+      return <MessageInputBlock args={args} />;
+    case "read":
+      return <ReadInputBlock args={args} />;
+    case "search":
+      return <SearchInputBlock args={args} />;
+    case "session-status":
+      return <SessionStatusInputBlock args={args} />;
+    case "url":
+      return <UrlInputBlock args={args} />;
+    case "write":
+      return <WriteInputBlock args={args} />;
+    case "code":
+      return <CodeBlock content={args} />;
   }
-  if (name === "exec" && args.command) {
-    return <ExecCommandBlock args={args} />;
-  }
-  if (name === "read") {
-    return <ReadInputBlock args={args} />;
-  }
-  if (name === "write") {
-    return <WriteInputBlock args={args} />;
-  }
-  if (toolCall.name === "web_search" || toolCall.name === "memory_search") {
-    return <SearchInputBlock args={args} />;
-  }
-  if (toolCall.name === "web_fetch") {
-    return <UrlInputBlock args={args} />;
-  }
-  if (toolCall.name === "memory_get") {
-    return <MemoryGetInputBlock args={args} />;
-  }
-  if (toolCall.name === "image") {
-    return <ImageInputBlock args={args} />;
-  }
-  if (toolCall.name === "browser") {
-    return <BrowserInputBlock args={args} />;
-  }
-  if (toolCall.name === "cron") {
-    return <CronInputBlock args={args} />;
-  }
-  if (toolCall.name === "session_status") {
-    return <SessionStatusInputBlock args={args} />;
-  }
-  if (toolCall.name === "message") {
-    return <MessageInputBlock args={args} />;
-  }
-  if (toolCall.name === "gateway") {
-    return <GatewayInputBlock args={args} />;
-  }
-
-  return <CodeBlock content={args} />;
 }
 
 // ============================================
@@ -457,62 +484,66 @@ function getStatusConfig(status: string, approvalPending = false): StatusConfig 
 /**
  * Get brief summary of tool call based on common arg patterns
  */
-function getToolSummary(toolCall: ToolCallType): string {
+interface SummaryOptions {
+  approvalPending: boolean;
+  effectiveStatus: string;
+}
+
+export interface ToolSummary {
+  label: string;
+  preview?: string;
+  fullPreview?: string;
+  resultPreview?: string;
+  statusLabel: string;
+}
+
+export function getToolCallSummary(toolCall: ToolCallType): ToolSummary {
+  return getToolSummary(toolCall, {
+    approvalPending: isApprovalPending(toolCall.result),
+    effectiveStatus: getEffectiveStatus(toolCall),
+  });
+}
+
+function getToolSummary(toolCall: ToolCallType, options: SummaryOptions): ToolSummary {
   const args = toolCall.args || {};
+  const label = getToolLabel(toolCall.name, args);
+  const preview = getToolPreview(toolCall);
+  const resultPreview = getToolResultPreview(toolCall);
 
-  // File operations
-  if (args.path || args.file_path) {
-    return truncatePath(String(args.path || args.file_path));
+  return {
+    label,
+    preview: preview ? truncateText(preview, 96) : undefined,
+    fullPreview: preview,
+    resultPreview: resultPreview ? truncateText(resultPreview, 120) : undefined,
+    statusLabel: getStatusLabel(options.effectiveStatus, options.approvalPending, toolCall.result),
+  };
+}
+
+function getEffectiveStatus(toolCall: ToolCallType): string {
+  const hasErrorResult =
+    toolCall.result !== undefined && parseErrorResult(toolCall.result) !== null;
+  return hasErrorResult ? "error" : toolCall.status;
+}
+
+function getStatusLabel(status: string, approvalPending: boolean, result: unknown): string {
+  if (approvalPending) return "Needs approval";
+  if (parseErrorResult(result) !== null) return "Failed";
+
+  switch (status) {
+    case "pending":
+      return "Pending";
+    case "running":
+      return "Running";
+    case "complete":
+      return result === undefined ? "Done" : "Result ready";
+    case "error":
+      return "Failed";
+    default:
+      return humanizeAction(status);
   }
-
-  // Shell commands
-  if (args.command) {
-    return truncateText(String(args.command), 60);
-  }
-
-  // Search/query
-  if (args.query) {
-    return truncateText(String(args.query), 60);
-  }
-
-  // URLs
-  if (args.url) {
-    return truncateUrl(String(args.url));
-  }
-
-  // Actions
-  if (args.action) {
-    return String(args.action);
-  }
-
-  // Fallback: first meaningful string arg
-  for (const [key, value] of Object.entries(args)) {
-    if (typeof value === "string" && value.length > 0 && !key.startsWith("_")) {
-      return truncateText(value, 50);
-    }
-  }
-
-  return "";
 }
 
 function truncateText(text: string, max: number): string {
   if (text.length <= max) return text;
   return text.slice(0, max - 1) + "…";
-}
-
-function truncatePath(path: string): string {
-  // Show filename with partial path context
-  const parts = path.split("/").filter(Boolean);
-  if (parts.length <= 2) return path;
-  return "…/" + parts.slice(-2).join("/");
-}
-
-function truncateUrl(url: string): string {
-  try {
-    const u = new URL(url);
-    const path = u.pathname.length > 30 ? u.pathname.slice(0, 30) + "…" : u.pathname;
-    return u.hostname + path;
-  } catch {
-    return truncateText(url, 50);
-  }
 }

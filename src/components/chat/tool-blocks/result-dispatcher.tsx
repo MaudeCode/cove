@@ -16,6 +16,7 @@ import { BrowserResultBlock } from "./browser";
 import { CronResultBlock } from "./cron";
 import { MessageResultBlock } from "./message";
 import { GatewayResultBlock } from "./gateway";
+import { getToolResultBlockKind } from "../tool-registry";
 
 // ============================================
 // Error Result Block
@@ -48,24 +49,23 @@ export function ResultBlock({ result, error, toolName, filePath }: ResultBlockPr
     return <ErrorResultBlock result={errorResult} />;
   }
 
-  // Route to specialized blocks based on tool name
-  switch (toolName) {
-    case "web_search":
+  switch (getToolResultBlockKind(toolName ?? "")) {
+    case "web-search":
       return <WebSearchResultBlock result={result} />;
 
-    case "web_fetch":
+    case "web-fetch":
       return <WebFetchResultBlock result={result} />;
 
-    case "memory_search":
+    case "memory-search":
       return <MemorySearchResultBlock result={result} />;
 
-    case "memory_get":
+    case "memory-get":
       return <MemoryGetResultBlock result={result} />;
 
     case "image":
       return <ImageResultBlock result={result} />;
 
-    case "session_status":
+    case "session-status":
       return <SessionStatusResultBlock result={result} />;
 
     case "browser":
@@ -80,7 +80,7 @@ export function ResultBlock({ result, error, toolName, filePath }: ResultBlockPr
     case "gateway":
       return <GatewayResultBlock result={result} />;
 
-    default:
+    case "code":
       return <CodeBlock content={result} maxLines={20} error={error} filePath={filePath} />;
   }
 }
