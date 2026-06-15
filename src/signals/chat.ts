@@ -185,6 +185,9 @@ effect(() => {
 /** Active chat runs (keyed by runId) */
 export const activeRuns = signal<Map<string, ChatRun>>(new Map());
 
+/** Sessions where startup reported an active run before it exposed a run id. */
+export const startupActiveRunSessions = signal<Set<string>>(new Set());
+
 /** First active streaming run across sessions (derived from activeRuns) */
 const currentStreamingRun = computed<ChatRun | null>(() => {
   for (const run of activeRuns.value.values()) {
@@ -206,6 +209,22 @@ export function getStreamingRun(sessionKey: string): ChatRun | null {
     }
   }
   return null;
+}
+
+export function hasStartupActiveRun(sessionKey: string): boolean {
+  return startupActiveRunSessions.value.has(sessionKey);
+}
+
+export function markStartupActiveRun(sessionKey: string): void {
+  if (startupActiveRunSessions.value.has(sessionKey)) return;
+  startupActiveRunSessions.value = new Set([...startupActiveRunSessions.value, sessionKey]);
+}
+
+export function clearStartupActiveRun(sessionKey: string): void {
+  if (!startupActiveRunSessions.value.has(sessionKey)) return;
+  const next = new Set(startupActiveRunSessions.value);
+  next.delete(sessionKey);
+  startupActiveRunSessions.value = next;
 }
 
 /** Get streaming state for a specific session */
@@ -406,6 +425,7 @@ export function markMessageFailed(messageId: string, error: string): void {
 
 /** Start a new chat run */
 export function startRun(runId: string, sessionKey: string): void {
+  clearStartupActiveRun(sessionKey);
   const newRuns = new Map(activeRuns.value);
   newRuns.set(runId, {
     runId,
@@ -575,6 +595,7 @@ export function abortRun(runId: string): void {
 /** Clear all active runs (used on reconnect when gateway state is lost) */
 export function clearActiveRuns(): void {
   activeRuns.value = new Map();
+  startupActiveRunSessions.value = new Set();
 }
 
 // ============================================

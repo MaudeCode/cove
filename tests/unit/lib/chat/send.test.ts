@@ -171,6 +171,7 @@ describe("chat send queue", () => {
     chat.messages.value = [];
     chat.messageQueue.value = [];
     chat.activeRuns.value = new Map();
+    chat.startupActiveRunSessions.value = new Set();
     chat.isLoadingHistory.value = false;
     chat.searchQuery.value = "";
     chat.dateRangeStart.value = null;
@@ -476,6 +477,14 @@ describe("chat send queue", () => {
       status: "sent",
       steered: true,
     });
+    expect(chat.activeRuns.value.get("run-active")).toMatchObject({
+      status: "aborted",
+    });
+    expect(chat.getStreamingRun("session-1")).toMatchObject({
+      runId: "hard-steer-run",
+      sessionKey: "session-1",
+      status: "pending",
+    });
   });
 
   test("hard steering clears same-session queued follow-up messages", async () => {
@@ -498,10 +507,7 @@ describe("chat send queue", () => {
 
     await sendMessage("session-1", "interrupt and replace");
 
-    expect(chat.messageQueue.value.map((message) => message.id)).toEqual([
-      "user_other-session",
-      "user_pending-steer",
-    ]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_other-session"]);
     await processNextQueuedMessage("session-1");
     expect(gatewayCalls.map((call) => call.method)).toEqual(["sessions.steer"]);
   });
@@ -893,6 +899,20 @@ describe("chat send queue", () => {
     expect(gatewayCalls).toEqual([]);
     expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_wait-for-startup"]);
 
+    chat.markStartupActiveRun("session-1");
+    await processMessageQueue();
+
+    expect(gatewayCalls).toEqual([]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_wait-for-startup"]);
+
+    const blockedKey = await sendMessage("session-1", "queued behind startup active run");
+    expect(gatewayCalls).toEqual([]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual([
+      "user_wait-for-startup",
+      `user_${blockedKey}`,
+    ]);
+
+    chat.clearStartupActiveRun("session-1");
     chat.activeRuns.value = new Map();
     await processMessageQueue();
 

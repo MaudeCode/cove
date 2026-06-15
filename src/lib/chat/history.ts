@@ -12,6 +12,8 @@ import {
   historyError,
   thinkingLevel,
   ensureRun,
+  markStartupActiveRun,
+  clearStartupActiveRun,
   reconcileMessagesFromHistory,
   saveCachedMessages,
 } from "@/signals/chat";
@@ -66,13 +68,19 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
     }
 
     const startupActiveRunIds = getStartupActiveRunIds(result);
-    for (const runId of startupActiveRunIds) {
-      ensureRun(runId, sessionKey);
+    const startupHasActiveRun = getStartupHasActiveRun(result);
+    if (startupActiveRunIds.size > 0) {
+      for (const runId of startupActiveRunIds) {
+        ensureRun(runId, sessionKey);
+      }
+    } else if (startupHasActiveRun) {
+      markStartupActiveRun(sessionKey);
+    } else {
+      clearStartupActiveRun(sessionKey);
     }
     const reconciled = reconcileMessagesFromHistory(sessionKey, normalized, historyRequestedAt, {
       preservePendingSteerRunIds: startupActiveRunIds,
-      preserveSessionPendingSteers:
-        startupActiveRunIds.size === 0 && getStartupHasActiveRun(result) === true,
+      preserveSessionPendingSteers: startupActiveRunIds.size === 0 && startupHasActiveRun,
     });
     saveCachedMessages(sessionKey, reconciled);
 

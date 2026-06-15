@@ -126,7 +126,9 @@ describe("release and documentation build contracts", () => {
     expect(transformed).toContain(
       "script-src 'self' 'unsafe-inline' https://scripts.example.test;",
     );
-    expect(transformed).toContain("connect-src 'self' ws://* wss://* https:;");
+    expect(transformed).toContain(
+      "connect-src 'self' https: wss: ws://127.0.0.1:18789 ws://localhost:18789;",
+    );
   });
 
   test("CSP extension plugin can append default-src without changing script-src", () => {

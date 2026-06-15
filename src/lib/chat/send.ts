@@ -26,6 +26,7 @@ import {
   clearMessages,
   adoptRunId,
   getStreamingRun,
+  hasStartupActiveRun,
 } from "@/signals/chat";
 import { sessions } from "@/signals/sessions";
 import { chatSteeringSettings } from "@/signals/settings";
@@ -119,6 +120,7 @@ export async function sendMessage(
   const isExplicitSoftSteer = softSteerCommand !== null;
   const isExplicitRedirect = redirectCommand !== null;
   const activeSessionRun = getStreamingRun(sessionKey);
+  const startupActiveRun = hasStartupActiveRun(sessionKey);
   const canSteerActiveRun = activeSessionRun !== null;
   const wantsActiveRunSteer =
     (isExplicitSoftSteer && canSteerActiveRun) ||
@@ -174,9 +176,10 @@ export async function sendMessage(
     return idempotencyKey;
   }
 
-  // Queue if currently streaming - don't add to chat yet
-  if (isStreaming.value && !isRetry && !shouldSteer && !isReset) {
-    log.chat.info("Currently streaming, queuing message");
+  // Queue if currently streaming, or startup says the session is active but
+  // has not exposed a run id yet. Don't add to chat until it is actually sent.
+  if ((isStreaming.value || startupActiveRun) && !isRetry && !shouldSteer && !isReset) {
+    log.chat.info("Session is active, queuing message");
     userMessage.status = "queued";
     queueMessage(userMessage);
     return idempotencyKey;
@@ -236,6 +239,15 @@ export async function sendMessage(
     }
 
     adoptRunId(idempotencyKey, result.runId);
+    if (
+      shouldUseSessionsSteer &&
+      "interruptedActiveRun" in result &&
+      result.interruptedActiveRun === true &&
+      activeSessionRun &&
+      activeSessionRun.runId !== result.runId
+    ) {
+      abortRun(activeSessionRun.runId);
+    }
 
     const resetRunId = isReset ? result.runId : undefined;
     if (isReset) {
@@ -573,6 +585,7 @@ function isAutoSendableQueuedMessage(message: Message): boolean {
     message.status === "queued" &&
     !message.pendingRunId &&
     message.queueKind !== "steered" &&
+    (!message.sessionKey || !hasStartupActiveRun(message.sessionKey)) &&
     (!message.sessionKey || getStreamingRun(message.sessionKey) === null)
   );
 }
