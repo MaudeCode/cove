@@ -22,7 +22,6 @@ beforeEach(() => {
 
 describe("i18n utilities", () => {
   test("handles plural and interpolation edge cases", () => {
-    expect(i18n.t("chat.thinkingBlock.second", { count: 1 })).toBe("1 second");
     expect(i18n.t("overview.capabilitiesCount", { count: 2 })).toBe("2 methods");
     expect(i18n.t("debug.viewEventDetails", { event: "chat.message" })).toBe(
       "View chat.message event details",

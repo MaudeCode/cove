@@ -408,8 +408,6 @@
     },
     "thinkingBlock": {
       "thoughtFor": "Thought for {duration}",
-      "second": "{count} second",
-      "second_plural": "{count} seconds",
       "secondShort": "{count}s",
       "expandLabel": "Expand thinking",
       "collapseLabel": "Collapse thinking"
