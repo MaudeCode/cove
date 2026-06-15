@@ -76,10 +76,13 @@ mock.module("@/components/ui/Button", () => ({
   ),
 }));
 mock.module("@/components/ui/icons", () => ({
+  AlertIcon: () => <span />,
   ChevronDownIcon: () => <span />,
   EditIcon: () => <span />,
   ImageIcon: () => <span />,
   PlusIcon: () => <span />,
+  RetryIcon: () => <span />,
+  SteerIcon: () => <span />,
   TrashIcon: () => <span />,
   XIcon: () => <span />,
 }));
@@ -152,5 +155,67 @@ describe("QueuedMessages", () => {
 
     fireEvent.click(screen.getByLabelText("actions.remove"));
     expect(chat.messageQueue.value).toEqual([]);
+  });
+
+  test("offers explicit steering for queued messages", () => {
+    const steered: string[] = [];
+    chat.messageQueue.value = [queuedMessage({ id: "queued-steer", sessionKey: "session-1" })];
+
+    renderComponent(<QueuedMessages onSteer={(messageId) => steered.push(messageId)} />);
+
+    fireEvent.click(screen.getByLabelText("actions.steer"));
+
+    expect(steered).toEqual(["queued-steer"]);
+    expect(chat.messageQueue.value).toHaveLength(1);
+  });
+
+  test("hides steering for queued messages that cannot be steered", () => {
+    chat.messageQueue.value = [queuedMessage({ id: "queued-steer", sessionKey: "session-1" })];
+
+    renderComponent(<QueuedMessages onSteer={() => undefined} canSteer={() => false} />);
+
+    expect(screen.queryByLabelText("actions.steer")).toBeNull();
+    expect(screen.getByLabelText("common.edit")).toBeTruthy();
+  });
+
+  test("shows pending tool-call state for steered queue messages", () => {
+    chat.messageQueue.value = [
+      queuedMessage({
+        id: "queued-steered",
+        queueKind: "steered",
+        pendingRunId: "run-active",
+        status: "sent",
+      }),
+    ];
+
+    renderComponent(<QueuedMessages onSteer={() => undefined} />);
+
+    expect(screen.getByText("chat.steeredStatus")).toBeTruthy();
+    expect(screen.getByText("chat.steerPendingStatus")).toBeTruthy();
+    expect(screen.queryByLabelText("actions.steer")).toBeNull();
+    expect(screen.queryByLabelText("common.edit")).toBeNull();
+    expect(screen.getByLabelText("actions.remove")).toBeTruthy();
+  });
+
+  test("shows failed queue errors and exposes explicit retry", () => {
+    const retried: string[] = [];
+    chat.messageQueue.value = [
+      queuedMessage({
+        id: "queued-failed",
+        content: "failed steer",
+        error: "soft steer failed",
+        status: "failed",
+      }),
+    ];
+
+    renderComponent(<QueuedMessages onRetry={(messageId) => retried.push(messageId)} />);
+
+    expect(screen.getByText("connection.messageFailedStatus")).toBeTruthy();
+    expect(screen.getByText("soft steer failed")).toBeTruthy();
+    fireEvent.click(screen.getByLabelText("actions.retry"));
+
+    expect(retried).toEqual(["queued-failed"]);
+    expect(screen.getByLabelText("common.edit")).toBeTruthy();
+    expect(screen.getByLabelText("actions.remove")).toBeTruthy();
   });
 });

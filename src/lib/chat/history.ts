@@ -11,6 +11,9 @@ import {
   isLoadingHistory,
   historyError,
   thinkingLevel,
+  ensureRun,
+  markStartupActiveRun,
+  clearStartupActiveRun,
   reconcileMessagesFromHistory,
   saveCachedMessages,
 } from "@/signals/chat";
@@ -64,7 +67,21 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
       return;
     }
 
-    const reconciled = reconcileMessagesFromHistory(sessionKey, normalized, historyRequestedAt);
+    const startupActiveRunIds = getStartupActiveRunIds(result);
+    const startupHasActiveRun = getStartupHasActiveRun(result);
+    if (startupActiveRunIds.size > 0) {
+      for (const runId of startupActiveRunIds) {
+        ensureRun(runId, sessionKey);
+      }
+    } else if (startupHasActiveRun) {
+      markStartupActiveRun(sessionKey);
+    } else {
+      clearStartupActiveRun(sessionKey);
+    }
+    const reconciled = reconcileMessagesFromHistory(sessionKey, normalized, historyRequestedAt, {
+      preservePendingSteerRunIds: startupActiveRunIds,
+      preserveSessionPendingSteers: startupActiveRunIds.size === 0 && startupHasActiveRun,
+    });
     saveCachedMessages(sessionKey, reconciled);
 
     const sessionInfo = getStartupSessionInfo(result);
@@ -87,6 +104,45 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
 
 function getStartupSessionInfo(result: ChatHistoryResult | ChatStartupResult) {
   return "sessionInfo" in result ? result.sessionInfo : undefined;
+}
+
+function getStartupHasActiveRun(result: ChatHistoryResult | ChatStartupResult): boolean {
+  if (!("sessionInfo" in result)) return false;
+  if (result.sessionInfo?.hasActiveRun === true) return true;
+  return getStartupActiveRunIds(result).size > 0;
+}
+
+function getStartupActiveRunIds(result: ChatHistoryResult | ChatStartupResult): Set<string> {
+  if (!("inFlightRun" in result)) return new Set();
+  return extractRunIds(result.inFlightRun);
+}
+
+function extractRunIds(value: unknown): Set<string> {
+  const runIds = new Set<string>();
+  collectRunIds(value, runIds, 0);
+  return runIds;
+}
+
+function collectRunIds(value: unknown, runIds: Set<string>, depth: number): void {
+  if (depth > 2 || value === null || typeof value !== "object") return;
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectRunIds(item, runIds, depth + 1);
+    }
+    return;
+  }
+
+  const record = value as Record<string, unknown>;
+  for (const key of ["runId", "id"]) {
+    const runId = record[key];
+    if (typeof runId === "string" && runId.trim()) {
+      runIds.add(runId);
+    }
+  }
+
+  for (const key of ["run", "activeRun", "inFlightRun"]) {
+    collectRunIds(record[key], runIds, depth + 1);
+  }
 }
 
 function applyStartupMetadata(result: ChatHistoryResult | ChatStartupResult): void {

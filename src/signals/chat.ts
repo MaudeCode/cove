@@ -11,7 +11,7 @@
  *   {isStreaming.value && <StreamingMessage />}
  */
 
-import { signal, computed } from "@preact/signals";
+import { signal, computed, effect } from "@preact/signals";
 import type { AttachmentPayload } from "@/types/attachments";
 import type { Message, MessageImage, MessageStatus, ToolCall } from "@/types/messages";
 import type { ChatRun } from "@/types/chat";
@@ -23,7 +23,12 @@ import {
 import { buildQueuedMessageAttachments } from "../lib/chat/attachments";
 import { createDebouncedSignal } from "@/lib/debounced-signal";
 import { isHeartbeatMessage } from "@/lib/message-detection";
-import { getMessagesCache, setMessagesCache } from "@/lib/storage";
+import {
+  getMessageQueue,
+  getMessagesCache,
+  setMessageQueue,
+  setMessagesCache,
+} from "@/lib/storage";
 import { isForActiveSession } from "@/signals/sessions";
 
 // ============================================
@@ -164,10 +169,14 @@ export const searchMatchCount = computed(() => {
 // ============================================
 
 /** Messages waiting to be sent (queued while disconnected) */
-export const messageQueue = signal<Message[]>([]);
+export const messageQueue = signal<Message[]>(getMessageQueue());
 
 /** Whether we have queued messages */
 export const hasQueuedMessages = computed(() => messageQueue.value.length > 0);
+
+effect(() => {
+  setMessageQueue(messageQueue.value);
+});
 
 // ============================================
 // Streaming State
@@ -175,6 +184,9 @@ export const hasQueuedMessages = computed(() => messageQueue.value.length > 0);
 
 /** Active chat runs (keyed by runId) */
 export const activeRuns = signal<Map<string, ChatRun>>(new Map());
+
+/** Sessions where startup reported an active run before it exposed a run id. */
+export const startupActiveRunSessions = signal<Set<string>>(new Set());
 
 /** First active streaming run across sessions (derived from activeRuns) */
 const currentStreamingRun = computed<ChatRun | null>(() => {
@@ -197,6 +209,22 @@ export function getStreamingRun(sessionKey: string): ChatRun | null {
     }
   }
   return null;
+}
+
+export function hasStartupActiveRun(sessionKey: string): boolean {
+  return startupActiveRunSessions.value.has(sessionKey);
+}
+
+export function markStartupActiveRun(sessionKey: string): void {
+  if (startupActiveRunSessions.value.has(sessionKey)) return;
+  startupActiveRunSessions.value = new Set([...startupActiveRunSessions.value, sessionKey]);
+}
+
+export function clearStartupActiveRun(sessionKey: string): void {
+  if (!startupActiveRunSessions.value.has(sessionKey)) return;
+  const next = new Set(startupActiveRunSessions.value);
+  next.delete(sessionKey);
+  startupActiveRunSessions.value = next;
 }
 
 /** Get streaming state for a specific session */
@@ -279,6 +307,10 @@ export function reconcileMessagesFromHistory(
   sessionKey: string,
   historyMessages: Message[],
   historyRequestedAt: number,
+  options?: {
+    preservePendingSteerRunIds?: Iterable<string>;
+    preserveSessionPendingSteers?: boolean;
+  },
 ): Message[] {
   const optimisticTail = getOptimisticTailMessages(
     sessionKey,
@@ -288,6 +320,7 @@ export function reconcileMessagesFromHistory(
   );
   const reconciled = [...historyMessages, ...optimisticTail];
   setMessages(reconciled);
+  pruneStalePendingSteerMessages(sessionKey, options);
   return reconciled;
 }
 
@@ -334,7 +367,9 @@ function isUnresolvedLocalMessage(message: Message): boolean {
 }
 
 function isNewerLocalTailMessage(message: Message, lastHistoryTimestamp: number): boolean {
-  if (message.status === "sent" && message.timestamp > lastHistoryTimestamp) return true;
+  if (message.status === "sent" && message.timestamp > lastHistoryTimestamp) {
+    return true;
+  }
   if (
     (message.id.startsWith("assistant_") || message.id.startsWith("side_")) &&
     message.timestamp > lastHistoryTimestamp
@@ -372,6 +407,13 @@ export function markMessageSent(messageId: string): void {
   setMessageStatus(messageId, "sent", undefined);
 }
 
+/** Mark a message as steered */
+export function markMessageSteered(messageId: string): void {
+  messages.value = messages.value.map((msg) =>
+    msg.id === messageId ? { ...msg, status: "sent", error: undefined, steered: true } : msg,
+  );
+}
+
 /** Mark a message as failed */
 export function markMessageFailed(messageId: string, error: string): void {
   setMessageStatus(messageId, "failed", error);
@@ -383,6 +425,7 @@ export function markMessageFailed(messageId: string, error: string): void {
 
 /** Start a new chat run */
 export function startRun(runId: string, sessionKey: string): void {
+  clearStartupActiveRun(sessionKey);
   const newRuns = new Map(activeRuns.value);
   newRuns.set(runId, {
     runId,
@@ -393,6 +436,12 @@ export function startRun(runId: string, sessionKey: string): void {
     toolCalls: [],
   });
   activeRuns.value = newRuns;
+}
+
+/** Ensure an active run exists without replacing live streamed content. */
+export function ensureRun(runId: string, sessionKey: string): void {
+  if (activeRuns.value.has(runId)) return;
+  startRun(runId, sessionKey);
 }
 
 /** Adopt the gateway ACK runId for an optimistic local run. */
@@ -448,6 +497,7 @@ export function updateRunContent(
 /** Complete a chat run */
 export function completeRun(runId: string, message?: Message): void {
   const run = activeRuns.value.get(runId);
+  clearPendingSteerMessagesForRun(runId);
   // Update content from final message to avoid showing incomplete streamed content
   const finalContent = message?.content ?? run?.content ?? "";
   updateRun(runId, { status: "complete", message, content: finalContent });
@@ -530,12 +580,14 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
 
 /** Mark a run as errored */
 export function errorRun(runId: string, error: string): void {
+  clearPendingSteerMessagesForRun(runId);
   updateRun(runId, { status: "error", error });
   scheduleRunCleanup(runId, RUN_ERROR_CLEANUP_DELAY_MS);
 }
 
 /** Mark a run as aborted */
 export function abortRun(runId: string): void {
+  clearPendingSteerMessagesForRun(runId);
   updateRun(runId, { status: "aborted" });
   scheduleRunCleanup(runId, RUN_ABORT_CLEANUP_DELAY_MS);
 }
@@ -543,6 +595,7 @@ export function abortRun(runId: string): void {
 /** Clear all active runs (used on reconnect when gateway state is lost) */
 export function clearActiveRuns(): void {
   activeRuns.value = new Map();
+  startupActiveRunSessions.value = new Set();
 }
 
 // ============================================
@@ -557,6 +610,40 @@ export function queueMessage(message: Message): void {
 /** Remove a message from the queue */
 export function dequeueMessage(messageId: string): void {
   messageQueue.value = messageQueue.value.filter((m) => m.id !== messageId);
+}
+
+/** Update queue metadata without changing content or attachments. */
+export function updateQueuedMessageState(messageId: string, updates: Partial<Message>): void {
+  messageQueue.value = messageQueue.value.map((m) =>
+    m.id === messageId ? { ...m, ...updates } : m,
+  );
+}
+
+/** Remove pending steering indicators once their active run finishes. */
+export function clearPendingSteerMessagesForRun(runId: string | undefined): void {
+  if (!runId) return;
+  messageQueue.value = messageQueue.value.filter(
+    (m) => !(m.queueKind === "steered" && m.pendingRunId === runId),
+  );
+}
+
+/** Drop persisted steering indicators whose run was already gone by history catch-up. */
+function pruneStalePendingSteerMessages(
+  sessionKey: string,
+  options?: {
+    preservePendingSteerRunIds?: Iterable<string>;
+    preserveSessionPendingSteers?: boolean;
+  },
+): void {
+  const activeRunIds = new Set(activeRuns.value.keys());
+  const preservedRunIds = new Set(options?.preservePendingSteerRunIds ?? []);
+  messageQueue.value = messageQueue.value.filter((m) => {
+    if (m.sessionKey !== sessionKey) return true;
+    if (m.queueKind !== "steered" || !m.pendingRunId) return true;
+    if (options?.preserveSessionPendingSteers) return true;
+    if (preservedRunIds.has(m.pendingRunId)) return true;
+    return activeRunIds.has(m.pendingRunId);
+  });
 }
 
 /** Update a queued message's content and/or images */

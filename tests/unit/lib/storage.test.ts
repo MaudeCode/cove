@@ -3,6 +3,7 @@ import {
   clearAuth,
   getAuth,
   getMessagesCache,
+  getMessageQueue,
   getModelFavorites,
   getSessionCredential,
   getSessionsCache,
@@ -10,6 +11,7 @@ import {
   getUsageCache,
   saveAuth,
   setMessagesCache,
+  setMessageQueue,
   setModelFavorites,
   setSessionsCache,
   setSessionsUsageCache,
@@ -204,6 +206,23 @@ describe("cache storage", () => {
     expect(getSessionsCache()).toEqual([session]);
     expect(getUsageCache()).toEqual(usage);
     expect(getSessionsUsageCache()).toEqual(sessionsUsage);
+  });
+
+  test("persists pending steered queue items across reload storage", () => {
+    const queueItem = {
+      id: "steer-1",
+      role: "user" as const,
+      content: "tighten the plan",
+      timestamp: 1,
+      sessionKey: "session-1",
+      status: "sent" as const,
+      queueKind: "steered" as const,
+      pendingRunId: "run-active",
+    };
+
+    setMessageQueue([queueItem]);
+
+    expect(getMessageQueue()).toEqual([queueItem]);
   });
 
   test("corrupted cache JSON falls back without throwing", () => {

@@ -21,6 +21,9 @@ import {
   ImageIcon,
   PlusIcon,
   TrashIcon,
+  SteerIcon,
+  AlertIcon,
+  RetryIcon,
 } from "@/components/ui/icons";
 import type { Message, MessageImage } from "@/types/messages";
 
@@ -30,7 +33,13 @@ const COLLAPSE_THRESHOLD = 100;
 /** Max image dimension for display in modal */
 const MAX_PREVIEW_SIZE = 120;
 
-export function QueuedMessages() {
+interface QueuedMessagesProps {
+  onSteer?: (messageId: string) => void;
+  onRetry?: (messageId: string) => void;
+  canSteer?: (message: Message) => boolean;
+}
+
+export function QueuedMessages({ onSteer, onRetry, canSteer }: QueuedMessagesProps) {
   const queue = messageQueue.value;
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [editingMessage, setEditingMessage] = useState<Message | null>(null);
@@ -138,15 +147,47 @@ export function QueuedMessages() {
             const isLong = message.content.length > COLLAPSE_THRESHOLD;
             const isExpanded = expandedIds.has(message.id);
             const hasImages = message.images && message.images.length > 0;
+            const isSteered = message.queueKind === "steered";
+            const isFailed = message.status === "failed";
 
             return (
               <div
                 key={message.id}
-                class="px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] border border-[var(--color-border)]"
+                class={`px-3 py-2 rounded-lg bg-[var(--color-bg-secondary)] border ${
+                  isFailed
+                    ? "border-[var(--color-error)]/40"
+                    : isSteered
+                      ? "border-[var(--color-accent)]/40"
+                      : "border-[var(--color-border)]"
+                }`}
               >
                 {/* Message content */}
                 <div class="flex items-start gap-2">
                   <div class="flex-1 min-w-0">
+                    {isFailed && (
+                      <div class="mb-1 flex flex-wrap items-center gap-1.5">
+                        <span class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-[var(--color-error)]/10 text-[var(--color-error)]">
+                          <AlertIcon class="w-3 h-3" />
+                          {t("connection.messageFailedStatus")}
+                        </span>
+                        {message.error && (
+                          <span class="text-[10px] text-[var(--color-text-muted)]">
+                            {message.error}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {isSteered && (
+                      <div class="mb-1 flex flex-wrap items-center gap-1.5">
+                        <span class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] font-medium bg-[var(--color-accent)]/10 text-[var(--color-accent)]">
+                          <SteerIcon class="w-3 h-3" />
+                          {t("chat.steeredStatus")}
+                        </span>
+                        <span class="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)]">
+                          {t("chat.steerPendingStatus")}
+                        </span>
+                      </div>
+                    )}
                     <p
                       class={`text-sm text-[var(--color-text-secondary)] break-words ${
                         isLong && !isExpanded ? "line-clamp-1" : "whitespace-pre-wrap"
@@ -165,16 +206,47 @@ export function QueuedMessages() {
 
                   {/* Action buttons */}
                   <div class="flex items-center gap-1 flex-shrink-0">
+                    {/* Retry button */}
+                    {isFailed && onRetry && (
+                      <button
+                        type="button"
+                        onClick={() => onRetry(message.id)}
+                        class="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-[var(--color-error)] transition-colors"
+                        title={t("actions.retry")}
+                        aria-label={t("actions.retry")}
+                      >
+                        <RetryIcon class="w-4 h-4" />
+                      </button>
+                    )}
+
+                    {/* Steer button */}
+                    {!isSteered &&
+                      onSteer &&
+                      message.sessionKey &&
+                      (canSteer?.(message) ?? true) && (
+                        <button
+                          type="button"
+                          onClick={() => onSteer(message.id)}
+                          class="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                          title={t("actions.steer")}
+                          aria-label={t("actions.steer")}
+                        >
+                          <SteerIcon class="w-4 h-4" />
+                        </button>
+                      )}
+
                     {/* Edit button */}
-                    <button
-                      type="button"
-                      onClick={() => handleEdit(message)}
-                      class="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
-                      title={t("common.edit")}
-                      aria-label={t("common.edit")}
-                    >
-                      <EditIcon class="w-4 h-4" />
-                    </button>
+                    {!isSteered && (
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(message)}
+                        class="p-1 rounded hover:bg-[var(--color-bg-tertiary)] text-[var(--color-text-muted)] hover:text-[var(--color-accent)] transition-colors"
+                        title={t("common.edit")}
+                        aria-label={t("common.edit")}
+                      >
+                        <EditIcon class="w-4 h-4" />
+                      </button>
+                    )}
 
                     {/* Remove button */}
                     <button

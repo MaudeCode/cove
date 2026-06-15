@@ -10,7 +10,13 @@ import { useComputed } from "@preact/signals";
 import { route } from "preact-router";
 import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
 import { useQueryParam, useInitFromParam, useSyncToParam } from "@/hooks/useQueryParam";
-import { sendMessage, abortChat, processMessageQueue } from "@/lib/chat/send";
+import {
+  sendMessage,
+  abortChat,
+  processMessageQueue,
+  steerQueuedMessage,
+  retryMessage,
+} from "@/lib/chat/send";
 import { loadHistory } from "@/lib/chat/history";
 import { clearExpandedToolCalls } from "@/components/chat/ToolCall";
 import {
@@ -25,6 +31,7 @@ import {
   messageQueue,
   getCachedSessionKey,
   getStreamingStateForSession,
+  getStreamingRun,
 } from "@/signals/chat";
 import {
   activeSessionKey,
@@ -34,10 +41,11 @@ import {
   updateSession,
 } from "@/signals/sessions";
 import { assistantName, assistantAvatar, userName, userAvatar } from "@/signals/identity";
-import { isSingleChatMode } from "@/signals/settings";
+import { chatSteeringSettings, isSingleChatMode } from "@/signals/settings";
 import { MessageList } from "@/components/chat/MessageList";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { ConnectionBanner } from "@/components/chat/ConnectionBanner";
+import type { Message } from "@/types/messages";
 
 interface ChatViewProps {
   /** Route path (from preact-router) */
@@ -123,9 +131,15 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
 
     // Load fresh history (will update cache when done)
-    loadHistory(currentSession).catch(() => {
-      // Error will be shown via historyError signal
-    });
+    loadHistory(currentSession)
+      .then(() => {
+        if (isConnected.value && hasQueuedMessages.value) {
+          processMessageQueue();
+        }
+      })
+      .catch(() => {
+        // Error will be shown via historyError signal
+      });
   }, [activeSessionKey.value]);
 
   // Handle connection established (initial or reconnect)
@@ -139,10 +153,19 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     // Clear stale runs - harmless on initial connect, necessary on reconnect
     clearActiveRuns();
 
-    // Process any queued messages
-    if (hasQueuedMessages.value) {
-      processMessageQueue();
-    }
+    const currentSession = effectiveSessionKey.value;
+    if (!currentSession) return;
+
+    // Reconcile startup active-run state before replaying queued sends.
+    loadHistory(currentSession)
+      .then(() => {
+        if (hasQueuedMessages.value) {
+          processMessageQueue();
+        }
+      })
+      .catch(() => {
+        // Error will be shown via historyError signal
+      });
   }, [connectionState.value]);
 
   const handleSend = async (
@@ -164,6 +187,23 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     if (sessionKey) {
       abortChat(sessionKey);
     }
+  };
+
+  const handleSteerQueued = (messageId: string) => {
+    steerQueuedMessage(messageId).catch(() => {
+      // Error is handled by steerQueuedMessage (marks message as failed)
+    });
+  };
+
+  const handleRetryQueued = (messageId: string) => {
+    retryMessage(messageId).catch(() => {
+      // Error is handled by retryMessage (marks message as failed)
+    });
+  };
+
+  const canSteerQueued = (message: Message) => {
+    if (!message.sessionKey || !isConnected.value) return false;
+    return getStreamingRun(message.sessionKey) !== null;
   };
 
   // Get streaming state for current session only (useComputed ensures reactivity)
@@ -192,9 +232,13 @@ export function ChatView({ sessionKey }: ChatViewProps) {
 
       <ChatInput
         onSend={handleSend}
+        onSteerQueued={handleSteerQueued}
+        onRetryQueued={handleRetryQueued}
+        canSteerQueued={canSteerQueued}
         onAbort={handleAbort}
         disabled={false} // Allow typing even when disconnected (will queue)
         isStreaming={sessionStreamingState.value.isStreaming}
+        steerByDefault={chatSteeringSettings.value.steerByDefault}
         sessionKey={effectiveSessionKey.value}
         currentModel={activeSession.value?.model}
         onModelChange={(modelId) => {

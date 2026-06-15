@@ -72,6 +72,7 @@
   "actions": {
     "send": "Send",
     "queue": "Queue",
+    "steer": "Steer",
     "stop": "Stop",
     "rename": "Rename",
     "cancel": "Cancel",
@@ -379,6 +380,13 @@
     "placeholderMobile": "Message...",
     "thinking": "Thinking...",
     "queuedMessages": "Queued ({count})",
+    "queueByDefaultActive": "Queue by default",
+    "steerByDefaultActive": "Steer by default",
+    "steeredStatus": "Steered",
+    "steerPendingStatus": "Waiting for next model call",
+    "steerEmptyError": "Add steering text after /steer.",
+    "steerUnavailable": "Steering is not available on this gateway.",
+    "steerUnavailableDisconnected": "Connect to the gateway before steering an active run.",
     "editQueuedMessage": "Edit Queued Message",
     "images": "Images",
     "addImage": "Add Image",
@@ -508,6 +516,14 @@
       "timeFormatDescription": "How timestamps are shown",
       "timeRelative": "Relative (2 hours ago)",
       "timeAbsolute": "Absolute (3:45 PM)"
+    },
+    "chat": {
+      "steerByDefault": "Steer active runs by default",
+      "steerByDefaultDescription": "Send new messages as active-run steering input instead of queueing while the assistant is working",
+      "steeringMode": "Steering mode",
+      "steeringModeDescription": "Choose whether steering waits for the next model call or interrupts the active run and sends immediately",
+      "steeringModeSoft": "Soft: next model call",
+      "steeringModeHard": "Hard: interrupt run"
     },
     "appMode": {
       "title": "Interface",

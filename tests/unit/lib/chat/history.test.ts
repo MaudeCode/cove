@@ -3,6 +3,7 @@ import { signal } from "@preact/signals";
 import { createGatewayMock, createSessionSignalsMock } from "../../../helpers/module-mocks";
 import { installStorageMocks } from "../../../helpers/storage";
 import type { ChatHistoryResult, ChatStartupResult } from "../../../../src/types/chat";
+import type { Message } from "../../../../src/types/messages";
 
 (globalThis as { __APP_VERSION__?: string }).__APP_VERSION__ = "test";
 
@@ -93,6 +94,19 @@ const modelSignals = await import("../../../../src/signals/models");
 mock.module("@/signals/models", () => modelSignals);
 const { loadHistory } = await import("../../../../src/lib/chat/history");
 
+function queuedMessage(overrides: Partial<Message>): Message {
+  return {
+    id: "user_queued",
+    role: "user",
+    content: "queued",
+    timestamp: 1000,
+    isStreaming: false,
+    sessionKey: "session-1",
+    status: "queued",
+    ...overrides,
+  };
+}
+
 describe("loadHistory", () => {
   let restoreStorage: (() => void) | undefined;
 
@@ -109,6 +123,9 @@ describe("loadHistory", () => {
     capabilities.value = ["chat.history"];
     gatewayHarness.send = gatewaySend;
     chat.messages.value = [];
+    chat.messageQueue.value = [];
+    chat.activeRuns.value = new Map();
+    chat.startupActiveRunSessions.value = new Set();
     chat.historyError.value = null;
     chat.isLoadingHistory.value = false;
     chat.thinkingLevel.value = "off";
@@ -185,6 +202,94 @@ describe("loadHistory", () => {
     expect(modelSignals.models.value).toEqual([
       { id: "openai/gpt-5.4", name: "GPT 5.4", provider: "openai" },
     ]);
+  });
+
+  test("preserves persisted steered queue items for startup in-flight runs", async () => {
+    capabilities.value = ["chat.startup", "chat.history"];
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_steer",
+        content: "use the narrow fix",
+        pendingRunId: "run-active",
+        queueKind: "steered",
+        status: "sent",
+      }),
+    );
+    gatewayResponse = {
+      sessionKey: "session-1",
+      sessionInfo: { hasActiveRun: true },
+      inFlightRun: { runId: "run-active" },
+      messages: [{ role: "assistant", content: "working", timestamp: 1000 }],
+    };
+
+    await loadHistory("session-1", 7);
+
+    expect(chat.activeRuns.value.get("run-active")).toMatchObject({
+      runId: "run-active",
+      sessionKey: "session-1",
+      status: "pending",
+    });
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        id: "user_steer",
+        pendingRunId: "run-active",
+        queueKind: "steered",
+      }),
+    ]);
+    expect(chat.hasStartupActiveRun("session-1")).toBe(false);
+  });
+
+  test("blocks sends when startup reports an active run without a run id", async () => {
+    capabilities.value = ["chat.startup", "chat.history"];
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_steer",
+        content: "use the narrow fix",
+        pendingRunId: "run-active",
+        queueKind: "steered",
+        status: "sent",
+      }),
+    );
+    gatewayResponse = {
+      sessionKey: "session-1",
+      sessionInfo: { hasActiveRun: true },
+      messages: [{ role: "assistant", content: "working", timestamp: 1000 }],
+    };
+
+    await loadHistory("session-1", 7);
+
+    expect(chat.hasStartupActiveRun("session-1")).toBe(true);
+    expect(chat.activeRuns.value.size).toBe(0);
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        id: "user_steer",
+        pendingRunId: "run-active",
+        queueKind: "steered",
+      }),
+    ]);
+  });
+
+  test("prunes stale persisted steered queue items when startup has no active run", async () => {
+    capabilities.value = ["chat.startup", "chat.history"];
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_stale-steer",
+        content: "old guidance",
+        pendingRunId: "run-gone",
+        queueKind: "steered",
+        status: "sent",
+      }),
+    );
+    gatewayResponse = {
+      sessionKey: "session-1",
+      sessionInfo: { hasActiveRun: false },
+      messages: [{ role: "assistant", content: "done", timestamp: 1000 }],
+    };
+
+    await loadHistory("session-1", 7);
+
+    expect(chat.messageQueue.value).toEqual([]);
+    expect(chat.hasStartupActiveRun("session-1")).toBe(false);
   });
 
   test("falls back to chat.history when chat.startup is unknown", async () => {

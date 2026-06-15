@@ -138,6 +138,13 @@ export interface ChatSendResult {
   summary?: string;
 }
 
+/** Result returned by sessions.send/sessions.steer wrappers around chat.send. */
+export interface SessionSendResult extends ChatSendResult {
+  ok?: boolean;
+  messageSeq?: number;
+  interruptedActiveRun?: boolean;
+}
+
 /** Chat event from gateway (streaming) */
 export interface ChatEvent {
   runId: string;

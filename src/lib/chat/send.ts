@@ -5,25 +5,31 @@
  */
 
 import { effect } from "@preact/signals";
-import { send, isConnected } from "@/lib/gateway";
+import { send, isConnected, isUnknownGatewayMethodError } from "@/lib/gateway";
 import { log } from "@/lib/logger";
 import {
   messages,
   addMessage,
   startRun,
   errorRun,
+  abortRun,
   queueMessage,
   dequeueMessage,
   messageQueue,
   markMessageFailed,
+  markMessageSteered,
   markMessageSending,
   markMessageSent,
+  updateQueuedMessageState,
   isStreaming,
+  isLoadingHistory,
   clearMessages,
   adoptRunId,
   getStreamingRun,
+  hasStartupActiveRun,
 } from "@/signals/chat";
 import { sessions } from "@/signals/sessions";
+import { chatSteeringSettings } from "@/signals/settings";
 import { autoRenameSession } from "./auto-rename";
 import { getAgentId, isUserCreatedChat } from "@/lib/session-utils";
 import { t } from "@/lib/i18n";
@@ -43,6 +49,8 @@ import type { Message } from "@/types/messages";
  * These match OpenClaw's DEFAULT_RESET_TRIGGERS.
  */
 const RESET_COMMANDS = ["/new", "/reset"];
+const SOFT_STEER_COMMANDS = ["/steer", "/tell"];
+const REDIRECT_COMMANDS = ["/redirect"];
 
 /**
  * Check if a message is a session reset command.
@@ -51,6 +59,18 @@ function isResetCommand(message: string): boolean {
   const trimmed = message.trim().toLowerCase();
   // Exact match or command with arguments (e.g., "/new some context")
   return RESET_COMMANDS.some((cmd) => trimmed === cmd || trimmed.startsWith(`${cmd} `));
+}
+
+function parseCommandPayload(message: string, commands: string[]): string | null {
+  const trimmed = message.trim();
+  const lower = trimmed.toLowerCase();
+  for (const command of commands) {
+    if (lower === command) return "";
+    if (lower.startsWith(`${command} `)) {
+      return trimmed.slice(command.length).trim();
+    }
+  }
+  return null;
 }
 
 let idempotencyCounter = 0;
@@ -87,37 +107,103 @@ export async function sendMessage(
     timeoutMs?: number;
     messageId?: string; // For retry
     attachments?: AttachmentPayload[];
+    steer?: boolean;
+    redirect?: boolean;
   },
 ): Promise<string> {
   const idempotencyKey = options?.messageId ?? generateIdempotencyKey();
   const messageId = `user_${idempotencyKey}`;
   const isRetry = options?.messageId != null;
+  const isReset = isResetCommand(message);
+  const softSteerCommand = parseCommandPayload(message, SOFT_STEER_COMMANDS);
+  const redirectCommand = parseCommandPayload(message, REDIRECT_COMMANDS);
+  const isExplicitSoftSteer = softSteerCommand !== null;
+  const isExplicitRedirect = redirectCommand !== null;
+  const activeSessionRun = getStreamingRun(sessionKey);
+  const startupActiveRun = hasStartupActiveRun(sessionKey);
+  const canSteerActiveRun = activeSessionRun !== null;
+  const wantsActiveRunSteer =
+    (isExplicitSoftSteer && canSteerActiveRun) ||
+    (options?.steer === true && canSteerActiveRun) ||
+    (!isRetry &&
+      !isReset &&
+      chatSteeringSettings.value.steerByDefault &&
+      activeSessionRun !== null);
+  const shouldHardSteer =
+    isExplicitRedirect ||
+    (wantsActiveRunSteer && chatSteeringSettings.value.steeringMode === "hard");
+  const shouldSoftSteer = wantsActiveRunSteer && !shouldHardSteer;
+  const shouldRedirect = isExplicitRedirect || options?.redirect === true;
+  const shouldSteer = wantsActiveRunSteer || shouldRedirect;
+  const shouldUseSessionsSteer = shouldRedirect || shouldHardSteer;
+  const sendContent = isExplicitSoftSteer
+    ? (softSteerCommand ?? "")
+    : isExplicitRedirect
+      ? (redirectCommand ?? "")
+      : message;
 
   const userMessage: Message = {
     id: messageId,
     role: "user",
-    content: message,
+    content: sendContent,
     images: attachmentsToImages(options?.attachments),
     pendingAttachments: options?.attachments,
     timestamp: Date.now(),
     isStreaming: false,
     status: "sending",
     sessionKey,
+    steered: shouldSteer,
   };
+
+  if ((isExplicitSoftSteer || isExplicitRedirect) && !sendContent) {
+    userMessage.status = "failed";
+    userMessage.error = t("chat.steerEmptyError");
+    addMessage(userMessage);
+    throw new Error(t("chat.steerEmptyError"));
+  }
 
   // Queue if disconnected - don't add to chat yet
   if (!isConnected.value) {
+    if (shouldSteer) {
+      userMessage.status = "failed";
+      userMessage.error = t("chat.steerUnavailableDisconnected");
+      addMessage(userMessage);
+      throw new Error(t("chat.steerUnavailableDisconnected"));
+    }
     log.chat.info("Not connected, queuing message");
     userMessage.status = "queued";
     queueMessage(userMessage);
     return idempotencyKey;
   }
 
-  // Queue if currently streaming - don't add to chat yet
-  if (isStreaming.value && !isRetry) {
-    log.chat.info("Currently streaming, queuing message");
+  // Queue if currently streaming, or startup says the session is active but
+  // has not exposed a run id yet. Don't add to chat until it is actually sent.
+  if ((isStreaming.value || startupActiveRun) && !isRetry && !shouldSteer && !isReset) {
+    log.chat.info("Session is active, queuing message");
     userMessage.status = "queued";
     queueMessage(userMessage);
+    return idempotencyKey;
+  }
+
+  if (shouldSoftSteer) {
+    if (!activeSessionRun) {
+      userMessage.status = "failed";
+      userMessage.error = t("chat.steerUnavailable");
+      if (!isRetry) {
+        addMessage(userMessage);
+      } else {
+        markMessageFailed(messageId, t("chat.steerUnavailable"));
+      }
+      throw new Error(t("chat.steerUnavailable"));
+    }
+
+    await sendSoftSteerInput(sessionKey, userMessage, idempotencyKey, activeSessionRun.runId, {
+      attachments: options?.attachments,
+      idempotencyKey,
+      thinking: options?.thinking,
+      timeoutMs: options?.timeoutMs,
+    });
+
     return idempotencyKey;
   }
 
@@ -131,16 +217,19 @@ export async function sendMessage(
   startRun(idempotencyKey, sessionKey);
 
   try {
-    log.chat.debug("Sending message to session:", sessionKey);
-
-    const result = await send("chat.send", {
-      sessionKey,
-      message,
-      thinking: options?.thinking,
-      timeoutMs: options?.timeoutMs,
-      idempotencyKey,
-      attachments: options?.attachments,
-    });
+    const result = shouldUseSessionsSteer
+      ? await sendRedirect(sessionKey, sendContent, {
+          attachments: options?.attachments,
+          idempotencyKey,
+          thinking: options?.thinking,
+          timeoutMs: options?.timeoutMs,
+        })
+      : await sendChat(sessionKey, sendContent, {
+          attachments: options?.attachments,
+          idempotencyKey,
+          thinking: options?.thinking,
+          timeoutMs: options?.timeoutMs,
+        });
 
     if (result.status === "error") {
       const errorMsg = result.summary ?? "Unknown error";
@@ -150,14 +239,29 @@ export async function sendMessage(
     }
 
     adoptRunId(idempotencyKey, result.runId);
+    if (
+      shouldUseSessionsSteer &&
+      "interruptedActiveRun" in result &&
+      result.interruptedActiveRun === true &&
+      activeSessionRun &&
+      activeSessionRun.runId !== result.runId
+    ) {
+      abortRun(activeSessionRun.runId);
+    }
 
-    const isReset = isResetCommand(message);
     const resetRunId = isReset ? result.runId : undefined;
     if (isReset) {
       registerResetRun(resetRunId);
     }
 
-    markMessageSent(messageId);
+    if (shouldSteer) {
+      markMessageSteered(messageId);
+    } else {
+      markMessageSent(messageId);
+    }
+    if (shouldUseSessionsSteer) {
+      clearOrdinaryQueuedMessagesForSession(sessionKey);
+    }
 
     // Handle session reset commands (/new, /reset)
     // Clear local messages and reload history (which will be empty for the new session)
@@ -183,12 +287,12 @@ export async function sendMessage(
 
     // Auto-rename on first message in user-created chats
     // Only rename if session label is still "New Chat" (not already renamed)
-    if (!isRetry && isUserCreatedChat(sessionKey)) {
+    if (!isRetry && !shouldSteer && isUserCreatedChat(sessionKey)) {
       const session = sessions.value.find((s) => s.key === sessionKey);
       const newChatLabel = t("common.newChat");
       if (session?.label === newChatLabel) {
         // Fire and forget - don't block on rename, but log failures
-        autoRenameSession(sessionKey, message).catch((err) => {
+        autoRenameSession(sessionKey, sendContent).catch((err) => {
           log.chat.warn("Auto-rename failed:", err instanceof Error ? err.message : String(err));
         });
       }
@@ -197,9 +301,118 @@ export async function sendMessage(
     return idempotencyKey;
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);
-    log.chat.error("chat.send failed:", err);
+    const methodName = shouldUseSessionsSteer ? "sessions.steer" : "chat.send";
+    log.chat.error(`${methodName} failed:`, err);
     errorRun(idempotencyKey, errorMsg);
     markMessageFailed(messageId, errorMsg);
+    throw err;
+  }
+}
+
+type MessageSendOptions = {
+  thinking?: string;
+  timeoutMs?: number;
+  idempotencyKey: string;
+  attachments?: AttachmentPayload[];
+};
+
+async function sendSoftSteerInput(
+  sessionKey: string,
+  message: Message,
+  idempotencyKey: string,
+  activeRunId: string,
+  options: MessageSendOptions,
+): Promise<void> {
+  const pendingMessage: Message = {
+    ...message,
+    status: "sending",
+    steered: true,
+    queueKind: "steered",
+    pendingRunId: activeRunId,
+  };
+  queueMessage(pendingMessage);
+
+  try {
+    const result = await sendSoftSteer(sessionKey, message.content, options);
+    if (result.status === "error") {
+      const errorMsg = result.summary ?? "Unknown error";
+      updateQueuedMessageState(message.id, { status: "failed", error: errorMsg });
+      throw new Error(errorMsg);
+    }
+
+    updateQueuedMessageState(message.id, {
+      status: "sent",
+      error: undefined,
+      pendingRunId: activeRunId,
+      queueKind: "steered",
+      steered: true,
+    });
+    markMessageSteered(message.id);
+  } catch (err) {
+    const errorMsg = err instanceof Error ? err.message : String(err);
+    log.chat.error("chat.send steer failed:", err);
+    updateQueuedMessageState(message.id, {
+      status: "failed",
+      error: errorMsg,
+      pendingRunId: undefined,
+      queueKind: "steered",
+      steered: true,
+    });
+    markMessageFailed(message.id, errorMsg);
+    throw err;
+  }
+}
+
+function clearOrdinaryQueuedMessagesForSession(sessionKey: string): void {
+  messageQueue.value = messageQueue.value.filter(
+    (message) =>
+      message.sessionKey !== sessionKey || message.pendingRunId || message.queueKind === "steered",
+  );
+}
+
+async function sendChat(sessionKey: string, message: string, options: MessageSendOptions) {
+  log.chat.debug("Sending message to session:", sessionKey);
+
+  return send("chat.send", {
+    sessionKey,
+    message,
+    thinking: options.thinking,
+    timeoutMs: options.timeoutMs,
+    idempotencyKey: options.idempotencyKey,
+    attachments: options.attachments,
+  });
+}
+
+async function sendSoftSteer(sessionKey: string, message: string, options: MessageSendOptions) {
+  log.chat.debug("Sending steering input to active session:", sessionKey);
+
+  return send("chat.send", {
+    sessionKey,
+    message,
+    deliver: false,
+    thinking: options.thinking,
+    timeoutMs: options.timeoutMs,
+    idempotencyKey: options.idempotencyKey,
+    attachments: options.attachments,
+  });
+}
+
+async function sendRedirect(sessionKey: string, message: string, options: MessageSendOptions) {
+  log.chat.debug("Redirecting active session:", sessionKey);
+
+  try {
+    return await send("sessions.steer", {
+      key: sessionKey,
+      message,
+      thinking: options.thinking,
+      timeoutMs: options.timeoutMs,
+      idempotencyKey: options.idempotencyKey,
+      attachments: options.attachments,
+    });
+  } catch (err) {
+    if (isUnknownGatewayMethodError(err, "sessions.steer")) {
+      throw new Error(t("chat.steerUnavailable"));
+    }
     throw err;
   }
 }
@@ -229,7 +442,71 @@ async function resendMessage(message: Message): Promise<void> {
   await sendMessage(message.sessionKey, message.content, {
     attachments: getResendAttachments(message),
     messageId: idempotencyKey,
+    steer: message.steered === true,
   });
+}
+
+export async function steerQueuedMessage(messageId: string): Promise<void> {
+  const message = messageQueue.value.find((m) => m.id === messageId);
+  if (!message) {
+    log.chat.warn("Cannot steer queued message - not found:", messageId);
+    return;
+  }
+
+  if (!message.sessionKey) {
+    log.chat.warn("Cannot steer queued message - missing sessionKey:", message.id);
+    return;
+  }
+
+  const activeRun = getStreamingRun(message.sessionKey);
+  if (!activeRun) {
+    log.chat.warn("Cannot steer queued message - no active run:", message.id);
+    return;
+  }
+
+  const originalMessage = message;
+  const idempotencyKey = message.id.replace(/^user_/, "");
+  if (chatSteeringSettings.value.steeringMode === "hard") {
+    await resendMessage({ ...message, steered: true });
+    return;
+  }
+
+  updateQueuedMessageState(message.id, {
+    status: "sending",
+    error: undefined,
+    steered: true,
+    queueKind: "steered",
+    pendingRunId: activeRun.runId,
+  });
+
+  try {
+    const result = await sendSoftSteer(message.sessionKey, message.content, {
+      attachments: getResendAttachments(message),
+      idempotencyKey,
+    });
+
+    if (result.status === "error") {
+      const errorMsg = result.summary ?? "Unknown error";
+      throw new Error(errorMsg);
+    }
+
+    updateQueuedMessageState(message.id, {
+      status: "sent",
+      error: undefined,
+      steered: true,
+      queueKind: "steered",
+      pendingRunId: activeRun.runId,
+    });
+  } catch (err) {
+    log.chat.error("chat.send steer failed:", err);
+    updateQueuedMessageState(message.id, {
+      ...originalMessage,
+      queueKind: undefined,
+      pendingRunId: undefined,
+      steered: false,
+    });
+    throw err;
+  }
 }
 
 /**
@@ -243,7 +520,9 @@ export async function processNextQueuedMessage(sessionKey: string): Promise<void
   }
 
   // Find first queued message for this session
-  const nextMessage = messageQueue.value.find((m) => m.sessionKey === sessionKey);
+  const nextMessage = messageQueue.value.find(
+    (m) => m.sessionKey === sessionKey && isAutoSendableQueuedMessage(m),
+  );
   if (!nextMessage) {
     log.chat.debug("No queued messages for session");
     return;
@@ -285,8 +564,9 @@ export async function retryMessage(messageId: string): Promise<void> {
 export async function processMessageQueue(): Promise<void> {
   const abortsReplayed = await replayPendingAborts();
   if (!abortsReplayed) return;
+  if (isLoadingHistory.value) return;
 
-  const queue = [...messageQueue.value];
+  const queue = messageQueue.value.filter(isAutoSendableQueuedMessage);
   if (queue.length === 0) return;
 
   log.chat.info(`Processing ${queue.length} queued messages`);
@@ -298,6 +578,16 @@ export async function processMessageQueue(): Promise<void> {
       log.chat.error("Failed to send queued message:", err);
     }
   }
+}
+
+function isAutoSendableQueuedMessage(message: Message): boolean {
+  return (
+    message.status === "queued" &&
+    !message.pendingRunId &&
+    message.queueKind !== "steered" &&
+    (!message.sessionKey || !hasStartupActiveRun(message.sessionKey)) &&
+    (!message.sessionKey || getStreamingRun(message.sessionKey) === null)
+  );
 }
 
 /**
@@ -313,6 +603,9 @@ export async function abortChat(sessionKey: string): Promise<void> {
 
   try {
     await send("sessions.abort", params);
+    if (params.runId) {
+      abortRun(params.runId);
+    }
   } catch (err) {
     pendingAbortParams.set(sessionKey, params);
     throw err;
@@ -332,6 +625,9 @@ async function replayPendingAborts(): Promise<boolean> {
       try {
         await send("sessions.abort", params);
         pendingAbortParams.delete(sessionKey);
+        if (params.runId) {
+          abortRun(params.runId);
+        }
       } catch (err) {
         log.chat.warn("Failed to replay pending abort:", err);
         return false;

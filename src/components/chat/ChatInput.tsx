@@ -24,9 +24,13 @@ const TEXTAREA_MAX_HEIGHT = 160;
 
 interface ChatInputProps {
   onSend: (message: string, attachments?: AttachmentPayload[]) => void | Promise<void>;
+  onSteerQueued?: (messageId: string) => void;
+  onRetryQueued?: (messageId: string) => void;
+  canSteerQueued?: (message: import("@/types/messages").Message) => boolean;
   onAbort?: () => void;
   disabled?: boolean;
   isStreaming?: boolean;
+  steerByDefault?: boolean;
   placeholder?: string;
   sessionKey?: string;
   currentModel?: string;
@@ -39,9 +43,13 @@ function getAttachmentSignature(attachments: Attachment[]): string {
 
 export function ChatInput({
   onSend,
+  onSteerQueued,
+  onRetryQueued,
+  canSteerQueued,
   onAbort,
   disabled = false,
   isStreaming = false,
+  steerByDefault = false,
   placeholder,
   sessionKey,
   currentModel,
@@ -272,12 +280,18 @@ export function ChatInput({
   const hasText = hasContent(value.value);
   const hasAttachments = attachments.length > 0;
   const canSend = (hasText || hasAttachments) && !disabled && !isSubmitting.value;
+  const activeSendLabel = isStreaming
+    ? steerByDefault
+      ? t("actions.steer")
+      : t("actions.queue")
+    : t("actions.send");
+  const inactiveSendLabel = isStreaming ? t("actions.queue") : t("actions.send");
 
   return (
     <div class="pb-3 pt-2">
       <div class="max-w-5xl mx-auto px-6">
         {/* Queued messages display */}
-        <QueuedMessages />
+        <QueuedMessages onSteer={onSteerQueued} onRetry={onRetryQueued} canSteer={canSteerQueued} />
 
         {/* Error message */}
         {attachmentError && (
@@ -390,6 +404,12 @@ export function ChatInput({
 
             {/* Right side: Stop + Send buttons */}
             <div class="flex items-center gap-1.5">
+              {isStreaming && (
+                <span class="hidden sm:inline text-xs text-[var(--color-text-muted)]">
+                  {steerByDefault ? t("chat.steerByDefaultActive") : t("chat.queueByDefaultActive")}
+                </span>
+              )}
+
               {/* Stop button - only during streaming */}
               {isStreaming && (
                 <button
@@ -411,7 +431,7 @@ export function ChatInput({
                 type="button"
                 onClick={() => void handleSend()}
                 disabled={!canSend}
-                aria-label={isStreaming ? t("actions.queue") : t("actions.send")}
+                aria-label={canSend ? activeSendLabel : inactiveSendLabel}
                 class={`p-2 sm:px-3 sm:py-1.5 rounded-lg flex items-center justify-center gap-1.5
                   transition-all duration-150 active:scale-95
                   ${
@@ -422,7 +442,7 @@ export function ChatInput({
               >
                 <SendIcon class="w-4 h-4" />
                 <span class="hidden sm:inline text-xs font-medium">
-                  {isStreaming ? t("actions.queue") : t("actions.send")}
+                  {canSend ? activeSendLabel : inactiveSendLabel}
                 </span>
               </button>
             </div>

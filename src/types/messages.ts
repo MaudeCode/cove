@@ -58,6 +58,15 @@ export interface Message {
   /** Error message if send failed */
   error?: string;
 
+  /** True when this user message was sent as steering input for an active run. */
+  steered?: boolean;
+
+  /** Queue-only display kind. Steered items are pending inputs for an active run. */
+  queueKind?: "steered";
+
+  /** Active run that should clear this queue item when it completes. */
+  pendingRunId?: string;
+
   /** Session key (for retry) */
   sessionKey?: string;
 

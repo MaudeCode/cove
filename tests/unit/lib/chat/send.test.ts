@@ -15,6 +15,8 @@ type NamedHandler = (payload: unknown) => void;
 
 const isConnected = signal(true);
 const mainSessionKey = signal<string | null>("main");
+const capabilities = signal<string[]>(["chat.send", "sessions.abort", "sessions.steer"]);
+const chatSteeringSettings = signal({ steerByDefault: false, steeringMode: "soft" });
 const sessions = signal<Array<{ key: string; label?: string }>>([]);
 const gatewayResponses = new Map<string, GatewayResponse>();
 const gatewayCalls: Array<{ method: string; params: unknown }> = [];
@@ -48,6 +50,7 @@ mock.module("@/lib/gateway", () =>
   createGatewayMock({
     isConnected,
     mainSessionKey,
+    capabilities,
     send: gatewaySend,
     on: (event: unknown, handler: unknown) => {
       namedHandlers.set(String(event), handler as NamedHandler);
@@ -85,6 +88,9 @@ mock.module("@/lib/session-utils", () => ({
   isUserCreatedChat: (sessionKey: string) => /^agent:[^:]+:chat:[^:]+$/.test(sessionKey),
 }));
 installI18nMock({ t: (key: string) => (key === "common.newChat" ? "New Chat" : key) });
+mock.module("@/signals/settings", () => ({
+  chatSteeringSettings,
+}));
 mock.module("../../../../src/lib/chat/auto-rename", () => ({
   autoRenameSession: async (sessionKey: string, messageText: string) => {
     autoRenameCalls.push({ sessionKey, message: messageText });
@@ -109,6 +115,7 @@ const {
   processNextQueuedMessage,
   retryMessage,
   sendMessage,
+  steerQueuedMessage,
 } = await import("../../../../src/lib/chat/send");
 const { subscribeToChatEvents, unsubscribeFromChatEvents } =
   await import("../../../../src/lib/chat/events");
@@ -164,10 +171,13 @@ describe("chat send queue", () => {
     chat.messages.value = [];
     chat.messageQueue.value = [];
     chat.activeRuns.value = new Map();
+    chat.startupActiveRunSessions.value = new Set();
+    chat.isLoadingHistory.value = false;
     chat.searchQuery.value = "";
     chat.dateRangeStart.value = null;
     chat.dateRangeEnd.value = null;
     chat.chatDrafts.value = new Map();
+    chatSteeringSettings.value = { steerByDefault: false, steeringMode: "soft" };
     clearPendingAborts();
     unsubscribeFromChatEvents();
     subscribeToChatEvents();
@@ -302,6 +312,362 @@ describe("chat send queue", () => {
     });
   });
 
+  test("sends explicit /steer as a pending queue item without replacing the active stream", async () => {
+    gatewayResponses.set("chat.send", { runId: "run-active", status: "started" });
+    chat.startRun("run-active", "session-1");
+    chat.updateRunContent("run-active", "working", [
+      { id: "tool-active", name: "read", status: "running" },
+    ]);
+
+    const key = await sendMessage("session-1", "/steer use the smaller implementation");
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.send",
+        params: {
+          attachments: undefined,
+          deliver: false,
+          idempotencyKey: key,
+          message: "use the smaller implementation",
+          sessionKey: "session-1",
+          thinking: undefined,
+          timeoutMs: undefined,
+        },
+      },
+    ]);
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        content: "use the smaller implementation",
+        id: `user_${key}`,
+        pendingRunId: "run-active",
+        queueKind: "steered",
+        status: "sent",
+      }),
+    ]);
+    expect(chat.activeRuns.value.get("run-active")).toMatchObject({
+      content: "working",
+      runId: "run-active",
+      sessionKey: "session-1",
+      toolCalls: [expect.objectContaining({ id: "tool-active" })],
+    });
+    expect([...chat.activeRuns.value.keys()]).toEqual(["run-active"]);
+  });
+
+  test("clears pending soft steering when the active run completes", async () => {
+    gatewayResponses.set("chat.send", { runId: "run-active", status: "started" });
+    chat.startRun("run-active", "session-1");
+
+    await sendMessage("session-1", "/steer use the smaller implementation");
+    expect(chat.messageQueue.value).toHaveLength(1);
+
+    emitChat({
+      runId: "run-active",
+      state: "final",
+      message: { role: "assistant", content: "Done", timestamp: 1200 },
+    });
+
+    expect(chat.messageQueue.value).toEqual([]);
+    expect(chat.messages.value.at(-1)).toMatchObject({
+      role: "assistant",
+      content: "Done",
+    });
+  });
+
+  test("failed fresh soft steering becomes a retryable failed message", async () => {
+    gatewayResponses.set("chat.send", new Error("soft steer failed"));
+    chat.startRun("run-active", "session-1");
+
+    await expect(sendMessage("session-1", "/steer failing steer")).rejects.toThrow(
+      "soft steer failed",
+    );
+
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        content: "failing steer",
+        error: "soft steer failed",
+        pendingRunId: undefined,
+        queueKind: "steered",
+        status: "failed",
+        steered: true,
+      }),
+    ]);
+
+    emitChat({
+      runId: "run-active",
+      state: "final",
+      message: { role: "assistant", content: "Done", timestamp: 1200 },
+    });
+    await flushPromises();
+    await processNextQueuedMessage("session-1");
+    await processMessageQueue();
+
+    expect(gatewayCalls).toHaveLength(1);
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        content: "failing steer",
+        error: "soft steer failed",
+        status: "failed",
+      }),
+    ]);
+  });
+
+  test("keeps active-run sends queued by default but steers when the setting is enabled", async () => {
+    chat.startRun("run-active", "session-1");
+
+    const queuedKey = await sendMessage("session-1", "queue me");
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual([`user_${queuedKey}`]);
+    expect(gatewayCalls).toEqual([]);
+
+    chatSteeringSettings.value = { steerByDefault: true, steeringMode: "soft" };
+    gatewayResponses.set("chat.send", { runId: "run-active", status: "started" });
+
+    const steeredKey = await sendMessage("session-1", "steer me");
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.send",
+        params: expect.objectContaining({
+          deliver: false,
+          idempotencyKey: steeredKey,
+          message: "steer me",
+          sessionKey: "session-1",
+        }),
+      },
+    ]);
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({ id: `user_${queuedKey}`, status: "queued" }),
+      expect.objectContaining({
+        content: "steer me",
+        id: `user_${steeredKey}`,
+        pendingRunId: "run-active",
+        queueKind: "steered",
+        status: "sent",
+      }),
+    ]);
+  });
+
+  test("uses hard steering for active-run sends when the setting selects interrupt mode", async () => {
+    chat.startRun("run-active", "session-1");
+    chatSteeringSettings.value = { steerByDefault: true, steeringMode: "hard" };
+    gatewayResponses.set("sessions.steer", {
+      interruptedActiveRun: true,
+      runId: "hard-steer-run",
+      status: "started",
+    });
+
+    const key = await sendMessage("session-1", "interrupt and steer");
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.steer",
+        params: {
+          attachments: undefined,
+          idempotencyKey: key,
+          key: "session-1",
+          message: "interrupt and steer",
+          thinking: undefined,
+          timeoutMs: undefined,
+        },
+      },
+    ]);
+    expect(chat.messageQueue.value).toEqual([]);
+    expect(chat.messages.value[0]).toMatchObject({
+      content: "interrupt and steer",
+      status: "sent",
+      steered: true,
+    });
+    expect(chat.activeRuns.value.get("run-active")).toMatchObject({
+      status: "aborted",
+    });
+    expect(chat.getStreamingRun("session-1")).toMatchObject({
+      runId: "hard-steer-run",
+      sessionKey: "session-1",
+      status: "pending",
+    });
+  });
+
+  test("hard steering clears same-session queued follow-up messages", async () => {
+    chat.startRun("run-active", "session-1");
+    chatSteeringSettings.value = { steerByDefault: true, steeringMode: "hard" };
+    gatewayResponses.set("sessions.steer", {
+      interruptedActiveRun: true,
+      runId: "hard-steer-run",
+      status: "started",
+    });
+    chat.queueMessage(queuedMessage({ id: "user_same-session", content: "stale queued" }));
+    chat.queueMessage(queuedMessage({ id: "user_other-session", sessionKey: "other" }));
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_pending-steer",
+        queueKind: "steered",
+        pendingRunId: "run-active",
+      }),
+    );
+
+    await sendMessage("session-1", "interrupt and replace");
+
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_other-session"]);
+    await processNextQueuedMessage("session-1");
+    expect(gatewayCalls.map((call) => call.method)).toEqual(["sessions.steer"]);
+  });
+
+  test("falls back to normal send for explicit /steer when no run is active", async () => {
+    const key = await sendMessage("session-1", "/steer start normally");
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.send",
+        params: {
+          attachments: undefined,
+          idempotencyKey: key,
+          message: "start normally",
+          sessionKey: "session-1",
+          thinking: undefined,
+          timeoutMs: undefined,
+        },
+      },
+    ]);
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        content: "start normally",
+        status: "sent",
+        steered: false,
+      }),
+    ]);
+    expect(chat.messageQueue.value).toEqual([]);
+  });
+
+  test("sends explicit /redirect commands through sessions.steer", async () => {
+    gatewayResponses.set("sessions.steer", {
+      interruptedActiveRun: true,
+      runId: "redirected-run",
+      status: "started",
+    });
+    chat.startRun("run-active", "session-1");
+
+    const key = await sendMessage("session-1", "/redirect stop and do the other task");
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.steer",
+        params: {
+          attachments: undefined,
+          idempotencyKey: key,
+          key: "session-1",
+          message: "stop and do the other task",
+          thinking: undefined,
+          timeoutMs: undefined,
+        },
+      },
+    ]);
+    expect(chat.messages.value[0]).toMatchObject({
+      content: "stop and do the other task",
+      status: "sent",
+      steered: true,
+    });
+  });
+
+  test("hard-steers a queued message through sessions.steer", async () => {
+    chat.startRun("run-active", "session-1");
+    chatSteeringSettings.value = { steerByDefault: false, steeringMode: "hard" };
+    gatewayResponses.set("sessions.steer", {
+      interruptedActiveRun: true,
+      runId: "hard-queued-run",
+      status: "started",
+    });
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_hard-queued-key",
+        content: "queued hard steer",
+        pendingAttachments: [attachment("image", "hard-queued.png")],
+      }),
+    );
+
+    await steerQueuedMessage("user_hard-queued-key");
+
+    expect(gatewayCalls).toEqual([
+      {
+        method: "sessions.steer",
+        params: expect.objectContaining({
+          attachments: [attachment("image", "hard-queued.png")],
+          idempotencyKey: "hard-queued-key",
+          key: "session-1",
+          message: "queued hard steer",
+        }),
+      },
+    ]);
+    expect(chat.messageQueue.value).toEqual([]);
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        content: "queued hard steer",
+        status: "sent",
+        steered: true,
+      }),
+    ]);
+  });
+
+  test("converts a queued message into pending steering input", async () => {
+    gatewayResponses.set("chat.send", { runId: "run-active", status: "started" });
+    chat.startRun("run-active", "session-1");
+    const attachments = [attachment("image", "queued-steer.png")];
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_queued-steer-key",
+        content: "queued steer",
+        pendingAttachments: attachments,
+      }),
+    );
+
+    await steerQueuedMessage("user_queued-steer-key");
+
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        content: "queued steer",
+        pendingRunId: "run-active",
+        queueKind: "steered",
+        status: "sent",
+      }),
+    ]);
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.send",
+        params: expect.objectContaining({
+          attachments,
+          deliver: false,
+          idempotencyKey: "queued-steer-key",
+          message: "queued steer",
+          sessionKey: "session-1",
+        }),
+      },
+    ]);
+  });
+
+  test("keeps queued steering pending when soft steering fails", async () => {
+    gatewayResponses.set("chat.send", new Error("steer failed"));
+    chat.startRun("run-active", "session-1");
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_queued-steer-fail",
+        content: "still queued",
+      }),
+    );
+
+    await expect(steerQueuedMessage("user_queued-steer-fail")).rejects.toThrow("steer failed");
+
+    expect(chat.messageQueue.value).toEqual([
+      expect.objectContaining({
+        id: "user_queued-steer-fail",
+        content: "still queued",
+        queueKind: undefined,
+        pendingRunId: undefined,
+        status: "queued",
+      }),
+    ]);
+    expect(chat.messages.value).toEqual([]);
+  });
+
   test("retry uses the original idempotency key and does not duplicate the user message", async () => {
     const attachments = [attachment("image", "retry.png"), attachment("file", "retry.txt")];
     chat.messages.value = [
@@ -322,6 +688,97 @@ describe("chat send queue", () => {
       attachments,
       idempotencyKey: "original-key",
       message: "retry me",
+    });
+  });
+
+  test("retry preserves failed soft steering intent", async () => {
+    chat.startRun("run-active", "session-1");
+    chat.messages.value = [
+      queuedMessage({
+        id: "user_steer-retry-key",
+        content: "retry as steering",
+        sessionKey: "session-1",
+        status: "failed",
+        steered: true,
+      }),
+    ];
+
+    await retryMessage("user_steer-retry-key");
+
+    expect(chat.messages.value[0]).toMatchObject({
+      id: "user_steer-retry-key",
+      status: "sent",
+      steered: true,
+    });
+    expect(chat.messageQueue.value[0]).toMatchObject({
+      id: "user_steer-retry-key",
+      content: "retry as steering",
+      pendingRunId: "run-active",
+      queueKind: "steered",
+      status: "sent",
+    });
+    expect(gatewayCalls[0]).toMatchObject({
+      method: "chat.send",
+      params: expect.objectContaining({
+        deliver: false,
+        idempotencyKey: "steer-retry-key",
+        message: "retry as steering",
+        sessionKey: "session-1",
+      }),
+    });
+  });
+
+  test("retry preserves failed queued soft steering intent", async () => {
+    chat.startRun("run-active", "session-1");
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_queued-steer-retry-key",
+        content: "retry queued steering",
+        sessionKey: "session-1",
+        status: "failed",
+        steered: true,
+        queueKind: "steered",
+        pendingRunId: undefined,
+      }),
+    );
+
+    await retryMessage("user_queued-steer-retry-key");
+
+    expect(chat.messageQueue.value[0]).toMatchObject({
+      id: "user_queued-steer-retry-key",
+      content: "retry queued steering",
+      pendingRunId: "run-active",
+      queueKind: "steered",
+      status: "sent",
+      steered: true,
+    });
+    expect(gatewayCalls[0]).toMatchObject({
+      method: "chat.send",
+      params: expect.objectContaining({
+        deliver: false,
+        idempotencyKey: "queued-steer-retry-key",
+        message: "retry queued steering",
+        sessionKey: "session-1",
+      }),
+    });
+  });
+
+  test("marks /redirect failed when sessions.steer is unavailable", async () => {
+    const unavailable = Object.assign(new Error("unknown method sessions.steer"), {
+      code: "METHOD_NOT_FOUND",
+    });
+    gatewayResponses.set("sessions.steer", unavailable);
+    chat.startRun("run-active", "session-1");
+
+    await expect(sendMessage("session-1", "/redirect do this instead")).rejects.toThrow(
+      "chat.steerUnavailable",
+    );
+
+    expect(chat.messages.value[0]).toMatchObject({
+      content: "do this instead",
+      error: "chat.steerUnavailable",
+      status: "failed",
+      steered: true,
     });
   });
 
@@ -420,6 +877,56 @@ describe("chat send queue", () => {
     });
   });
 
+  test("delays auto replay while startup history is loading or session has an active run", async () => {
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_wait-for-startup",
+        sessionKey: "session-1",
+        content: "wait for startup",
+      }),
+    );
+
+    chat.isLoadingHistory.value = true;
+    await processMessageQueue();
+
+    expect(gatewayCalls).toEqual([]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_wait-for-startup"]);
+
+    chat.isLoadingHistory.value = false;
+    chat.startRun("run-active", "session-1");
+    await processMessageQueue();
+
+    expect(gatewayCalls).toEqual([]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_wait-for-startup"]);
+
+    chat.markStartupActiveRun("session-1");
+    await processMessageQueue();
+
+    expect(gatewayCalls).toEqual([]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_wait-for-startup"]);
+
+    const blockedKey = await sendMessage("session-1", "queued behind startup active run");
+    expect(gatewayCalls).toEqual([]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual([
+      "user_wait-for-startup",
+      `user_${blockedKey}`,
+    ]);
+
+    chat.clearStartupActiveRun("session-1");
+    chat.activeRuns.value = new Map();
+    await processMessageQueue();
+
+    expect(gatewayCalls[0]).toMatchObject({
+      method: "chat.send",
+      params: expect.objectContaining({
+        idempotencyKey: "wait-for-startup",
+        message: "wait for startup",
+        sessionKey: "session-1",
+      }),
+    });
+    expect(chat.messageQueue.value).toEqual([]);
+  });
+
   test("replays pending aborts on reconnect without queued messages", async () => {
     gatewayResponses.set("sessions.abort", { ok: true });
     const sessionKey = "agent:main:chat:abc";
@@ -492,6 +999,34 @@ describe("chat send queue", () => {
     await Promise.resolve();
 
     expect(chat.messages.value).toEqual([]);
+    expect(historyLoads).toEqual(["session-1"]);
+  });
+
+  test("/new reset is not soft-steered when steer by default is enabled", async () => {
+    gatewayResponses.set("chat.send", { runId: "reset-run", status: "started" });
+    chatSteeringSettings.value = { steerByDefault: true, steeringMode: "soft" };
+    chat.startRun("run-active", "session-1");
+
+    await sendMessage("session-1", "/new");
+
+    expect(chat.messageQueue.value).toEqual([]);
+    expect(gatewayCalls).toEqual([
+      {
+        method: "chat.send",
+        params: {
+          attachments: undefined,
+          idempotencyKey: expect.any(String),
+          message: "/new",
+          sessionKey: "session-1",
+          thinking: undefined,
+          timeoutMs: undefined,
+        },
+      },
+    ]);
+
+    timers.advanceBy(100);
+    await Promise.resolve();
+
     expect(historyLoads).toEqual(["session-1"]);
   });
 
