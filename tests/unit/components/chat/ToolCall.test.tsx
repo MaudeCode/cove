@@ -55,7 +55,11 @@ mock.module("../../../../src/components/chat/tool-blocks", () => ({
   WebFetchResultBlock: () => <div data-testid="web-fetch-result" />,
   WebSearchResultBlock: () => <div data-testid="web-search-result" />,
   WriteInputBlock: () => <div data-testid="write-input" />,
-  parseErrorResult: () => null,
+  parseErrorResult: (result: unknown) => {
+    if (!result || typeof result !== "object") return null;
+    const record = result as Record<string, unknown>;
+    return typeof record.error === "string" ? { error: record.error, tool: record.tool } : null;
+  },
 }));
 
 const { ToolCall, clearExpandedToolCalls } =
@@ -118,9 +122,116 @@ describe("ToolCall", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: /web_search/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Web search/ }));
 
     expect(screen.getByTestId("search-input")).toBeTruthy();
     expect(screen.getByTestId("web_search-result")).toBeTruthy();
+  });
+
+  test("prefers commandPreview for collapsed exec display and keeps canonical input in raw details", () => {
+    renderComponent(
+      <ToolCall
+        toolCall={toolCall({
+          args: {
+            command: '/bin/zsh -lc "bun run build -- --mode production"',
+            commandPreview: "bun run build -- --mode production",
+          },
+          name: "exec",
+        })}
+      />,
+    );
+
+    const row = screen.getByRole("button", { name: /Exec/ });
+    expect(row.textContent).toContain("bun run build -- --mode production");
+    expect(row.textContent).not.toContain("/bin/zsh -lc");
+
+    fireEvent.click(row);
+    fireEvent.click(screen.getByRole("button", { name: "toolBlock.showRaw" }));
+
+    expect(screen.getByTestId("code-block").textContent).toContain("/bin/zsh -lc");
+    expect(screen.getByTestId("code-block").textContent).toContain("commandPreview");
+  });
+
+  test("unwraps simple shell carriers for preview-absent exec calls without mutating details", () => {
+    renderComponent(
+      <ToolCall
+        toolCall={toolCall({
+          args: {
+            command: "/bin/bash -lc 'bun test tests/unit/components/chat/ToolCall.test.tsx'",
+          },
+          name: "exec",
+        })}
+      />,
+    );
+
+    const row = screen.getByRole("button", { name: /Exec/ });
+    expect(row.textContent).toContain("bun test tests/unit/components/chat/ToolCall.test.tsx");
+    expect(row.textContent).not.toContain("/bin/bash -lc");
+
+    fireEvent.click(row);
+    fireEvent.click(screen.getByRole("button", { name: "toolBlock.showRaw" }));
+    expect(screen.getByTestId("code-block").textContent).toContain("/bin/bash -lc");
+  });
+
+  test("treats OpenClaw Bash tool calls as commands instead of previewing cwd", () => {
+    renderComponent(
+      <ToolCall
+        toolCall={toolCall({
+          args: {
+            command: '/bin/zsh -lc "echo heartbeat"',
+            cwd: "/Users/maudebot/agents/maude",
+          },
+          name: "Bash",
+        })}
+      />,
+    );
+
+    const row = screen.getByRole("button", { name: /Exec/ });
+    expect(row.textContent).toContain("echo heartbeat");
+    expect(row.textContent).not.toContain("/Users/maudebot/agents/maude");
+  });
+
+  test("keeps protocol identifiers and raw payloads out of collapsed fallback summaries", () => {
+    renderComponent(
+      <ToolCall
+        toolCall={toolCall({
+          args: {
+            action: "rpc.call",
+            canonicalCommand: "/bin/zsh -lc secret-debug-command",
+            eventId: "evt_raw_123",
+            payload: { method: "session.list", params: { raw: true } },
+            rawPayload: "raw gateway frame",
+            requestId: "req_456",
+          },
+          name: "gateway",
+        })}
+      />,
+    );
+
+    const row = screen.getByRole("button", { name: /Gateway Rpc call/ });
+    expect(row.textContent).toContain("Gateway Rpc call");
+    expect(row.textContent).not.toContain("evt_raw_123");
+    expect(row.textContent).not.toContain("session.list");
+    expect(row.textContent).not.toContain("req_456");
+    expect(row.textContent).not.toContain("secret-debug-command");
+    expect(row.textContent).not.toContain("raw gateway frame");
+  });
+
+  test("shows failure and result previews in the collapsed row", () => {
+    renderComponent(
+      <ToolCall
+        toolCall={toolCall({
+          args: { query: "cove release checks" },
+          name: "web_search",
+          result: { error: "network unavailable", tool: "web_search" },
+          status: "complete",
+        })}
+      />,
+    );
+
+    const row = screen.getByRole("button", { name: /Web search/ });
+    expect(row.textContent).toContain("cove release checks");
+    expect(row.textContent).toContain("Failed");
+    expect(row.textContent).toContain("Error: network unavailable");
   });
 });

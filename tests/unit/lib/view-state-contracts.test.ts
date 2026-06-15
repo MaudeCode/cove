@@ -235,13 +235,13 @@ describe("view-state system contracts", () => {
     expect(nodeCalls.stop).toBe(1);
   });
 
-  test("i18n translates, interpolates, pluralizes, and formats values", async () => {
+  test("i18n translates, interpolates, and formats values", async () => {
     const i18n = await import("../../../src/lib/i18n");
     const realNow = Date.now;
     Date.now = () => new Date("2026-06-13T12:00:00Z").getTime();
 
     expect(i18n.t("actions.send")).toBe("Send");
-    expect(i18n.t("chat.thinkingBlock.second", { count: 2 })).toBe("2 seconds");
+    expect(i18n.t("overview.capabilitiesCount", { count: 2 })).toBe("2 methods");
     expect(i18n.t("connection.reconnectingAttempt", { count: 4 })).toContain("4");
     expect(i18n.t("missing.key")).toBe("missing.key");
     expect(i18n.formatTimestamp(new Date("2026-06-13T11:59:00Z"), { relative: true })).toContain(

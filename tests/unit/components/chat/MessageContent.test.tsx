@@ -102,10 +102,9 @@ describe("MessageContent", () => {
 
     const status = screen.getByRole("status", { name: "chat.thinking" });
     expect(status.textContent).toBe("chat.thinking");
-    expect(status.querySelector(".cove-bouncing-text")?.textContent).toBe("chat.thinking");
-    expect(status.querySelectorAll(".cove-bouncing-text__character")).toHaveLength(
-      Array.from("chat.thinking").length,
-    );
+    expect(status.querySelector(".lucide-brain")).toBeTruthy();
+    expect(status.querySelector(".tool-call-running-text")?.textContent).toBe("chat.thinking");
+    expect(status.querySelector(".cove-bouncing-text")).toBeNull();
     expect(document.querySelector("[data-testid='bouncing-dots']")).toBeNull();
   });
 });

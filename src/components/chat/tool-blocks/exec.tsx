@@ -3,6 +3,7 @@
  */
 
 import { t } from "@/lib/i18n";
+import { getExecCommandInput } from "../tool-registry";
 import { CodeBlock } from "./CodeBlock";
 
 interface ExecCommandBlockProps {
@@ -10,8 +11,8 @@ interface ExecCommandBlockProps {
 }
 
 export function ExecCommandBlock({ args }: ExecCommandBlockProps) {
-  const command = args.command as string;
-  const cwd = args.workdir || args.cwd;
+  const command = getExecCommandInput(args) ?? "";
+  const cwd = getString(args.workdir) ?? getString(args.cwd);
 
   const display = cwd ? `# cwd: ${cwd}\n${command}` : command;
 
@@ -21,4 +22,8 @@ export function ExecCommandBlock({ args }: ExecCommandBlockProps) {
       <CodeBlock content={display} filePath="command.sh" maxLines={20} />
     </div>
   );
+}
+
+function getString(value: unknown): string | undefined {
+  return typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
 }

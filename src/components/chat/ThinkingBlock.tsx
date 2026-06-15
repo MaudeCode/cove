@@ -2,13 +2,13 @@
  * ThinkingBlock
  *
  * Collapsible block for displaying assistant thinking/reasoning content.
- * Follows Claude.ai style: collapsed by default with "Thought for Xs" header.
  */
 
 import { useState } from "preact/hooks";
 import { MessageContent } from "./MessageContent";
 import { ChevronRight, ChevronDown, Brain } from "lucide-preact";
 import { t } from "@/lib/i18n";
+import { dispatchChatContentToggle } from "@/lib/chat-scroll";
 
 interface ThinkingBlockProps {
   /** The thinking/reasoning content (markdown) */
@@ -21,45 +21,43 @@ export function ThinkingBlock({ content }: ThinkingBlockProps) {
   // Estimate thinking duration based on content length (rough heuristic)
   // In the future, this could come from actual timing data
   const estimatedSeconds = Math.max(1, Math.round(content.length / 500));
-  const durationText = t(
-    estimatedSeconds === 1 ? "chat.thinkingBlock.second" : "chat.thinkingBlock.second_plural",
-    { count: estimatedSeconds },
-  );
+  const durationText = t("chat.thinkingBlock.secondShort", { count: estimatedSeconds });
+  const label = isExpanded
+    ? t("common.thinking")
+    : t("chat.thinkingBlock.thoughtFor", { duration: durationText });
 
   return (
-    <div class="thinking-block border border-[var(--color-border)] rounded-lg overflow-hidden my-2">
-      {/* Header - always visible */}
+    <div class="thinking-block min-w-0 space-y-2 text-[var(--color-text-muted)]">
       <button
         type="button"
-        onClick={() => setIsExpanded(!isExpanded)}
+        onClick={(event) => {
+          dispatchChatContentToggle(event.currentTarget);
+          setIsExpanded(!isExpanded);
+        }}
         aria-expanded={isExpanded}
         aria-label={
           isExpanded ? t("chat.thinkingBlock.collapseLabel") : t("chat.thinkingBlock.expandLabel")
         }
-        class="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--color-text-muted)] hover:bg-[var(--color-bg-hover)] transition-colors"
+        class="group flex min-h-8 w-full min-w-0 items-center gap-2 text-left text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
       >
-        {/* Expand/collapse icon */}
+        <Brain class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+        <span class="truncate">{label}</span>
         {isExpanded ? (
-          <ChevronDown class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+          <ChevronDown
+            class="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)]"
+            aria-hidden="true"
+          />
         ) : (
-          <ChevronRight class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+          <ChevronRight
+            class="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)] opacity-0 transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100"
+            aria-hidden="true"
+          />
         )}
-
-        {/* Brain icon */}
-        <Brain class="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)]" aria-hidden="true" />
-
-        {/* Label */}
-        <span class="font-medium">
-          {isExpanded
-            ? t("common.thinking")
-            : t("chat.thinkingBlock.thoughtFor", { duration: durationText })}
-        </span>
       </button>
 
-      {/* Content - only shown when expanded */}
       {isExpanded && (
-        <div class="px-3 pb-3 border-t border-[var(--color-border)] bg-[var(--color-bg-subtle)]">
-          <div class="pt-3 text-sm text-[var(--color-text-secondary)]">
+        <div class="min-w-0 pl-6">
+          <div class="min-w-0 overflow-hidden rounded-md bg-[var(--color-bg-secondary)] p-3 text-sm text-[var(--color-text-secondary)]">
             <MessageContent content={content} />
           </div>
         </div>

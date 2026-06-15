@@ -28,6 +28,27 @@ describe("extractToolResultContent", () => {
     ).toBe("stdout\nstderr");
   });
 
+  test("unwraps OpenClaw toolResult content blocks", () => {
+    expect(
+      extractToolResultContent([
+        {
+          type: "toolResult",
+          content: [{ type: "text", text: "actual command output" }],
+        },
+      ]),
+    ).toBe("actual command output");
+    expect(
+      extractToolResultContent({
+        content: [
+          {
+            type: "toolResult",
+            result: { content: [{ type: "text", text: "nested result output" }] },
+          },
+        ],
+      }),
+    ).toBe("nested result output");
+  });
+
   test("extracts mixed content arrays as bounded display placeholders", () => {
     expect(
       extractToolResultContent([

@@ -6,7 +6,16 @@ const timeFormat = signal<"relative" | "local">("relative");
 const storage = await import("../../../src/lib/storage");
 const locales = await import("../../../src/locales");
 mock.module("@/lib/storage", () => storage);
-mock.module("@/locales", () => locales);
+mock.module("@/locales", () => ({
+  ...locales,
+  getLocaleStrings: (locale: string) => ({
+    ...locales.getLocaleStrings(locale),
+    test: {
+      itemCount: "{count} item",
+      itemCount_plural: "{count} items",
+    },
+  }),
+}));
 mock.module("@/signals/settings", () => ({ timeFormat }));
 mock.module("@/lib/logger", () => ({ log: { i18n: { warn: () => undefined } } }));
 
@@ -22,7 +31,8 @@ beforeEach(() => {
 
 describe("i18n utilities", () => {
   test("handles plural and interpolation edge cases", () => {
-    expect(i18n.t("chat.thinkingBlock.second", { count: 1 })).toBe("1 second");
+    expect(i18n.t("test.itemCount", { count: 1 })).toBe("1 item");
+    expect(i18n.t("test.itemCount", { count: 2 })).toBe("2 items");
     expect(i18n.t("overview.capabilitiesCount", { count: 2 })).toBe("2 methods");
     expect(i18n.t("debug.viewEventDetails", { event: "chat.message" })).toBe(
       "View chat.message event details",

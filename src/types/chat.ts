@@ -6,6 +6,7 @@
 
 import type { Message, ToolCall, MessageImage } from "./messages";
 import { stripEnvelopeMetadata } from "@/lib/message-detection";
+import { extractToolResultContent } from "@/lib/tool-utils";
 
 // ============================================
 // Content Block Types (Discriminated Union)
@@ -307,7 +308,7 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
         // Find matching tool call and update its result
         const existing = toolCalls.find((tc) => tc.id === block.id);
         if (existing) {
-          existing.result = block.content;
+          existing.result = extractToolResultContent(block.content);
           existing.status = "complete";
           existing.completedAt = Date.now();
         }
