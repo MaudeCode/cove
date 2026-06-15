@@ -121,15 +121,19 @@ interface FallbackConfig {
 const HTML_FALLBACK_CONFIG = createFallbackConfig(SANITIZE_CONFIG);
 const CODE_FALLBACK_CONFIG = createFallbackConfig(CODE_SANITIZE_CONFIG);
 
+const canUseDomPurify = DOMPurify.isSupported && domPurifyPreservesAllowedTags();
+
 /**
  * Sanitize HTML content to prevent XSS attacks
  * Use this for all user-generated or external HTML content
  */
 export function sanitizeHtml(dirty: string): string {
-  const clean = DOMPurify.sanitize(dirty, {
-    ...SANITIZE_CONFIG,
-    RETURN_TRUSTED_TYPE: false,
-  }) as string;
+  const clean = canUseDomPurify
+    ? (DOMPurify.sanitize(dirty, {
+        ...SANITIZE_CONFIG,
+        RETURN_TRUSTED_TYPE: false,
+      }) as string)
+    : dirty;
   return enforceSanitizeFallback(clean, HTML_FALLBACK_CONFIG);
 }
 
@@ -138,8 +142,22 @@ export function sanitizeHtml(dirty: string): string {
  * More restrictive - only allows code-related elements
  */
 export function sanitizeCodeHtml(dirty: string): string {
-  const clean = DOMPurify.sanitize(dirty, CODE_SANITIZE_CONFIG) as string;
+  const clean = canUseDomPurify
+    ? (DOMPurify.sanitize(dirty, CODE_SANITIZE_CONFIG) as string)
+    : dirty;
   return enforceSanitizeFallback(clean, CODE_FALLBACK_CONFIG);
+}
+
+function domPurifyPreservesAllowedTags(): boolean {
+  try {
+    const clean = DOMPurify.sanitize("<pre><code>x</code></pre>", {
+      ALLOWED_TAGS: ["pre", "code"],
+      RETURN_TRUSTED_TYPE: false,
+    }) as string;
+    return clean.includes("<pre>") && clean.includes("<code>");
+  } catch {
+    return false;
+  }
 }
 
 function createFallbackConfig(config: Config): FallbackConfig {

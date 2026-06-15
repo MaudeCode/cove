@@ -140,7 +140,7 @@ function CollapsibleNavSection({ section, mode, defaultOpen = false }: Collapsib
 
       {/* Collapsible content */}
       {isOpen.value && (
-        <ul id={`nav-section-${section.titleKey}`} class="px-3 pb-2 space-y-0.5" role="list">
+        <ul id={`nav-section-${section.titleKey}`} class="px-3 pb-2 space-y-0.5">
           {visibleItems.map((item) => (
             <li key={item.id}>
               <NavItemComponent item={item} />

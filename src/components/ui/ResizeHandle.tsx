@@ -113,6 +113,7 @@ export function ResizeHandle({
       role="separator"
       aria-orientation={isHorizontal ? "horizontal" : "vertical"}
       aria-label="Resize handle"
+      tabIndex={-1}
     />
   );
 }

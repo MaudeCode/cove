@@ -7,7 +7,6 @@ import { selectedAgentId } from "./agents-core-state";
 import {
   buildAgentToolsConfig,
   applyGatewayConfigWithSend,
-  normalizeGatewayConfig,
   type ToolProfile,
 } from "./agents-config-utils";
 

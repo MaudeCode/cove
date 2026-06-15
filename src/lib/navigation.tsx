@@ -19,11 +19,10 @@ import {
   FileText,
   BookOpen,
   Palette,
-  Github,
   BarChart3,
   Bot,
 } from "lucide-preact";
-import { siDiscord } from "simple-icons";
+import { siDiscord, siGithub } from "simple-icons";
 import { EXTERNAL_URLS } from "@/lib/constants";
 
 // ============================================
@@ -69,7 +68,17 @@ const ConfigIcon = () => <Settings class={iconClass} aria-hidden="true" />;
 const DebugIcon = () => <SlidersHorizontal class={iconClass} aria-hidden="true" />;
 const LogsIcon = () => <FileText class={iconClass} aria-hidden="true" />;
 const DocsIcon = () => <BookOpen class={iconClass} aria-hidden="true" />;
-const GitHubIcon = () => <Github class={iconClass} aria-hidden="true" />;
+const GitHubIcon = () => (
+  <svg
+    role="img"
+    viewBox="0 0 24 24"
+    xmlns="http://www.w3.org/2000/svg"
+    class={iconClass}
+    aria-hidden="true"
+  >
+    <path fill="currentColor" d={siGithub.path} />
+  </svg>
+);
 const DiscordIcon = () => (
   <svg
     role="img"

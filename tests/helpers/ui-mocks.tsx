@@ -110,7 +110,7 @@ export function MockDropdown({
         {label}
       </button>
       {open && (
-        <div aria-label={ariaLabel} onKeyDown={handleKeyDown} role="listbox">
+        <div aria-label={ariaLabel} onKeyDown={handleKeyDown} role="listbox" tabIndex={-1}>
           {options.map((option) => (
             <button
               aria-selected={option.value === value}

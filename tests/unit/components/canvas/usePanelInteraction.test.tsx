@@ -36,6 +36,7 @@ function InteractionHarness() {
         data-testid="resize-se"
         role="separator"
         aria-orientation="horizontal"
+        tabIndex={-1}
         onMouseDown={(e) => handleResizeStart(e, "se")}
         onTouchStart={(e) => handleResizeStart(e, "se")}
       />
@@ -43,6 +44,7 @@ function InteractionHarness() {
         data-testid="resize-nw"
         role="separator"
         aria-orientation="horizontal"
+        tabIndex={-1}
         onMouseDown={(e) => handleResizeStart(e, "nw")}
         onTouchStart={(e) => handleResizeStart(e, "nw")}
       />
@@ -50,6 +52,7 @@ function InteractionHarness() {
         data-testid="docked-resize"
         role="separator"
         aria-orientation="vertical"
+        tabIndex={-1}
         onMouseDown={handleDockedResizeStart}
       />
     </div>
