@@ -185,6 +185,388 @@ describe("chat event handling", () => {
     });
   });
 
+  test("renders OpenClaw item commentary as live run progress without transcript content", async () => {
+    emitAgent({
+      runId: "run-commentary",
+      stream: "item",
+      data: {
+        kind: "preamble",
+        itemId: "commentary-1",
+        title: "commentary",
+        progressText: "Inspecting the repository",
+      },
+    });
+
+    expect(chat.activeRuns.value.get("run-commentary")).toMatchObject({
+      content: "",
+      commentaryItems: [
+        {
+          id: "commentary-1",
+          seq: 1,
+          text: "Inspecting the repository",
+        },
+      ],
+      status: "streaming",
+    });
+
+    emitAgent({
+      runId: "run-commentary",
+      stream: "item",
+      data: {
+        kind: "preamble",
+        itemId: "commentary-1",
+        title: "commentary",
+        progressText: "Still inspecting",
+      },
+    });
+
+    expect(chat.activeRuns.value.get("run-commentary")?.commentaryItems).toEqual([
+      {
+        id: "commentary-1",
+        seq: 1,
+        text: "Still inspecting",
+      },
+    ]);
+
+    emitAgent({
+      runId: "run-commentary",
+      stream: "tool",
+      seq: 2,
+      data: {
+        phase: "result",
+        toolCallId: "tool-1",
+        name: "read",
+        result: "ok",
+      },
+    });
+
+    emitAgent({
+      runId: "run-commentary",
+      stream: "lifecycle",
+      data: { phase: "end" },
+    });
+
+    expect(chat.messages.value).toHaveLength(1);
+    const [messageBeforeRefresh] = chat.messages.value;
+    expect(messageBeforeRefresh.id).toBe("assistant_run-commentary");
+    expect(messageBeforeRefresh.role).toBe("assistant");
+    expect(messageBeforeRefresh.content).toBe("");
+    expect(messageBeforeRefresh.commentaryItems).toEqual([
+      {
+        id: "commentary-1",
+        seq: 1,
+        text: "Still inspecting",
+      },
+    ]);
+    expect(messageBeforeRefresh.toolCalls?.[0]?.id).toBe("tool-1");
+    expect(messageBeforeRefresh.toolCalls?.[0]?.name).toBe("read");
+    expect(messageBeforeRefresh.toolCalls?.[0]?.seq).toBe(2);
+    const completedRun = chat.activeRuns.value.get("run-commentary");
+    expect(completedRun?.content).toBe("");
+    expect(completedRun?.toolCalls[0]?.id).toBe("tool-1");
+    expect(completedRun?.toolCalls[0]?.name).toBe("read");
+    expect(completedRun?.toolCalls[0]?.seq).toBe(2);
+    expect(completedRun?.commentaryItems).toEqual([
+      {
+        id: "commentary-1",
+        seq: 1,
+        text: "Still inspecting",
+      },
+    ]);
+    expect(completedRun?.status).toBe("complete");
+
+    timers.advanceBy(500);
+    await flushGatewayTasks();
+    expect(
+      gatewayCalls.some((call) => call.method === "chat.startup" || call.method === "chat.history"),
+    ).toBe(true);
+    expect(chat.messages.value).toHaveLength(1);
+    const [messageAfterRefresh] = chat.messages.value;
+    expect(messageAfterRefresh.id).toBe("assistant_run-commentary");
+    expect(messageAfterRefresh.content).toBe("");
+    expect(messageAfterRefresh.commentaryItems).toEqual([
+      {
+        id: "commentary-1",
+        seq: 1,
+        text: "Still inspecting",
+      },
+    ]);
+    expect(messageAfterRefresh.toolCalls?.[0]?.id).toBe("tool-1");
+    expect(messageAfterRefresh.toolCalls?.[0]?.name).toBe("read");
+    expect(messageAfterRefresh.toolCalls?.[0]?.seq).toBe(2);
+  });
+
+  test("keeps commentary separate from final answer content and tool calls", () => {
+    emitAgent({
+      runId: "run-final-commentary",
+      stream: "item",
+      seq: 2,
+      data: {
+        kind: "preamble",
+        itemId: "commentary-before-tool",
+        title: "commentary",
+        progressText: "Checking files",
+      },
+    });
+    emitAgent({
+      runId: "run-final-commentary",
+      stream: "tool",
+      seq: 3,
+      data: {
+        phase: "result",
+        toolCallId: "tool-1",
+        name: "read",
+        result: "ok",
+      },
+    });
+    emitChat({
+      runId: "run-final-commentary",
+      state: "final",
+      message: { role: "assistant", content: "Final answer", timestamp: 1234 },
+    });
+
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        content: "Final answer",
+        commentaryItems: [
+          {
+            id: "commentary-before-tool",
+            seq: 2,
+            text: "Checking files",
+          },
+        ],
+        toolCalls: [expect.objectContaining({ id: "tool-1", name: "read", seq: 3 })],
+      }),
+    ]);
+  });
+
+  test("keys item commentary by run and sequence when OpenClaw omits itemId", () => {
+    emitAgent({
+      runId: "run-commentary-seq",
+      stream: "item",
+      seq: 12,
+      data: {
+        kind: "preamble",
+        title: "commentary",
+        progressText: "Checking context",
+      },
+    });
+
+    expect(chat.activeRuns.value.get("run-commentary-seq")?.commentaryItems).toEqual([
+      {
+        id: "run-commentary-seq:12",
+        seq: 12,
+        text: "Checking context",
+      },
+    ]);
+  });
+
+  test("deduplicates repeated commentary text even when replayed with a new item id", () => {
+    emitAgent({
+      runId: "run-commentary-duplicate",
+      stream: "item",
+      seq: 10,
+      data: {
+        kind: "preamble",
+        itemId: "commentary-first",
+        title: "commentary",
+        progressText: "Checking context",
+      },
+    });
+    emitAgent({
+      runId: "run-commentary-duplicate",
+      stream: "item",
+      seq: 11,
+      data: {
+        kind: "preamble",
+        itemId: "commentary-replay",
+        title: "commentary",
+        progressText: "Checking context",
+      },
+    });
+
+    expect(chat.activeRuns.value.get("run-commentary-duplicate")?.commentaryItems).toEqual([
+      {
+        id: "commentary-first",
+        seq: 10,
+        text: "Checking context",
+      },
+    ]);
+
+    emitChat({
+      runId: "run-commentary-duplicate",
+      state: "final",
+      message: { role: "assistant", content: "Final answer", timestamp: 1234 },
+    });
+
+    expect(chat.messages.value[0]?.commentaryItems).toEqual([
+      {
+        id: "commentary-first",
+        seq: 10,
+        text: "Checking context",
+      },
+    ]);
+  });
+
+  test("ignores OpenClaw item commentary outside the active session", () => {
+    activeSessionMatches = false;
+
+    emitAgent({
+      runId: "run-other-commentary",
+      stream: "item",
+      sessionKey: "other-session",
+      data: {
+        kind: "preamble",
+        title: "commentary",
+        progressText: "Inspecting another session",
+      },
+    });
+
+    expect(chat.activeRuns.value.has("run-other-commentary")).toBe(false);
+  });
+
+  test("preserves assistant commentary phase outside final answer content", () => {
+    emitAgent({
+      runId: "run-phase-commentary",
+      stream: "assistant",
+      seq: 3,
+      data: { phase: "commentary", text: "Checking files" },
+    });
+
+    expect(chat.activeRuns.value.get("run-phase-commentary")).toMatchObject({
+      content: "",
+      commentaryItems: [
+        {
+          id: "run-phase-commentary:3",
+          seq: 3,
+          text: "Checking files",
+        },
+      ],
+    });
+
+    emitAgent({
+      runId: "run-phase-commentary",
+      stream: "assistant",
+      seq: 4,
+      data: { phase: "commentary", delta: "Reading output" },
+    });
+
+    emitAgent({
+      runId: "run-phase-commentary",
+      stream: "assistant",
+      data: { text: "Final answer" },
+    });
+
+    expect(chat.activeRuns.value.get("run-phase-commentary")).toMatchObject({
+      content: "Final answer",
+    });
+    expect(chat.activeRuns.value.get("run-phase-commentary")?.commentaryItems).toEqual([
+      {
+        id: "run-phase-commentary:3",
+        seq: 3,
+        text: "Checking files",
+      },
+      {
+        id: "run-phase-commentary:commentary-delta",
+        seq: 4,
+        text: "Reading output",
+      },
+    ]);
+  });
+
+  test("accumulates assistant commentary delta chunks", () => {
+    emitAgent({
+      runId: "run-commentary-delta",
+      stream: "assistant",
+      seq: 3,
+      data: { phase: "commentary", itemId: "commentary-stream", delta: "Reading" },
+    });
+    emitAgent({
+      runId: "run-commentary-delta",
+      stream: "assistant",
+      seq: 4,
+      data: { phase: "commentary", itemId: "commentary-stream", delta: " output" },
+    });
+    emitAgent({
+      runId: "run-commentary-delta",
+      stream: "assistant",
+      seq: 5,
+      data: { phase: "commentary", itemId: "commentary-stream", delta: "." },
+    });
+
+    expect(chat.activeRuns.value.get("run-commentary-delta")?.commentaryItems).toEqual([
+      {
+        id: "commentary-stream",
+        seq: 3,
+        text: "Reading output.",
+      },
+    ]);
+  });
+
+  test("preserves whitespace-only assistant commentary delta chunks", () => {
+    emitAgent({
+      runId: "run-commentary-whitespace-delta",
+      stream: "assistant",
+      seq: 3,
+      data: { phase: "commentary", itemId: "commentary-stream", delta: "Looking" },
+    });
+    emitAgent({
+      runId: "run-commentary-whitespace-delta",
+      stream: "assistant",
+      seq: 4,
+      data: { phase: "commentary", itemId: "commentary-stream", delta: " " },
+    });
+    emitAgent({
+      runId: "run-commentary-whitespace-delta",
+      stream: "assistant",
+      seq: 5,
+      data: { phase: "commentary", itemId: "commentary-stream", delta: "around" },
+    });
+    emitAgent({
+      runId: "run-commentary-whitespace-delta",
+      stream: "assistant",
+      seq: 6,
+      data: { phase: "commentary", itemId: "commentary-stream", delta: "\n" },
+    });
+    emitAgent({
+      runId: "run-commentary-whitespace-delta",
+      stream: "assistant",
+      seq: 7,
+      data: { phase: "commentary", itemId: "commentary-stream", delta: "again" },
+    });
+
+    expect(chat.activeRuns.value.get("run-commentary-whitespace-delta")?.commentaryItems).toEqual([
+      {
+        id: "commentary-stream",
+        seq: 3,
+        text: "Looking around\nagain",
+      },
+    ]);
+  });
+
+  test("accumulates assistant commentary deltas without item ids into one progress item", () => {
+    emitAgent({
+      runId: "run-commentary-delta-no-id",
+      stream: "assistant",
+      seq: 3,
+      data: { phase: "commentary", delta: "Reading" },
+    });
+    emitAgent({
+      runId: "run-commentary-delta-no-id",
+      stream: "assistant",
+      seq: 4,
+      data: { phase: "commentary", delta: " output" },
+    });
+
+    expect(chat.activeRuns.value.get("run-commentary-delta-no-id")?.commentaryItems).toEqual([
+      {
+        id: "run-commentary-delta-no-id:commentary-delta",
+        seq: 3,
+        text: "Reading output",
+      },
+    ]);
+  });
+
   test("subscribes to the selected active-session message stream", async () => {
     unsubscribeFromChatEvents();
     effectiveSessionKey.value = "agent:main:main";
@@ -583,6 +965,16 @@ describe("chat event handling", () => {
       runId: "reset-run",
       stream: "lifecycle",
       data: { phase: "start" },
+    });
+    emitAgent({
+      runId: "reset-run",
+      stream: "item",
+      data: {
+        kind: "preamble",
+        itemId: "reset-commentary",
+        title: "commentary",
+        progressText: "Resetting session",
+      },
     });
     emitAgent({
       runId: "reset-run",

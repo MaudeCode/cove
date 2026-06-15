@@ -24,6 +24,17 @@ export interface MessageImage {
   bytes?: number;
 }
 
+export interface CommentaryItem {
+  /** Stable live item key, usually OpenClaw's itemId, falling back to run/seq. */
+  id: string;
+
+  /** Muted live progress text. Never persisted as final answer content. */
+  text: string;
+
+  /** Gateway sequence for ordering and fallback identity. */
+  seq?: number;
+}
+
 export interface Message {
   /** Unique message ID */
   id: string;
@@ -45,6 +56,15 @@ export interface Message {
 
   /** Thinking/reasoning content (assistant only) */
   thinking?: string;
+
+  /** Ephemeral live commentary/progress items (assistant streaming only) */
+  commentaryItems?: CommentaryItem[];
+
+  /** Active run start time for the collapsed run activity summary. */
+  runStartedAt?: number;
+
+  /** Active run completion time for the collapsed run activity summary. */
+  runCompletedAt?: number;
 
   /** When the message was created */
   timestamp: number;
@@ -98,6 +118,9 @@ export interface ToolCall {
 
   /** When the tool call started */
   startedAt?: number;
+
+  /** Gateway event sequence for ordering with live commentary items. */
+  seq?: number;
 
   /** When the tool call completed */
   completedAt?: number;

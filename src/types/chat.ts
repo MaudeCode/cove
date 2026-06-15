@@ -4,7 +4,7 @@
  * Types for chat messages and streaming.
  */
 
-import type { Message, ToolCall, MessageImage } from "./messages";
+import type { CommentaryItem, Message, ToolCall, MessageImage } from "./messages";
 import { stripEnvelopeMetadata } from "@/lib/message-detection";
 import { extractToolResultContent } from "@/lib/tool-utils";
 
@@ -170,11 +170,14 @@ export interface ChatEvent {
 export interface AgentEvent {
   runId: string;
   sessionKey?: string;
-  stream: "lifecycle" | "assistant" | "tool" | "error" | "compaction" | "thinking";
+  stream: "lifecycle" | "assistant" | "tool" | "error" | "compaction" | "thinking" | "item";
   seq: number;
   ts: number;
   data?: {
-    phase?: "start" | "update" | "result" | "end" | "error";
+    phase?: "start" | "update" | "result" | "end" | "error" | "commentary";
+    kind?: string;
+    itemId?: string;
+    title?: string;
     name?: string;
     toolCallId?: string;
     args?: unknown;
@@ -184,6 +187,7 @@ export interface AgentEvent {
     meta?: string;
     text?: string;
     delta?: string;
+    progressText?: string;
     summary?: string;
   };
 }
@@ -198,6 +202,8 @@ export interface ChatRun {
   content: string;
   /** Tool calls accumulated during streaming */
   toolCalls: ToolCall[];
+  /** Ephemeral commentary/progress items from live agent item events */
+  commentaryItems?: CommentaryItem[];
   /** Position where we last appended a new text block (for continuation detection) */
   lastBlockStart?: number;
   /** Final message once complete */
