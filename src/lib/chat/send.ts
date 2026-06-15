@@ -504,7 +504,7 @@ export async function processNextQueuedMessage(sessionKey: string): Promise<void
 
   // Find first queued message for this session
   const nextMessage = messageQueue.value.find(
-    (m) => m.sessionKey === sessionKey && !m.pendingRunId && m.queueKind !== "steered",
+    (m) => m.sessionKey === sessionKey && isAutoSendableQueuedMessage(m),
   );
   if (!nextMessage) {
     log.chat.debug("No queued messages for session");
@@ -548,9 +548,7 @@ export async function processMessageQueue(): Promise<void> {
   const abortsReplayed = await replayPendingAborts();
   if (!abortsReplayed) return;
 
-  const queue = messageQueue.value.filter(
-    (message) => !message.pendingRunId && message.queueKind !== "steered",
-  );
+  const queue = messageQueue.value.filter(isAutoSendableQueuedMessage);
   if (queue.length === 0) return;
 
   log.chat.info(`Processing ${queue.length} queued messages`);
@@ -562,6 +560,10 @@ export async function processMessageQueue(): Promise<void> {
       log.chat.error("Failed to send queued message:", err);
     }
   }
+}
+
+function isAutoSendableQueuedMessage(message: Message): boolean {
+  return message.status === "queued" && !message.pendingRunId && message.queueKind !== "steered";
 }
 
 /**

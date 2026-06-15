@@ -396,7 +396,11 @@ describe("chat send queue", () => {
       state: "final",
       message: { role: "assistant", content: "Done", timestamp: 1200 },
     });
+    await flushPromises();
+    await processNextQueuedMessage("session-1");
+    await processMessageQueue();
 
+    expect(gatewayCalls).toHaveLength(1);
     expect(chat.messageQueue.value).toEqual([
       expect.objectContaining({
         content: "failing steer",
