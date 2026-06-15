@@ -131,9 +131,15 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     }
 
     // Load fresh history (will update cache when done)
-    loadHistory(currentSession).catch(() => {
-      // Error will be shown via historyError signal
-    });
+    loadHistory(currentSession)
+      .then(() => {
+        if (isConnected.value && hasQueuedMessages.value) {
+          processMessageQueue();
+        }
+      })
+      .catch(() => {
+        // Error will be shown via historyError signal
+      });
   }, [activeSessionKey.value]);
 
   // Handle connection established (initial or reconnect)
@@ -147,10 +153,19 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     // Clear stale runs - harmless on initial connect, necessary on reconnect
     clearActiveRuns();
 
-    // Process any queued messages
-    if (hasQueuedMessages.value) {
-      processMessageQueue();
-    }
+    const currentSession = effectiveSessionKey.value;
+    if (!currentSession) return;
+
+    // Reconcile startup active-run state before replaying queued sends.
+    loadHistory(currentSession)
+      .then(() => {
+        if (hasQueuedMessages.value) {
+          processMessageQueue();
+        }
+      })
+      .catch(() => {
+        // Error will be shown via historyError signal
+      });
   }, [connectionState.value]);
 
   const handleSend = async (

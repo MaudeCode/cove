@@ -12,6 +12,7 @@ import {
   addMessage,
   startRun,
   errorRun,
+  abortRun,
   queueMessage,
   dequeueMessage,
   messageQueue,
@@ -21,6 +22,7 @@ import {
   markMessageSent,
   updateQueuedMessageState,
   isStreaming,
+  isLoadingHistory,
   clearMessages,
   adoptRunId,
   getStreamingRun,
@@ -341,8 +343,8 @@ async function sendSoftSteerInput(
       status: "failed",
       error: errorMsg,
       pendingRunId: undefined,
-      queueKind: undefined,
-      steered: false,
+      queueKind: "steered",
+      steered: true,
     });
     markMessageFailed(message.id, errorMsg);
     throw err;
@@ -550,6 +552,7 @@ export async function retryMessage(messageId: string): Promise<void> {
 export async function processMessageQueue(): Promise<void> {
   const abortsReplayed = await replayPendingAborts();
   if (!abortsReplayed) return;
+  if (isLoadingHistory.value) return;
 
   const queue = messageQueue.value.filter(isAutoSendableQueuedMessage);
   if (queue.length === 0) return;
@@ -566,7 +569,12 @@ export async function processMessageQueue(): Promise<void> {
 }
 
 function isAutoSendableQueuedMessage(message: Message): boolean {
-  return message.status === "queued" && !message.pendingRunId && message.queueKind !== "steered";
+  return (
+    message.status === "queued" &&
+    !message.pendingRunId &&
+    message.queueKind !== "steered" &&
+    (!message.sessionKey || getStreamingRun(message.sessionKey) === null)
+  );
 }
 
 /**
@@ -582,6 +590,9 @@ export async function abortChat(sessionKey: string): Promise<void> {
 
   try {
     await send("sessions.abort", params);
+    if (params.runId) {
+      abortRun(params.runId);
+    }
   } catch (err) {
     pendingAbortParams.set(sessionKey, params);
     throw err;
@@ -601,6 +612,9 @@ async function replayPendingAborts(): Promise<boolean> {
       try {
         await send("sessions.abort", params);
         pendingAbortParams.delete(sessionKey);
+        if (params.runId) {
+          abortRun(params.runId);
+        }
       } catch (err) {
         log.chat.warn("Failed to replay pending abort:", err);
         return false;

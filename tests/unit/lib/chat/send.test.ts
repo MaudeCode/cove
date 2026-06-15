@@ -171,6 +171,7 @@ describe("chat send queue", () => {
     chat.messages.value = [];
     chat.messageQueue.value = [];
     chat.activeRuns.value = new Map();
+    chat.isLoadingHistory.value = false;
     chat.searchQuery.value = "";
     chat.dateRangeStart.value = null;
     chat.dateRangeEnd.value = null;
@@ -385,9 +386,9 @@ describe("chat send queue", () => {
         content: "failing steer",
         error: "soft steer failed",
         pendingRunId: undefined,
-        queueKind: undefined,
+        queueKind: "steered",
         status: "failed",
-        steered: false,
+        steered: true,
       }),
     ]);
 
@@ -721,6 +722,41 @@ describe("chat send queue", () => {
     });
   });
 
+  test("retry preserves failed queued soft steering intent", async () => {
+    chat.startRun("run-active", "session-1");
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_queued-steer-retry-key",
+        content: "retry queued steering",
+        sessionKey: "session-1",
+        status: "failed",
+        steered: true,
+        queueKind: "steered",
+        pendingRunId: undefined,
+      }),
+    );
+
+    await retryMessage("user_queued-steer-retry-key");
+
+    expect(chat.messageQueue.value[0]).toMatchObject({
+      id: "user_queued-steer-retry-key",
+      content: "retry queued steering",
+      pendingRunId: "run-active",
+      queueKind: "steered",
+      status: "sent",
+      steered: true,
+    });
+    expect(gatewayCalls[0]).toMatchObject({
+      method: "chat.send",
+      params: expect.objectContaining({
+        deliver: false,
+        idempotencyKey: "queued-steer-retry-key",
+        message: "retry queued steering",
+        sessionKey: "session-1",
+      }),
+    });
+  });
+
   test("marks /redirect failed when sessions.steer is unavailable", async () => {
     const unavailable = Object.assign(new Error("unknown method sessions.steer"), {
       code: "METHOD_NOT_FOUND",
@@ -833,6 +869,42 @@ describe("chat send queue", () => {
       message: "later",
       sessionKey,
     });
+  });
+
+  test("delays auto replay while startup history is loading or session has an active run", async () => {
+    chat.queueMessage(
+      queuedMessage({
+        id: "user_wait-for-startup",
+        sessionKey: "session-1",
+        content: "wait for startup",
+      }),
+    );
+
+    chat.isLoadingHistory.value = true;
+    await processMessageQueue();
+
+    expect(gatewayCalls).toEqual([]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_wait-for-startup"]);
+
+    chat.isLoadingHistory.value = false;
+    chat.startRun("run-active", "session-1");
+    await processMessageQueue();
+
+    expect(gatewayCalls).toEqual([]);
+    expect(chat.messageQueue.value.map((message) => message.id)).toEqual(["user_wait-for-startup"]);
+
+    chat.activeRuns.value = new Map();
+    await processMessageQueue();
+
+    expect(gatewayCalls[0]).toMatchObject({
+      method: "chat.send",
+      params: expect.objectContaining({
+        idempotencyKey: "wait-for-startup",
+        message: "wait for startup",
+        sessionKey: "session-1",
+      }),
+    });
+    expect(chat.messageQueue.value).toEqual([]);
   });
 
   test("replays pending aborts on reconnect without queued messages", async () => {
