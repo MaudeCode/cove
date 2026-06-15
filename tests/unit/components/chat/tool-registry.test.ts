@@ -10,6 +10,8 @@ import {
   getToolResultPreview,
   getToolResultBlockKind,
   isExecToolName,
+  isFailedToolCall,
+  isRunningToolCall,
 } from "../../../../src/components/chat/tool-registry";
 import type { ToolCall } from "../../../../src/types/messages";
 
@@ -41,7 +43,13 @@ describe("tool registry", () => {
     expect(getToolGroupPriority("search")).toBeLessThan(getToolGroupPriority("fetch"));
     expect(getToolIconKindForToolCalls([toolCall({ name: "web_search" })])).toBe("search");
     expect(getToolGroupPhrase("search", 2, true)).toBe("searching 2 times");
-    expect(getToolItemVerb(toolCall({ name: "web_search", status: "running" }))).toBe("Searching");
+    expect(getToolItemVerb(toolCall({ name: "web_search", status: "running" }), true)).toBe(
+      "Searching",
+    );
+    expect(getToolItemVerb(toolCall({ name: "web_search", status: "error" }))).toBe(
+      "Failed to search",
+    );
+    expect(getToolGroupPhrase("search", 1, false, true)).toBe("failed to search");
   });
 
   test("uses one definition for tool aliases", () => {
@@ -76,6 +84,41 @@ describe("tool registry", () => {
       getToolGroupPriority("status"),
     );
     expect(getToolGroupPhrase("custom:Heartbeat", 1, false)).toBe("used Heartbeat");
-    expect(getToolItemVerb(toolCall({ name: "Heartbeat", status: "running" }))).toBe("Using");
+    expect(getToolItemVerb(toolCall({ name: "Heartbeat", status: "running" }), true)).toBe("Using");
+  });
+
+  test("requires a live turn before pending or running tools use active labels", () => {
+    const pendingCommand = toolCall({
+      args: { commandPreview: "git status -sb" },
+      name: "exec",
+      status: "pending",
+    });
+    const runningCommand = toolCall({
+      args: { commandPreview: "git status -sb" },
+      name: "exec",
+      status: "running",
+    });
+
+    expect(isRunningToolCall(pendingCommand)).toBe(false);
+    expect(isRunningToolCall(runningCommand)).toBe(false);
+    expect(isRunningToolCall(pendingCommand, true)).toBe(true);
+    expect(isRunningToolCall(runningCommand, true)).toBe(true);
+    expect(getToolItemVerb(pendingCommand)).toBe("Started");
+    expect(getToolItemVerb(runningCommand)).toBe("Ran");
+    expect(getToolItemVerb(runningCommand, true)).toBe("Running");
+  });
+
+  test("marks status and error-shaped results as failed", () => {
+    expect(isFailedToolCall(toolCall({ name: "read", status: "error" }))).toBe(true);
+    expect(
+      isFailedToolCall(
+        toolCall({
+          name: "exec",
+          result: { error: "permission denied" },
+          status: "complete",
+        }),
+      ),
+    ).toBe(true);
+    expect(getToolItemVerb(toolCall({ name: "exec", status: "error" }))).toBe("Failed to run");
   });
 });

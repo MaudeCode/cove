@@ -145,6 +145,7 @@ describe("AssistantMessage", () => {
   test("uses present tense and exact target for active single read tools", () => {
     const rendered = renderComponent(
       <AssistantMessage
+        isStreaming
         message={assistantMessage({
           content: "",
           toolCalls: [
@@ -163,6 +164,7 @@ describe("AssistantMessage", () => {
 
     rendered.rerender(
       <AssistantMessage
+        isStreaming
         message={assistantMessage({
           content: "",
           toolCalls: [
@@ -188,6 +190,7 @@ describe("AssistantMessage", () => {
 
     renderComponent(
       <AssistantMessage
+        isStreaming
         message={assistantMessage({
           content: "Before after",
           toolCalls: [
@@ -210,9 +213,7 @@ describe("AssistantMessage", () => {
       />,
     );
 
-    const groupHeader = screen.getByRole("button", {
-      name: /Read 1 file, running a command/,
-    });
+    const groupHeader = screen.getByRole("button", { name: "Running git status -sb" });
     expect(groupHeader).toBeTruthy();
     expect(document.querySelectorAll("[data-tool-call-group]")).toHaveLength(1);
     expect(screen.queryAllByTestId("tool-call")).toHaveLength(0);
@@ -223,13 +224,16 @@ describe("AssistantMessage", () => {
     expect(toggleEvents).toBe(1);
     expect(groupHeader.querySelector(".lucide-chevron-down")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Read AssistantMessage.test.tsx" })).toBeTruthy();
-    const commandRow = screen.getByRole("button", { name: "Running git status -sb" });
+    const runningCommandButtons = screen.getAllByRole("button", { name: "Running git status -sb" });
+    expect(runningCommandButtons).toHaveLength(2);
+    expect(runningCommandButtons[0].querySelector(".tool-call-running-text")).toBeTruthy();
+    const commandRow = runningCommandButtons[1];
     expect(commandRow).toBeTruthy();
     expect(commandRow.querySelector(".tool-call-running-text")).toBeNull();
 
     fireEvent.click(commandRow);
     expect(toggleEvents).toBe(2);
-    expect(screen.getByRole("button", { name: "Running git status -sb" })).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Running git status -sb" })).toHaveLength(2);
     expect(screen.queryByRole("button", { name: /Ran command/ })).toBeNull();
     expect(screen.getByTestId("code-block")).toBeTruthy();
 
@@ -267,7 +271,7 @@ describe("AssistantMessage", () => {
       />,
     );
 
-    const groupHeader = screen.getByRole("button", { name: "Read 1 file, running a command" });
+    const groupHeader = screen.getByRole("button", { name: "Read 1 file, ran a command" });
     expect(groupHeader.getAttribute("aria-expanded")).toBe("true");
 
     const approvalItem = screen.getByRole("button", { name: "Running rm -rf build" });
@@ -677,9 +681,10 @@ describe("AssistantMessage", () => {
     expect(screen.queryByRole("button", { name: /checked cron 2 times/ })).toBeNull();
   });
 
-  test("uses present tense for running commands and past tense after completion", () => {
+  test("uses present tense for live running commands and past tense after completion", () => {
     const rendered = renderComponent(
       <AssistantMessage
+        isStreaming
         message={assistantMessage({
           content: "",
           toolCalls: [
@@ -715,6 +720,80 @@ describe("AssistantMessage", () => {
 
     expect(screen.getByRole("button", { name: "Ran git status -sb" })).toBeTruthy();
     expect(screen.queryByRole("button", { name: "Running git status -sb" })).toBeNull();
+  });
+
+  test("does not render historical pending commands as actively running", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "",
+          toolCalls: [
+            {
+              args: { commandPreview: "git status -sb" },
+              id: "tool-1",
+              name: "exec",
+              status: "pending",
+            },
+          ],
+        })}
+      />,
+    );
+
+    const groupHeader = screen.getByRole("button", { name: "Started git status -sb" });
+    expect(groupHeader.querySelector(".tool-call-running-text")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Running git status -sb" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Thinking..." })).toBeNull();
+  });
+
+  test("shows failed tool state in the collapsed group header", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "",
+          toolCalls: [
+            {
+              args: { commandPreview: "git status -sb" },
+              id: "tool-1",
+              name: "exec",
+              status: "error",
+            },
+          ],
+        })}
+      />,
+    );
+
+    const groupHeader = screen.getByRole("button", { name: "Failed to run git status -sb" });
+    expect(groupHeader.querySelector(".tool-call-running-text")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Ran git status -sb" })).toBeNull();
+  });
+
+  test("keeps failed tool counts separate from successful tools in summaries", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "",
+          toolCalls: [
+            {
+              args: { commandPreview: "git status -sb" },
+              id: "tool-1",
+              name: "exec",
+              status: "complete",
+            },
+            {
+              args: { commandPreview: "bun test" },
+              id: "tool-2",
+              name: "exec",
+              status: "error",
+            },
+          ],
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Failed to run a command, ran a command" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Ran 2 commands" })).toBeNull();
   });
 
   test("shimmers only the main header while the assistant turn is still streaming", () => {

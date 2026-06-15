@@ -18,6 +18,7 @@ import {
   getToolGroupPriority,
   getToolIconKindForToolCalls,
   getToolItemVerb,
+  isFailedToolCall,
   isRunningToolCall,
   type ToolGroupKind,
 } from "./tool-registry";
@@ -42,6 +43,7 @@ interface AssistantMessageProps {
 
 const TOOL_HEADER_THINKING_DELAY_MS = 2_000;
 
+type ToolSummaryState = "complete" | "error" | "pending" | "running";
 type TextBlock = { type: "text"; content: string };
 type SingleToolBlock = { type: "tool"; toolCall: ToolCall };
 type ToolGroupBlock = { type: "tool-group"; toolCalls: ToolCall[] };
@@ -325,7 +327,7 @@ function ToolCallGroup({
       return clearThinkingDelayTimer;
     }
 
-    const activeToolCalls = toolCalls.filter(isRunningToolCall);
+    const activeToolCalls = toolCalls.filter((toolCall) => isRunningToolCall(toolCall, true));
     if (activeToolCalls.length > 0) {
       clearThinkingDelayTimer();
       lingeredToolCallIds.value = [];
@@ -335,7 +337,9 @@ function ToolCallGroup({
     }
 
     const recentlyCompletedToolCallIds = previousActiveToolCallIds.current.filter((toolCallId) =>
-      toolCalls.some((toolCall) => toolCall.id === toolCallId && !isRunningToolCall(toolCall)),
+      toolCalls.some(
+        (toolCall) => toolCall.id === toolCallId && !isRunningToolCall(toolCall, true),
+      ),
     );
     if (recentlyCompletedToolCallIds.length > 0) {
       clearThinkingDelayTimer();
@@ -363,7 +367,7 @@ function ToolCallGroup({
   };
   const summary = getToolCallGroupHeaderLabel(toolCalls, isStreaming, liveState);
   const iconKind = getToolCallGroupIconKind(toolCalls, isStreaming, liveState);
-  const running = isStreaming || toolCalls.some(isRunningToolCall);
+  const running = isStreaming;
   const shimmerStyle = running
     ? `--tool-call-shimmer-duration: ${getToolCallShimmerDuration(summary)}`
     : undefined;
@@ -415,7 +419,11 @@ function ToolCallGroup({
       {expanded.value && (
         <div class="min-w-0 space-y-2 pl-6" data-tool-call-group-items>
           {toolCalls.map((toolCall) => (
-            <ToolCallGroupItem key={toolCall.id} toolCall={toolCall} />
+            <ToolCallGroupItem
+              key={toolCall.id}
+              live={isStreaming || isApprovalPendingToolCall(toolCall)}
+              toolCall={toolCall}
+            />
           ))}
         </div>
       )}
@@ -423,10 +431,10 @@ function ToolCallGroup({
   );
 }
 
-function ToolCallGroupItem({ toolCall }: { toolCall: ToolCall }) {
+function ToolCallGroupItem({ live, toolCall }: { live: boolean; toolCall: ToolCall }) {
   const approvalPending = isApprovalPendingToolCall(toolCall);
   const expanded = useSignal(approvalPending);
-  const itemLabel = getToolGroupItemLabel(toolCall);
+  const itemLabel = getToolGroupItemLabel(toolCall, live);
   const detailsId = `tool-details-${toolCall.id}`;
   useEffect(() => {
     if (approvalPending && !expanded.value) {
@@ -482,29 +490,29 @@ function getToolCallGroupHeaderLabel(
   },
 ): string {
   if (!isStreaming) {
-    return summarizeToolGroup(toolCalls);
+    return summarizeToolGroup(toolCalls, false);
   }
 
-  const runningToolCalls = toolCalls.filter(isRunningToolCall);
+  const runningToolCalls = toolCalls.filter((toolCall) => isRunningToolCall(toolCall, true));
   if (runningToolCalls.length === 0) {
     const lingeringToolCalls = toolCalls.filter((toolCall) =>
       liveState?.lingeredToolCallIds.includes(toolCall.id),
     );
     if (lingeringToolCalls.length > 0 && liveState?.thinkingDelayElapsed === false) {
-      return summarizeToolGroup(lingeringToolCalls);
+      return summarizeToolGroup(lingeringToolCalls, false);
     }
 
     const recentlyActiveToolCalls = toolCalls.filter((toolCall) =>
       liveState?.previousActiveToolCallIds.includes(toolCall.id),
     );
     if (recentlyActiveToolCalls.length > 0 && liveState?.thinkingDelayElapsed === false) {
-      return summarizeToolGroup(recentlyActiveToolCalls);
+      return summarizeToolGroup(recentlyActiveToolCalls, false);
     }
 
     return "Thinking...";
   }
 
-  return summarizeToolGroup(runningToolCalls);
+  return summarizeToolGroup(runningToolCalls, true);
 }
 
 function getToolCallGroupIconKind(
@@ -534,7 +542,7 @@ function isToolCallGroupThinking(
   },
 ): boolean {
   if (!isStreaming) return false;
-  if (toolCalls.some(isRunningToolCall)) return false;
+  if (toolCalls.some((toolCall) => isRunningToolCall(toolCall, true))) return false;
   if (liveState?.thinkingDelayElapsed === false) {
     const lingeringToolCallIds = new Set([
       ...(liveState.lingeredToolCallIds ?? []),
@@ -558,7 +566,7 @@ function getToolCallGroupHeaderToolCalls(
     return toolCalls;
   }
 
-  const runningToolCalls = toolCalls.filter(isRunningToolCall);
+  const runningToolCalls = toolCalls.filter((toolCall) => isRunningToolCall(toolCall, true));
   if (runningToolCalls.length > 0) {
     return runningToolCalls;
   }
@@ -580,34 +588,43 @@ function getToolCallGroupHeaderToolCalls(
   return toolCalls;
 }
 
-function summarizeToolGroup(toolCalls: ToolCall[]): string {
+function summarizeToolGroup(toolCalls: ToolCall[], live = false): string {
   if (toolCalls.length === 1) {
-    return getToolGroupItemLabel(toolCalls[0]);
+    return getToolGroupItemLabel(toolCalls[0], live);
   }
 
-  const groups = new Map<ToolGroupKind, { count: number; running: boolean }>();
+  const groups = new Map<string, { count: number; kind: ToolGroupKind; state: ToolSummaryState }>();
   for (const toolCall of toolCalls) {
     const kind = getToolGroupKind(toolCall);
-    const current = groups.get(kind) ?? { count: 0, running: false };
-    groups.set(kind, {
+    const state = getToolSummaryState(toolCall, live);
+    const key = `${kind}:${state}`;
+    const current = groups.get(key) ?? { count: 0, kind, state };
+    groups.set(key, {
       count: current.count + 1,
-      running: current.running || isRunningToolCall(toolCall),
+      kind,
+      state,
     });
   }
 
   const entries = Array.from(groups.entries())
-    .map(([kind, group]) => ({ kind, count: group.count, running: group.running }))
-    .sort((left, right) => getToolGroupPriority(left.kind) - getToolGroupPriority(right.kind));
+    .map(([, group]) => group)
+    .sort((left, right) => {
+      const priorityDelta = getToolGroupPriority(left.kind) - getToolGroupPriority(right.kind);
+      if (priorityDelta !== 0) return priorityDelta;
+      return getToolSummaryStatePriority(left.state) - getToolSummaryStatePriority(right.state);
+    });
   const parts = collapseNoisyToolSummary(entries);
 
   return parts.map((part, index) => (index === 0 ? capitalize(part) : part)).join(", ");
 }
 
 function collapseNoisyToolSummary(
-  entries: Array<{ count: number; kind: ToolGroupKind; running: boolean }>,
+  entries: Array<{ count: number; kind: ToolGroupKind; state: ToolSummaryState }>,
 ): string[] {
   if (entries.length <= 3) {
-    return entries.map(({ kind, count, running }) => getToolGroupPhrase(kind, count, running));
+    return entries.map(({ kind, count, state }) =>
+      getToolGroupPhrase(kind, count, state === "running", state === "error", state === "pending"),
+    );
   }
 
   const visibleCount = 2;
@@ -618,16 +635,24 @@ function collapseNoisyToolSummary(
   return [
     ...entries
       .slice(0, visibleCount)
-      .map(({ kind, count, running }) => getToolGroupPhrase(kind, count, running)),
+      .map(({ kind, count, state }) =>
+        getToolGroupPhrase(
+          kind,
+          count,
+          state === "running",
+          state === "error",
+          state === "pending",
+        ),
+      ),
     `used ${hiddenToolCount} other tools`,
   ];
 }
 
-function getToolGroupItemLabel(toolCall: ToolCall): string {
+function getToolGroupItemLabel(toolCall: ToolCall, live = false): string {
   const summary = getToolCallSummary(toolCall);
   const kind = getToolGroupKind(toolCall);
   const preview = summary.fullPreview ?? summary.preview;
-  const verb = getToolItemVerb(toolCall);
+  const verb = getToolItemVerb(toolCall, live);
 
   if (kind === "read") {
     return `${verb} ${formatToolTarget(preview) ?? "file"}`;
@@ -661,6 +686,20 @@ function formatToolTarget(value: string | undefined): string | undefined {
 
 function capitalize(value: string): string {
   return value.replace(/^./, (char) => char.toUpperCase());
+}
+
+function getToolSummaryState(toolCall: ToolCall, live: boolean): ToolSummaryState {
+  if (isFailedToolCall(toolCall)) return "error";
+  if (isRunningToolCall(toolCall, live)) return "running";
+  if (toolCall.status === "pending") return "pending";
+  return "complete";
+}
+
+function getToolSummaryStatePriority(state: ToolSummaryState): number {
+  if (state === "error") return 0;
+  if (state === "running") return 1;
+  if (state === "pending") return 2;
+  return 3;
 }
 
 function isApprovalPendingToolCall(toolCall: ToolCall): boolean {

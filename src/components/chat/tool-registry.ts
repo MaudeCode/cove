@@ -52,6 +52,8 @@ interface ToolDefinition {
   inputBlock?: ToolInputBlockKind | ((args: Record<string, unknown>) => ToolInputBlockKind);
   itemVerb: {
     complete: string;
+    error: string;
+    pending?: string;
     running: string;
   };
   kind: ToolKind;
@@ -63,7 +65,9 @@ interface ToolDefinition {
 
 interface ToolKindDefinition {
   completePhrase: (count: number) => string;
+  errorPhrase: (count: number) => string;
   groupPriority: number;
+  pendingPhrase?: (count: number) => string;
   runningPhrase?: (count: number) => string;
 }
 
@@ -72,7 +76,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["read"],
     icon: "default",
     inputBlock: "read",
-    itemVerb: { complete: "Read", running: "Reading" },
+    itemVerb: {
+      complete: "Read",
+      error: "Failed to read",
+      pending: "Started reading",
+      running: "Reading",
+    },
     kind: "read",
     label: () => "Read file",
     preview: (_toolCall, args) => getPathPreview(args),
@@ -81,7 +90,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["memory_get"],
     icon: "default",
     inputBlock: "memory-get",
-    itemVerb: { complete: "Read", running: "Reading" },
+    itemVerb: {
+      complete: "Read",
+      error: "Failed to read",
+      pending: "Started reading",
+      running: "Reading",
+    },
     kind: "read",
     label: () => "Memory read",
     preview: (_toolCall, args) => getPathPreview(args),
@@ -91,7 +105,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["write"],
     icon: "default",
     inputBlock: "write",
-    itemVerb: { complete: "Wrote", running: "Writing" },
+    itemVerb: {
+      complete: "Wrote",
+      error: "Failed to write",
+      pending: "Started writing",
+      running: "Writing",
+    },
     kind: "write",
     label: () => "Write file",
     preview: (_toolCall, args) => getPathPreview(args),
@@ -100,7 +119,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["edit"],
     icon: "edit",
     inputBlock: "edit",
-    itemVerb: { complete: "Edited", running: "Editing" },
+    itemVerb: {
+      complete: "Edited",
+      error: "Failed to edit",
+      pending: "Started editing",
+      running: "Editing",
+    },
     kind: "edit",
     label: () => "Edit file",
     preview: (_toolCall, args) => getPathPreview(args),
@@ -109,7 +133,7 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["exec", "bash", "shell", "system.run", "system_run"],
     icon: "default",
     inputBlock: (args) => (hasCommandInput(args) ? "exec" : "code"),
-    itemVerb: { complete: "Ran", running: "Running" },
+    itemVerb: { complete: "Ran", error: "Failed to run", pending: "Started", running: "Running" },
     kind: "exec",
     label: () => "Exec",
     preview: getCommandPreview,
@@ -118,7 +142,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["web_search"],
     icon: "search",
     inputBlock: "search",
-    itemVerb: { complete: "Searched", running: "Searching" },
+    itemVerb: {
+      complete: "Searched",
+      error: "Failed to search",
+      pending: "Started searching",
+      running: "Searching",
+    },
     kind: "search",
     label: () => "Web search",
     preview: (_toolCall, args) => getString(args.query),
@@ -128,7 +157,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["memory_search"],
     icon: "search",
     inputBlock: "search",
-    itemVerb: { complete: "Searched", running: "Searching" },
+    itemVerb: {
+      complete: "Searched",
+      error: "Failed to search",
+      pending: "Started searching",
+      running: "Searching",
+    },
     kind: "search",
     label: () => "Memory search",
     preview: (_toolCall, args) => getString(args.query),
@@ -138,7 +172,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["web_fetch"],
     icon: "default",
     inputBlock: "url",
-    itemVerb: { complete: "Fetched", running: "Fetching" },
+    itemVerb: {
+      complete: "Fetched",
+      error: "Failed to fetch",
+      pending: "Started fetching",
+      running: "Fetching",
+    },
     kind: "fetch",
     label: () => "Web fetch",
     preview: (_toolCall, args) => {
@@ -151,7 +190,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["browser"],
     icon: "default",
     inputBlock: "browser",
-    itemVerb: { complete: "Used", running: "Using" },
+    itemVerb: {
+      complete: "Used",
+      error: "Failed to use",
+      pending: "Started using",
+      running: "Using",
+    },
     kind: "browser",
     label: (args) => actionLabel("Browser", args),
     preview: (_toolCall, args) =>
@@ -166,7 +210,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["image"],
     icon: "default",
     inputBlock: "image",
-    itemVerb: { complete: "Handled", running: "Handling" },
+    itemVerb: {
+      complete: "Handled",
+      error: "Failed to handle",
+      pending: "Started handling",
+      running: "Handling",
+    },
     kind: "media",
     label: () => "Image",
     preview: (_toolCall, args) =>
@@ -176,7 +225,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
   {
     aliases: ["media"],
     icon: "default",
-    itemVerb: { complete: "Handled", running: "Handling" },
+    itemVerb: {
+      complete: "Handled",
+      error: "Failed to handle",
+      pending: "Started handling",
+      running: "Handling",
+    },
     kind: "media",
     label: () => "Media",
     preview: (_toolCall, args) =>
@@ -186,7 +240,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["message"],
     icon: "default",
     inputBlock: "message",
-    itemVerb: { complete: "Sent", running: "Sending" },
+    itemVerb: {
+      complete: "Sent",
+      error: "Failed to send",
+      pending: "Started sending",
+      running: "Sending",
+    },
     kind: "message",
     label: (args) => actionLabel("Message", args),
     preview: (_toolCall, args) =>
@@ -201,7 +260,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["cron"],
     icon: "default",
     inputBlock: "cron",
-    itemVerb: { complete: "Checked", running: "Checking" },
+    itemVerb: {
+      complete: "Checked",
+      error: "Failed to check",
+      pending: "Started checking",
+      running: "Checking",
+    },
     kind: "cron",
     label: (args) => actionLabel("Cron", args),
     preview: (_toolCall, args) =>
@@ -215,7 +279,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["gateway"],
     icon: "default",
     inputBlock: "gateway",
-    itemVerb: { complete: "Called", running: "Calling" },
+    itemVerb: {
+      complete: "Called",
+      error: "Failed to call",
+      pending: "Started calling",
+      running: "Calling",
+    },
     kind: "gateway",
     label: (args) => actionLabel("Gateway", args),
     preview: (_toolCall, args) =>
@@ -226,7 +295,12 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
     aliases: ["session_status"],
     icon: "default",
     inputBlock: "session-status",
-    itemVerb: { complete: "Checked", running: "Checking" },
+    itemVerb: {
+      complete: "Checked",
+      error: "Failed to check",
+      pending: "Started checking",
+      running: "Checking",
+    },
     kind: "status",
     label: () => "Session status",
     preview: (_toolCall, args) => getString(args.sessionKey) ?? getString(args.model),
@@ -237,57 +311,101 @@ const TOOL_DEFINITIONS: ToolDefinition[] = [
 const TOOL_KIND_DEFINITIONS: Record<Exclude<ToolKind, "custom">, ToolKindDefinition> = {
   browser: {
     completePhrase: (count) => (count === 1 ? "used browser" : `used browser ${count} times`),
+    errorPhrase: (count) =>
+      count === 1 ? "failed to use browser" : `failed to use browser ${count} times`,
     groupPriority: 70,
+    pendingPhrase: (count) =>
+      count === 1 ? "started using browser" : `started using browser ${count} times`,
   },
   cron: {
     completePhrase: (count) => (count === 1 ? "checked cron" : `checked cron ${count} times`),
+    errorPhrase: (count) =>
+      count === 1 ? "failed to check cron" : `failed to check cron ${count} times`,
     groupPriority: 100,
+    pendingPhrase: (count) =>
+      count === 1 ? "started checking cron" : `started checking cron ${count} times`,
   },
   edit: {
     completePhrase: (count) => `edited ${count} ${plural(count, "file", "files")}`,
+    errorPhrase: (count) => `failed to edit ${count} ${plural(count, "file", "files")}`,
     groupPriority: 30,
+    pendingPhrase: (count) => `started editing ${count} ${plural(count, "file", "files")}`,
     runningPhrase: (count) => `editing ${count} ${plural(count, "file", "files")}`,
   },
   exec: {
     completePhrase: (count) => (count === 1 ? "ran a command" : `ran ${count} commands`),
+    errorPhrase: (count) =>
+      count === 1 ? "failed to run a command" : `failed to run ${count} commands`,
     groupPriority: 40,
+    pendingPhrase: (count) => (count === 1 ? "started a command" : `started ${count} commands`),
     runningPhrase: (count) => (count === 1 ? "running a command" : `running ${count} commands`),
   },
   fetch: {
     completePhrase: (count) => (count === 1 ? "fetched a page" : `fetched ${count} pages`),
+    errorPhrase: (count) =>
+      count === 1 ? "failed to fetch a page" : `failed to fetch ${count} pages`,
     groupPriority: 60,
+    pendingPhrase: (count) =>
+      count === 1 ? "started fetching a page" : `started fetching ${count} pages`,
     runningPhrase: (count) => (count === 1 ? "fetching a page" : `fetching ${count} pages`),
   },
   gateway: {
     completePhrase: (count) => (count === 1 ? "called gateway" : `called gateway ${count} times`),
+    errorPhrase: (count) =>
+      count === 1 ? "failed to call gateway" : `failed to call gateway ${count} times`,
     groupPriority: 110,
+    pendingPhrase: (count) =>
+      count === 1 ? "started calling gateway" : `started calling gateway ${count} times`,
   },
   media: {
     completePhrase: (count) => (count === 1 ? "handled media" : `handled ${count} media items`),
+    errorPhrase: (count) =>
+      count === 1 ? "failed to handle media" : `failed to handle ${count} media items`,
     groupPriority: 80,
+    pendingPhrase: (count) =>
+      count === 1 ? "started handling media" : `started handling ${count} media items`,
   },
   message: {
     completePhrase: (count) => (count === 1 ? "sent a message" : `sent ${count} messages`),
+    errorPhrase: (count) =>
+      count === 1 ? "failed to send a message" : `failed to send ${count} messages`,
     groupPriority: 90,
+    pendingPhrase: (count) =>
+      count === 1 ? "started sending a message" : `started sending ${count} messages`,
   },
   read: {
     completePhrase: (count) => `read ${count} ${plural(count, "file", "files")}`,
+    errorPhrase: (count) => `failed to read ${count} ${plural(count, "file", "files")}`,
     groupPriority: 10,
+    pendingPhrase: (count) => `started reading ${count} ${plural(count, "file", "files")}`,
     runningPhrase: (count) => `reading ${count} ${plural(count, "file", "files")}`,
   },
   search: {
     completePhrase: (count) => (count === 1 ? "searched" : `searched ${count} times`),
+    errorPhrase: (count) => (count === 1 ? "failed to search" : `failed to search ${count} times`),
     groupPriority: 50,
+    pendingPhrase: (count) =>
+      count === 1 ? "started searching" : `started searching ${count} times`,
     runningPhrase: (count) => (count === 1 ? "searching" : `searching ${count} times`),
   },
   status: {
     completePhrase: (count) =>
       count === 1 ? "checked session status" : `checked session status ${count} times`,
+    errorPhrase: (count) =>
+      count === 1
+        ? "failed to check session status"
+        : `failed to check session status ${count} times`,
     groupPriority: 120,
+    pendingPhrase: (count) =>
+      count === 1
+        ? "started checking session status"
+        : `started checking session status ${count} times`,
   },
   write: {
     completePhrase: (count) => `wrote ${count} ${plural(count, "file", "files")}`,
+    errorPhrase: (count) => `failed to write ${count} ${plural(count, "file", "files")}`,
     groupPriority: 20,
+    pendingPhrase: (count) => `started writing ${count} ${plural(count, "file", "files")}`,
     runningPhrase: (count) => `writing ${count} ${plural(count, "file", "files")}`,
   },
 };
@@ -309,9 +427,21 @@ export function getToolGroupKind(toolCall: ToolCall): ToolGroupKind {
   return definition.kind;
 }
 
-export function getToolGroupPhrase(kind: ToolGroupKind, count: number, running = false): string {
+export function getToolGroupPhrase(
+  kind: ToolGroupKind,
+  count: number,
+  running = false,
+  failed = false,
+  pending = false,
+): string {
   if (kind.startsWith("custom:")) {
     const label = kind.slice("custom:".length) || "tool";
+    if (failed) {
+      return count === 1 ? `failed ${label}` : `failed ${label} ${count} times`;
+    }
+    if (pending) {
+      return count === 1 ? `started ${label}` : `started ${label} ${count} times`;
+    }
     if (running) {
       return count === 1 ? `using ${label}` : `using ${label} ${count} times`;
     }
@@ -319,6 +449,8 @@ export function getToolGroupPhrase(kind: ToolGroupKind, count: number, running =
   }
 
   const definition = TOOL_KIND_DEFINITIONS[kind as Exclude<ToolKind, "custom">];
+  if (failed) return definition.errorPhrase(count);
+  if (pending && definition.pendingPhrase) return definition.pendingPhrase(count);
   return running && definition.runningPhrase
     ? definition.runningPhrase(count)
     : definition.completePhrase(count);
@@ -355,9 +487,15 @@ export function getToolResultBlockKind(name: string): ToolResultBlockKind {
   return getToolDefinition(name).resultBlock ?? "code";
 }
 
-export function getToolItemVerb(toolCall: ToolCall): string {
+export function getToolItemVerb(toolCall: ToolCall, running = false): string {
   const definition = getToolDefinition(toolCall.name);
-  return isRunningToolCall(toolCall) ? definition.itemVerb.running : definition.itemVerb.complete;
+  if (isFailedToolCall(toolCall)) return definition.itemVerb.error;
+  if (toolCall.status === "pending" && !running) {
+    return definition.itemVerb.pending ?? definition.itemVerb.complete;
+  }
+  return isRunningToolCall(toolCall, running)
+    ? definition.itemVerb.running
+    : definition.itemVerb.complete;
 }
 
 export function getToolLabel(name: string, args: Record<string, unknown>): string {
@@ -386,8 +524,12 @@ export function getExecCommandInput(args: Record<string, unknown>): string | und
   return getArgvCommandPreview(args.argv);
 }
 
-export function isRunningToolCall(toolCall: ToolCall): boolean {
-  return toolCall.status === "pending" || toolCall.status === "running";
+export function isRunningToolCall(toolCall: ToolCall, live = false): boolean {
+  return live && (toolCall.status === "pending" || toolCall.status === "running");
+}
+
+export function isFailedToolCall(toolCall: ToolCall): boolean {
+  return toolCall.status === "error" || hasErrorResult(toolCall.result);
 }
 
 export function humanizeAction(value: string): string {
@@ -402,7 +544,12 @@ function getCustomToolDefinition(name: string): ToolDefinition {
   return {
     aliases: [normalizeToolName(name)],
     icon: "custom",
-    itemVerb: { complete: humanizeAction(name), running: "Using" },
+    itemVerb: {
+      complete: humanizeAction(name),
+      error: "Failed",
+      pending: "Started",
+      running: "Using",
+    },
     kind: "custom",
     label: () => humanizeAction(name),
   };
@@ -514,6 +661,10 @@ function parseLooseErrorResult(result: unknown): { error: string } | null {
 
   const record = result as Record<string, unknown>;
   return typeof record.error === "string" ? { error: record.error } : null;
+}
+
+function hasErrorResult(result: unknown): boolean {
+  return parseErrorResult(result) !== null || parseLooseErrorResult(result) !== null;
 }
 
 function unwrapResult(result: unknown): unknown {
