@@ -85,6 +85,38 @@ describe("chat content parsing", () => {
       ]).images,
     ).toEqual([{ url: "", alt: "Image omitted", omitted: true, bytes: 12345 }]);
   });
+
+  test("preserves inline tool result error metadata before flattening display content", () => {
+    const parsed = parseMessageContent([
+      {
+        type: "toolCall",
+        id: "tool-1",
+        name: "exec",
+        arguments: { command: "bun test" },
+      },
+      {
+        type: "tool_result",
+        id: "tool-1",
+        content: {
+          status: "error",
+          error: "command failed",
+          content: [{ type: "text", text: "display output" }],
+        },
+      },
+    ]);
+
+    expect(parsed.toolCalls).toHaveLength(1);
+    expect(parsed.toolCalls[0]).toMatchObject({
+      id: "tool-1",
+      name: "exec",
+      result: {
+        status: "error",
+        error: "command failed",
+        tool: "exec",
+      },
+      status: "error",
+    });
+  });
 });
 
 describe("chat message normalization", () => {
