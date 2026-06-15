@@ -235,7 +235,7 @@ describe("view-state system contracts", () => {
     expect(nodeCalls.stop).toBe(1);
   });
 
-  test("i18n translates, interpolates, pluralizes, and formats values", async () => {
+  test("i18n translates, interpolates, and formats values", async () => {
     const i18n = await import("../../../src/lib/i18n");
     const realNow = Date.now;
     Date.now = () => new Date("2026-06-13T12:00:00Z").getTime();

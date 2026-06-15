@@ -27,7 +27,7 @@ export function ThinkingBlock({ content }: ThinkingBlockProps) {
     : t("chat.thinkingBlock.thoughtFor", { duration: durationText });
 
   return (
-    <section class="thinking-block min-w-0 space-y-2 text-[var(--color-text-muted)]">
+    <div class="thinking-block min-w-0 space-y-2 text-[var(--color-text-muted)]">
       <button
         type="button"
         onClick={(event) => {
@@ -38,7 +38,7 @@ export function ThinkingBlock({ content }: ThinkingBlockProps) {
         aria-label={
           isExpanded ? t("chat.thinkingBlock.collapseLabel") : t("chat.thinkingBlock.expandLabel")
         }
-        class="group flex w-full min-w-0 items-center gap-2 text-left text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+        class="group flex min-h-8 w-full min-w-0 items-center gap-2 text-left text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
       >
         <Brain class="w-4 h-4 flex-shrink-0" aria-hidden="true" />
         <span class="truncate">{label}</span>
@@ -62,6 +62,6 @@ export function ThinkingBlock({ content }: ThinkingBlockProps) {
           </div>
         </div>
       )}
-    </section>
+    </div>
   );
 }

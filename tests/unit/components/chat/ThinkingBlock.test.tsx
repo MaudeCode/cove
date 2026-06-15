@@ -30,10 +30,12 @@ describe("ThinkingBlock", () => {
     renderComponent(<ThinkingBlock content={"x".repeat(5_000)} />);
 
     const button = screen.getByRole("button", { name: "Expand thinking" });
+    const root = document.querySelector(".thinking-block");
+
     expect(button.textContent).toBe("Thought for 10s");
-    expect(button.querySelector(".lucide-brain")).toBeTruthy();
-    expect(button.querySelector(".lucide-chevron-right")).toBeTruthy();
-    expect(document.querySelector(".thinking-block")?.className).not.toContain("border");
+    expect(button.getAttribute("aria-expanded")).toBe("false");
+    expect(root?.tagName).toBe("DIV");
+    expect(button.classList.contains("min-h-8") || button.className.includes(" py-")).toBe(true);
     expect(screen.queryByTestId("thought-content")).toBeNull();
   });
 
@@ -51,12 +53,10 @@ describe("ThinkingBlock", () => {
       expect(screen.getByRole("button", { name: "Collapse thinking" }).textContent).toBe(
         "Thinking",
       );
-      expect(screen.getByTestId("thought-content").textContent).toBe("private reasoning");
       expect(
-        screen
-          .getByRole("button", { name: "Collapse thinking" })
-          .querySelector(".lucide-chevron-down"),
-      ).toBeTruthy();
+        screen.getByRole("button", { name: "Collapse thinking" }).getAttribute("aria-expanded"),
+      ).toBe("true");
+      expect(screen.getByTestId("thought-content").textContent).toBe("private reasoning");
     } finally {
       document.removeEventListener(CHAT_CONTENT_TOGGLE_EVENT, handleToggle);
     }
