@@ -121,4 +121,16 @@ describe("tool registry", () => {
     ).toBe(true);
     expect(getToolItemVerb(toolCall({ name: "exec", status: "error" }))).toBe("Failed to run");
   });
+
+  test("uses active wording for grouped non-command tools", () => {
+    expect(getToolGroupPhrase("browser", 1, true)).toBe("using browser");
+    expect(getToolGroupPhrase("cron", 2, true)).toBe("checking cron 2 times");
+    expect(getToolGroupPhrase("gateway", 1, true)).toBe("calling gateway");
+    expect(getToolGroupPhrase("media", 2, true)).toBe("handling 2 media items");
+    expect(getToolGroupPhrase("message", 1, true)).toBe("sending a message");
+    expect(getToolGroupPhrase("status", 2, true)).toBe("checking session status 2 times");
+
+    expect(getToolGroupPhrase("browser", 1)).toBe("used browser");
+    expect(getToolGroupPhrase("cron", 1)).toBe("checked cron");
+  });
 });

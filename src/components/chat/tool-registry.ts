@@ -316,6 +316,7 @@ const TOOL_KIND_DEFINITIONS: Record<Exclude<ToolKind, "custom">, ToolKindDefinit
     groupPriority: 70,
     pendingPhrase: (count) =>
       count === 1 ? "started using browser" : `started using browser ${count} times`,
+    runningPhrase: (count) => (count === 1 ? "using browser" : `using browser ${count} times`),
   },
   cron: {
     completePhrase: (count) => (count === 1 ? "checked cron" : `checked cron ${count} times`),
@@ -324,6 +325,7 @@ const TOOL_KIND_DEFINITIONS: Record<Exclude<ToolKind, "custom">, ToolKindDefinit
     groupPriority: 100,
     pendingPhrase: (count) =>
       count === 1 ? "started checking cron" : `started checking cron ${count} times`,
+    runningPhrase: (count) => (count === 1 ? "checking cron" : `checking cron ${count} times`),
   },
   edit: {
     completePhrase: (count) => `edited ${count} ${plural(count, "file", "files")}`,
@@ -356,6 +358,7 @@ const TOOL_KIND_DEFINITIONS: Record<Exclude<ToolKind, "custom">, ToolKindDefinit
     groupPriority: 110,
     pendingPhrase: (count) =>
       count === 1 ? "started calling gateway" : `started calling gateway ${count} times`,
+    runningPhrase: (count) => (count === 1 ? "calling gateway" : `calling gateway ${count} times`),
   },
   media: {
     completePhrase: (count) => (count === 1 ? "handled media" : `handled ${count} media items`),
@@ -364,6 +367,7 @@ const TOOL_KIND_DEFINITIONS: Record<Exclude<ToolKind, "custom">, ToolKindDefinit
     groupPriority: 80,
     pendingPhrase: (count) =>
       count === 1 ? "started handling media" : `started handling ${count} media items`,
+    runningPhrase: (count) => (count === 1 ? "handling media" : `handling ${count} media items`),
   },
   message: {
     completePhrase: (count) => (count === 1 ? "sent a message" : `sent ${count} messages`),
@@ -372,6 +376,7 @@ const TOOL_KIND_DEFINITIONS: Record<Exclude<ToolKind, "custom">, ToolKindDefinit
     groupPriority: 90,
     pendingPhrase: (count) =>
       count === 1 ? "started sending a message" : `started sending ${count} messages`,
+    runningPhrase: (count) => (count === 1 ? "sending a message" : `sending ${count} messages`),
   },
   read: {
     completePhrase: (count) => `read ${count} ${plural(count, "file", "files")}`,
@@ -400,6 +405,8 @@ const TOOL_KIND_DEFINITIONS: Record<Exclude<ToolKind, "custom">, ToolKindDefinit
       count === 1
         ? "started checking session status"
         : `started checking session status ${count} times`,
+    runningPhrase: (count) =>
+      count === 1 ? "checking session status" : `checking session status ${count} times`,
   },
   write: {
     completePhrase: (count) => `wrote ${count} ${plural(count, "file", "files")}`,

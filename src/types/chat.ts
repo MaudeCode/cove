@@ -308,8 +308,9 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
         // Find matching tool call and update its result
         const existing = toolCalls.find((tc) => tc.id === block.id);
         if (existing) {
-          existing.result = extractToolResultContent(block.content);
-          existing.status = "complete";
+          const errorResult = getToolResultError(block.content, existing.name);
+          existing.result = errorResult ?? extractToolResultContent(block.content);
+          existing.status = errorResult ? "error" : "complete";
           existing.completedAt = Date.now();
         }
         break;
@@ -333,6 +334,29 @@ export function parseMessageContent(content: string | ContentBlock[]): ParsedCon
     toolCalls,
     images,
     thinking,
+  };
+}
+
+function getToolResultError(result: unknown, toolName?: string): unknown | null {
+  if (!result || typeof result !== "object") return null;
+
+  const record = result as Record<string, unknown>;
+  if (record.status !== "error") return null;
+
+  const displayContent = extractToolResultContent(record.content);
+  const error =
+    typeof record.error === "string"
+      ? record.error
+      : typeof record.message === "string"
+        ? record.message
+        : typeof displayContent === "string"
+          ? displayContent
+          : "Tool execution failed";
+
+  return {
+    status: "error",
+    error,
+    tool: typeof record.tool === "string" ? record.tool : toolName,
   };
 }
 
