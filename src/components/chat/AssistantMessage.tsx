@@ -44,6 +44,7 @@ interface AssistantMessageProps {
 const TOOL_HEADER_THINKING_DELAY_MS = 2_000;
 
 type ToolSummaryState = "complete" | "error" | "pending" | "running";
+type ToolLiveMatcher = boolean | ((toolCall: ToolCall) => boolean);
 type TextBlock = { type: "text"; content: string };
 type SingleToolBlock = { type: "tool"; toolCall: ToolCall };
 type ToolGroupBlock = { type: "tool-group"; toolCalls: ToolCall[] };
@@ -490,7 +491,7 @@ function getToolCallGroupHeaderLabel(
   },
 ): string {
   if (!isStreaming) {
-    return summarizeToolGroup(toolCalls, false);
+    return summarizeToolGroup(toolCalls, isApprovalPendingToolCall);
   }
 
   const runningToolCalls = toolCalls.filter((toolCall) => isRunningToolCall(toolCall, true));
@@ -588,15 +589,15 @@ function getToolCallGroupHeaderToolCalls(
   return toolCalls;
 }
 
-function summarizeToolGroup(toolCalls: ToolCall[], live = false): string {
+function summarizeToolGroup(toolCalls: ToolCall[], live: ToolLiveMatcher = false): string {
   if (toolCalls.length === 1) {
-    return getToolGroupItemLabel(toolCalls[0], live);
+    return getToolGroupItemLabel(toolCalls[0], isToolCallLive(toolCalls[0], live));
   }
 
   const groups = new Map<string, { count: number; kind: ToolGroupKind; state: ToolSummaryState }>();
   for (const toolCall of toolCalls) {
     const kind = getToolGroupKind(toolCall);
-    const state = getToolSummaryState(toolCall, live);
+    const state = getToolSummaryState(toolCall, isToolCallLive(toolCall, live));
     const key = `${kind}:${state}`;
     const current = groups.get(key) ?? { count: 0, kind, state };
     groups.set(key, {
@@ -609,9 +610,10 @@ function summarizeToolGroup(toolCalls: ToolCall[], live = false): string {
   const entries = Array.from(groups.entries())
     .map(([, group]) => group)
     .sort((left, right) => {
-      const priorityDelta = getToolGroupPriority(left.kind) - getToolGroupPriority(right.kind);
-      if (priorityDelta !== 0) return priorityDelta;
-      return getToolSummaryStatePriority(left.state) - getToolSummaryStatePriority(right.state);
+      const stateDelta =
+        getToolSummaryStatePriority(left.state) - getToolSummaryStatePriority(right.state);
+      if (stateDelta !== 0) return stateDelta;
+      return getToolGroupPriority(left.kind) - getToolGroupPriority(right.kind);
     });
   const parts = collapseNoisyToolSummary(entries);
 
@@ -693,6 +695,10 @@ function getToolSummaryState(toolCall: ToolCall, live: boolean): ToolSummaryStat
   if (isRunningToolCall(toolCall, live)) return "running";
   if (toolCall.status === "pending") return "pending";
   return "complete";
+}
+
+function isToolCallLive(toolCall: ToolCall, live: ToolLiveMatcher): boolean {
+  return typeof live === "function" ? live(toolCall) : live;
 }
 
 function getToolSummaryStatePriority(state: ToolSummaryState): number {

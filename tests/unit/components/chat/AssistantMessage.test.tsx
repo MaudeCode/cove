@@ -271,7 +271,9 @@ describe("AssistantMessage", () => {
       />,
     );
 
-    const groupHeader = screen.getByRole("button", { name: "Read 1 file, ran a command" });
+    const groupHeader = screen.getByRole("button", {
+      name: "Running a command, read 1 file",
+    });
     expect(groupHeader.getAttribute("aria-expanded")).toBe("true");
 
     const approvalItem = screen.getByRole("button", { name: "Running rm -rf build" });
@@ -679,6 +681,40 @@ describe("AssistantMessage", () => {
     ).toBeTruthy();
     expect(screen.queryByRole("button", { name: /searched 2 times/ })).toBeNull();
     expect(screen.queryByRole("button", { name: /checked cron 2 times/ })).toBeNull();
+  });
+
+  test("keeps failed entries visible before collapsing noisy mixed tool summaries", () => {
+    const toolCalls = [
+      { args: { path: "README.md" }, id: "read-1", name: "read", status: "complete" },
+      { args: { commandPreview: "bun test" }, id: "exec-1", name: "exec", status: "complete" },
+      {
+        args: { query: "AssistantMessage" },
+        id: "search-1",
+        name: "web_search",
+        status: "complete",
+      },
+      {
+        args: { url: "https://example.com" },
+        id: "fetch-1",
+        name: "web_fetch",
+        status: "complete",
+      },
+      { args: { action: "list_mcp_resources" }, id: "custom-1", name: "Codex", status: "error" },
+    ] as Message["toolCalls"];
+
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "",
+          toolCalls,
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Failed Codex, read 1 file, used 3 other tools" }),
+    ).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /used 4 other tools/ })).toBeNull();
   });
 
   test("uses present tense for live running commands and past tense after completion", () => {
