@@ -10,7 +10,13 @@ import { useComputed } from "@preact/signals";
 import { route } from "preact-router";
 import { isConnected, connectionState, mainSessionKey } from "@/lib/gateway";
 import { useQueryParam, useInitFromParam, useSyncToParam } from "@/hooks/useQueryParam";
-import { sendMessage, abortChat, processMessageQueue, steerQueuedMessage } from "@/lib/chat/send";
+import {
+  sendMessage,
+  abortChat,
+  processMessageQueue,
+  steerQueuedMessage,
+  retryMessage,
+} from "@/lib/chat/send";
 import { loadHistory } from "@/lib/chat/history";
 import { clearExpandedToolCalls } from "@/components/chat/ToolCall";
 import {
@@ -174,6 +180,12 @@ export function ChatView({ sessionKey }: ChatViewProps) {
     });
   };
 
+  const handleRetryQueued = (messageId: string) => {
+    retryMessage(messageId).catch(() => {
+      // Error is handled by retryMessage (marks message as failed)
+    });
+  };
+
   const canSteerQueued = (message: Message) => {
     if (!message.sessionKey || !isConnected.value) return false;
     return getStreamingRun(message.sessionKey) !== null;
@@ -206,6 +218,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
       <ChatInput
         onSend={handleSend}
         onSteerQueued={handleSteerQueued}
+        onRetryQueued={handleRetryQueued}
         canSteerQueued={canSteerQueued}
         onAbort={handleAbort}
         disabled={false} // Allow typing even when disconnected (will queue)

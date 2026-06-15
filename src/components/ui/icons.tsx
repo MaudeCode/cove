@@ -26,6 +26,8 @@ import {
   MonitorPlay,
   Maximize2,
   CornerUpRight,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-preact";
 
 type IconProps = {
@@ -123,6 +125,14 @@ export function SearchIcon({ class: className }: IconProps) {
 
 export function CheckIcon({ class: className }: IconProps) {
   return <Check class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+export function AlertIcon({ class: className }: IconProps) {
+  return <AlertCircle class={className || "w-5 h-5"} aria-hidden="true" />;
+}
+
+export function RetryIcon({ class: className }: IconProps) {
+  return <RefreshCw class={className || "w-5 h-5"} aria-hidden="true" />;
 }
 
 // ============================================

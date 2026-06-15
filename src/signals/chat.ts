@@ -418,6 +418,12 @@ export function startRun(runId: string, sessionKey: string): void {
   activeRuns.value = newRuns;
 }
 
+/** Ensure an active run exists without replacing live streamed content. */
+export function ensureRun(runId: string, sessionKey: string): void {
+  if (activeRuns.value.has(runId)) return;
+  startRun(runId, sessionKey);
+}
+
 /** Adopt the gateway ACK runId for an optimistic local run. */
 export function adoptRunId(optimisticRunId: string, gatewayRunId: string): void {
   if (optimisticRunId === gatewayRunId) return;

@@ -11,6 +11,7 @@ import {
   isLoadingHistory,
   historyError,
   thinkingLevel,
+  ensureRun,
   reconcileMessagesFromHistory,
   saveCachedMessages,
 } from "@/signals/chat";
@@ -65,6 +66,9 @@ async function doLoadHistory(sessionKey: string, limit: number): Promise<void> {
     }
 
     const startupActiveRunIds = getStartupActiveRunIds(result);
+    for (const runId of startupActiveRunIds) {
+      ensureRun(runId, sessionKey);
+    }
     const reconciled = reconcileMessagesFromHistory(sessionKey, normalized, historyRequestedAt, {
       preservePendingSteerRunIds: startupActiveRunIds,
       preserveSessionPendingSteers:

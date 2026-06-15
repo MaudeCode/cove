@@ -25,6 +25,7 @@ const TEXTAREA_MAX_HEIGHT = 160;
 interface ChatInputProps {
   onSend: (message: string, attachments?: AttachmentPayload[]) => void | Promise<void>;
   onSteerQueued?: (messageId: string) => void;
+  onRetryQueued?: (messageId: string) => void;
   canSteerQueued?: (message: import("@/types/messages").Message) => boolean;
   onAbort?: () => void;
   disabled?: boolean;
@@ -43,6 +44,7 @@ function getAttachmentSignature(attachments: Attachment[]): string {
 export function ChatInput({
   onSend,
   onSteerQueued,
+  onRetryQueued,
   canSteerQueued,
   onAbort,
   disabled = false,
@@ -289,7 +291,7 @@ export function ChatInput({
     <div class="pb-3 pt-2">
       <div class="max-w-5xl mx-auto px-6">
         {/* Queued messages display */}
-        <QueuedMessages onSteer={onSteerQueued} canSteer={canSteerQueued} />
+        <QueuedMessages onSteer={onSteerQueued} onRetry={onRetryQueued} canSteer={canSteerQueued} />
 
         {/* Error message */}
         {attachmentError && (

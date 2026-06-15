@@ -223,6 +223,11 @@ describe("loadHistory", () => {
 
     await loadHistory("session-1", 7);
 
+    expect(chat.activeRuns.value.get("run-active")).toMatchObject({
+      runId: "run-active",
+      sessionKey: "session-1",
+      status: "pending",
+    });
     expect(chat.messageQueue.value).toEqual([
       expect.objectContaining({
         id: "user_steer",
