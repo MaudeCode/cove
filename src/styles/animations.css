@@ -222,6 +222,39 @@
   animation-delay: 300ms;
 }
 
+/* Sequential letter bounce for assistant thinking states */
+@keyframes cove-bouncing-character {
+  0%,
+  22%,
+  100% {
+    transform: translateY(0);
+  }
+  10% {
+    transform: translateY(-1.5px);
+  }
+}
+
+.cove-bouncing-text {
+  display: inline-block;
+  max-width: 100%;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+
+.cove-bouncing-text__character {
+  display: inline-block;
+  animation: cove-bouncing-character 2.2s ease-in-out infinite;
+  animation-delay: calc(var(--cove-bouncing-character-index) * 55ms);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cove-bouncing-text__character {
+    animation: none;
+    transform: none;
+  }
+}
+
 /* AI glow spin - rotating gradient border for streaming sessions */
 @keyframes ai-glow-spin {
   from {

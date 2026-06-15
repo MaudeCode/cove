@@ -12,12 +12,12 @@ import { MessageImages } from "./MessageImages";
 import { MessageActions } from "./MessageActions";
 import { ToolCall as ToolCallComponent } from "./ToolCall";
 import { ThinkingBlock } from "./ThinkingBlock";
-import { BouncingDots } from "@/components/ui/BouncingDots";
-import { formatTimestamp, t } from "@/lib/i18n";
+import { formatTimestamp } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { isAvatarUrl } from "@/lib/utils";
 import { parseMediaFromContent, mediaUrlsToImages } from "@/lib/media-parse";
 import { HistoryTruncationIndicator } from "./HistoryTruncationIndicator";
+import { ThinkingStatus } from "./ThinkingStatus";
 
 interface AssistantMessageProps {
   message: Message;
@@ -229,20 +229,8 @@ export function AssistantMessage({
           </div>
         )}
 
-        {/* Show streaming indicator after all content */}
-        {hasContent && isStreaming && (
-          <span class="ml-1">
-            <BouncingDots />
-          </span>
-        )}
-
         {/* Empty state with streaming indicator */}
-        {!hasContent && isStreaming && (
-          <span class="inline-flex items-center gap-2 text-[var(--color-text-muted)]">
-            {t("chat.thinking")}
-            <BouncingDots />
-          </span>
-        )}
+        {!hasContent && isStreaming && <ThinkingStatus />}
       </div>
     </div>
   );

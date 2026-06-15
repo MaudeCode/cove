@@ -96,4 +96,16 @@ describe("MessageContent", () => {
     await waitFor(() => expect(execCalls).toEqual(["copy"]));
     expect(screen.getByRole("button", { name: "actions.copied" })).toBeTruthy();
   });
+
+  test("renders empty streaming content as one accessible thinking label", () => {
+    renderComponent(<MessageContent content="" isStreaming />);
+
+    const status = screen.getByRole("status", { name: "chat.thinking" });
+    expect(status.textContent).toBe("chat.thinking");
+    expect(status.querySelector(".cove-bouncing-text")?.textContent).toBe("chat.thinking");
+    expect(status.querySelectorAll(".cove-bouncing-text__character")).toHaveLength(
+      Array.from("chat.thinking").length,
+    );
+    expect(document.querySelector("[data-testid='bouncing-dots']")).toBeNull();
+  });
 });
