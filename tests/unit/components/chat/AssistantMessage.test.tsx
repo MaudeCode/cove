@@ -115,7 +115,10 @@ describe("AssistantMessage", () => {
 
     const status = screen.getByRole("status", { name: "chat.thinking" });
     expect(status.textContent).toBe("chat.thinking");
-    expect(status.querySelector(".cove-shimmer-text")?.textContent).toBe("chat.thinking");
+    expect(status.querySelector(".cove-bouncing-text")?.textContent).toBe("chat.thinking");
+    expect(status.querySelectorAll(".cove-bouncing-text__character")).toHaveLength(
+      Array.from("chat.thinking").length,
+    );
     expect(document.querySelector("[data-testid='bouncing-dots']")).toBeNull();
   });
 

@@ -1,5 +1,5 @@
 import { t } from "@/lib/i18n";
-import { ShimmerText } from "../ui/ShimmerText";
+import { BouncingText } from "../ui/BouncingText";
 
 export function ThinkingStatus() {
   const label = t("chat.thinking");
@@ -10,7 +10,7 @@ export function ThinkingStatus() {
       aria-label={label}
       class="inline-flex min-w-0 max-w-full items-center text-[var(--color-text-muted)]"
     >
-      <ShimmerText class="truncate">{label}</ShimmerText>
+      <BouncingText class="truncate" text={label} />
     </span>
   );
 }
