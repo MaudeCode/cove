@@ -6,7 +6,7 @@
 
 import { useRef, useEffect, useCallback, useMemo } from "preact/hooks";
 import { useSignal } from "@preact/signals";
-import type { Message, ToolCall } from "@/types/messages";
+import type { CommentaryItem, Message, ToolCall } from "@/types/messages";
 import { ChatMessage } from "./ChatMessage";
 import { CollapsedMessage } from "./CollapsedMessage";
 import { CompactionDivider } from "./CompactionDivider";
@@ -43,6 +43,7 @@ interface MessageListProps {
   error?: string | null;
   streamingContent?: string;
   streamingToolCalls?: ToolCall[];
+  streamingCommentaryItems?: CommentaryItem[];
   isStreaming?: boolean;
   assistantName?: string;
   assistantAvatar?: string;
@@ -58,6 +59,7 @@ export function MessageList({
   error = null,
   streamingContent = "",
   streamingToolCalls = [],
+  streamingCommentaryItems = [],
   isStreaming = false,
   assistantName,
   assistantAvatar,
@@ -70,6 +72,7 @@ export function MessageList({
     messagesCount: messages.length,
     streamingContentLen: streamingContent.length,
     streamingToolCallsCount: streamingToolCalls.length,
+    streamingCommentaryItemsCount: streamingCommentaryItems.length,
     isStreaming,
     queuedCount,
   });
@@ -141,6 +144,7 @@ export function MessageList({
   }, [
     messages.length,
     streamingContent.length,
+    streamingCommentaryItems.length,
     streamingToolCalls.length,
     completedToolCount,
     queuedCount,
@@ -224,6 +228,7 @@ export function MessageList({
         role: "assistant",
         content: streamingContent,
         toolCalls: streamingToolCalls.length > 0 ? streamingToolCalls : undefined,
+        commentaryItems: streamingCommentaryItems.length > 0 ? streamingCommentaryItems : undefined,
         timestamp: Date.now(),
         isStreaming: true,
       }

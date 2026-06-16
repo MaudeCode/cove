@@ -7,7 +7,7 @@
 
 import { useSignal } from "@preact/signals";
 import { useEffect, useRef } from "preact/hooks";
-import type { Message, ToolCall } from "@/types/messages";
+import type { CommentaryItem, Message, ToolCall } from "@/types/messages";
 import { MessageContent } from "./MessageContent";
 import { MessageImages } from "./MessageImages";
 import { MessageActions } from "./MessageActions";
@@ -23,7 +23,7 @@ import {
   type ToolGroupKind,
 } from "./tool-registry";
 import { ThinkingBlock } from "./ThinkingBlock";
-import { formatTimestamp } from "@/lib/i18n";
+import { formatTimestamp, t } from "@/lib/i18n";
 import { log } from "@/lib/logger";
 import { isAvatarUrl } from "@/lib/utils";
 import { parseMediaFromContent, mediaUrlsToImages } from "@/lib/media-parse";
@@ -48,9 +48,10 @@ type ToolLiveMatcher = boolean | ((toolCall: ToolCall) => boolean);
 type TextBlock = { type: "text"; content: string };
 type SingleToolBlock = { type: "tool"; toolCall: ToolCall };
 type ToolGroupBlock = { type: "tool-group"; toolCalls: ToolCall[] };
+type CommentaryGroupBlock = { type: "commentary-group"; items: CommentaryItem[] };
 
 /** A content block - either text or consecutive tool calls */
-type ContentBlock = TextBlock | ToolGroupBlock;
+type ContentBlock = TextBlock | ToolGroupBlock | CommentaryGroupBlock;
 
 /**
  * Split content into blocks interleaved with tool calls at their insertion points.
@@ -166,6 +167,57 @@ function groupConsecutiveToolCalls(blocks: Array<TextBlock | SingleToolBlock>): 
   return grouped;
 }
 
+function buildActivityContentBlocks(
+  content: string,
+  toolCalls: ToolCall[],
+  commentaryItems: CommentaryItem[],
+): ContentBlock[] {
+  const activityItems = [
+    ...commentaryItems.map((item, index) => ({
+      type: "commentary" as const,
+      item,
+      seq: item.seq,
+      fallbackOrder: index * 2,
+    })),
+    ...toolCalls.map((toolCall, index) => ({
+      type: "tool" as const,
+      toolCall,
+      seq: toolCall.seq,
+      fallbackOrder: index * 2 + 1,
+    })),
+  ].sort((a, b) => {
+    if (a.seq != null && b.seq != null && a.seq !== b.seq) return a.seq - b.seq;
+    return a.fallbackOrder - b.fallbackOrder;
+  });
+
+  const blocks: ContentBlock[] = [];
+
+  for (const item of activityItems) {
+    const previous = blocks[blocks.length - 1];
+
+    if (item.type === "commentary") {
+      if (previous?.type === "commentary-group") {
+        previous.items.push(item.item);
+      } else {
+        blocks.push({ type: "commentary-group", items: [item.item] });
+      }
+      continue;
+    }
+
+    if (previous?.type === "tool-group") {
+      previous.toolCalls.push(item.toolCall);
+    } else {
+      blocks.push({ type: "tool-group", toolCalls: [item.toolCall] });
+    }
+  }
+
+  if (content) {
+    blocks.push({ type: "text", content });
+  }
+
+  return blocks;
+}
+
 export function AssistantMessage({
   message,
   assistantName = "Assistant",
@@ -181,9 +233,27 @@ export function AssistantMessage({
   // Combine images from message.images (content blocks) and parsed MEDIA: lines
   const allImages = [...(message.images ?? []), ...mediaImages];
 
+  const toolCalls = message.toolCalls ?? [];
+  const commentaryItems = message.commentaryItems ?? [];
+  const hasCompletedRunActivity = !isStreaming && commentaryItems.length > 0;
+  const hasLiveRunProgress = isStreaming && commentaryItems.length > 0;
+  const hasRunActivity = hasCompletedRunActivity || hasLiveRunProgress;
+  const activityBlocks = hasRunActivity
+    ? buildActivityContentBlocks("", toolCalls, commentaryItems)
+    : [];
+
   // Build content blocks using cleaned text (MEDIA: lines removed)
-  const blocks = buildContentBlocks(parsedMedia.text, message.toolCalls ?? []);
-  const hasContent = blocks.length > 0 || allImages.length > 0 || !!message.thinking;
+  const blocks = hasRunActivity
+    ? parsedMedia.text
+      ? [{ type: "text" as const, content: parsedMedia.text }]
+      : []
+    : buildContentBlocks(parsedMedia.text, toolCalls);
+  const hasContent =
+    blocks.length > 0 ||
+    activityBlocks.length > 0 ||
+    allImages.length > 0 ||
+    !!message.thinking ||
+    !!message.commentaryItems?.length;
   const streamingToolGroupKey = isStreaming ? getStreamingToolGroupKey(blocks) : null;
 
   // Debug: log every render to track reactivity issues
@@ -247,12 +317,25 @@ export function AssistantMessage({
         {/* Thinking/reasoning block (collapsible) */}
         {message.thinking && <ThinkingBlock content={message.thinking} />}
 
+        {hasCompletedRunActivity && <RunActivityBlock message={message} blocks={activityBlocks} />}
+        {hasLiveRunProgress && <RunLiveActivityBlock blocks={activityBlocks} />}
+
         {blocks.map((block, idx) => {
           log.chat.debug("Rendering block", {
             idx,
             type: block.type,
             contentLen: block.type === "text" ? block.content.length : undefined,
           });
+
+          if (block.type === "commentary-group") {
+            return (
+              <RunProgressBlock
+                key={`commentary-${block.items.map((item) => item.id).join("-")}`}
+                items={block.items}
+              />
+            );
+          }
+
           if (block.type === "text") {
             return (
               <div
@@ -291,6 +374,153 @@ export function AssistantMessage({
       </div>
     </div>
   );
+}
+
+function RunLiveActivityBlock({ blocks }: { blocks: ContentBlock[] }) {
+  return (
+    <div class="min-w-0 space-y-3">
+      {blocks.map((block) => {
+        if (block.type === "commentary-group") {
+          return (
+            <RunProgressBlock
+              key={`live-commentary-${block.items.map((item) => item.id).join("-")}`}
+              items={block.items}
+            />
+          );
+        }
+
+        if (block.type === "tool-group") {
+          return (
+            <ToolCallGroup
+              key={getToolBlockKey(block)}
+              toolCalls={block.toolCalls}
+              isStreaming={hasLiveToolCall(block.toolCalls)}
+            />
+          );
+        }
+
+        return null;
+      })}
+    </div>
+  );
+}
+
+function hasLiveToolCall(toolCalls: ToolCall[]): boolean {
+  return toolCalls.some((toolCall) => isRunningToolCall(toolCall, true));
+}
+
+function RunProgressBlock({ items }: { items: CommentaryItem[] }) {
+  return (
+    <output
+      aria-live="polite"
+      aria-label={t("chat.runProgress")}
+      class="block min-w-0 max-w-full space-y-1 text-sm text-[var(--color-text-muted)]"
+    >
+      {items.map((item) => (
+        <span key={item.id} class="block truncate">
+          {item.text}
+        </span>
+      ))}
+    </output>
+  );
+}
+
+function RunActivityBlock({ message, blocks }: { message: Message; blocks: ContentBlock[] }) {
+  const expanded = useSignal(false);
+  const label = getRunActivityLabel(message);
+
+  return (
+    <section
+      class="min-w-0 border-b border-[var(--color-border)] pb-3 text-[var(--color-text-muted)]"
+      aria-label={t("chat.runActivity")}
+    >
+      <button
+        type="button"
+        class="group flex w-full min-w-0 items-center gap-2 text-left text-sm text-[var(--color-text-muted)] hover:text-[var(--color-text-secondary)] transition-colors"
+        aria-expanded={expanded.value}
+        onClick={(event) => {
+          dispatchChatContentToggle(event.currentTarget);
+          expanded.value = !expanded.value;
+        }}
+      >
+        <span class="truncate">{label}</span>
+        {expanded.value ? (
+          <ChevronDownIcon
+            class="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)]"
+            open={expanded.value}
+          />
+        ) : (
+          <ChevronRight
+            class="w-4 h-4 flex-shrink-0 text-[var(--color-text-muted)]"
+            aria-hidden="true"
+          />
+        )}
+      </button>
+
+      {expanded.value && (
+        <div class="mt-4 min-w-0 space-y-4">
+          {blocks.map((block) => {
+            if (block.type === "commentary-group") {
+              return (
+                <RunCommentaryActivityBlock
+                  key={`run-commentary-${block.items.map((item) => item.id).join("-")}`}
+                  items={block.items}
+                />
+              );
+            }
+
+            if (block.type === "tool-group") {
+              return (
+                <ToolCallGroup
+                  key={getToolBlockKey(block)}
+                  toolCalls={block.toolCalls}
+                  isStreaming={false}
+                />
+              );
+            }
+
+            return null;
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function RunCommentaryActivityBlock({ items }: { items: CommentaryItem[] }) {
+  return (
+    <div class="min-w-0 space-y-2 text-[var(--color-text-secondary)]">
+      {items.map((item) => (
+        <p key={item.id} class="m-0 whitespace-pre-wrap break-words text-sm">
+          {item.text}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function getRunActivityLabel(message: Message): string {
+  const startedAt = message.runStartedAt;
+  const completedAt = message.runCompletedAt ?? message.timestamp;
+
+  if (startedAt != null && completedAt >= startedAt) {
+    return t("chat.runActivityWorkedFor", {
+      duration: formatRunActivityDuration(completedAt - startedAt),
+    });
+  }
+
+  return t("chat.runActivity");
+}
+
+function formatRunActivityDuration(ms: number): string {
+  if (ms < 1000) return "<1s";
+
+  const totalSeconds = Math.round(ms / 1000);
+  if (totalSeconds < 60) return `${totalSeconds}s`;
+
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return `${mins}m ${secs}s`;
 }
 
 function getToolBlockKey(block: ToolGroupBlock): string {

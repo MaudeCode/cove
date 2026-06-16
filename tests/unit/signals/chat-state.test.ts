@@ -158,6 +158,232 @@ describe("chat signals", () => {
     });
   });
 
+  test("reconcileMessagesFromHistory merges local run activity into matching history messages", () => {
+    chat.messages.value = [
+      message({
+        id: "assistant_run-final",
+        role: "assistant",
+        content: "Final answer",
+        timestamp: 2_200,
+        commentaryItems: [{ id: "commentary-1", text: "Checked files", seq: 1 }],
+        runStartedAt: 1_000,
+        runCompletedAt: 2_200,
+        toolCalls: [{ id: "tool-1", name: "read", status: "complete", result: "ok", seq: 2 }],
+      }),
+    ];
+
+    const reconciled = chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_assistant",
+          role: "assistant",
+          content: "Final answer",
+          timestamp: 2_000,
+          toolCalls: [{ id: "tool-1", name: "read", status: "complete", result: "ok" }],
+        }),
+      ],
+      1_500,
+    );
+
+    expect(reconciled).toHaveLength(1);
+    expect(reconciled[0]).toMatchObject({
+      id: "hist_assistant",
+      content: "Final answer",
+      commentaryItems: [{ id: "commentary-1", text: "Checked files", seq: 1 }],
+      runStartedAt: 1_000,
+      runCompletedAt: 2_200,
+      toolCalls: [expect.objectContaining({ id: "tool-1", seq: 2 })],
+    });
+  });
+
+  test("reconcileMessagesFromHistory merges repeated assistant run activity into the closest history row", () => {
+    chat.messages.value = [
+      message({
+        id: "assistant_run-later",
+        role: "assistant",
+        content: "Done",
+        timestamp: 2_200,
+        commentaryItems: [{ id: "commentary-later", text: "Checked later files", seq: 3 }],
+        runStartedAt: 2_000,
+        runCompletedAt: 2_200,
+        toolCalls: [{ id: "tool-later", name: "read", status: "complete", seq: 4 }],
+      }),
+    ];
+
+    const reconciled = chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_assistant_earlier",
+          role: "assistant",
+          content: "Done",
+          timestamp: 2_000,
+        }),
+        message({
+          id: "hist_assistant_later",
+          role: "assistant",
+          content: "Done",
+          timestamp: 2_190,
+        }),
+      ],
+      1_500,
+    );
+
+    expect(reconciled.map((msg) => msg.id)).toEqual([
+      "hist_assistant_earlier",
+      "hist_assistant_later",
+    ]);
+    expect(reconciled[0]?.commentaryItems).toBeUndefined();
+    expect(reconciled[0]?.toolCalls).toBeUndefined();
+    expect(reconciled[1]?.commentaryItems).toEqual([
+      { id: "commentary-later", text: "Checked later files", seq: 3 },
+    ]);
+    expect(reconciled[1]?.toolCalls?.[0]?.id).toBe("tool-later");
+    expect(reconciled[1]?.toolCalls?.[0]?.seq).toBe(4);
+  });
+
+  test("reconcileMessagesFromHistory preserves unmatched commentary-only run activity", () => {
+    chat.messages.value = [
+      message({
+        id: "assistant_run-commentary",
+        role: "assistant",
+        content: "",
+        timestamp: 2_200,
+        commentaryItems: [{ id: "commentary-1", text: "Checked files", seq: 1 }],
+        runStartedAt: 1_000,
+        runCompletedAt: 2_200,
+        toolCalls: [{ id: "tool-1", name: "read", status: "complete", result: "ok", seq: 2 }],
+      }),
+    ];
+
+    const reconciled = chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_user",
+          content: "Run a check",
+          timestamp: 2_000,
+        }),
+      ],
+      2_500,
+    );
+
+    expect(reconciled.map((msg) => msg.id)).toEqual(["hist_user", "assistant_run-commentary"]);
+    expect(reconciled[1]).toMatchObject({
+      id: "assistant_run-commentary",
+      content: "",
+      commentaryItems: [{ id: "commentary-1", text: "Checked files", seq: 1 }],
+      runStartedAt: 1_000,
+      runCompletedAt: 2_200,
+    });
+    expect(reconciled[1]?.toolCalls?.[0]?.id).toBe("tool-1");
+    expect(reconciled[1]?.toolCalls?.[0]?.seq).toBe(2);
+  });
+
+  test("reconcileMessagesFromHistory preserves newer local final content when only tool ids match", () => {
+    chat.messages.value = [
+      message({
+        id: "assistant_run-final",
+        role: "assistant",
+        content: "New final answer",
+        timestamp: 2_200,
+        commentaryItems: [{ id: "commentary-1", text: "Checked files", seq: 1 }],
+        runStartedAt: 1_000,
+        runCompletedAt: 2_200,
+        toolCalls: [{ id: "tool-1", name: "read", status: "complete", result: "ok", seq: 2 }],
+      }),
+    ];
+
+    const reconciled = chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_assistant",
+          role: "assistant",
+          content: "Stale final answer",
+          timestamp: 2_000,
+          toolCalls: [{ id: "tool-1", name: "read", status: "complete", result: "ok" }],
+        }),
+      ],
+      1_500,
+    );
+
+    expect(reconciled.map((msg) => msg.id)).toEqual(["hist_assistant", "assistant_run-final"]);
+    expect(reconciled[0]).toMatchObject({
+      id: "hist_assistant",
+      content: "Stale final answer",
+      commentaryItems: [{ id: "commentary-1", text: "Checked files", seq: 1 }],
+      runStartedAt: 1_000,
+      runCompletedAt: 2_200,
+      toolCalls: [expect.objectContaining({ id: "tool-1", seq: 2 })],
+    });
+    expect(reconciled[1]).toMatchObject({
+      id: "assistant_run-final",
+      content: "New final answer",
+    });
+  });
+
+  test("reconcileMessagesFromHistory does not duplicate newer local final messages already in history", () => {
+    chat.messages.value = [
+      message({
+        id: "assistant_run-final",
+        role: "assistant",
+        content: "Final answer",
+        timestamp: 2_200,
+        commentaryItems: [{ id: "commentary-1", text: "Checked files", seq: 1 }],
+      }),
+    ];
+
+    const reconciled = chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_assistant",
+          role: "assistant",
+          content: "Final answer",
+          timestamp: 2_000,
+        }),
+      ],
+      1_500,
+    );
+
+    expect(reconciled.map((msg) => msg.id)).toEqual(["hist_assistant"]);
+    expect(reconciled[0]?.commentaryItems).toEqual([
+      { id: "commentary-1", text: "Checked files", seq: 1 },
+    ]);
+  });
+
+  test("reconcileMessagesFromHistory deduplicates equivalent commentary while preserving the first sequence", () => {
+    chat.messages.value = [
+      message({
+        id: "assistant_run-final",
+        role: "assistant",
+        content: "Final answer",
+        timestamp: 2_200,
+        commentaryItems: [{ id: "commentary-local", text: "Checked files", seq: 1 }],
+      }),
+    ];
+
+    const reconciled = chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_assistant",
+          role: "assistant",
+          content: "Final answer",
+          timestamp: 2_000,
+          commentaryItems: [{ id: "commentary-history", text: "Checked files", seq: 99 }],
+        }),
+      ],
+      1_500,
+    );
+
+    expect(reconciled[0]?.commentaryItems).toEqual([
+      { id: "commentary-history", text: "Checked files", seq: 99 },
+    ]);
+  });
+
   test("reconcileMessagesFromHistory preserves repeated unresolved prompts", () => {
     chat.messages.value = [
       message({
@@ -182,6 +408,66 @@ describe("chat signals", () => {
     );
 
     expect(chat.messages.value.map((msg) => msg.id)).toEqual(["hist_repeat", "user_repeat"]);
+  });
+
+  test("reconcileMessagesFromHistory preserves repeated sent prompts newer than the request", () => {
+    chat.messages.value = [
+      message({
+        id: "user_repeat_newer",
+        content: "OK",
+        status: "sent",
+        sessionKey: "session-1",
+        timestamp: 2_000,
+      }),
+    ];
+
+    chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_repeat",
+          content: "OK",
+          timestamp: 1_950,
+        }),
+      ],
+      1_990,
+    );
+
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual(["hist_repeat", "user_repeat_newer"]);
+  });
+
+  test("reconcileMessagesFromHistory does not duplicate repeated sent prompts already caught by history", () => {
+    chat.messages.value = [
+      message({
+        id: "user_repeat_newer",
+        content: "OK",
+        status: "sent",
+        sessionKey: "session-1",
+        timestamp: 2_000,
+      }),
+    ];
+
+    chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_repeat_older",
+          content: "OK",
+          timestamp: 1_950,
+        }),
+        message({
+          id: "hist_repeat_newer",
+          content: "OK",
+          timestamp: 2_005,
+        }),
+      ],
+      1_990,
+    );
+
+    expect(chat.messages.value.map((msg) => msg.id)).toEqual([
+      "hist_repeat_older",
+      "hist_repeat_newer",
+    ]);
   });
 
   test("reconcileMessagesFromHistory drops stale completed messages after a reset", () => {
@@ -258,6 +544,44 @@ describe("chat signals", () => {
     expect(chat.messages.value.map((msg) => msg.id)).toEqual(["assistant-1"]);
   });
 
+  test("completeRun without a message preserves no-message semantics even with commentary", () => {
+    chat.startRun("run-commentary", "session-1");
+    chat.updateRunCommentaryItem("run-commentary", {
+      id: "commentary-1",
+      text: "Inspecting files",
+      seq: 1,
+    });
+
+    chat.completeRun("run-commentary");
+
+    expect(chat.messages.value).toEqual([]);
+    expect(chat.activeRuns.value.get("run-commentary")).toMatchObject({
+      content: "",
+      commentaryItems: [{ id: "commentary-1", text: "Inspecting files", seq: 1 }],
+      status: "complete",
+    });
+  });
+
+  test("completeRunWithCommentaryOnlyMessage explicitly creates a commentary-only transcript message", () => {
+    chat.startRun("run-commentary", "session-1");
+    chat.updateRunCommentaryItem("run-commentary", {
+      id: "commentary-1",
+      text: "Inspecting files",
+      seq: 1,
+    });
+
+    chat.completeRunWithCommentaryOnlyMessage("run-commentary");
+
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        id: "assistant_run-commentary",
+        role: "assistant",
+        content: "",
+        commentaryItems: [{ id: "commentary-1", text: "Inspecting files", seq: 1 }],
+      }),
+    ]);
+  });
+
   test("adoptRunId rekeys optimistic runs and preserves gateway stream state", () => {
     chat.startRun("optimistic", "session-1");
     chat.startRun("gateway-run", "session-1");
@@ -280,6 +604,46 @@ describe("chat signals", () => {
       status: "streaming",
       toolCalls: [expect.objectContaining({ id: "tool-1" })],
     });
+  });
+
+  test("adoptRunId merges optimistic and gateway commentary", () => {
+    chat.startRun("optimistic", "session-1");
+    chat.updateRunCommentaryItem("optimistic", {
+      id: "commentary-optimistic",
+      text: "Queued locally",
+      seq: 1,
+    });
+    chat.startRun("gateway-run", "session-1");
+    chat.updateRunCommentaryItem("gateway-run", {
+      id: "commentary-gateway",
+      text: "Streaming from gateway",
+      seq: 2,
+    });
+
+    chat.adoptRunId("optimistic", "gateway-run");
+
+    expect(chat.activeRuns.value.get("gateway-run")?.commentaryItems).toEqual([
+      { id: "commentary-optimistic", text: "Queued locally", seq: 1 },
+      { id: "commentary-gateway", text: "Streaming from gateway", seq: 2 },
+    ]);
+  });
+
+  test("same-id commentary updates preserve the original sequence", () => {
+    chat.startRun("run-commentary", "session-1");
+    chat.updateRunCommentaryItem("run-commentary", {
+      id: "commentary-1",
+      text: "Inspecting files",
+      seq: 1,
+    });
+    chat.updateRunCommentaryItem("run-commentary", {
+      id: "commentary-1",
+      text: "Still inspecting",
+      seq: 5,
+    });
+
+    expect(chat.activeRuns.value.get("run-commentary")?.commentaryItems).toEqual([
+      { id: "commentary-1", text: "Still inspecting", seq: 1 },
+    ]);
   });
 
   test("error and abort cleanup timers use their configured delays", () => {

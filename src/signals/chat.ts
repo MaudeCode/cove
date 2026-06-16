@@ -13,7 +13,13 @@
 
 import { signal, computed, effect } from "@preact/signals";
 import type { AttachmentPayload } from "@/types/attachments";
-import type { Message, MessageImage, MessageStatus, ToolCall } from "@/types/messages";
+import type {
+  CommentaryItem,
+  Message,
+  MessageImage,
+  MessageStatus,
+  ToolCall,
+} from "@/types/messages";
 import type { ChatRun } from "@/types/chat";
 import {
   RUN_CLEANUP_DELAY_MS,
@@ -232,6 +238,7 @@ export function getStreamingStateForSession(sessionKey: string): {
   isStreaming: boolean;
   content: string;
   toolCalls: ToolCall[];
+  commentaryItems: CommentaryItem[];
 } {
   const run = getStreamingRun(sessionKey);
   if (run) {
@@ -239,12 +246,14 @@ export function getStreamingStateForSession(sessionKey: string): {
       isStreaming: true,
       content: run.content,
       toolCalls: run.toolCalls,
+      commentaryItems: run.commentaryItems ?? [],
     };
   }
   return {
     isStreaming: false,
     content: "",
     toolCalls: [],
+    commentaryItems: [],
   };
 }
 
@@ -312,16 +321,121 @@ export function reconcileMessagesFromHistory(
     preserveSessionPendingSteers?: boolean;
   },
 ): Message[] {
+  const currentMessages = messages.value;
+  const historyWithLocalRunActivity = mergeLocalRunActivityIntoHistory(
+    historyMessages,
+    currentMessages,
+  );
   const optimisticTail = getOptimisticTailMessages(
     sessionKey,
-    messages.value,
-    historyMessages,
+    currentMessages,
+    historyWithLocalRunActivity,
     historyRequestedAt,
   );
-  const reconciled = [...historyMessages, ...optimisticTail];
+  const reconciled = [...historyWithLocalRunActivity, ...optimisticTail];
   setMessages(reconciled);
   pruneStalePendingSteerMessages(sessionKey, options);
   return reconciled;
+}
+
+function mergeLocalRunActivityIntoHistory(
+  historyMessages: Message[],
+  currentMessages: Message[],
+): Message[] {
+  const localActivityByHistoryIndex = getClosestLocalRunActivityMatches(
+    historyMessages,
+    currentMessages,
+  );
+
+  return historyMessages.map((historyMessage, historyIndex) => {
+    const localIndex = localActivityByHistoryIndex.get(historyIndex);
+    if (localIndex == null) return historyMessage;
+
+    return mergeLocalRunActivity(historyMessage, currentMessages[localIndex]);
+  });
+}
+
+function getClosestLocalRunActivityMatches(
+  historyMessages: Message[],
+  currentMessages: Message[],
+): Map<number, number> {
+  const candidates: Array<{ historyIndex: number; localIndex: number; distance: number }> = [];
+
+  for (const [historyIndex, historyMessage] of historyMessages.entries()) {
+    if (historyMessage.role !== "assistant") continue;
+
+    for (const [localIndex, currentMessage] of currentMessages.entries()) {
+      if (!hasLocalRunActivity(currentMessage)) continue;
+      if (
+        !isRepresentedByHistoryMessage(currentMessage, historyMessage, {
+          allowToolCallMatch: true,
+        })
+      ) {
+        continue;
+      }
+
+      candidates.push({
+        historyIndex,
+        localIndex,
+        distance: Math.abs(historyMessage.timestamp - currentMessage.timestamp),
+      });
+    }
+  }
+
+  candidates.sort((left, right) => left.distance - right.distance);
+
+  const usedHistoryIndexes = new Set<number>();
+  const usedLocalIndexes = new Set<number>();
+  const localActivityByHistoryIndex = new Map<number, number>();
+
+  for (const candidate of candidates) {
+    if (usedHistoryIndexes.has(candidate.historyIndex)) continue;
+    if (usedLocalIndexes.has(candidate.localIndex)) continue;
+
+    usedHistoryIndexes.add(candidate.historyIndex);
+    usedLocalIndexes.add(candidate.localIndex);
+    localActivityByHistoryIndex.set(candidate.historyIndex, candidate.localIndex);
+  }
+
+  return localActivityByHistoryIndex;
+}
+
+function hasLocalRunActivity(message: Message): boolean {
+  if (message.role !== "assistant") return false;
+  if (message.commentaryItems?.length) return true;
+  if (message.runStartedAt != null || message.runCompletedAt != null) return true;
+  if (message.toolCalls?.some((toolCall) => toolCall.seq != null)) return true;
+  return false;
+}
+
+function mergeLocalRunActivity(historyMessage: Message, localMessage: Message): Message {
+  return {
+    ...historyMessage,
+    commentaryItems: localMessage.commentaryItems?.length
+      ? mergeCommentaryItems(historyMessage.commentaryItems, localMessage.commentaryItems)
+      : historyMessage.commentaryItems,
+    runStartedAt: historyMessage.runStartedAt ?? localMessage.runStartedAt,
+    runCompletedAt: historyMessage.runCompletedAt ?? localMessage.runCompletedAt,
+    toolCalls: mergeLocalToolCallMetadata(historyMessage.toolCalls, localMessage.toolCalls),
+  };
+}
+
+function mergeLocalToolCallMetadata(
+  historyToolCalls: ToolCall[] | undefined,
+  localToolCalls: ToolCall[] | undefined,
+): ToolCall[] | undefined {
+  if (!localToolCalls?.length) return historyToolCalls;
+  if (!historyToolCalls?.length) return localToolCalls;
+
+  return historyToolCalls.map((historyToolCall) => {
+    const localToolCall = localToolCalls.find((toolCall) => toolCall.id === historyToolCall.id);
+    if (!localToolCall) return historyToolCall;
+
+    return {
+      ...historyToolCall,
+      seq: historyToolCall.seq ?? localToolCall.seq,
+    };
+  });
 }
 
 /** Add a message to the list (deduplicates by ID) */
@@ -351,7 +465,14 @@ function getOptimisticTailMessages(
   return currentMessages.filter((message) => {
     if (message.sessionKey && message.sessionKey !== sessionKey) return false;
     if (isUnresolvedLocalMessage(message)) return true;
+    if (isUnmatchedCommentaryOnlyRunActivity(message, historyMessages)) return true;
     if (message.timestamp < historyRequestedAt) return false;
+    if (
+      isRepeatedSentUserMessageAfterHistoryRequest(message, historyMessages, historyRequestedAt)
+    ) {
+      return true;
+    }
+    if (isRepresentedInHistory(message, historyMessages)) return false;
     if (isNewerLocalTailMessage(message, lastHistoryTimestamp)) return true;
     if (isBoundaryLocalTailMessage(message, lastHistoryTimestamp)) {
       return !isRepresentedInHistory(message, historyMessages);
@@ -364,6 +485,48 @@ function isUnresolvedLocalMessage(message: Message): boolean {
   if (message.status === "sending" || message.status === "failed") return true;
   if (message.isStreaming) return true;
   return false;
+}
+
+function isUnmatchedCommentaryOnlyRunActivity(
+  message: Message,
+  historyMessages: Message[],
+): boolean {
+  if (message.role !== "assistant") return false;
+  if (message.content.trim().length > 0) return false;
+  if (!hasLocalRunActivity(message)) return false;
+
+  return !historyMessages.some((historyMessage) =>
+    isRepresentedByHistoryMessage(message, historyMessage, {
+      allowToolCallMatch: true,
+    }),
+  );
+}
+
+function isRepeatedSentUserMessageAfterHistoryRequest(
+  message: Message,
+  historyMessages: Message[],
+  historyRequestedAt: number,
+): boolean {
+  if (message.role !== "user" || message.status !== "sent") return false;
+  if (message.timestamp <= historyRequestedAt) return false;
+  if (hasSameOrNewerHistoryMessage(message, historyMessages)) return false;
+
+  return historyMessages.some(
+    (historyMessage) =>
+      historyMessage.role === message.role &&
+      historyMessage.content === message.content &&
+      historyMessage.timestamp < message.timestamp,
+  );
+}
+
+function hasSameOrNewerHistoryMessage(message: Message, historyMessages: Message[]): boolean {
+  return historyMessages.some(
+    (historyMessage) =>
+      historyMessage.role === message.role &&
+      historyMessage.content === message.content &&
+      historyMessage.timestamp >= message.timestamp &&
+      Math.abs(historyMessage.timestamp - message.timestamp) <= HISTORY_MATCH_WINDOW_MS,
+  );
 }
 
 function isNewerLocalTailMessage(message: Message, lastHistoryTimestamp: number): boolean {
@@ -389,12 +552,29 @@ function isBoundaryLocalTailMessage(message: Message, lastHistoryTimestamp: numb
 }
 
 function isRepresentedInHistory(message: Message, historyMessages: Message[]): boolean {
-  return historyMessages.some(
-    (historyMessage) =>
-      historyMessage.role === message.role &&
-      historyMessage.content === message.content &&
-      Math.abs(historyMessage.timestamp - message.timestamp) <= HISTORY_MATCH_WINDOW_MS,
+  return historyMessages.some((historyMessage) =>
+    isRepresentedByHistoryMessage(message, historyMessage),
   );
+}
+
+function isRepresentedByHistoryMessage(
+  message: Message,
+  historyMessage: Message,
+  options?: { allowToolCallMatch?: boolean },
+): boolean {
+  if (historyMessage.role !== message.role) return false;
+  if (Math.abs(historyMessage.timestamp - message.timestamp) > HISTORY_MATCH_WINDOW_MS) {
+    return false;
+  }
+  if (historyMessage.content === message.content) return true;
+  if (!options?.allowToolCallMatch) return false;
+  return hasMatchingToolCall(message, historyMessage);
+}
+
+function hasMatchingToolCall(message: Message, historyMessage: Message): boolean {
+  if (!message.toolCalls?.length || !historyMessage.toolCalls?.length) return false;
+  const historyToolCallIds = new Set(historyMessage.toolCalls.map((toolCall) => toolCall.id));
+  return message.toolCalls.some((toolCall) => historyToolCallIds.has(toolCall.id));
 }
 
 /** Mark a message as sending */
@@ -434,6 +614,7 @@ export function startRun(runId: string, sessionKey: string): void {
     status: "pending",
     content: "",
     toolCalls: [],
+    commentaryItems: [],
   });
   activeRuns.value = newRuns;
 }
@@ -464,6 +645,10 @@ export function adoptRunId(optimisticRunId: string, gatewayRunId: string): void 
       startedAt: Math.min(optimisticRun.startedAt, gatewayRun.startedAt),
       content: gatewayRun.content || optimisticRun.content,
       toolCalls: gatewayRun.toolCalls.length ? gatewayRun.toolCalls : optimisticRun.toolCalls,
+      commentaryItems: mergeCommentaryItems(
+        optimisticRun.commentaryItems,
+        gatewayRun.commentaryItems ?? [],
+      ),
       lastBlockStart: gatewayRun.lastBlockStart ?? optimisticRun.lastBlockStart,
     });
   } else {
@@ -494,32 +679,134 @@ export function updateRunContent(
   });
 }
 
+/** Upsert ephemeral commentary/progress without changing final assistant content. */
+export function updateRunCommentaryItem(runId: string, item: CommentaryItem): void {
+  const run = activeRuns.value.get(runId);
+  if (!run) return;
+
+  updateRun(runId, {
+    status: "streaming",
+    commentaryItems: mergeCommentaryItems(run.commentaryItems, [item]),
+  });
+}
+
 /** Complete a chat run */
 export function completeRun(runId: string, message?: Message): void {
+  completeRunInternal(runId, message, { createCommentaryOnlyMessage: false });
+}
+
+/** Complete a chat run and intentionally persist commentary even without final content. */
+export function completeRunWithCommentaryOnlyMessage(runId: string): void {
+  completeRunInternal(runId, undefined, { createCommentaryOnlyMessage: true });
+}
+
+function completeRunInternal(
+  runId: string,
+  message: Message | undefined,
+  options: { createCommentaryOnlyMessage: boolean },
+): void {
   const run = activeRuns.value.get(runId);
   clearPendingSteerMessagesForRun(runId);
-  // Update content from final message to avoid showing incomplete streamed content
-  const finalContent = message?.content ?? run?.content ?? "";
-  updateRun(runId, { status: "complete", message, content: finalContent });
 
-  if (message) {
+  const completedAt = Date.now();
+  const completedMessage = withRunCommentaryItems(message, run, completedAt, options);
+
+  // Update content from final message to avoid showing incomplete streamed content
+  const finalContent = completedMessage?.content ?? run?.content ?? "";
+  updateRun(runId, { status: "complete", message: completedMessage, content: finalContent });
+
+  if (completedMessage) {
     // Only add message to global messages if this run belongs to the active session.
     // Messages from other sessions will be loaded from history when user switches to them.
     if (isForActiveSession(run?.sessionKey)) {
       // If run was created on-the-fly (after refresh), try to update existing message
       // instead of adding a duplicate
       if (run?.sessionKey === "unknown") {
-        const updated = tryUpdateExistingMessage(message);
+        const updated = tryUpdateExistingMessage(completedMessage);
         if (!updated) {
-          addMessage(message);
+          addMessage(completedMessage);
         }
       } else {
-        addMessage(message);
+        addMessage(completedMessage);
       }
     }
   }
 
   scheduleRunCleanup(runId, RUN_CLEANUP_DELAY_MS);
+}
+
+function withRunCommentaryItems(
+  message: Message | undefined,
+  run: ChatRun | undefined,
+  completedAt: number,
+  options: { createCommentaryOnlyMessage: boolean },
+): Message | undefined {
+  const commentaryItems = run?.commentaryItems?.filter((item) => item.text.trim().length > 0);
+  if (!commentaryItems?.length) return message;
+
+  if (message) {
+    return {
+      ...message,
+      commentaryItems: mergeCommentaryItems(message.commentaryItems, commentaryItems),
+      runStartedAt: message.runStartedAt ?? run?.startedAt,
+      runCompletedAt: message.runCompletedAt ?? completedAt,
+    };
+  }
+
+  if (!options.createCommentaryOnlyMessage) return undefined;
+
+  return {
+    id: `assistant_${run?.runId ?? Date.now()}`,
+    role: "assistant",
+    content: "",
+    commentaryItems,
+    toolCalls: run?.toolCalls?.length ? run.toolCalls : undefined,
+    timestamp: Date.now(),
+    isStreaming: false,
+    runStartedAt: run?.startedAt,
+    runCompletedAt: completedAt,
+  };
+}
+
+function mergeCommentaryItems(
+  existing: CommentaryItem[] | undefined,
+  incoming: CommentaryItem[],
+): CommentaryItem[] {
+  const merged = [...(existing ?? [])];
+
+  for (const item of incoming) {
+    const existingIndex = merged.findIndex((candidate) => isSameCommentaryItem(candidate, item));
+    if (existingIndex >= 0) {
+      merged[existingIndex] = mergeCommentaryItem(merged[existingIndex], item);
+    } else {
+      merged.push(item);
+    }
+  }
+
+  return merged;
+}
+
+function isSameCommentaryItem(left: CommentaryItem, right: CommentaryItem): boolean {
+  if (left.id === right.id) return true;
+  return normalizeCommentaryText(left.text) === normalizeCommentaryText(right.text);
+}
+
+function mergeCommentaryItem(existing: CommentaryItem, incoming: CommentaryItem): CommentaryItem {
+  if (existing.id === incoming.id) {
+    return {
+      ...incoming,
+      seq: existing.seq,
+    };
+  }
+
+  return {
+    ...existing,
+    text: incoming.text,
+  };
+}
+
+function normalizeCommentaryText(text: string): string {
+  return text.trim().replace(/\s+/gu, " ");
 }
 
 /**
@@ -552,6 +839,7 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
               ...existingTc,
               status: newTc.status,
               result: newTc.result,
+              seq: newTc.seq ?? existingTc.seq,
               completedAt: newTc.completedAt,
             };
           }
@@ -567,7 +855,16 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
 
         messages.value = existingMessages.map((msg) =>
           msg.id === existing.id
-            ? { ...msg, content: mergedContent, toolCalls: mergedToolCalls }
+            ? {
+                ...msg,
+                content: mergedContent,
+                toolCalls: mergedToolCalls,
+                commentaryItems: newMessage.commentaryItems?.length
+                  ? mergeCommentaryItems(existing.commentaryItems, newMessage.commentaryItems)
+                  : existing.commentaryItems,
+                runStartedAt: newMessage.runStartedAt ?? existing.runStartedAt,
+                runCompletedAt: newMessage.runCompletedAt ?? existing.runCompletedAt,
+              }
             : msg,
         );
         return true;

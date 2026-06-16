@@ -68,7 +68,7 @@ export function isAgentEvent(data: unknown): data is AgentEvent {
   return (
     typeof obj.runId === "string" &&
     typeof obj.stream === "string" &&
-    ["lifecycle", "assistant", "tool", "error", "compaction", "thinking"].includes(
+    ["lifecycle", "assistant", "tool", "error", "compaction", "thinking", "item"].includes(
       obj.stream as string,
     ) &&
     typeof obj.seq === "number" &&

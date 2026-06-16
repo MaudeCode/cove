@@ -19,7 +19,9 @@ import {
   activeRuns,
   startRun,
   updateRunContent,
+  updateRunCommentaryItem,
   completeRun,
+  completeRunWithCommentaryOnlyMessage,
   errorRun,
   abortRun as abortRunSignal,
   isCompacting,
@@ -98,6 +100,8 @@ export function subscribeToChatEvents(): () => void {
       handleCompactionEvent(evt);
     } else if (evt.stream === "assistant") {
       handleAssistantStreamEvent(evt);
+    } else if (evt.stream === "item") {
+      handleItemEvent(evt);
     }
   });
 
@@ -473,6 +477,7 @@ function handleLifecycleEnd(evt: AgentEvent): void {
     }
 
     const wasEmpty = !existingRun.content;
+    const hasCommentaryOnlyActivity = wasEmpty && hasNonEmptyCommentary(existingRun);
 
     // If the run has content, create a message from it
     if (existingRun.content) {
@@ -484,6 +489,8 @@ function handleLifecycleEnd(evt: AgentEvent): void {
         timestamp: Date.now(),
       };
       completeRun(runId, finalMessage);
+    } else if (hasCommentaryOnlyActivity) {
+      completeRunWithCommentaryOnlyMessage(runId);
     } else {
       // Empty run (heartbeat, no-reply, etc.) - just complete without adding a message
       completeRun(runId);
@@ -506,6 +513,10 @@ function handleLifecycleEnd(evt: AgentEvent): void {
       }
     }
   }
+}
+
+function hasNonEmptyCommentary(run: ChatRun): boolean {
+  return run.commentaryItems?.some((item) => item.text.trim().length > 0) ?? false;
 }
 
 /**
@@ -567,6 +578,11 @@ function handleCompactionEvent(evt: AgentEvent): void {
  */
 function handleAssistantStreamEvent(evt: AgentEvent): void {
   const { runId, sessionKey, data } = evt;
+  if (isAssistantCommentaryEvent(evt)) {
+    handleItemEvent(evt);
+    return;
+  }
+
   const text = typeof data?.text === "string" ? data.text : null;
   const delta = typeof data?.delta === "string" ? data.delta : null;
 
@@ -599,6 +615,117 @@ function handleAssistantStreamEvent(evt: AgentEvent): void {
   if (!merged) return;
 
   updateRunContent(runId, merged.content, run.toolCalls, merged.lastBlockStart);
+}
+
+/**
+ * Handle item stream events from OpenClaw. Commentary/preamble items are live
+ * progress only; they must not become final assistant answer content.
+ */
+function handleItemEvent(evt: AgentEvent): void {
+  const { runId, sessionKey } = evt;
+  const commentaryItem = getCommentaryItem(evt);
+  if (!commentaryItem) return;
+
+  if (compactionRunIds.has(runId)) return;
+
+  if (!isForActiveSession(sessionKey)) {
+    return;
+  }
+
+  let run = activeRuns.value.get(runId);
+  if (!run && sessionKey) {
+    log.chat.debug("Creating run for commentary item:", runId, "session:", sessionKey);
+    startRun(runId, sessionKey);
+    run = activeRuns.value.get(runId);
+  }
+
+  if (!run) return;
+
+  updateRunCommentaryItem(
+    runId,
+    commentaryItem.isDelta
+      ? appendCommentaryDelta(run, commentaryItem)
+      : toCommentaryItem(commentaryItem),
+  );
+}
+
+function isAssistantCommentaryEvent(evt: AgentEvent): boolean {
+  return evt.stream === "assistant" && evt.data?.phase === "commentary";
+}
+
+function getCommentaryItem(
+  evt: AgentEvent,
+): { id: string; text: string; seq: number; isDelta?: boolean } | null {
+  const data = evt.data;
+  if (!data) return null;
+
+  const kind = typeof data.kind === "string" ? data.kind.toLowerCase() : "";
+  const title = typeof data.title === "string" ? data.title.toLowerCase() : "";
+  const phase = typeof data.phase === "string" ? data.phase.toLowerCase() : "";
+
+  if (kind === "preamble" || title === "commentary" || phase === "commentary") {
+    const text = getCommentaryText(data);
+    if (!text) return null;
+    const isDelta =
+      typeof data.delta === "string" &&
+      data.delta.length > 0 &&
+      typeof data.progressText !== "string" &&
+      typeof data.text !== "string";
+
+    return {
+      id: getCommentaryItemId(evt, isDelta),
+      text,
+      seq: evt.seq,
+      isDelta,
+    };
+  }
+
+  return null;
+}
+
+function getCommentaryText(data: NonNullable<AgentEvent["data"]>): string {
+  for (const key of ["progressText", "text"] as const) {
+    const value = data[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  if (typeof data.delta === "string" && data.delta.length > 0) {
+    return data.delta;
+  }
+
+  return "";
+}
+
+function getCommentaryItemId(evt: AgentEvent, isDelta: boolean): string {
+  const itemId = evt.data?.itemId;
+  if (typeof itemId === "string" && itemId) return itemId;
+  return isDelta ? `${evt.runId}:commentary-delta` : `${evt.runId}:${evt.seq}`;
+}
+
+function appendCommentaryDelta(
+  run: ChatRun,
+  item: { id: string; text: string; seq: number },
+): { id: string; text: string; seq: number } {
+  const existingText = run.commentaryItems?.find((existing) => existing.id === item.id)?.text ?? "";
+  return {
+    id: item.id,
+    text: `${existingText}${item.text}`,
+    seq: item.seq,
+  };
+}
+
+function toCommentaryItem(item: { id: string; text: string; seq: number }): {
+  id: string;
+  text: string;
+  seq: number;
+} {
+  return {
+    id: item.id,
+    text: item.text,
+    seq: item.seq,
+  };
 }
 
 /**
@@ -655,6 +782,7 @@ function handleToolEvent(evt: AgentEvent): void {
         args: data.args as Record<string, unknown> | undefined,
         status: "running",
         startedAt: Date.now(),
+        seq: evt.seq,
         insertedAtContentLength: run!.content.length,
         contentSnapshotAtStart: run!.content,
       });
@@ -697,6 +825,7 @@ function handleToolEvent(evt: AgentEvent): void {
           args: data.args as Record<string, unknown> | undefined,
           status: "running",
           startedAt: Date.now(),
+          seq: evt.seq,
           insertedAtContentLength: currentRun.content.length,
           contentSnapshotAtStart: currentRun.content,
         };

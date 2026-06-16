@@ -222,6 +222,7 @@ export function ChatView({ sessionKey }: ChatViewProps) {
         error={historyError.value}
         streamingContent={sessionStreamingState.value.content}
         streamingToolCalls={sessionStreamingState.value.toolCalls}
+        streamingCommentaryItems={sessionStreamingState.value.commentaryItems}
         isStreaming={sessionStreamingState.value.isStreaming}
         assistantName={assistantName.value}
         assistantAvatar={assistantAvatar.value ?? undefined}

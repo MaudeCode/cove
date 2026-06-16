@@ -48,6 +48,7 @@ mock.module("../../../../src/components/chat/ChatMessage", () => ({
   ChatMessage: ({ message, isStreaming }: { message: Message; isStreaming?: boolean }) => (
     <article data-testid={`chat-message-${message.id}`}>
       {message.role}:{message.content}
+      {message.commentaryItems?.map((item) => `:${item.text}`).join("")}
       {isStreaming ? ":streaming" : ""}
     </article>
   ),
@@ -173,13 +174,15 @@ describe("MessageList", () => {
         messages={[message({ id: "normal", content: "visible" })]}
         isStreaming
         streamingContent="streaming text"
+        streamingCommentaryItems={[{ id: "commentary-1", text: "Inspecting the repository" }]}
       />,
     );
 
     expect(screen.queryByText("completed summary")).toBeNull();
     expect(screen.getByTestId("compaction-active")).toBeTruthy();
+    expect(screen.getByTestId("chat-message-streaming").textContent).toContain("streaming text");
     expect(screen.getByTestId("chat-message-streaming").textContent).toContain(
-      "streaming text:streaming",
+      "Inspecting the repository",
     );
 
     chat.isCompacting.value = false;

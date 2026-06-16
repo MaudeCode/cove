@@ -984,6 +984,245 @@ describe("AssistantMessage", () => {
     expect(document.querySelector("[data-testid='bouncing-dots']")).toBeNull();
   });
 
+  test("renders streaming commentary without treating it as answer content", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "",
+          commentaryItems: [
+            { id: "commentary-1", text: "Inspecting the repository", seq: 1 },
+            { id: "commentary-2", text: "Reading related files", seq: 2 },
+          ],
+        })}
+        isStreaming
+      />,
+    );
+
+    const progress = screen.getByRole("status", { name: "chat.runProgress" });
+    expect(progress.textContent).toContain("Inspecting the repository");
+    expect(progress.textContent).toContain("Reading related files");
+    expect(progress.querySelector(".tool-call-running-text")).toBeNull();
+    expect(progress.getAttribute("class")).toContain("text-[var(--color-text-muted)]");
+    expect(screen.queryByTestId("message-content")).toBeNull();
+    expect(screen.queryByRole("status", { name: "chat.thinking" })).toBeNull();
+  });
+
+  test("keeps streaming run activity separate from final answer content", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "Answer before answer after",
+          commentaryItems: [{ id: "commentary-1", text: "Inspecting the repository", seq: 1 }],
+          toolCalls: [
+            {
+              args: { path: "/repo/package.json" },
+              id: "tool-1",
+              insertedAtContentLength: "Answer before".length,
+              name: "read",
+              status: "running",
+            },
+          ],
+        })}
+        isStreaming
+      />,
+    );
+
+    const progress = screen.getByRole("status", { name: "chat.runProgress" });
+    expect(progress.textContent).toContain("Inspecting the repository");
+    expect(progress.querySelector(".tool-call-running-text")).toBeNull();
+
+    expect(screen.getByTestId("message-content").textContent).toBe("Answer before answer after");
+    expect(screen.getByRole("button", { name: "Reading package.json" })).toBeTruthy();
+
+    const transcriptText = document.body.textContent ?? "";
+    expect(transcriptText.indexOf("Inspecting the repository")).toBeLessThan(
+      transcriptText.indexOf("Reading package.json"),
+    );
+    expect(transcriptText.indexOf("Reading package.json")).toBeLessThan(
+      transcriptText.indexOf("Answer before answer after"),
+    );
+  });
+
+  test("interleaves streaming commentary and tool calls by run sequence", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "Final answer",
+          commentaryItems: [
+            { id: "commentary-before-tool", text: "Checking files", seq: 1 },
+            { id: "commentary-after-tool", text: "Reviewing output", seq: 3 },
+          ],
+          toolCalls: [
+            {
+              args: { path: "/repo/package.json" },
+              id: "tool-1",
+              name: "read",
+              seq: 2,
+              status: "running",
+            },
+          ],
+        })}
+        isStreaming
+      />,
+    );
+
+    const bodyText = document.body.textContent ?? "";
+    expect(bodyText.indexOf("Checking files")).toBeLessThan(
+      bodyText.indexOf("Reading package.json"),
+    );
+    expect(bodyText.indexOf("Reading package.json")).toBeLessThan(
+      bodyText.indexOf("Reviewing output"),
+    );
+    expect(bodyText.indexOf("Reviewing output")).toBeLessThan(bodyText.indexOf("Final answer"));
+  });
+
+  test("keeps completed streaming run-activity tool groups in their end state", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "Final answer",
+          commentaryItems: [
+            { id: "commentary-before-tool", text: "Checking files", seq: 1 },
+            { id: "commentary-between-tools", text: "Reviewing output", seq: 3 },
+          ],
+          toolCalls: [
+            {
+              args: { commandPreview: "git status -sb" },
+              id: "tool-1",
+              name: "exec",
+              seq: 2,
+              status: "complete",
+            },
+            {
+              args: { commandPreview: "bun test" },
+              id: "tool-2",
+              name: "exec",
+              seq: 4,
+              status: "running",
+            },
+          ],
+        })}
+        isStreaming
+      />,
+    );
+
+    expect(screen.getByRole("button", { name: "Ran git status -sb" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Running bun test" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Thinking..." })).toBeNull();
+
+    const bodyText = document.body.textContent ?? "";
+    expect(bodyText.indexOf("Checking files")).toBeLessThan(bodyText.indexOf("Ran git status -sb"));
+    expect(bodyText.indexOf("Ran git status -sb")).toBeLessThan(
+      bodyText.indexOf("Reviewing output"),
+    );
+    expect(bodyText.indexOf("Reviewing output")).toBeLessThan(bodyText.indexOf("Running bun test"));
+  });
+
+  test("formats completed run activity duration as whole seconds or less than one second", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "Final answer",
+          runStartedAt: 1000,
+          runCompletedAt: 28000,
+          commentaryItems: [{ id: "commentary-1", text: "Checking files", seq: 1 }],
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: 'chat.runActivityWorkedFor:{"duration":"27s"}',
+      }),
+    ).toBeTruthy();
+
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "Final answer",
+          runStartedAt: 1000,
+          runCompletedAt: 1500,
+          commentaryItems: [{ id: "commentary-1", text: "Checking files", seq: 1 }],
+        })}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: 'chat.runActivityWorkedFor:{"duration":"<1s"}',
+      }),
+    ).toBeTruthy();
+  });
+
+  test("renders completed commentary as collapsed activity before the final answer", () => {
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "Final answer",
+          runStartedAt: 1000,
+          runCompletedAt: 4200,
+          commentaryItems: [
+            { id: "commentary-1", text: "Checking files", seq: 1 },
+            { id: "commentary-2", text: "Reviewing output", seq: 3 },
+          ],
+          toolCalls: [
+            {
+              id: "tool-1",
+              name: "read",
+              status: "complete",
+              result: "ok",
+              seq: 2,
+            },
+          ],
+        })}
+      />,
+    );
+
+    const activityButton = screen.getByRole("button", {
+      name: 'chat.runActivityWorkedFor:{"duration":"3s"}',
+    });
+    const finalAnswer = screen.getByTestId("message-content");
+
+    const articleText = document.body.textContent ?? "";
+    expect(articleText.indexOf('chat.runActivityWorkedFor:{"duration":"3s"}')).toBeLessThan(
+      articleText.indexOf("Final answer"),
+    );
+    expect(screen.queryByText("Checking files")).toBeNull();
+    expect(screen.queryByRole("button", { name: "Read file" })).toBeNull();
+    expect(activityButton.getAttribute("aria-expanded")).toBe("false");
+    expect(finalAnswer.textContent).toBe("Final answer");
+
+    fireEvent.click(activityButton);
+    const toolButton = screen.getByRole("button", { name: "Read file" });
+    const expandedText = document.body.textContent ?? "";
+    expect(expandedText.indexOf("Checking files")).toBeLessThan(expandedText.indexOf("Read file"));
+    expect(expandedText.indexOf("Read file")).toBeLessThan(
+      expandedText.indexOf("Reviewing output"),
+    );
+    expect(screen.getByText("Checking files")).toBeTruthy();
+    expect(screen.getByText("Reviewing output")).toBeTruthy();
+    expect(toolButton).toBeTruthy();
+  });
+
+  test("wraps long completed commentary lines when expanded", () => {
+    const longLine = "commentary-" + "x".repeat(160);
+
+    renderComponent(
+      <AssistantMessage
+        message={assistantMessage({
+          content: "Final answer",
+          commentaryItems: [{ id: "commentary-1", text: longLine, seq: 1 }],
+        })}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "chat.runActivity" }));
+
+    const commentaryLine = screen.getByText(longLine);
+    expect(commentaryLine.getAttribute("class")).toContain("whitespace-pre-wrap");
+    expect(commentaryLine.getAttribute("class")).toContain("break-words");
+  });
+
   test("does not append a dot-only streaming indicator after content", () => {
     renderComponent(
       <AssistantMessage message={assistantMessage({ content: "Partial answer" })} isStreaming />,
