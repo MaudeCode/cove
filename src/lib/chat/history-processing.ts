@@ -1,7 +1,7 @@
 import { SAME_TURN_THRESHOLD_MS } from "@/lib/constants";
 import { extractToolResultContent } from "@/lib/tool-utils";
 import type { ChatHistoryResult } from "@/types/chat";
-import { normalizeMessage } from "@/types/chat";
+import { mergeToolCalls, normalizeMessage } from "@/types/chat";
 import type { Message } from "@/types/messages";
 
 /**
@@ -100,7 +100,9 @@ function mergeIntoMessage(prev: Message, curr: Message): void {
           ? prevContentLen + separator.length + tc.insertedAtContentLength
           : undefined,
     }));
-    prev.toolCalls = [...(prev.toolCalls ?? []), ...adjustedToolCalls];
+    prev.toolCalls = mergeToolCalls(prev.toolCalls ?? [], adjustedToolCalls, {
+      preserveExistingAnchors: true,
+    });
   }
 
   // Merge content

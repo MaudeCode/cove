@@ -931,6 +931,134 @@ describe("chat event handling", () => {
     expect(chat.activeRuns.value.get("heartbeat")).toMatchObject({ status: "complete" });
   });
 
+  test("does not duplicate completed tool UI when lifecycle completion, history, and final repeat", () => {
+    emitAgent({ runId: "run-repeat-final", stream: "assistant", data: { text: "Done" } });
+    emitAgent({
+      runId: "run-repeat-final",
+      stream: "tool",
+      seq: 2,
+      data: {
+        phase: "result",
+        toolCallId: "tool-1",
+        name: "read",
+        result: "ok",
+      },
+    });
+    emitAgent({
+      runId: "run-repeat-final",
+      stream: "lifecycle",
+      data: { phase: "end" },
+    });
+
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        id: "assistant_run-repeat-final",
+        toolCalls: [expect.objectContaining({ id: "tool-1", result: "ok" })],
+      }),
+    ]);
+
+    chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        {
+          id: "hist_run-repeat-final",
+          role: "assistant",
+          content: "Done",
+          timestamp: Date.now(),
+          isStreaming: false,
+          toolCalls: [
+            {
+              id: "tool-1",
+              name: "read",
+              status: "complete",
+              result: "ok",
+              insertedAtContentLength: 0,
+            },
+          ],
+        },
+      ],
+      Date.now() - 1,
+    );
+
+    emitAgent({
+      runId: "run-repeat-final",
+      stream: "assistant",
+      data: { text: "Done with more detail" },
+    });
+    emitAgent({
+      runId: "run-repeat-final",
+      stream: "tool",
+      seq: 3,
+      data: {
+        phase: "result",
+        toolCallId: "tool-1",
+        name: "read",
+        result: "latest ok",
+      },
+    });
+    emitAgent({
+      runId: "run-repeat-final",
+      stream: "tool",
+      seq: 4,
+      data: {
+        phase: "result",
+        toolCallId: "tool-2",
+        name: "grep",
+        result: "second ok",
+      },
+    });
+
+    expect(chat.activeRuns.value.get("run-repeat-final")?.status).toBe("streaming");
+
+    emitChat({
+      runId: "run-repeat-final",
+      state: "final",
+      message: { role: "assistant", content: "Done with more detail", timestamp: Date.now() },
+    });
+
+    expect(chat.messages.value).toHaveLength(1);
+    expect(chat.messages.value[0]).toMatchObject({
+      id: "hist_run-repeat-final",
+      content: "Done with more detail",
+      toolCalls: [
+        expect.objectContaining({
+          id: "tool-1",
+          result: "latest ok",
+          status: "complete",
+          insertedAtContentLength: 0,
+        }),
+        expect.objectContaining({
+          id: "tool-2",
+          result: "second ok",
+          status: "complete",
+        }),
+      ],
+    });
+
+    emitAgent({
+      runId: "run-repeat-final",
+      stream: "tool",
+      seq: 5,
+      data: {
+        phase: "result",
+        toolCallId: "tool-1",
+        name: "read",
+        result: "latest ok",
+      },
+    });
+
+    expect(chat.activeRuns.value.get("run-repeat-final")?.status).toBe("streaming");
+
+    emitChat({
+      runId: "run-repeat-final",
+      state: "final",
+      message: { role: "assistant", content: "Done", timestamp: Date.now() },
+    });
+
+    expect(chat.messages.value).toHaveLength(1);
+    expect(chat.messages.value[0]?.content).toBe("Done with more detail");
+  });
+
   test("does not append a late reset final after authoritative history reloads", () => {
     registerResetRun("reset-run");
     chat.messages.value = [

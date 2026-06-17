@@ -562,6 +562,143 @@ describe("chat signals", () => {
     });
   });
 
+  test("completeRun does not content-match ambiguous recent history rows", () => {
+    chat.messages.value = [
+      message({ id: "hist-1", role: "assistant", content: "Done with more detail" }),
+      message({ id: "hist-2", role: "assistant", content: "Done elsewhere" }),
+    ];
+
+    chat.startRun("run-content", "session-1");
+    chat.completeRun("run-content");
+    chat.completeRun(
+      "run-content",
+      message({ id: "assistant_run-content", role: "assistant", content: "Done" }),
+    );
+
+    expect(chat.messages.value.map((msg) => [msg.id, msg.content])).toEqual([
+      ["hist-1", "Done with more detail"],
+      ["hist-2", "Done elsewhere"],
+      ["assistant_run-content", "Done"],
+    ]);
+  });
+
+  test("completeRun appends known-session finals instead of using content-only recent matches", () => {
+    const now = Date.now();
+    chat.messages.value = [
+      message({
+        id: "hist-setup",
+        role: "assistant",
+        content: "Done with setup",
+        timestamp: now,
+      }),
+    ];
+
+    chat.startRun("run-content", "session-1");
+    chat.completeRun(
+      "run-content",
+      message({
+        id: "assistant_run-content",
+        role: "assistant",
+        content: "Done",
+        timestamp: now + 1,
+        toolCalls: [{ id: "tool-new", name: "setup", status: "complete", result: "ok" }],
+      }),
+    );
+
+    expect(chat.messages.value.map((msg) => [msg.id, msg.content])).toEqual([
+      ["hist-setup", "Done with setup"],
+      ["assistant_run-content", "Done"],
+    ]);
+    expect(chat.messages.value[1]?.toolCalls).toEqual([
+      expect.objectContaining({ id: "tool-new" }),
+    ]);
+  });
+
+  test("completeRun reconciles repeated finals with matching tool-call ids", () => {
+    const now = Date.now();
+    chat.messages.value = [
+      message({
+        id: "hist-final",
+        role: "assistant",
+        content: "Done with setup details",
+        timestamp: now,
+        toolCalls: [{ id: "tool-1", name: "setup", status: "running" }],
+      }),
+    ];
+
+    chat.startRun("run-repeat", "session-1");
+    chat.completeRun(
+      "run-repeat",
+      message({
+        id: "assistant_run-repeat",
+        role: "assistant",
+        content: "Done",
+        timestamp: now + 1,
+        toolCalls: [{ id: "tool-1", name: "setup", status: "complete", result: "ok" }],
+      }),
+    );
+
+    expect(chat.messages.value.map((msg) => [msg.id, msg.content])).toEqual([
+      ["hist-final", "Done with setup details"],
+    ]);
+    expect(chat.messages.value[0]?.toolCalls).toEqual([
+      expect.objectContaining({ id: "tool-1", status: "complete", result: "ok" }),
+    ]);
+  });
+
+  test("completeRun reconciles text-only finals after history replaces the local run message id", () => {
+    const now = Date.now();
+
+    chat.startRun("run-text", "session-1");
+    chat.completeRun(
+      "run-text",
+      message({
+        id: "assistant_run-text",
+        role: "assistant",
+        content: "Done",
+        timestamp: now,
+      }),
+    );
+
+    chat.reconcileMessagesFromHistory(
+      "session-1",
+      [
+        message({
+          id: "hist_0_1700000000000",
+          role: "assistant",
+          content: "Done",
+          timestamp: now,
+        }),
+      ],
+      now - 500,
+    );
+
+    expect(chat.messages.value).toEqual([
+      expect.objectContaining({
+        id: "hist_0_1700000000000",
+        content: "Done",
+        runId: "run-text",
+      }),
+    ]);
+
+    chat.completeRun(
+      "run-text",
+      message({
+        id: "assistant_run-text",
+        role: "assistant",
+        content: "Done",
+        timestamp: now + 1,
+      }),
+    );
+
+    expect(chat.messages.value).toHaveLength(1);
+    expect(chat.messages.value[0]).toMatchObject({
+      id: "hist_0_1700000000000",
+      content: "Done",
+      runId: "run-text",
+    });
+  });
+
   test("completeRunWithCommentaryOnlyMessage explicitly creates a commentary-only transcript message", () => {
     chat.startRun("run-commentary", "session-1");
     chat.updateRunCommentaryItem("run-commentary", {

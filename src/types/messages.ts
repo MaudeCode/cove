@@ -66,6 +66,9 @@ export interface Message {
   /** Active run completion time for the collapsed run activity summary. */
   runCompletedAt?: number;
 
+  /** Gateway run ID that produced this assistant message. */
+  runId?: string;
+
   /** When the message was created */
   timestamp: number;
 
