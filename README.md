@@ -1,3 +1,8 @@
+> [!WARNING]  
+> Maude has been migrated to Hermes Agent. Development on Cove has ended.
+> 
+> I hope OpenClaw gets a good WebUI some day and actually acts like a real harness.
+
 <p align="center">
   <img src="./docs/public/banner.jpg" alt="Cove" width="640">
 </p>
