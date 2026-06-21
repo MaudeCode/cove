@@ -160,6 +160,87 @@ describe("normalizeHistoryMessages", () => {
     });
   });
 
+  test("deduplicates same-turn history tool calls by id while keeping latest completion details", () => {
+    const messages = normalizeHistoryMessages([
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "first" },
+          {
+            type: "toolCall",
+            id: "tool-1",
+            name: "read",
+            arguments: { path: "old.md" },
+          },
+        ],
+        timestamp: 1000,
+      },
+      {
+        role: "assistant",
+        content: [
+          { type: "text", text: "second" },
+          {
+            type: "toolCall",
+            id: "tool-1",
+            name: "read",
+            arguments: { path: "new.md" },
+          },
+        ],
+        timestamp: 1001,
+      },
+      {
+        role: "toolResult",
+        toolCallId: "tool-1",
+        content: "latest result",
+        timestamp: 1002,
+      },
+    ]);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].toolCalls).toEqual([
+      expect.objectContaining({
+        id: "tool-1",
+        name: "read",
+        args: { path: "new.md" },
+        result: "latest result",
+        status: "complete",
+        insertedAtContentLength: "first".length,
+      }),
+    ]);
+  });
+
+  test("keeps distinct same-turn history tool calls visible separately", () => {
+    const messages = normalizeHistoryMessages([
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "toolCall",
+            id: "tool-1",
+            name: "read",
+            arguments: { path: "one.md" },
+          },
+        ],
+        timestamp: 1000,
+      },
+      {
+        role: "assistant",
+        content: [
+          {
+            type: "toolCall",
+            id: "tool-2",
+            name: "read",
+            arguments: { path: "two.md" },
+          },
+        ],
+        timestamp: 1001,
+      },
+    ]);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].toolCalls?.map((toolCall) => toolCall.id)).toEqual(["tool-1", "tool-2"]);
+  });
+
   test("preserves truncation metadata when merging same-turn history", () => {
     const messages = normalizeHistoryMessages([
       {

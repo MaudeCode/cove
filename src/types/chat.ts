@@ -5,8 +5,8 @@
  */
 
 import type { CommentaryItem, Message, ToolCall, MessageImage } from "./messages";
-import { stripEnvelopeMetadata } from "@/lib/message-detection";
-import { extractToolResultContent } from "@/lib/tool-utils";
+import { stripEnvelopeMetadata } from "../lib/message-detection";
+import { extractToolResultContent } from "../lib/tool-utils";
 
 // ============================================
 // Content Block Types (Discriminated Union)
@@ -480,7 +480,11 @@ function stripHistoryTruncationSuffix(content: string): string {
  * Merge tool calls from new content into existing tool calls
  * (updates status, results, adds new ones)
  */
-export function mergeToolCalls(existing: ToolCall[], incoming: ToolCall[]): ToolCall[] {
+export function mergeToolCalls(
+  existing: ToolCall[],
+  incoming: ToolCall[],
+  options: { preserveExistingAnchors?: boolean } = {},
+): ToolCall[] {
   const merged = new Map<string, ToolCall>();
 
   // Add existing first
@@ -493,12 +497,21 @@ export function mergeToolCalls(existing: ToolCall[], incoming: ToolCall[]): Tool
     const prev = merged.get(tc.id);
     if (prev) {
       // Update existing - take latest status and result
-      merged.set(tc.id, {
+      const next = {
         ...prev,
         ...withoutUndefinedFields(tc),
-        // Keep earlier startedAt
         startedAt: prev.startedAt ?? tc.startedAt,
-      });
+      };
+      merged.set(
+        tc.id,
+        options.preserveExistingAnchors
+          ? {
+              ...next,
+              insertedAtContentLength: prev.insertedAtContentLength ?? tc.insertedAtContentLength,
+              contentSnapshotAtStart: prev.contentSnapshotAtStart ?? tc.contentSnapshotAtStart,
+            }
+          : next,
+      );
     } else {
       // New tool call
       merged.set(tc.id, tc);

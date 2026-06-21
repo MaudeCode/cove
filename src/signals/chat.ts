@@ -20,7 +20,7 @@ import type {
   MessageStatus,
   ToolCall,
 } from "@/types/messages";
-import type { ChatRun } from "@/types/chat";
+import { mergeToolCalls, type ChatRun } from "../types/chat";
 import {
   RUN_CLEANUP_DELAY_MS,
   RUN_ERROR_CLEANUP_DELAY_MS,
@@ -402,6 +402,7 @@ function getClosestLocalRunActivityMatches(
 
 function hasLocalRunActivity(message: Message): boolean {
   if (message.role !== "assistant") return false;
+  if (message.runId) return true;
   if (message.commentaryItems?.length) return true;
   if (message.runStartedAt != null || message.runCompletedAt != null) return true;
   if (message.toolCalls?.some((toolCall) => toolCall.seq != null)) return true;
@@ -411,6 +412,7 @@ function hasLocalRunActivity(message: Message): boolean {
 function mergeLocalRunActivity(historyMessage: Message, localMessage: Message): Message {
   return {
     ...historyMessage,
+    runId: historyMessage.runId ?? localMessage.runId,
     commentaryItems: localMessage.commentaryItems?.length
       ? mergeCommentaryItems(historyMessage.commentaryItems, localMessage.commentaryItems)
       : historyMessage.commentaryItems,
@@ -719,10 +721,14 @@ function completeRunInternal(
     // Only add message to global messages if this run belongs to the active session.
     // Messages from other sessions will be loaded from history when user switches to them.
     if (isForActiveSession(run?.sessionKey)) {
-      // If run was created on-the-fly (after refresh), try to update existing message
-      // instead of adding a duplicate
-      if (run?.sessionKey === "unknown") {
-        const updated = tryUpdateExistingMessage(completedMessage);
+      // If completion repeats after history refresh, update the matching history row
+      // instead of adding a duplicate run message.
+      if (
+        run?.sessionKey === "unknown" ||
+        run?.status === "complete" ||
+        completedMessage.toolCalls?.length
+      ) {
+        const updated = tryUpdateExistingMessage(runId, completedMessage);
         if (!updated) {
           addMessage(completedMessage);
         }
@@ -742,17 +748,32 @@ function withRunCommentaryItems(
   options: { createCommentaryOnlyMessage: boolean },
 ): Message | undefined {
   const commentaryItems = run?.commentaryItems?.filter((item) => item.text.trim().length > 0);
-  if (!commentaryItems?.length) return message;
 
   if (message) {
+    const toolCalls = message.toolCalls?.length
+      ? message.toolCalls
+      : run?.toolCalls?.length
+        ? run.toolCalls
+        : undefined;
+    const runId = message.runId ?? run?.runId;
+
+    if (!commentaryItems?.length && !toolCalls && !runId) return message;
+
     return {
       ...message,
-      commentaryItems: mergeCommentaryItems(message.commentaryItems, commentaryItems),
-      runStartedAt: message.runStartedAt ?? run?.startedAt,
-      runCompletedAt: message.runCompletedAt ?? completedAt,
+      ...(runId ? { runId } : {}),
+      ...(toolCalls ? { toolCalls } : {}),
+      ...(commentaryItems?.length
+        ? {
+            commentaryItems: mergeCommentaryItems(message.commentaryItems, commentaryItems),
+            runStartedAt: message.runStartedAt ?? run?.startedAt,
+            runCompletedAt: message.runCompletedAt ?? completedAt,
+          }
+        : {}),
     };
   }
 
+  if (!commentaryItems?.length) return undefined;
   if (!options.createCommentaryOnlyMessage) return undefined;
 
   return {
@@ -761,6 +782,7 @@ function withRunCommentaryItems(
     content: "",
     commentaryItems,
     toolCalls: run?.toolCalls?.length ? run.toolCalls : undefined,
+    runId: run?.runId,
     timestamp: Date.now(),
     isStreaming: false,
     runStartedAt: run?.startedAt,
@@ -811,10 +833,11 @@ function normalizeCommentaryText(text: string): string {
 
 /**
  * Try to update an existing message from history that matches this one.
- * Used when completing a run that was created on-the-fly after page refresh.
+ * Used when completing a run created on-the-fly after page refresh, and when a
+ * repeated completion needs to reconcile with a message already loaded from history.
  * Returns true if an existing message was updated.
  */
-function tryUpdateExistingMessage(newMessage: Message): boolean {
+function tryUpdateExistingMessage(runId: string, newMessage: Message): boolean {
   // Look for a recent assistant message with matching tool calls
   const existingMessages = messages.value;
 
@@ -825,54 +848,77 @@ function tryUpdateExistingMessage(newMessage: Message): boolean {
     if (existing.role !== "assistant") continue;
     if (Date.now() - existing.timestamp > 60000) break; // Only check last minute
 
+    if (hasStableMessageIdentity(existing, newMessage, runId)) {
+      updateExistingFinalMessage(existingMessages, existing, newMessage);
+      return true;
+    }
+
     // Check if tool calls match by ID
     if (newMessage.toolCalls && existing.toolCalls) {
       const newToolIds = new Set(newMessage.toolCalls.map((tc) => tc.id));
       const hasMatchingTool = existing.toolCalls.some((tc) => newToolIds.has(tc.id));
 
       if (hasMatchingTool) {
-        // Merge tool calls: update status of existing ones
-        const mergedToolCalls = existing.toolCalls.map((existingTc) => {
-          const newTc = newMessage.toolCalls?.find((tc) => tc.id === existingTc.id);
-          if (newTc) {
-            return {
-              ...existingTc,
-              status: newTc.status,
-              result: newTc.result,
-              seq: newTc.seq ?? existingTc.seq,
-              completedAt: newTc.completedAt,
-            };
-          }
-          return existingTc;
-        });
-
-        // Merge content: keep existing content, append new content
-        let mergedContent = existing.content;
-        if (newMessage.content && !existing.content.endsWith(newMessage.content)) {
-          const separator = existing.content ? "\n\n" : "";
-          mergedContent = existing.content + separator + newMessage.content;
-        }
-
-        messages.value = existingMessages.map((msg) =>
-          msg.id === existing.id
-            ? {
-                ...msg,
-                content: mergedContent,
-                toolCalls: mergedToolCalls,
-                commentaryItems: newMessage.commentaryItems?.length
-                  ? mergeCommentaryItems(existing.commentaryItems, newMessage.commentaryItems)
-                  : existing.commentaryItems,
-                runStartedAt: newMessage.runStartedAt ?? existing.runStartedAt,
-                runCompletedAt: newMessage.runCompletedAt ?? existing.runCompletedAt,
-              }
-            : msg,
-        );
+        updateExistingFinalMessage(existingMessages, existing, newMessage);
         return true;
       }
     }
   }
 
   return false;
+}
+
+function hasStableMessageIdentity(existing: Message, newMessage: Message, runId: string): boolean {
+  if (existing.id === newMessage.id) return true;
+  if (existing.runId === runId && newMessage.runId === runId) return true;
+  return isRunMessageId(existing.id, runId) && isRunMessageId(newMessage.id, runId);
+}
+
+function isRunMessageId(messageId: string, runId: string): boolean {
+  return messageId === `assistant_${runId}` || messageId === `hist_${runId}`;
+}
+
+function updateExistingFinalMessage(
+  existingMessages: Message[],
+  existing: Message,
+  newMessage: Message,
+): void {
+  const mergedContent = mergeRepeatedFinalContent(existing.content, newMessage.content);
+  const mergedToolCalls = newMessage.toolCalls?.length
+    ? mergeToolCalls(existing.toolCalls ?? [], newMessage.toolCalls, {
+        preserveExistingAnchors: true,
+      })
+    : existing.toolCalls;
+
+  messages.value = existingMessages.map((msg) =>
+    msg.id === existing.id
+      ? {
+          ...msg,
+          content: mergedContent,
+          toolCalls: mergedToolCalls,
+          commentaryItems: newMessage.commentaryItems?.length
+            ? mergeCommentaryItems(existing.commentaryItems, newMessage.commentaryItems)
+            : existing.commentaryItems,
+          runStartedAt: newMessage.runStartedAt ?? existing.runStartedAt,
+          runCompletedAt: newMessage.runCompletedAt ?? existing.runCompletedAt,
+        }
+      : msg,
+  );
+}
+
+function mergeRepeatedFinalContent(existingContent: string, incomingContent: string): string {
+  if (!incomingContent) return existingContent;
+  if (!existingContent) return incomingContent;
+  if (existingContent === incomingContent || existingContent.endsWith(incomingContent)) {
+    return existingContent;
+  }
+  if (existingContent.startsWith(incomingContent)) {
+    return existingContent;
+  }
+  if (incomingContent.startsWith(existingContent)) {
+    return incomingContent;
+  }
+  return `${existingContent}\n\n${incomingContent}`;
 }
 
 /** Mark a run as errored */

@@ -1,5 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
 import type { ContentBlock, RawMessage } from "../../../src/types/chat";
+import type { ToolCall } from "../../../src/types/messages";
 
 const messageDetection = await import("../../../src/lib/message-detection");
 const toolUtils = await import("../../../src/lib/tool-utils");
@@ -319,6 +320,97 @@ describe("tool call merging", () => {
         result: "old result",
         status: "running",
       },
+    ]);
+  });
+
+  test("updates placement anchors by default for live parsed content", () => {
+    expect(
+      mergeToolCalls(
+        [
+          {
+            id: "tool-1",
+            name: "read",
+            status: "running",
+            insertedAtContentLength: 0,
+            contentSnapshotAtStart: "",
+          },
+        ],
+        [
+          {
+            id: "tool-1",
+            name: "read",
+            status: "running",
+            insertedAtContentLength: 12,
+            contentSnapshotAtStart: "before tool",
+          },
+        ],
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        id: "tool-1",
+        insertedAtContentLength: 12,
+        contentSnapshotAtStart: "before tool",
+      }),
+    ]);
+  });
+
+  test("can preserve existing placement anchors for history and final reconciliation", () => {
+    expect(
+      mergeToolCalls(
+        [
+          {
+            id: "tool-1",
+            name: "read",
+            status: "complete",
+            insertedAtContentLength: 0,
+            contentSnapshotAtStart: "",
+          },
+        ],
+        [
+          {
+            id: "tool-1",
+            name: "read",
+            status: "complete",
+            result: "latest",
+            insertedAtContentLength: 12,
+            contentSnapshotAtStart: "before tool",
+          },
+        ],
+        { preserveExistingAnchors: true },
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        id: "tool-1",
+        result: "latest",
+        insertedAtContentLength: 0,
+        contentSnapshotAtStart: "",
+      }),
+    ]);
+  });
+
+  test("preserves future incoming tool fields while keeping existing anchors when requested", () => {
+    const incoming = {
+      id: "tool-1",
+      name: "read",
+      status: "complete",
+      result: "latest",
+      insertedAtContentLength: 12,
+      futureOutput: { kind: "finish", value: "future metadata" },
+    } as ToolCall & { futureOutput: { kind: string; value: string } };
+
+    expect(
+      mergeToolCalls(
+        [{ id: "tool-1", name: "read", status: "running", insertedAtContentLength: 0 }],
+        [incoming],
+        { preserveExistingAnchors: true },
+      ),
+    ).toEqual([
+      expect.objectContaining({
+        id: "tool-1",
+        result: "latest",
+        insertedAtContentLength: 0,
+        futureOutput: { kind: "finish", value: "future metadata" },
+      }),
     ]);
   });
 });
